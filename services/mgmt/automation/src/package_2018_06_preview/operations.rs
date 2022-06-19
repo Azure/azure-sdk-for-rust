@@ -50,10 +50,9 @@ impl Client {
     pub(crate) fn scopes(&self) -> Vec<&str> {
         self.scopes.iter().map(String::as_str).collect()
     }
-    pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> azure_core::error::Result<azure_core::Response> {
+    pub(crate) async fn send(&self, request: &mut azure_core::Request) -> azure_core::Result<azure_core::Response> {
         let mut context = azure_core::Context::default();
-        let mut request = request.into();
-        self.pipeline.send(&mut context, &mut request).await
+        self.pipeline.send(&mut context, request).await
     }
     pub fn new(
         endpoint: impl Into<String>,
@@ -280,7 +279,6 @@ pub mod automation_account {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::AutomationAccount;
         #[derive(Clone)]
         pub struct Builder {
@@ -290,37 +288,30 @@ pub mod automation_account {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -340,7 +331,6 @@ pub mod automation_account {
     }
     pub mod create_or_update {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Created201(models::AutomationAccount),
@@ -355,38 +345,31 @@ pub mod automation_account {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::CREATED => {
@@ -411,7 +394,6 @@ pub mod automation_account {
     }
     pub mod update {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::AutomationAccount;
         #[derive(Clone)]
         pub struct Builder {
@@ -422,38 +404,31 @@ pub mod automation_account {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PATCH);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PATCH);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -473,7 +448,6 @@ pub mod automation_account {
     }
     pub mod delete {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -487,37 +461,30 @@ pub mod automation_account {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
@@ -534,7 +501,6 @@ pub mod automation_account {
     }
     pub mod list_by_resource_group {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::AutomationAccountListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -547,61 +513,48 @@ pub mod automation_account {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -624,7 +577,6 @@ pub mod automation_account {
     }
     pub mod list {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::AutomationAccountListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -636,60 +588,47 @@ pub mod automation_account {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/providers/Microsoft.Automation/automationAccounts",
                             this.client.endpoint(),
                             &this.subscription_id
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -721,7 +660,6 @@ pub mod operations {
     }
     pub mod list {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::OperationListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -729,31 +667,25 @@ pub mod operations {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!("{}/providers/Microsoft.Automation/operations", this.client.endpoint(),);
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url =
+                            azure_core::Url::parse(&format!("{}/providers/Microsoft.Automation/operations", this.client.endpoint(),))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -793,7 +725,6 @@ pub mod statistics {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::StatisticsListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -809,40 +740,33 @@ pub mod statistics {
                 self
             }
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/statistics",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         if let Some(filter) = &this.filter {
-                            url.query_pairs_mut().append_pair("$filter", filter);
+                            req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                         }
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -881,7 +805,6 @@ pub mod usages {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::UsageListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -892,37 +815,30 @@ pub mod usages {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/usages",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -961,7 +877,6 @@ pub mod keys {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::KeyListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -971,38 +886,31 @@ pub mod keys {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/listKeys",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -1105,7 +1013,6 @@ pub mod certificate {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Certificate;
         #[derive(Clone)]
         pub struct Builder {
@@ -1116,38 +1023,31 @@ pub mod certificate {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/certificates/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.certificate_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -1167,7 +1067,6 @@ pub mod certificate {
     }
     pub mod create_or_update {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Created201(models::Certificate),
@@ -1183,39 +1082,32 @@ pub mod certificate {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/certificates/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.certificate_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::CREATED => {
@@ -1240,7 +1132,6 @@ pub mod certificate {
     }
     pub mod update {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Certificate;
         #[derive(Clone)]
         pub struct Builder {
@@ -1252,39 +1143,32 @@ pub mod certificate {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/certificates/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.certificate_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PATCH);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PATCH);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -1304,7 +1188,6 @@ pub mod certificate {
     }
     pub mod delete {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -1315,38 +1198,31 @@ pub mod certificate {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/certificates/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.certificate_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
@@ -1362,7 +1238,6 @@ pub mod certificate {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::CertificateListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -1376,62 +1251,49 @@ pub mod certificate {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/certificates",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -1537,7 +1399,6 @@ pub mod connection {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Connection;
         #[derive(Clone)]
         pub struct Builder {
@@ -1548,38 +1409,31 @@ pub mod connection {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/connections/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.connection_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -1599,7 +1453,6 @@ pub mod connection {
     }
     pub mod create_or_update {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Created201(models::Connection),
@@ -1615,39 +1468,32 @@ pub mod connection {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/connections/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.connection_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::CREATED => {
@@ -1672,7 +1518,6 @@ pub mod connection {
     }
     pub mod update {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Connection;
         #[derive(Clone)]
         pub struct Builder {
@@ -1684,39 +1529,32 @@ pub mod connection {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/connections/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.connection_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PATCH);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PATCH);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -1736,7 +1574,6 @@ pub mod connection {
     }
     pub mod delete {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::Connection),
@@ -1751,38 +1588,31 @@ pub mod connection {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/connections/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.connection_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -1803,7 +1633,6 @@ pub mod connection {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::ConnectionListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -1817,62 +1646,49 @@ pub mod connection {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/connections",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -1961,7 +1777,6 @@ pub mod connection_type {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::ConnectionType;
         #[derive(Clone)]
         pub struct Builder {
@@ -1972,38 +1787,31 @@ pub mod connection_type {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/connectionTypes/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.connection_type_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -2023,7 +1831,6 @@ pub mod connection_type {
     }
     pub mod create_or_update {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::ConnectionType;
         #[derive(Clone)]
         pub struct Builder {
@@ -2035,39 +1842,32 @@ pub mod connection_type {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/connectionTypes/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.connection_type_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::CREATED => {
@@ -2087,7 +1887,6 @@ pub mod connection_type {
     }
     pub mod delete {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2102,38 +1901,31 @@ pub mod connection_type {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/connectionTypes/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.connection_type_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
@@ -2150,7 +1942,6 @@ pub mod connection_type {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::ConnectionTypeListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -2164,62 +1955,49 @@ pub mod connection_type {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/connectionTypes",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -2325,7 +2103,6 @@ pub mod credential {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Credential;
         #[derive(Clone)]
         pub struct Builder {
@@ -2336,38 +2113,31 @@ pub mod credential {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/credentials/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.credential_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -2387,7 +2157,6 @@ pub mod credential {
     }
     pub mod create_or_update {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Created201(models::Credential),
@@ -2403,39 +2172,32 @@ pub mod credential {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/credentials/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.credential_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::CREATED => {
@@ -2460,7 +2222,6 @@ pub mod credential {
     }
     pub mod update {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Credential;
         #[derive(Clone)]
         pub struct Builder {
@@ -2472,39 +2233,32 @@ pub mod credential {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/credentials/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.credential_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PATCH);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PATCH);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -2524,7 +2278,6 @@ pub mod credential {
     }
     pub mod delete {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -2535,38 +2288,31 @@ pub mod credential {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/credentials/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.credential_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
@@ -2582,7 +2328,6 @@ pub mod credential {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::CredentialListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -2596,62 +2341,49 @@ pub mod credential {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/credentials",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -2775,7 +2507,6 @@ pub mod dsc_configuration {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::DscConfiguration;
         #[derive(Clone)]
         pub struct Builder {
@@ -2786,38 +2517,31 @@ pub mod dsc_configuration {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/configurations/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.configuration_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -2837,7 +2561,6 @@ pub mod dsc_configuration {
     }
     pub mod create_or_update {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::DscConfiguration),
@@ -2853,39 +2576,32 @@ pub mod dsc_configuration {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/configurations/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.configuration_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -2910,7 +2626,6 @@ pub mod dsc_configuration {
     }
     pub mod update {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::DscConfiguration;
         #[derive(Clone)]
         pub struct Builder {
@@ -2926,43 +2641,36 @@ pub mod dsc_configuration {
                 self.parameters = Some(parameters.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/configurations/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.configuration_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PATCH);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PATCH);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = if let Some(parameters) = &this.parameters {
-                            req_builder = req_builder.header("content-type", "application/json");
+                            req.insert_header("content-type", "application/json");
                             azure_core::to_json(parameters)?
                         } else {
                             azure_core::EMPTY_BODY
                         };
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -2982,7 +2690,6 @@ pub mod dsc_configuration {
     }
     pub mod delete {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2997,38 +2704,31 @@ pub mod dsc_configuration {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/configurations/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.configuration_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
@@ -3045,7 +2745,6 @@ pub mod dsc_configuration {
     }
     pub mod get_content {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = bytes::Bytes;
         #[derive(Clone)]
         pub struct Builder {
@@ -3056,31 +2755,24 @@ pub mod dsc_configuration {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/configurations/{}/content" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . configuration_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/configurations/{}/content" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . configuration_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -3100,7 +2792,6 @@ pub mod dsc_configuration {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::DscConfigurationListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -3134,74 +2825,61 @@ pub mod dsc_configuration {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/configurations",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                                 if let Some(filter) = &this.filter {
-                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                    req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
                                 if let Some(skip) = &this.skip {
-                                    url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                                    req.url_mut().query_pairs_mut().append_pair("$skip", &skip.to_string());
                                 }
                                 if let Some(top) = &this.top {
-                                    url.query_pairs_mut().append_pair("$top", &top.to_string());
+                                    req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
                                 }
                                 if let Some(inlinecount) = &this.inlinecount {
-                                    url.query_pairs_mut().append_pair("$inlinecount", inlinecount);
+                                    req.url_mut().query_pairs_mut().append_pair("$inlinecount", inlinecount);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -3291,7 +2969,6 @@ pub mod hybrid_runbook_worker_group {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::HybridRunbookWorkerGroup;
         #[derive(Clone)]
         pub struct Builder {
@@ -3302,31 +2979,24 @@ pub mod hybrid_runbook_worker_group {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/hybridRunbookWorkerGroups/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . hybrid_runbook_worker_group_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/hybridRunbookWorkerGroups/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . hybrid_runbook_worker_group_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -3346,7 +3016,6 @@ pub mod hybrid_runbook_worker_group {
     }
     pub mod update {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::HybridRunbookWorkerGroup;
         #[derive(Clone)]
         pub struct Builder {
@@ -3358,32 +3027,25 @@ pub mod hybrid_runbook_worker_group {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/hybridRunbookWorkerGroups/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . hybrid_runbook_worker_group_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PATCH);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/hybridRunbookWorkerGroups/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . hybrid_runbook_worker_group_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::PATCH);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -3403,7 +3065,6 @@ pub mod hybrid_runbook_worker_group {
     }
     pub mod delete {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -3414,31 +3075,24 @@ pub mod hybrid_runbook_worker_group {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/hybridRunbookWorkerGroups/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . hybrid_runbook_worker_group_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/hybridRunbookWorkerGroups/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . hybrid_runbook_worker_group_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
@@ -3454,7 +3108,6 @@ pub mod hybrid_runbook_worker_group {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::HybridRunbookWorkerGroupsListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -3473,59 +3126,46 @@ pub mod hybrid_runbook_worker_group {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/hybridRunbookWorkerGroups" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/hybridRunbookWorkerGroups" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name)) ? ;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                                 if let Some(filter) = &this.filter {
-                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                    req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -3615,7 +3255,6 @@ pub mod job_schedule {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::JobSchedule;
         #[derive(Clone)]
         pub struct Builder {
@@ -3626,38 +3265,31 @@ pub mod job_schedule {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/jobSchedules/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.job_schedule_id
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -3677,7 +3309,6 @@ pub mod job_schedule {
     }
     pub mod create {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::JobSchedule;
         #[derive(Clone)]
         pub struct Builder {
@@ -3689,39 +3320,32 @@ pub mod job_schedule {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/jobSchedules/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.job_schedule_id
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::CREATED => {
@@ -3741,7 +3365,6 @@ pub mod job_schedule {
     }
     pub mod delete {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -3752,38 +3375,31 @@ pub mod job_schedule {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/jobSchedules/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.job_schedule_id
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
@@ -3799,7 +3415,6 @@ pub mod job_schedule {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::JobScheduleListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -3818,65 +3433,52 @@ pub mod job_schedule {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/jobSchedules",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                                 if let Some(filter) = &this.filter {
-                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                    req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -3918,7 +3520,6 @@ pub mod linked_workspace {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::LinkedWorkspace;
         #[derive(Clone)]
         pub struct Builder {
@@ -3928,37 +3529,30 @@ pub mod linked_workspace {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/linkedWorkspace",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -4016,7 +3610,6 @@ pub mod activity {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Activity;
         #[derive(Clone)]
         pub struct Builder {
@@ -4028,31 +3621,24 @@ pub mod activity {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/modules/{}/activities/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . module_name , & this . activity_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/modules/{}/activities/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . module_name , & this . activity_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -4072,7 +3658,6 @@ pub mod activity {
     }
     pub mod list_by_module {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::ActivityListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -4087,56 +3672,43 @@ pub mod activity {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/modules/{}/activities" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . module_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/modules/{}/activities" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . module_name)) ? ;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -4242,7 +3814,6 @@ pub mod module {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Module;
         #[derive(Clone)]
         pub struct Builder {
@@ -4253,38 +3824,31 @@ pub mod module {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/modules/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.module_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -4304,7 +3868,6 @@ pub mod module {
     }
     pub mod create_or_update {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Created201(models::Module),
@@ -4320,39 +3883,32 @@ pub mod module {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/modules/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.module_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::CREATED => {
@@ -4377,7 +3933,6 @@ pub mod module {
     }
     pub mod update {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Module;
         #[derive(Clone)]
         pub struct Builder {
@@ -4389,39 +3944,32 @@ pub mod module {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/modules/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.module_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PATCH);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PATCH);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -4441,7 +3989,6 @@ pub mod module {
     }
     pub mod delete {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -4452,38 +3999,31 @@ pub mod module {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/modules/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.module_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
@@ -4499,7 +4039,6 @@ pub mod module {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::ModuleListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -4513,62 +4052,49 @@ pub mod module {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/modules",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -4629,7 +4155,6 @@ pub mod object_data_types {
     }
     pub mod list_fields_by_module_and_type {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::TypeFieldListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -4642,31 +4167,24 @@ pub mod object_data_types {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/modules/{}/objectDataTypes/{}/fields" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . module_name , & this . type_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/modules/{}/objectDataTypes/{}/fields" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . module_name , & this . type_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -4686,7 +4204,6 @@ pub mod object_data_types {
     }
     pub mod list_fields_by_type {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::TypeFieldListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -4698,31 +4215,24 @@ pub mod object_data_types {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/objectDataTypes/{}/fields" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . type_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/objectDataTypes/{}/fields" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . type_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -4765,7 +4275,6 @@ pub mod fields {
     }
     pub mod list_by_type {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::TypeFieldListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -4778,31 +4287,24 @@ pub mod fields {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/modules/{}/types/{}/fields" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . module_name , & this . type_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/modules/{}/types/{}/fields" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . module_name , & this . type_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -4905,7 +4407,6 @@ pub mod schedule {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Schedule;
         #[derive(Clone)]
         pub struct Builder {
@@ -4916,38 +4417,31 @@ pub mod schedule {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/schedules/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.schedule_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -4967,7 +4461,6 @@ pub mod schedule {
     }
     pub mod create_or_update {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Created201(models::Schedule),
@@ -4983,39 +4476,32 @@ pub mod schedule {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/schedules/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.schedule_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::CREATED => {
@@ -5040,7 +4526,6 @@ pub mod schedule {
     }
     pub mod update {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Schedule;
         #[derive(Clone)]
         pub struct Builder {
@@ -5052,39 +4537,32 @@ pub mod schedule {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/schedules/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.schedule_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PATCH);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PATCH);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -5104,7 +4582,6 @@ pub mod schedule {
     }
     pub mod delete {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -5115,38 +4592,31 @@ pub mod schedule {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/schedules/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.schedule_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
@@ -5162,7 +4632,6 @@ pub mod schedule {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::ScheduleListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -5176,62 +4645,49 @@ pub mod schedule {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/schedules",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -5337,7 +4793,6 @@ pub mod variable {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Variable;
         #[derive(Clone)]
         pub struct Builder {
@@ -5348,38 +4803,31 @@ pub mod variable {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/variables/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.variable_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -5399,7 +4847,6 @@ pub mod variable {
     }
     pub mod create_or_update {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::Variable),
@@ -5415,39 +4862,32 @@ pub mod variable {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/variables/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.variable_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -5472,7 +4912,6 @@ pub mod variable {
     }
     pub mod update {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Variable;
         #[derive(Clone)]
         pub struct Builder {
@@ -5484,39 +4923,32 @@ pub mod variable {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/variables/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.variable_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PATCH);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PATCH);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -5536,7 +4968,6 @@ pub mod variable {
     }
     pub mod delete {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -5547,38 +4978,31 @@ pub mod variable {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/variables/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.variable_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
@@ -5594,7 +5018,6 @@ pub mod variable {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::VariableListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -5608,62 +5031,49 @@ pub mod variable {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/variables",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -5783,7 +5193,6 @@ pub mod webhook {
     }
     pub mod generate_uri {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = String;
         #[derive(Clone)]
         pub struct Builder {
@@ -5793,32 +5202,25 @@ pub mod webhook {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/webhooks/generateUri" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/webhooks/generateUri" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -5838,7 +5240,6 @@ pub mod webhook {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Webhook;
         #[derive(Clone)]
         pub struct Builder {
@@ -5849,38 +5250,31 @@ pub mod webhook {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/webhooks/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.webhook_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -5900,7 +5294,6 @@ pub mod webhook {
     }
     pub mod create_or_update {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::Webhook),
@@ -5916,39 +5309,32 @@ pub mod webhook {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/webhooks/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.webhook_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -5973,7 +5359,6 @@ pub mod webhook {
     }
     pub mod update {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Webhook;
         #[derive(Clone)]
         pub struct Builder {
@@ -5985,39 +5370,32 @@ pub mod webhook {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/webhooks/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.webhook_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PATCH);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PATCH);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -6037,7 +5415,6 @@ pub mod webhook {
     }
     pub mod delete {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -6048,38 +5425,31 @@ pub mod webhook {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/webhooks/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.webhook_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
@@ -6095,7 +5465,6 @@ pub mod webhook {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::WebhookListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -6114,65 +5483,52 @@ pub mod webhook {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/webhooks",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                                 if let Some(filter) = &this.filter {
-                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                    req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -6309,7 +5665,6 @@ pub mod watcher {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Watcher;
         #[derive(Clone)]
         pub struct Builder {
@@ -6320,38 +5675,31 @@ pub mod watcher {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/watchers/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.watcher_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -6371,7 +5719,6 @@ pub mod watcher {
     }
     pub mod create_or_update {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::Watcher),
@@ -6387,39 +5734,32 @@ pub mod watcher {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/watchers/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.watcher_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -6444,7 +5784,6 @@ pub mod watcher {
     }
     pub mod update {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Watcher;
         #[derive(Clone)]
         pub struct Builder {
@@ -6456,39 +5795,32 @@ pub mod watcher {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/watchers/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.watcher_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PATCH);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PATCH);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -6508,7 +5840,6 @@ pub mod watcher {
     }
     pub mod delete {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -6519,38 +5850,31 @@ pub mod watcher {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/watchers/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.watcher_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
@@ -6566,7 +5890,6 @@ pub mod watcher {
     }
     pub mod start {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -6577,39 +5900,32 @@ pub mod watcher {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/watchers/{}/start",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.watcher_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
@@ -6625,7 +5941,6 @@ pub mod watcher {
     }
     pub mod stop {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -6636,39 +5951,32 @@ pub mod watcher {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/watchers/{}/stop",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.watcher_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
@@ -6684,7 +5992,6 @@ pub mod watcher {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::WatcherListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -6703,65 +6010,52 @@ pub mod watcher {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/watchers",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2015-10-31");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2015-10-31");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2015-10-31");
                                 if let Some(filter) = &this.filter {
-                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                    req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -6855,7 +6149,6 @@ pub mod software_update_configurations {
     }
     pub mod get_by_name {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::SoftwareUpdateConfiguration;
         #[derive(Clone)]
         pub struct Builder {
@@ -6871,34 +6164,27 @@ pub mod software_update_configurations {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/softwareUpdateConfigurations/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . software_update_configuration_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/softwareUpdateConfigurations/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . software_update_configuration_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req_builder = req_builder.header("clientRequestId", client_request_id);
+                            req.insert_header("clientRequestId", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -6918,7 +6204,6 @@ pub mod software_update_configurations {
     }
     pub mod create {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::SoftwareUpdateConfiguration),
@@ -6939,35 +6224,28 @@ pub mod software_update_configurations {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/softwareUpdateConfigurations/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . software_update_configuration_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/softwareUpdateConfigurations/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . software_update_configuration_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req_builder = req_builder.header("clientRequestId", client_request_id);
+                            req.insert_header("clientRequestId", client_request_id);
                         }
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -6992,7 +6270,6 @@ pub mod software_update_configurations {
     }
     pub mod delete {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -7012,34 +6289,27 @@ pub mod software_update_configurations {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/softwareUpdateConfigurations/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . software_update_configuration_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/softwareUpdateConfigurations/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . software_update_configuration_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req_builder = req_builder.header("clientRequestId", client_request_id);
+                            req.insert_header("clientRequestId", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
@@ -7056,7 +6326,6 @@ pub mod software_update_configurations {
     }
     pub mod list {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::SoftwareUpdateConfigurationListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -7076,37 +6345,30 @@ pub mod software_update_configurations {
                 self.filter = Some(filter.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/softwareUpdateConfigurations" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/softwareUpdateConfigurations" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req_builder = req_builder.header("clientRequestId", client_request_id);
+                            req.insert_header("clientRequestId", client_request_id);
                         }
                         if let Some(filter) = &this.filter {
-                            url.query_pairs_mut().append_pair("$filter", filter);
+                            req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                         }
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -7165,7 +6427,6 @@ pub mod software_update_configuration_runs {
     }
     pub mod get_by_id {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::SoftwareUpdateConfigurationRun;
         #[derive(Clone)]
         pub struct Builder {
@@ -7181,34 +6442,27 @@ pub mod software_update_configuration_runs {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/softwareUpdateConfigurationRuns/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . software_update_configuration_run_id) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/softwareUpdateConfigurationRuns/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . software_update_configuration_run_id)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req_builder = req_builder.header("clientRequestId", client_request_id);
+                            req.insert_header("clientRequestId", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -7228,7 +6482,6 @@ pub mod software_update_configuration_runs {
     }
     pub mod list {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::SoftwareUpdateConfigurationRunListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -7258,43 +6511,36 @@ pub mod software_update_configuration_runs {
                 self.top = Some(top.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/softwareUpdateConfigurationRuns" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/softwareUpdateConfigurationRuns" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req_builder = req_builder.header("clientRequestId", client_request_id);
+                            req.insert_header("clientRequestId", client_request_id);
                         }
                         if let Some(filter) = &this.filter {
-                            url.query_pairs_mut().append_pair("$filter", filter);
+                            req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                         }
                         if let Some(skip) = &this.skip {
-                            url.query_pairs_mut().append_pair("$skip", skip);
+                            req.url_mut().query_pairs_mut().append_pair("$skip", skip);
                         }
                         if let Some(top) = &this.top {
-                            url.query_pairs_mut().append_pair("$top", top);
+                            req.url_mut().query_pairs_mut().append_pair("$top", top);
                         }
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -7353,7 +6599,6 @@ pub mod software_update_configuration_machine_runs {
     }
     pub mod get_by_id {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::SoftwareUpdateConfigurationMachineRun;
         #[derive(Clone)]
         pub struct Builder {
@@ -7369,34 +6614,27 @@ pub mod software_update_configuration_machine_runs {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/softwareUpdateConfigurationMachineRuns/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . software_update_configuration_machine_run_id) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/softwareUpdateConfigurationMachineRuns/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . software_update_configuration_machine_run_id)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req_builder = req_builder.header("clientRequestId", client_request_id);
+                            req.insert_header("clientRequestId", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -7416,7 +6654,6 @@ pub mod software_update_configuration_machine_runs {
     }
     pub mod list {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::SoftwareUpdateConfigurationMachineRunListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -7446,43 +6683,36 @@ pub mod software_update_configuration_machine_runs {
                 self.top = Some(top.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/softwareUpdateConfigurationMachineRuns" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/softwareUpdateConfigurationMachineRuns" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req_builder = req_builder.header("clientRequestId", client_request_id);
+                            req.insert_header("clientRequestId", client_request_id);
                         }
                         if let Some(filter) = &this.filter {
-                            url.query_pairs_mut().append_pair("$filter", filter);
+                            req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                         }
                         if let Some(skip) = &this.skip {
-                            url.query_pairs_mut().append_pair("$skip", skip);
+                            req.url_mut().query_pairs_mut().append_pair("$skip", skip);
                         }
                         if let Some(top) = &this.top {
-                            url.query_pairs_mut().append_pair("$top", top);
+                            req.url_mut().query_pairs_mut().append_pair("$top", top);
                         }
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -7586,7 +6816,6 @@ pub mod source_control {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::SourceControl;
         #[derive(Clone)]
         pub struct Builder {
@@ -7597,38 +6826,31 @@ pub mod source_control {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/sourceControls/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.source_control_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -7648,7 +6870,6 @@ pub mod source_control {
     }
     pub mod create_or_update {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::SourceControl),
@@ -7664,39 +6885,32 @@ pub mod source_control {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/sourceControls/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.source_control_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -7721,7 +6935,6 @@ pub mod source_control {
     }
     pub mod update {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::SourceControl;
         #[derive(Clone)]
         pub struct Builder {
@@ -7733,39 +6946,32 @@ pub mod source_control {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/sourceControls/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.source_control_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PATCH);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PATCH);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -7785,7 +6991,6 @@ pub mod source_control {
     }
     pub mod delete {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -7796,38 +7001,31 @@ pub mod source_control {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/sourceControls/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.source_control_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
@@ -7843,7 +7041,6 @@ pub mod source_control {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::SourceControlListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -7862,65 +7059,52 @@ pub mod source_control {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/sourceControls",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                                 if let Some(filter) = &this.filter {
-                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                    req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -8001,7 +7185,6 @@ pub mod source_control_sync_job {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::SourceControlSyncJobById;
         #[derive(Clone)]
         pub struct Builder {
@@ -8013,31 +7196,24 @@ pub mod source_control_sync_job {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/sourceControls/{}/sourceControlSyncJobs/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . source_control_name , & this . source_control_sync_job_id) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/sourceControls/{}/sourceControlSyncJobs/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . source_control_name , & this . source_control_sync_job_id)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -8057,7 +7233,6 @@ pub mod source_control_sync_job {
     }
     pub mod create {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::SourceControlSyncJob;
         #[derive(Clone)]
         pub struct Builder {
@@ -8070,32 +7245,25 @@ pub mod source_control_sync_job {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/sourceControls/{}/sourceControlSyncJobs/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . source_control_name , & this . source_control_sync_job_id) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/sourceControls/{}/sourceControlSyncJobs/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . source_control_name , & this . source_control_sync_job_id)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::CREATED => {
@@ -8115,7 +7283,6 @@ pub mod source_control_sync_job {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::SourceControlSyncJobListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -8135,59 +7302,46 @@ pub mod source_control_sync_job {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/sourceControls/{}/sourceControlSyncJobs" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . source_control_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/sourceControls/{}/sourceControlSyncJobs" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . source_control_name)) ? ;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                                 if let Some(filter) = &this.filter {
-                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                    req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -8253,7 +7407,6 @@ pub mod source_control_sync_job_streams {
     }
     pub mod list_by_sync_job {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::SourceControlSyncJobStreamsListBySyncJob;
         #[derive(Clone)]
         pub struct Builder {
@@ -8274,59 +7427,46 @@ pub mod source_control_sync_job_streams {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/sourceControls/{}/sourceControlSyncJobs/{}/streams" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . source_control_name , & this . source_control_sync_job_id) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/sourceControls/{}/sourceControlSyncJobs/{}/streams" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . source_control_name , & this . source_control_sync_job_id)) ? ;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                                 if let Some(filter) = &this.filter {
-                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                    req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -8349,7 +7489,6 @@ pub mod source_control_sync_job_streams {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::SourceControlSyncJobStreamById;
         #[derive(Clone)]
         pub struct Builder {
@@ -8362,31 +7501,24 @@ pub mod source_control_sync_job_streams {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/sourceControls/{}/sourceControlSyncJobs/{}/streams/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . source_control_name , & this . source_control_sync_job_id , & this . stream_id) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/sourceControls/{}/sourceControlSyncJobs/{}/streams/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . source_control_name , & this . source_control_sync_job_id , & this . stream_id)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -8541,7 +7673,6 @@ pub mod job {
     }
     pub mod get_output {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = bytes::Bytes;
         #[derive(Clone)]
         pub struct Builder {
@@ -8557,41 +7688,34 @@ pub mod job {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/jobs/{}/output",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.job_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req_builder = req_builder.header("clientRequestId", client_request_id);
+                            req.insert_header("clientRequestId", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -8611,7 +7735,6 @@ pub mod job {
     }
     pub mod get_runbook_content {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = bytes::Bytes;
         #[derive(Clone)]
         pub struct Builder {
@@ -8627,34 +7750,27 @@ pub mod job {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/jobs/{}/runbookContent" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . job_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/jobs/{}/runbookContent" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . job_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req_builder = req_builder.header("clientRequestId", client_request_id);
+                            req.insert_header("clientRequestId", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -8674,7 +7790,6 @@ pub mod job {
     }
     pub mod suspend {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -8690,42 +7805,35 @@ pub mod job {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/jobs/{}/suspend",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.job_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req_builder = req_builder.header("clientRequestId", client_request_id);
+                            req.insert_header("clientRequestId", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
@@ -8741,7 +7849,6 @@ pub mod job {
     }
     pub mod stop {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -8757,42 +7864,35 @@ pub mod job {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/jobs/{}/stop",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.job_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req_builder = req_builder.header("clientRequestId", client_request_id);
+                            req.insert_header("clientRequestId", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
@@ -8808,7 +7908,6 @@ pub mod job {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Job;
         #[derive(Clone)]
         pub struct Builder {
@@ -8824,41 +7923,34 @@ pub mod job {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/jobs/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.job_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req_builder = req_builder.header("clientRequestId", client_request_id);
+                            req.insert_header("clientRequestId", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -8878,7 +7970,6 @@ pub mod job {
     }
     pub mod create {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Job;
         #[derive(Clone)]
         pub struct Builder {
@@ -8895,42 +7986,35 @@ pub mod job {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/jobs/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.job_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(client_request_id) = &this.client_request_id {
-                            req_builder = req_builder.header("clientRequestId", client_request_id);
+                            req.insert_header("clientRequestId", client_request_id);
                         }
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::CREATED => {
@@ -8950,7 +8034,6 @@ pub mod job {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::JobListResultV2;
         #[derive(Clone)]
         pub struct Builder {
@@ -8974,68 +8057,55 @@ pub mod job {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/jobs",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                                 if let Some(filter) = &this.filter {
-                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                    req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
                                 if let Some(client_request_id) = &this.client_request_id {
-                                    req_builder = req_builder.header("clientRequestId", client_request_id);
+                                    req.insert_header("clientRequestId", client_request_id);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -9058,7 +8128,6 @@ pub mod job {
     }
     pub mod resume {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -9074,42 +8143,35 @@ pub mod job {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/jobs/{}/resume",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.job_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req_builder = req_builder.header("clientRequestId", client_request_id);
+                            req.insert_header("clientRequestId", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
@@ -9166,7 +8228,6 @@ pub mod job_stream {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::JobStream;
         #[derive(Clone)]
         pub struct Builder {
@@ -9183,11 +8244,11 @@ pub mod job_stream {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/jobs/{}/streams/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
@@ -9195,30 +8256,23 @@ pub mod job_stream {
                             &this.automation_account_name,
                             &this.job_name,
                             &this.job_stream_id
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req_builder = req_builder.header("clientRequestId", client_request_id);
+                            req.insert_header("clientRequestId", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -9238,7 +8292,6 @@ pub mod job_stream {
     }
     pub mod list_by_job {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::JobStreamListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -9263,69 +8316,56 @@ pub mod job_stream {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/jobs/{}/streams",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.job_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2017-05-15-preview");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2017-05-15-preview");
                                 if let Some(filter) = &this.filter {
-                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                    req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
                                 if let Some(client_request_id) = &this.client_request_id {
-                                    req_builder = req_builder.header("clientRequestId", client_request_id);
+                                    req.insert_header("clientRequestId", client_request_id);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -9382,7 +8422,6 @@ pub mod agent_registration_information {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::AgentRegistration;
         #[derive(Clone)]
         pub struct Builder {
@@ -9392,31 +8431,24 @@ pub mod agent_registration_information {
             pub(crate) automation_account_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/agentRegistrationInformation" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/agentRegistrationInformation" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-01-15");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -9436,7 +8468,6 @@ pub mod agent_registration_information {
     }
     pub mod regenerate_key {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::AgentRegistration;
         #[derive(Clone)]
         pub struct Builder {
@@ -9447,32 +8478,25 @@ pub mod agent_registration_information {
             pub(crate) parameters: models::AgentRegistrationRegenerateKeyParameter,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/agentRegistrationInformation/regenerateKey" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/agentRegistrationInformation/regenerateKey" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-01-15");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -9562,7 +8586,6 @@ pub mod dsc_node {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::DscNode;
         #[derive(Clone)]
         pub struct Builder {
@@ -9573,38 +8596,31 @@ pub mod dsc_node {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/nodes/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.node_id
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-01-15");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -9624,7 +8640,6 @@ pub mod dsc_node {
     }
     pub mod update {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::DscNode;
         #[derive(Clone)]
         pub struct Builder {
@@ -9636,39 +8651,32 @@ pub mod dsc_node {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/nodes/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.node_id
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PATCH);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PATCH);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-01-15");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.dsc_node_update_parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -9688,7 +8696,6 @@ pub mod dsc_node {
     }
     pub mod delete {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::DscNode;
         #[derive(Clone)]
         pub struct Builder {
@@ -9699,38 +8706,31 @@ pub mod dsc_node {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/nodes/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.node_id
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-01-15");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -9750,7 +8750,6 @@ pub mod dsc_node {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::DscNodeListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -9784,74 +8783,61 @@ pub mod dsc_node {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/nodes",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2018-01-15");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2018-01-15");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
                                 if let Some(filter) = &this.filter {
-                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                    req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
                                 if let Some(skip) = &this.skip {
-                                    url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                                    req.url_mut().query_pairs_mut().append_pair("$skip", &skip.to_string());
                                 }
                                 if let Some(top) = &this.top {
-                                    url.query_pairs_mut().append_pair("$top", &top.to_string());
+                                    req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
                                 }
                                 if let Some(inlinecount) = &this.inlinecount {
-                                    url.query_pairs_mut().append_pair("$inlinecount", inlinecount);
+                                    req.url_mut().query_pairs_mut().append_pair("$inlinecount", inlinecount);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -9930,7 +8916,6 @@ pub mod node_reports {
     }
     pub mod list_by_node {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::DscNodeReportListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -9950,66 +8935,53 @@ pub mod node_reports {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/nodes/{}/reports",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.node_id
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2018-01-15");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2018-01-15");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
                                 if let Some(filter) = &this.filter {
-                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                    req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -10032,7 +9004,6 @@ pub mod node_reports {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::DscNodeReport;
         #[derive(Clone)]
         pub struct Builder {
@@ -10044,31 +9015,24 @@ pub mod node_reports {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/nodes/{}/reports/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . node_id , & this . report_id) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/nodes/{}/reports/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . node_id , & this . report_id)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-01-15");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -10088,7 +9052,6 @@ pub mod node_reports {
     }
     pub mod get_content {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = serde_json::Value;
         #[derive(Clone)]
         pub struct Builder {
@@ -10100,31 +9063,24 @@ pub mod node_reports {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/nodes/{}/reports/{}/content" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . node_id , & this . report_id) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/nodes/{}/reports/{}/content" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . node_id , & this . report_id)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-01-15");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -10213,7 +9169,6 @@ pub mod dsc_compilation_job {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::DscCompilationJob;
         #[derive(Clone)]
         pub struct Builder {
@@ -10224,38 +9179,31 @@ pub mod dsc_compilation_job {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/compilationjobs/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.compilation_job_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-01-15");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -10275,7 +9223,6 @@ pub mod dsc_compilation_job {
     }
     pub mod create {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::DscCompilationJob;
         #[derive(Clone)]
         pub struct Builder {
@@ -10288,39 +9235,32 @@ pub mod dsc_compilation_job {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/compilationjobs/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.compilation_job_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-01-15");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::CREATED => {
@@ -10340,7 +9280,6 @@ pub mod dsc_compilation_job {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::DscCompilationJobListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -10359,65 +9298,52 @@ pub mod dsc_compilation_job {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/compilationjobs",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2018-01-15");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2018-01-15");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
                                 if let Some(filter) = &this.filter {
-                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                    req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -10440,7 +9366,6 @@ pub mod dsc_compilation_job {
     }
     pub mod get_stream {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::JobStream;
         #[derive(Clone)]
         pub struct Builder {
@@ -10452,31 +9377,24 @@ pub mod dsc_compilation_job {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/compilationjobs/{}/streams/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . job_id , & this . job_stream_id) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/compilationjobs/{}/streams/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . job_id , & this . job_stream_id)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-01-15");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -10517,7 +9435,6 @@ pub mod dsc_compilation_job_stream {
     }
     pub mod list_by_job {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::JobStreamListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -10528,31 +9445,24 @@ pub mod dsc_compilation_job_stream {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/compilationjobs/{}/streams" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . job_id) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/compilationjobs/{}/streams" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . job_id)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-01-15");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -10642,7 +9552,6 @@ pub mod dsc_node_configuration {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::DscNodeConfiguration;
         #[derive(Clone)]
         pub struct Builder {
@@ -10653,31 +9562,24 @@ pub mod dsc_node_configuration {
             pub(crate) node_configuration_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/nodeConfigurations/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . node_configuration_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/nodeConfigurations/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . node_configuration_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-01-15");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -10697,7 +9599,6 @@ pub mod dsc_node_configuration {
     }
     pub mod create_or_update {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -10714,32 +9615,25 @@ pub mod dsc_node_configuration {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/nodeConfigurations/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . node_configuration_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/nodeConfigurations/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . node_configuration_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-01-15");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
@@ -10760,7 +9654,6 @@ pub mod dsc_node_configuration {
     }
     pub mod delete {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -10771,31 +9664,24 @@ pub mod dsc_node_configuration {
             pub(crate) node_configuration_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/nodeConfigurations/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . node_configuration_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/nodeConfigurations/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . node_configuration_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-01-15");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
@@ -10811,7 +9697,6 @@ pub mod dsc_node_configuration {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::DscNodeConfigurationListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -10845,74 +9730,61 @@ pub mod dsc_node_configuration {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/nodeConfigurations",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2018-01-15");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2018-01-15");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
                                 if let Some(filter) = &this.filter {
-                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                    req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
                                 if let Some(skip) = &this.skip {
-                                    url.query_pairs_mut().append_pair("$skip", &skip.to_string());
+                                    req.url_mut().query_pairs_mut().append_pair("$skip", &skip.to_string());
                                 }
                                 if let Some(top) = &this.top {
-                                    url.query_pairs_mut().append_pair("$top", &top.to_string());
+                                    req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
                                 }
                                 if let Some(inlinecount) = &this.inlinecount {
-                                    url.query_pairs_mut().append_pair("$inlinecount", inlinecount);
+                                    req.url_mut().query_pairs_mut().append_pair("$inlinecount", inlinecount);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -10956,7 +9828,6 @@ pub mod node_count_information {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::NodeCounts;
         #[derive(Clone)]
         pub struct Builder {
@@ -10967,38 +9838,31 @@ pub mod node_count_information {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/nodecounts/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.count_type
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-01-15");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-01-15");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -11086,7 +9950,6 @@ pub mod runbook_draft {
     }
     pub mod get_content {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = bytes::Bytes;
         #[derive(Clone)]
         pub struct Builder {
@@ -11097,31 +9960,24 @@ pub mod runbook_draft {
             pub(crate) runbook_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft/content" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft/content" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-06-30");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -11141,7 +9997,6 @@ pub mod runbook_draft {
     }
     pub mod replace_content {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(bytes::Bytes),
@@ -11158,32 +10013,25 @@ pub mod runbook_draft {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft/content" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft/content" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-06-30");
-                        req_builder = req_builder.header("content-type", "text/powershell");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
+                        req.insert_header("content-type", "text/powershell");
                         let req_body = azure_core::to_json(&this.runbook_content)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -11204,7 +10052,6 @@ pub mod runbook_draft {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::RunbookDraft;
         #[derive(Clone)]
         pub struct Builder {
@@ -11215,38 +10062,31 @@ pub mod runbook_draft {
             pub(crate) runbook_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.runbook_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-06-30");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -11266,7 +10106,6 @@ pub mod runbook_draft {
     }
     pub mod undo_edit {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::RunbookDraftUndoEditResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -11277,32 +10116,25 @@ pub mod runbook_draft {
             pub(crate) runbook_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft/undoEdit" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft/undoEdit" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-06-30");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -11435,7 +10267,6 @@ pub mod runbook {
     }
     pub mod publish {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -11447,32 +10278,25 @@ pub mod runbook {
         }
         impl Builder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/publish" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/publish" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-06-30");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::ACCEPTED => Ok(()),
@@ -11488,7 +10312,6 @@ pub mod runbook {
     }
     pub mod get_content {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = bytes::Bytes;
         #[derive(Clone)]
         pub struct Builder {
@@ -11499,31 +10322,24 @@ pub mod runbook {
             pub(crate) runbook_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/content" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/content" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-06-30");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -11543,7 +10359,6 @@ pub mod runbook {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Runbook;
         #[derive(Clone)]
         pub struct Builder {
@@ -11554,38 +10369,31 @@ pub mod runbook {
             pub(crate) runbook_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.runbook_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-06-30");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -11605,7 +10413,6 @@ pub mod runbook {
     }
     pub mod create_or_update {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::Runbook),
@@ -11621,39 +10428,32 @@ pub mod runbook {
             pub(crate) parameters: models::RunbookCreateOrUpdateParameters,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.runbook_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-06-30");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -11678,7 +10478,6 @@ pub mod runbook {
     }
     pub mod update {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Runbook;
         #[derive(Clone)]
         pub struct Builder {
@@ -11690,39 +10489,32 @@ pub mod runbook {
             pub(crate) parameters: models::RunbookUpdateParameters,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.runbook_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PATCH);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PATCH);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-06-30");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -11742,7 +10534,6 @@ pub mod runbook {
     }
     pub mod delete {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -11757,38 +10548,31 @@ pub mod runbook {
             pub(crate) runbook_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.runbook_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-06-30");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(Response::Ok200),
@@ -11805,7 +10589,6 @@ pub mod runbook {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::RunbookListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -11819,62 +10602,49 @@ pub mod runbook {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2018-06-30");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2018-06-30");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -11936,7 +10706,6 @@ pub mod test_job_streams {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::JobStream;
         #[derive(Clone)]
         pub struct Builder {
@@ -11948,31 +10717,24 @@ pub mod test_job_streams {
             pub(crate) job_stream_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft/testJob/streams/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name , & this . job_stream_id) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft/testJob/streams/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name , & this . job_stream_id)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-06-30");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -11992,7 +10754,6 @@ pub mod test_job_streams {
     }
     pub mod list_by_test_job {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::JobStreamListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -12012,59 +10773,46 @@ pub mod test_job_streams {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft/testJob/streams" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft/testJob/streams" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name)) ? ;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2018-06-30");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2018-06-30");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
                                 if let Some(filter) = &this.filter {
-                                    url.query_pairs_mut().append_pair("$filter", filter);
+                                    req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -12170,7 +10918,6 @@ pub mod test_job {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::TestJob;
         #[derive(Clone)]
         pub struct Builder {
@@ -12181,31 +10928,24 @@ pub mod test_job {
             pub(crate) runbook_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft/testJob" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft/testJob" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-06-30");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -12225,7 +10965,6 @@ pub mod test_job {
     }
     pub mod create {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::TestJob;
         #[derive(Clone)]
         pub struct Builder {
@@ -12237,32 +10976,25 @@ pub mod test_job {
             pub(crate) parameters: models::TestJobCreateParameters,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft/testJob" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft/testJob" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-06-30");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::CREATED => {
@@ -12282,7 +11014,6 @@ pub mod test_job {
     }
     pub mod resume {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -12293,32 +11024,25 @@ pub mod test_job {
             pub(crate) runbook_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft/testJob/resume" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft/testJob/resume" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-06-30");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
@@ -12334,7 +11058,6 @@ pub mod test_job {
     }
     pub mod stop {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -12345,32 +11068,25 @@ pub mod test_job {
             pub(crate) runbook_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft/testJob/stop" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft/testJob/stop" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-06-30");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
@@ -12386,7 +11102,6 @@ pub mod test_job {
     }
     pub mod suspend {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -12397,32 +11112,25 @@ pub mod test_job {
             pub(crate) runbook_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft/testJob/suspend" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name) ;
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/runbooks/{}/draft/testJob/suspend" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . automation_account_name , & this . runbook_name)) ? ;
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-06-30");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
@@ -12521,7 +11229,6 @@ pub mod python2_package {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Module;
         #[derive(Clone)]
         pub struct Builder {
@@ -12532,38 +11239,31 @@ pub mod python2_package {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/python2Packages/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.package_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-06-30");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -12583,7 +11283,6 @@ pub mod python2_package {
     }
     pub mod create_or_update {
         use super::models;
-        use azure_core::error::ResultExt;
         #[derive(Debug)]
         pub enum Response {
             Created201(models::Module),
@@ -12599,39 +11298,32 @@ pub mod python2_package {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/python2Packages/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.package_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PUT);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-06-30");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::CREATED => {
@@ -12656,7 +11348,6 @@ pub mod python2_package {
     }
     pub mod update {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::Module;
         #[derive(Clone)]
         pub struct Builder {
@@ -12668,39 +11359,32 @@ pub mod python2_package {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/python2Packages/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.package_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PATCH);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PATCH);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-06-30");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -12720,7 +11404,6 @@ pub mod python2_package {
     }
     pub mod delete {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = ();
         #[derive(Clone)]
         pub struct Builder {
@@ -12731,38 +11414,31 @@ pub mod python2_package {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/python2Packages/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name,
                             &this.package_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::DELETE);
+                        ))?;
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2018-06-30");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => Ok(()),
@@ -12778,7 +11454,6 @@ pub mod python2_package {
     }
     pub mod list_by_automation_account {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::ModuleListResult;
         #[derive(Clone)]
         pub struct Builder {
@@ -12792,62 +11467,49 @@ pub mod python2_package {
                 let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
                     let this = self.clone();
                     async move {
-                        let url_str = &format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/python2Packages",
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.resource_group_name,
                             &this.automation_account_name
-                        );
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let mut req_builder = http::request::Builder::new();
+                        ))?;
                         let rsp = match continuation {
                             Some(token) => {
                                 url.set_path("");
-                                url = url
-                                    .join(&token.into_raw())
-                                    .context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                                let has_api_version_already = url.query_pairs().any(|(k, _)| k == "api-version");
-                                if !has_api_version_already {
-                                    url.query_pairs_mut().append_pair("api-version", "2018-06-30");
-                                }
-                                req_builder = req_builder.uri(url.as_str());
-                                req_builder = req_builder.method(http::Method::GET);
+                                url = url.join(&token.into_raw())?;
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
+                                }
                                 let req_body = azure_core::EMPTY_BODY;
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                             None => {
-                                req_builder = req_builder.method(http::Method::GET);
+                                let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
-                                let token_response = credential
-                                    .get_token(&this.client.scopes().join(" "))
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                                req_builder =
-                                    req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                                url.query_pairs_mut().append_pair("api-version", "2018-06-30");
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2018-06-30");
                                 let req_body = azure_core::EMPTY_BODY;
-                                req_builder = req_builder.uri(url.as_str());
-                                let req = req_builder
-                                    .body(req_body)
-                                    .context(azure_core::error::ErrorKind::Other, "build request")?;
-                                this.client
-                                    .send(req)
-                                    .await
-                                    .context(azure_core::error::ErrorKind::Io, "execute request")?
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
                         };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
