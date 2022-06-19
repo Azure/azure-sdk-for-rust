@@ -62,10 +62,9 @@ impl Policy for AuthorizationPolicy {
 
         let auth = {
             let resource_link = generate_resource_link(&uri_path);
-            trace!("resource_link == {}", resource_link);
             generate_authorization(
                 &self.authorization_token,
-                &request.method(),
+                request.method(),
                 ctx.get()
                     .expect("ResourceType must be in the Context at this point"),
                 resource_link,

@@ -1,9 +1,8 @@
 use azure_core::error::{Error, ErrorKind, ResultExt};
-use azure_core::{collect_pinned_stream, CollectedResponse, HttpClient, Request, Url};
+use azure_core::{CollectedResponse, HttpClient, Request, Url};
 use base64::{decode, encode_config};
-use bytes::Bytes;
 use hmac::{Hmac, Mac};
-use http::{header, HeaderMap, Method, StatusCode};
+use http::{header, Method};
 use sha2::Sha256;
 use std::sync::Arc;
 

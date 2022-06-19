@@ -6,7 +6,6 @@ use crate::ResourceQuota;
 use azure_core::error::{Error, ErrorKind};
 use azure_core::headers::{self, parse_int, Headers};
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
 
 pub(crate) fn request_charge_from_headers(headers: &Headers) -> azure_core::Result<f64> {
     headers::get_from_headers(headers, HEADER_REQUEST_CHARGE)
