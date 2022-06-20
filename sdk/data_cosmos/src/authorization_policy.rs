@@ -57,18 +57,15 @@ impl Policy for AuthorizationPolicy {
 
         let time_nonce = TimeNonce::new();
 
-        let uri_path = &request.path_and_query()[1..];
-        trace!("uri_path used by AuthorizationPolicy == {:#?}", uri_path);
-
         let auth = {
-            let resource_link = generate_resource_link(uri_path);
+            let resource_link = generate_resource_link(request);
             trace!("resource_link == {}", resource_link);
             generate_authorization(
                 &self.authorization_token,
                 &request.method(),
                 ctx.get()
                     .expect("ResourceType must be in the Context at this point"),
-                resource_link,
+                &resource_link,
                 time_nonce,
             )
         };
@@ -95,15 +92,17 @@ impl Policy for AuthorizationPolicy {
     }
 }
 
-/// This function strips the resource name from the passed uri. It does not alter the uri if a
-/// resource name is not present. This is accomplished in three steps (with eager return):
-/// 1. Find if the uri ends with a ENDING_STRING. If so, strip it and return. Every ENDING_STRING
+/// This function strips the leading slash and the resource name from the uri of the passed request.
+/// It does not strip the resource name if the resource name is not present. This is accomplished in
+/// four steps (with eager return):
+/// 1. Strip leading slash from the uri of the passed request.
+/// 2. Find if the uri ends with a ENDING_STRING. If so, strip it and return. Every ENDING_STRING
 ///    starts with a leading slash so this check will not match uri compsed **only** by the
 ///    ENDING_STRING.
-/// 2. Find if the uri **is** the ending string (without the leading slash). If so return an empty
+/// 3. Find if the uri **is** the ending string (without the leading slash). If so return an empty
 ///    string. This covers the exception of the rule above.
-/// 3. Return the received uri unchanged.
-fn generate_resource_link(uri: &str) -> &str {
+/// 4. Return the received uri unchanged.
+fn generate_resource_link(request: &Request) -> String {
     static ENDING_STRINGS: &[&str] = &[
         "/dbs",
         "/colls",
@@ -117,12 +116,17 @@ fn generate_resource_link(uri: &str) -> &str {
         "/triggers",
     ];
 
+    // This strips the leading slash from the uri of the passed request.
+    let uri_path = request.path_and_query();
+    let uri = uri_path.trim_start_matches('/');
+    trace!("uri used by AuthorizationPolicy == {:#?}", uri);
+
     // We find the above resource names. If found, we strip it and eagerly return. Note that the
     // resource names have a leading slash so the suffix will match `test/users` but not
     // `test-users`.
     for ending in ENDING_STRINGS {
         if let Some(uri_without_ending) = uri.strip_suffix(ending) {
-            return uri_without_ending;
+            return uri_without_ending.to_string();
         }
     }
 
@@ -134,9 +138,9 @@ fn generate_resource_link(uri: &str) -> &str {
         .map(|ending| &ending[1..]) // this is safe since every ENDING_STRING starts with a slash
         .any(|item| uri == item)
     {
-        ""
+        "".to_string()
     } else {
-        uri
+        uri.to_string()
     }
 }
 
@@ -319,12 +323,37 @@ mon, 01 jan 1900 01:00:00 gmt
 
     #[test]
     fn generate_resource_link_00() {
-        assert_eq!(generate_resource_link("dbs/second"), "dbs/second");
-        assert_eq!(generate_resource_link("dbs"), "");
-        assert_eq!(
-            generate_resource_link("colls/second/third"),
-            "colls/second/third"
+        let request = Request::new(
+            reqwest::Url::parse("https://.documents.azure.com/dbs/second").unwrap(),
+            http::Method::GET,
         );
-        assert_eq!(generate_resource_link("dbs/test_db/colls"), "dbs/test_db");
+        assert_eq!(&generate_resource_link(&request), "dbs/second");
+    }
+
+    #[test]
+    fn generate_resource_link_01() {
+        let request = Request::new(
+            reqwest::Url::parse("https://.documents.azure.com/dbs").unwrap(),
+            http::Method::GET,
+        );
+        assert_eq!(&generate_resource_link(&request), "");
+    }
+
+    #[test]
+    fn generate_resource_link_02() {
+        let request = Request::new(
+            reqwest::Url::parse("https://.documents.azure.com/colls/second/third").unwrap(),
+            http::Method::GET,
+        );
+        assert_eq!(&generate_resource_link(&request), "colls/second/third");
+    }
+
+    #[test]
+    fn generate_resource_link_03() {
+        let request = Request::new(
+            reqwest::Url::parse("https://.documents.azure.com/dbs/test_db/colls").unwrap(),
+            http::Method::GET,
+        );
+        assert_eq!(&generate_resource_link(&request), "dbs/test_db");
     }
 }
