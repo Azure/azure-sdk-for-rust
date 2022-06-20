@@ -55,7 +55,7 @@ impl Policy for MockTransportRecorderPolicy {
         let response = self
             .transport_options
             .http_client
-            .execute_request2(request)
+            .execute_request(request)
             .await?;
 
         // we need to duplicate the response because we are about to consume the response stream.

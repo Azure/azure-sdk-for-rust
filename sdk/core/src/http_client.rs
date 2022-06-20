@@ -25,14 +25,14 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     ///
     /// It does not consume the request. Implementors are expected to clone the necessary parts
     /// of the request and pass them to the underlying transport.
-    async fn execute_request2(&self, request: &crate::Request) -> crate::Result<crate::Response>;
+    async fn execute_request(&self, request: &crate::Request) -> crate::Result<crate::Response>;
 }
 
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 #[cfg(not(target_arch = "wasm32"))]
 #[async_trait]
 impl HttpClient for reqwest::Client {
-    async fn execute_request2(&self, request: &crate::Request) -> crate::Result<crate::Response> {
+    async fn execute_request(&self, request: &crate::Request) -> crate::Result<crate::Response> {
         let url = request.url().clone();
         let mut reqwest_request = self.request(request.method().clone(), url);
         for (name, value) in request.headers().iter() {
@@ -89,7 +89,7 @@ pub async fn execute_request_check_status(
     http_client: &dyn HttpClient,
     request: &crate::Request,
 ) -> crate::Result<crate::CollectedResponse> {
-    let rsp = http_client.execute_request2(request).await?;
+    let rsp = http_client.execute_request(request).await?;
     let (status, headers, body) = rsp.deconstruct();
     let body = crate::collect_pinned_stream(body).await?;
     if !status.is_success() {

@@ -32,7 +32,7 @@ impl Policy for TransportPolicy {
         // there must be no more policies
         assert_eq!(0, next.len());
 
-        let response = { self.transport_options.http_client.execute_request2(request) };
+        let response = { self.transport_options.http_client.execute_request(request) };
 
         response.await
     }

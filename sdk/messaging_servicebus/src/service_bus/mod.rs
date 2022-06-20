@@ -176,7 +176,7 @@ async fn peek_lock_message2(
         signing_key,
     )?;
 
-    let res = http_client.execute_request2(&req).await?;
+    let res = http_client.execute_request(&req).await?;
 
     let status = res.status();
     let lock_location: String = match res.headers().get("Location") {
