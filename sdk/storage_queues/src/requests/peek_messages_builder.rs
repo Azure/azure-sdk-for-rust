@@ -41,7 +41,7 @@ impl<'a> PeekMessagesBuilder<'a> {
             http::method::Method::GET,
             None,
         )?;
-        request.add_optional_header(self.client_request_id);
+        request.add_optional_header(self.client_request_id.as_ref());
 
         let response = self
             .queue_client

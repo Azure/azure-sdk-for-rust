@@ -52,7 +52,7 @@ impl<'a> UpdateMessageBuilder<'a> {
             http::method::Method::PUT,
             Some(message.into()),
         )?;
-        request.add_optional_header(self.client_request_id);
+        request.add_optional_header(self.client_request_id.as_ref());
 
         let response = self
             .pop_receipt_client

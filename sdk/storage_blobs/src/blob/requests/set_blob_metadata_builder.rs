@@ -38,7 +38,7 @@ impl<'a> SetBlobMetadataBuilder<'a> {
         let mut request =
             self.blob_client
                 .prepare_request(url.as_str(), http::Method::PUT, None)?;
-        request.add_optional_header(self.client_request_id);
+        request.add_optional_header(self.client_request_id.as_ref());
         request.add_optional_header(self.lease_id);
         if let Some(metadata) = &self.metadata {
             for m in metadata.iter() {

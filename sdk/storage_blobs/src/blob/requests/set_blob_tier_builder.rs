@@ -45,8 +45,8 @@ impl<'a> SetBlobTierBuilder<'a> {
             self.blob_client
                 .prepare_request(url.as_str(), http::Method::PUT, None)?;
         request.add_mandatory_header(&self.access_tier);
-        request.add_optional_header(self.client_request_id);
-        request.add_optional_header(self.rehydrate_priority);
+        request.add_optional_header(self.client_request_id.as_ref());
+        request.add_optional_header(self.rehydrate_priority.as_ref());
 
         let response = self
             .blob_client

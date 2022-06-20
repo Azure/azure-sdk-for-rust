@@ -35,7 +35,7 @@ impl<'a> ReleaseLeaseBuilder<'a> {
             self.container_lease_client
                 .prepare_request(url.as_str(), Method::PUT, None)?;
         request.insert_header(LEASE_ACTION, "release");
-        request.add_optional_header(self.client_request_id);
+        request.add_optional_header(self.client_request_id.as_ref());
         request.add_mandatory_header(self.container_lease_client.lease_id());
 
         let response = self

@@ -37,7 +37,7 @@ impl<'a> CreateQueueBuilder<'a> {
             http::method::Method::PUT,
             None,
         )?;
-        request.add_optional_header(self.client_request_id);
+        request.add_optional_header(self.client_request_id.as_ref());
         if let Some(metadata) = &self.metadata {
             for m in metadata.iter() {
                 request.add_mandatory_header(&m);

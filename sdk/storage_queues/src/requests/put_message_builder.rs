@@ -51,7 +51,7 @@ impl<'a> PutMessageBuilder<'a> {
             http::method::Method::POST,
             Some(message.into()),
         )?;
-        request.add_optional_header(self.client_request_id);
+        request.add_optional_header(self.client_request_id.as_ref());
 
         let response = self
             .queue_client
