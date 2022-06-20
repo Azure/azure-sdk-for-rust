@@ -54,7 +54,7 @@ impl<'a> UpdateOrMergeEntityBuilder<'a> {
             },
             Some(bytes::Bytes::from(request_body_serialized)),
         )?;
-        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(self.client_request_id);
         request.insert_header("Content-Type", "application/json");
         request.add_mandatory_header(if_match_condition);
 
@@ -83,7 +83,7 @@ impl<'a> UpdateOrMergeEntityBuilder<'a> {
                 Operation::Update => Method::PUT,
             },
         );
-        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(self.client_request_id);
         request.insert_header("Accept", "application/json;odata=fullmetadata");
         request.insert_header("Content-Type", "application/json");
         request.add_mandatory_header(if_match_condition);

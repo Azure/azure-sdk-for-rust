@@ -51,7 +51,7 @@ impl<'a> InsertOrReplaceOrMergeEntityBuilder<'a> {
             },
             Some(bytes::Bytes::from(request_body_serialized)),
         )?;
-        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(self.client_request_id.as_ref());
         request.insert_header("Content-Type", "application/json");
 
         let response = self
@@ -78,7 +78,7 @@ impl<'a> InsertOrReplaceOrMergeEntityBuilder<'a> {
                 Operation::InsertOrReplace => Method::PUT,
             },
         );
-        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(self.client_request_id.as_ref());
         request.insert_header("Accept", "application/json;odata=fullmetadata");
         request.insert_header("Content-Type", "application/json");
 

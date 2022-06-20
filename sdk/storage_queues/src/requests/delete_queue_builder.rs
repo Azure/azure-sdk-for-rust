@@ -35,7 +35,7 @@ impl<'a> DeleteQueueBuilder<'a> {
             http::method::Method::DELETE,
             None,
         )?;
-        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(self.client_request_id);
 
         let response = self
             .queue_client

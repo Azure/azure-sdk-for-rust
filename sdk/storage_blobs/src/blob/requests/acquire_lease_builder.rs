@@ -41,9 +41,9 @@ impl<'a> AcquireLeaseBuilder<'a> {
                 .prepare_request(url.as_str(), http::Method::PUT, None)?;
         request.insert_header(LEASE_ACTION, "acquire");
         request.add_mandatory_header(&self.lease_duration);
-        request.add_optional_header_ref(&self.proposed_lease_id);
-        request.add_optional_header(&self.client_request_id);
-        request.add_optional_header_ref(&self.lease_id);
+        request.add_optional_header(self.proposed_lease_id);
+        request.add_optional_header(self.client_request_id.as_ref());
+        request.add_optional_header(self.lease_id);
 
         let response = self
             .blob_client

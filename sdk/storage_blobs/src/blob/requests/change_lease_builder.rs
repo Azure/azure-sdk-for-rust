@@ -41,7 +41,7 @@ impl<'a> ChangeLeaseBuilder<'a> {
         request.insert_header(LEASE_ACTION, "change");
         request.add_mandatory_header(self.blob_lease_client.lease_id());
         request.add_mandatory_header(self.proposed_lease_id);
-        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(self.client_request_id.as_ref());
 
         let response = self
             .blob_lease_client

@@ -33,7 +33,7 @@ impl<'a> RenewLeaseBuilder<'a> {
                 .prepare_request(url.as_str(), http::Method::PUT, None)?;
         request.insert_header(LEASE_ACTION, "renew");
         request.add_mandatory_header(self.blob_lease_client.lease_id());
-        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(self.client_request_id);
 
         let response = self
             .blob_lease_client

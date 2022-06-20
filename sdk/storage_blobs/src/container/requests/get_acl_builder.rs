@@ -38,8 +38,8 @@ impl<'a> GetACLBuilder<'a> {
         let mut request = self
             .container_client
             .prepare_request(url.as_str(), Method::GET, None)?;
-        request.add_optional_header(&self.client_request_id);
-        request.add_optional_header_ref(&self.lease_id);
+        request.add_optional_header(self.client_request_id);
+        request.add_optional_header(self.lease_id);
 
         let response = self
             .container_client

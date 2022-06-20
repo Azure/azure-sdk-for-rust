@@ -51,7 +51,7 @@ impl<'a> SetQueueServicePropertiesBuilder<'a> {
             http::method::Method::PUT,
             Some(xml_body.into()),
         )?;
-        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(self.client_request_id);
 
         let response = self
             .storage_client

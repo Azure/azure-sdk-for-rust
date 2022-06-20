@@ -62,7 +62,7 @@ impl<'a> QueryBuilder<'a> {
         let body = azure_core::to_json(&query_body)?;
 
         let mut request = self.service_client.prepare_request(&uri, Method::POST)?;
-        request.add_optional_header(&self.continuation);
+        request.add_optional_header(self.continuation.as_ref());
         request.add_mandatory_header(&self.max_item_count);
         request.set_body(body);
 

@@ -51,11 +51,11 @@ impl<'a> ClearPageBuilder<'a> {
         request.insert_header(PAGE_WRITE, "clear");
         request.insert_header(BLOB_TYPE, "PageBlob");
         request.add_mandatory_header(&self.ba512_range);
-        request.add_optional_header(&self.sequence_number_condition);
-        request.add_optional_header(&self.if_modified_since_condition);
-        request.add_optional_header(&self.if_match_condition);
-        request.add_optional_header(&self.client_request_id);
-        request.add_optional_header_ref(&self.lease_id);
+        request.add_optional_header(self.sequence_number_condition.as_ref());
+        request.add_optional_header(self.if_modified_since_condition.as_ref());
+        request.add_optional_header(self.if_match_condition.as_ref());
+        request.add_optional_header(self.client_request_id.as_ref());
+        request.add_optional_header(self.lease_id);
 
         let response = self
             .blob_client

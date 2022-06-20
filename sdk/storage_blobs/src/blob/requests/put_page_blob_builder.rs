@@ -59,18 +59,18 @@ impl<'a> PutPageBlobBuilder<'a> {
                 .prepare_request(url.as_str(), http::Method::PUT, None)?;
         request.insert_header(BLOB_TYPE, "PageBlob");
         request.insert_header(BLOB_CONTENT_LENGTH, &format!("{}", self.length));
-        request.add_optional_header(&self.content_type);
-        request.add_optional_header(&self.content_encoding);
-        request.add_optional_header(&self.content_language);
-        request.add_optional_header(&self.content_disposition);
+        request.add_optional_header(self.content_type);
+        request.add_optional_header(self.content_encoding);
+        request.add_optional_header(self.content_language);
+        request.add_optional_header(self.content_disposition);
         if let Some(metadata) = &self.metadata {
             for m in metadata.iter() {
                 request.add_mandatory_header(&m);
             }
         }
-        request.add_optional_header_ref(&self.lease_id);
-        request.add_optional_header(&self.sequence_number);
-        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(self.lease_id);
+        request.add_optional_header(self.sequence_number);
+        request.add_optional_header(self.client_request_id);
 
         let response = self
             .blob_client

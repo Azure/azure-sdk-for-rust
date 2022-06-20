@@ -77,8 +77,8 @@ impl<'a> GetBlobBuilder<'a> {
                 request.insert_header(name, value);
             }
         }
-        request.add_optional_header(&self.client_request_id);
-        request.add_optional_header_ref(&self.lease_id);
+        request.add_optional_header(self.client_request_id.as_ref());
+        request.add_optional_header(self.lease_id);
 
         let response = self
             .blob_client

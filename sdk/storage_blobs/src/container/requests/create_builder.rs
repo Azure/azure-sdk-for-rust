@@ -47,7 +47,7 @@ impl<'a> CreateBuilder<'a> {
                 request.add_mandatory_header(&m);
             }
         }
-        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(self.client_request_id);
 
         let _response = self
             .container_client

@@ -36,8 +36,8 @@ impl<'a> DeleteBlobBuilder<'a> {
         let mut request =
             self.blob_client
                 .prepare_request(url.as_str(), http::Method::DELETE, None)?;
-        request.add_optional_header_ref(&self.lease_id);
-        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(self.lease_id);
+        request.add_optional_header(self.client_request_id.as_ref());
         request.add_mandatory_header(&self.delete_snapshots_method);
 
         let response = self

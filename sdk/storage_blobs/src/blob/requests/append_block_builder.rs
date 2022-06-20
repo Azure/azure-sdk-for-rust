@@ -48,11 +48,11 @@ impl<'a> AppendBlockBuilder<'a> {
             http::Method::PUT,
             Some(self.body.clone()),
         )?;
-        request.add_optional_header_ref(&self.hash);
-        request.add_optional_header(&self.condition_max_size);
-        request.add_optional_header(&self.condition_append_position);
-        request.add_optional_header_ref(&self.lease_id);
-        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(self.hash);
+        request.add_optional_header(self.condition_max_size.as_ref());
+        request.add_optional_header(self.condition_append_position.as_ref());
+        request.add_optional_header(self.lease_id);
+        request.add_optional_header(self.client_request_id.as_ref());
 
         let response = self
             .blob_client

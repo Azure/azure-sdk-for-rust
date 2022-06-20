@@ -44,7 +44,7 @@ impl<'a> GetMessagesBuilder<'a> {
             http::method::Method::GET,
             None,
         )?;
-        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(self.client_request_id);
 
         let response = self
             .queue_client

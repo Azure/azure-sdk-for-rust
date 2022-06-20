@@ -67,13 +67,13 @@ impl<'a> CopyBlobFromUrlBuilder<'a> {
                 request.add_mandatory_header(&m);
             }
         }
-        request.add_optional_header(&self.if_modified_since_condition);
-        request.add_optional_header(&self.if_match_condition);
-        request.add_optional_header_ref(&self.lease_id);
-        request.add_optional_header(&self.client_request_id);
-        request.add_optional_header(&self.if_source_since_condition);
-        request.add_optional_header(&self.if_source_match_condition);
-        request.add_optional_header_ref(&self.source_content_md5);
+        request.add_optional_header(self.if_modified_since_condition.as_ref());
+        request.add_optional_header(self.if_match_condition.as_ref());
+        request.add_optional_header(self.lease_id);
+        request.add_optional_header(self.client_request_id.as_ref());
+        request.add_optional_header(self.if_source_since_condition.as_ref());
+        request.add_optional_header(self.if_source_match_condition.as_ref());
+        request.add_optional_header(self.source_content_md5);
 
         let response = self
             .blob_client

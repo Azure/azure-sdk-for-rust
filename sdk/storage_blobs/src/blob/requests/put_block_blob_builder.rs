@@ -61,19 +61,19 @@ impl<'a> PutBlockBlobBuilder<'a> {
             Some(self.body.clone()),
         )?;
         request.insert_header(BLOB_TYPE, "BlockBlob");
-        request.add_optional_header_ref(&self.hash);
-        request.add_optional_header(&self.content_type);
-        request.add_optional_header(&self.content_encoding);
-        request.add_optional_header(&self.content_language);
-        request.add_optional_header(&self.content_disposition);
+        request.add_optional_header(self.hash);
+        request.add_optional_header(self.content_type.as_ref());
+        request.add_optional_header(self.content_encoding.as_ref());
+        request.add_optional_header(self.content_language.as_ref());
+        request.add_optional_header(self.content_disposition.as_ref());
         if let Some(metadata) = &self.metadata {
             for m in metadata.iter() {
                 request.add_mandatory_header(&m);
             }
         }
-        request.add_optional_header(&self.access_tier);
-        request.add_optional_header_ref(&self.lease_id);
-        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(self.access_tier.as_ref());
+        request.add_optional_header(self.lease_id);
+        request.add_optional_header(self.client_request_id.as_ref());
 
         let response = self
             .blob_client

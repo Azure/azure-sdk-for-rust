@@ -39,7 +39,7 @@ impl<'a> DeleteEntityBuilder<'a> {
         let mut request = self
             .entity_client
             .prepare_request(url.as_str(), Method::DELETE, None)?;
-        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(self.client_request_id.as_ref());
         request.add_mandatory_header(&self.if_match);
 
         let response = self
@@ -54,7 +54,7 @@ impl<'a> DeleteEntityBuilder<'a> {
         let url = self.entity_client.url();
 
         let mut request = Request::new(url.clone(), Method::DELETE);
-        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(self.client_request_id.as_ref());
         request.insert_header("Accept", "application/json;odata=minimalmetadata");
         request.insert_header("If-Match", "*");
 

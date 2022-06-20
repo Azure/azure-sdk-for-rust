@@ -51,7 +51,7 @@ impl<'a> InsertEntityBuilder<'a> {
             Method::POST,
             Some(bytes::Bytes::from(request_body_serialized)),
         )?;
-        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(self.client_request_id.as_ref());
         request.add_mandatory_header(&self.return_entity);
         request.insert_header("Accept", "application/json;odata=fullmetadata");
         request.insert_header("Content-Type", "application/json");
@@ -78,7 +78,7 @@ impl<'a> InsertEntityBuilder<'a> {
             .push(self.table_client.table_name());
 
         let mut request = Request::new(url, Method::POST);
-        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(self.client_request_id.as_ref());
         request.insert_header("Accept", "application/json;odata=fullmetadata");
         request.insert_header("Content-Type", "application/json");
 
