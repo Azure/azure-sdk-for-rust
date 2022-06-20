@@ -26,6 +26,21 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     /// It does not consume the request. Implementors are expected to clone the necessary parts
     /// of the request and pass them to the underlying transport.
     async fn execute_request(&self, request: &crate::Request) -> crate::Result<crate::Response>;
+
+    /// Send out the request and collect the response body.
+    /// An error is returned if the status is not success.
+    async fn execute_request_check_status(
+        &self,
+        request: &crate::Request,
+    ) -> crate::Result<crate::CollectedResponse> {
+        let rsp = self.execute_request(request).await?;
+        let (status, headers, body) = rsp.deconstruct();
+        let body = crate::collect_pinned_stream(body).await?;
+        if !status.is_success() {
+            return Err(ErrorKind::http_response_from_body(status.as_u16(), &body).into_error());
+        }
+        Ok(crate::CollectedResponse::new(status, headers, body))
+    }
 }
 
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
@@ -81,19 +96,4 @@ where
     T: ?Sized + Serialize,
 {
     Ok(Bytes::from(serde_json::to_vec(value)?))
-}
-
-/// Send out the request and collect the response body.
-/// An error is returned if the status is not success.
-pub async fn execute_request_check_status(
-    http_client: &dyn HttpClient,
-    request: &crate::Request,
-) -> crate::Result<crate::CollectedResponse> {
-    let rsp = http_client.execute_request(request).await?;
-    let (status, headers, body) = rsp.deconstruct();
-    let body = crate::collect_pinned_stream(body).await?;
-    if !status.is_success() {
-        return Err(ErrorKind::http_response_from_body(status.as_u16(), &body).into_error());
-    }
-    Ok(crate::CollectedResponse::new(status, headers, body))
 }

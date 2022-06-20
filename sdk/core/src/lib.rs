@@ -46,7 +46,7 @@ pub use headers::Header;
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 #[cfg(not(target_arch = "wasm32"))]
 pub use http_client::new_http_client;
-pub use http_client::{execute_request_check_status, to_json, HttpClient};
+pub use http_client::{to_json, HttpClient};
 pub use models::*;
 pub use options::*;
 pub use pageable::*;

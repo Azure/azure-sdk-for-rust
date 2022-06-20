@@ -1,6 +1,4 @@
-use azure_core::{
-    error::Error, execute_request_check_status, CollectedResponse, HttpClient, Request, Url,
-};
+use azure_core::{error::Error, CollectedResponse, HttpClient, Request, Url};
 use chrono::Duration;
 use http::{
     header::{AUTHORIZATION, CONTENT_LENGTH},
@@ -103,7 +101,10 @@ async fn send_message(
         signing_key,
     )?;
 
-    execute_request_check_status(http_client.as_ref(), &req).await?;
+    http_client
+        .as_ref()
+        .execute_request_check_status(&req)
+        .await?;
     Ok(())
 }
 
@@ -122,7 +123,10 @@ async fn receive_and_delete_message(
 
     let req = prepare_request(&url, Method::DELETE, None, policy_name, signing_key)?;
 
-    execute_request_check_status(http_client.as_ref(), &req).await
+    http_client
+        .as_ref()
+        .execute_request_check_status(&req)
+        .await
 }
 
 /// Non-destructively read a message
@@ -151,7 +155,10 @@ async fn peek_lock_message(
         signing_key,
     )?;
 
-    execute_request_check_status(http_client.as_ref(), &req).await
+    http_client
+        .as_ref()
+        .execute_request_check_status(&req)
+        .await
 }
 
 /// Non-destructively read a message but track it
@@ -226,7 +233,10 @@ impl PeekLockResponse {
             &self.signing_key,
         )?;
 
-        execute_request_check_status(self.http_client.as_ref(), &req).await
+        self.http_client
+            .as_ref()
+            .execute_request_check_status(&req)
+            .await
     }
 
     /// Unlock a message in the lock
@@ -239,8 +249,10 @@ impl PeekLockResponse {
             &self.signing_key,
         )?;
 
-        execute_request_check_status(self.http_client.as_ref(), &req).await?;
-
+        self.http_client
+            .as_ref()
+            .execute_request_check_status(&req)
+            .await?;
         Ok(())
     }
 
@@ -254,8 +266,10 @@ impl PeekLockResponse {
             &self.signing_key,
         )?;
 
-        execute_request_check_status(self.http_client.as_ref(), &req).await?;
-
+        self.http_client
+            .as_ref()
+            .execute_request_check_status(&req)
+            .await?;
         Ok(())
     }
 }

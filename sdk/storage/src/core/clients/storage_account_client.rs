@@ -501,7 +501,9 @@ impl StorageAccountClient {
         &self,
         request: &Request,
     ) -> azure_core::Result<azure_core::CollectedResponse> {
-        azure_core::execute_request_check_status(self.http_client(), request).await
+        self.http_client()
+            .execute_request_check_status(request)
+            .await
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {
