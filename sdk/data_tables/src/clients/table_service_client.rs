@@ -71,17 +71,6 @@ impl TableServiceClient {
             )
             .context(ErrorKind::Other, "failed to prepare request")
     }
-
-    /// Send out the request and collect the response body.
-    /// An error is returned if the status is not success.
-    pub(crate) async fn execute_request_check_status(
-        &self,
-        request: &Request,
-    ) -> azure_core::Result<azure_core::CollectedResponse> {
-        self.http_client()
-            .execute_request_check_status(request)
-            .await
-    }
 }
 
 #[cfg(test)]

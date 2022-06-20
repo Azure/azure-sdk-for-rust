@@ -40,6 +40,7 @@ impl<'a> DeleteQueueBuilder<'a> {
         let response = self
             .queue_client
             .storage_client()
+            .http_client()
             .execute_request_check_status(&request)
             .await?;
 

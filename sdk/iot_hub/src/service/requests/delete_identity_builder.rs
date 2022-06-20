@@ -44,6 +44,7 @@ impl<'a> DeleteIdentityBuilder<'a> {
         request.set_body(azure_core::EMPTY_BODY);
 
         self.service_client
+            .http_client()
             .execute_request_check_status(&request)
             .await?;
         Ok(())

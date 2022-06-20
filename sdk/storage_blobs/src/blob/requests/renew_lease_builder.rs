@@ -37,6 +37,7 @@ impl<'a> RenewLeaseBuilder<'a> {
 
         let response = self
             .blob_lease_client
+            .http_client()
             .execute_request_check_status(&request)
             .await?;
 

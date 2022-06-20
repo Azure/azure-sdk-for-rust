@@ -55,6 +55,7 @@ impl<'a> SetQueueServicePropertiesBuilder<'a> {
 
         let response = self
             .storage_client
+            .http_client()
             .execute_request_check_status(&request)
             .await?;
 

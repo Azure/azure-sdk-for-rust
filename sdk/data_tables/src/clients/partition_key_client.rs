@@ -61,17 +61,6 @@ impl PartitionKeyClient {
     ) -> azure_core::Result<Request> {
         self.table_client.prepare_request(url, method, request_body)
     }
-
-    /// Send out the request and collect the response body.
-    /// An error is returned if the status is not success.
-    pub(crate) async fn execute_request_check_status(
-        &self,
-        request: &Request,
-    ) -> azure_core::Result<azure_core::CollectedResponse> {
-        self.http_client()
-            .execute_request_check_status(request)
-            .await
-    }
 }
 
 #[cfg(test)]

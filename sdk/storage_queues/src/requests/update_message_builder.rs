@@ -57,6 +57,7 @@ impl<'a> UpdateMessageBuilder<'a> {
         let response = self
             .pop_receipt_client
             .storage_client()
+            .http_client()
             .execute_request_check_status(&request)
             .await?;
 

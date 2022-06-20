@@ -57,6 +57,7 @@ impl<'a> SubmitTransactionBuilder<'a> {
 
         let response = self
             .partition_key_client
+            .http_client()
             .execute_request_check_status(&request)
             .await?;
 

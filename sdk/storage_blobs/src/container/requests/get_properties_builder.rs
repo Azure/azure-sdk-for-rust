@@ -44,6 +44,7 @@ impl<'a> GetPropertiesBuilder<'a> {
             .container_client
             .storage_client()
             .storage_account_client()
+            .http_client()
             .execute_request_check_status(&request)
             .await?;
 

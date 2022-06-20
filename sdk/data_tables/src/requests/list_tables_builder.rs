@@ -54,6 +54,7 @@ impl<'a> ListTablesBuilder<'a> {
 
         let response = self
             .table_service_client
+            .http_client()
             .execute_request_check_status(&request)
             .await?;
 

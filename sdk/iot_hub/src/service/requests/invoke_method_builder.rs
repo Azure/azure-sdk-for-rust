@@ -87,6 +87,7 @@ impl<'a> InvokeMethodBuilder<'a> {
         request.set_body(body);
 
         self.iot_hub_service
+            .http_client()
             .execute_request_check_status(&request)
             .await?
             .try_into()

@@ -41,6 +41,7 @@ impl<'a> GetEntityBuilder<'a> {
 
         let response = self
             .entity_client
+            .http_client()
             .execute_request_check_status(&request)
             .await?;
 

@@ -39,6 +39,7 @@ impl<'a> DeleteTableBuilder<'a> {
 
         let response = self
             .table_client
+            .http_client()
             .execute_request_check_status(&request)
             .await?;
 

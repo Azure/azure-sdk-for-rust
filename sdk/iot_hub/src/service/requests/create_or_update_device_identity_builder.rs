@@ -80,6 +80,7 @@ impl<'a> CreateOrUpdateDeviceIdentityBuilder<'a> {
         request.set_body(body);
 
         self.service_client
+            .http_client()
             .execute_request_check_status(&request)
             .await?
             .try_into()

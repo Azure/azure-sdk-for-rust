@@ -77,6 +77,7 @@ impl<'a> CopyBlobFromUrlBuilder<'a> {
 
         let response = self
             .blob_client
+            .http_client()
             .execute_request_check_status(&request)
             .await?;
 
