@@ -57,6 +57,8 @@ pub use response::*;
 pub use seekable_stream::*;
 pub use sleep::sleep;
 
+pub use url::Url;
+
 /// A unique identifier for a request.
 // NOTE: only used for Storage?
 pub type RequestId = Uuid;

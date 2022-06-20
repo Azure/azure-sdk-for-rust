@@ -50,10 +50,9 @@ impl Client {
     pub(crate) fn scopes(&self) -> Vec<&str> {
         self.scopes.iter().map(String::as_str).collect()
     }
-    pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> azure_core::error::Result<azure_core::Response> {
+    pub(crate) async fn send(&self, request: &mut azure_core::Request) -> azure_core::Result<azure_core::Response> {
         let mut context = azure_core::Context::default();
-        let mut request = request.into();
-        self.pipeline.send(&mut context, &mut request).await
+        self.pipeline.send(&mut context, request).await
     }
     pub fn new(
         endpoint: impl Into<String>,
@@ -125,7 +124,6 @@ pub mod query {
     }
     pub mod get_availability {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::AvailabilityResponse;
         #[derive(Clone)]
         pub struct Builder {
@@ -147,40 +145,33 @@ pub mod query {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!("{}/availability", this.client.endpoint(),);
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core::Url::parse(&format!("{}/availability", this.client.endpoint(),))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2020-07-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-07-31");
                         if let Some(store_type) = &this.store_type {
-                            url.query_pairs_mut().append_pair("storeType", store_type);
+                            req.url_mut().query_pairs_mut().append_pair("storeType", store_type);
                         }
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
-                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                            req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(x_ms_client_session_id) = &this.x_ms_client_session_id {
-                            req_builder = req_builder.header("x-ms-client-session-id", x_ms_client_session_id);
+                            req.insert_header("x-ms-client-session-id", x_ms_client_session_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -200,7 +191,6 @@ pub mod query {
     }
     pub mod get_event_schema {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::EventSchema;
         #[derive(Clone)]
         pub struct Builder {
@@ -223,41 +213,34 @@ pub mod query {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!("{}/eventSchema", this.client.endpoint(),);
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
+                        let url = azure_core::Url::parse(&format!("{}/eventSchema", this.client.endpoint(),))?;
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2020-07-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-07-31");
                         if let Some(store_type) = &this.store_type {
-                            url.query_pairs_mut().append_pair("storeType", store_type);
+                            req.url_mut().query_pairs_mut().append_pair("storeType", store_type);
                         }
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
-                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                            req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(x_ms_client_session_id) = &this.x_ms_client_session_id {
-                            req_builder = req_builder.header("x-ms-client-session-id", x_ms_client_session_id);
+                            req.insert_header("x-ms-client-session-id", x_ms_client_session_id);
                         }
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -277,7 +260,6 @@ pub mod query {
     }
     pub mod execute {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::QueryResultPage;
         #[derive(Clone)]
         pub struct Builder {
@@ -305,44 +287,37 @@ pub mod query {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!("{}/timeseries/query", this.client.endpoint(),);
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
+                        let url = azure_core::Url::parse(&format!("{}/timeseries/query", this.client.endpoint(),))?;
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2020-07-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-07-31");
                         if let Some(store_type) = &this.store_type {
-                            url.query_pairs_mut().append_pair("storeType", store_type);
+                            req.url_mut().query_pairs_mut().append_pair("storeType", store_type);
                         }
                         if let Some(x_ms_continuation) = &this.x_ms_continuation {
-                            req_builder = req_builder.header("x-ms-continuation", x_ms_continuation);
+                            req.insert_header("x-ms-continuation", x_ms_continuation);
                         }
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
-                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                            req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(x_ms_client_session_id) = &this.x_ms_client_session_id {
-                            req_builder = req_builder.header("x-ms-client-session-id", x_ms_client_session_id);
+                            req.insert_header("x-ms-client-session-id", x_ms_client_session_id);
                         }
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -383,7 +358,6 @@ pub mod model_settings {
     }
     pub mod get {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::ModelSettingsResponse;
         #[derive(Clone)]
         pub struct Builder {
@@ -400,37 +374,30 @@ pub mod model_settings {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!("{}/timeseries/modelSettings", this.client.endpoint(),);
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core::Url::parse(&format!("{}/timeseries/modelSettings", this.client.endpoint(),))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2020-07-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-07-31");
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
-                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                            req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(x_ms_client_session_id) = &this.x_ms_client_session_id {
-                            req_builder = req_builder.header("x-ms-client-session-id", x_ms_client_session_id);
+                            req.insert_header("x-ms-client-session-id", x_ms_client_session_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -450,7 +417,6 @@ pub mod model_settings {
     }
     pub mod update {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::ModelSettingsResponse;
         #[derive(Clone)]
         pub struct Builder {
@@ -468,38 +434,31 @@ pub mod model_settings {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!("{}/timeseries/modelSettings", this.client.endpoint(),);
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::PATCH);
+                        let url = azure_core::Url::parse(&format!("{}/timeseries/modelSettings", this.client.endpoint(),))?;
+                        let mut req = azure_core::Request::new(url, http::Method::PATCH);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2020-07-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-07-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
-                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                            req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(x_ms_client_session_id) = &this.x_ms_client_session_id {
-                            req_builder = req_builder.header("x-ms-client-session-id", x_ms_client_session_id);
+                            req.insert_header("x-ms-client-session-id", x_ms_client_session_id);
                         }
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -558,7 +517,6 @@ pub mod time_series_instances {
     }
     pub mod list {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::GetInstancesPage;
         #[derive(Clone)]
         pub struct Builder {
@@ -580,40 +538,33 @@ pub mod time_series_instances {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!("{}/timeseries/instances", this.client.endpoint(),);
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core::Url::parse(&format!("{}/timeseries/instances", this.client.endpoint(),))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2020-07-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-07-31");
                         if let Some(x_ms_continuation) = &this.x_ms_continuation {
-                            req_builder = req_builder.header("x-ms-continuation", x_ms_continuation);
+                            req.insert_header("x-ms-continuation", x_ms_continuation);
                         }
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
-                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                            req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(x_ms_client_session_id) = &this.x_ms_client_session_id {
-                            req_builder = req_builder.header("x-ms-client-session-id", x_ms_client_session_id);
+                            req.insert_header("x-ms-client-session-id", x_ms_client_session_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -633,7 +584,6 @@ pub mod time_series_instances {
     }
     pub mod execute_batch {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::InstancesBatchResponse;
         #[derive(Clone)]
         pub struct Builder {
@@ -651,38 +601,31 @@ pub mod time_series_instances {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!("{}/timeseries/instances/$batch", this.client.endpoint(),);
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
+                        let url = azure_core::Url::parse(&format!("{}/timeseries/instances/$batch", this.client.endpoint(),))?;
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2020-07-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-07-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
-                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                            req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(x_ms_client_session_id) = &this.x_ms_client_session_id {
-                            req_builder = req_builder.header("x-ms-client-session-id", x_ms_client_session_id);
+                            req.insert_header("x-ms-client-session-id", x_ms_client_session_id);
                         }
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -702,7 +645,6 @@ pub mod time_series_instances {
     }
     pub mod suggest {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::InstancesSuggestResponse;
         #[derive(Clone)]
         pub struct Builder {
@@ -720,38 +662,31 @@ pub mod time_series_instances {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!("{}/timeseries/instances/suggest", this.client.endpoint(),);
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
+                        let url = azure_core::Url::parse(&format!("{}/timeseries/instances/suggest", this.client.endpoint(),))?;
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2020-07-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-07-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
-                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                            req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(x_ms_client_session_id) = &this.x_ms_client_session_id {
-                            req_builder = req_builder.header("x-ms-client-session-id", x_ms_client_session_id);
+                            req.insert_header("x-ms-client-session-id", x_ms_client_session_id);
                         }
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -771,7 +706,6 @@ pub mod time_series_instances {
     }
     pub mod search {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::SearchInstancesResponsePage;
         #[derive(Clone)]
         pub struct Builder {
@@ -794,41 +728,34 @@ pub mod time_series_instances {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!("{}/timeseries/instances/search", this.client.endpoint(),);
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
+                        let url = azure_core::Url::parse(&format!("{}/timeseries/instances/search", this.client.endpoint(),))?;
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2020-07-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-07-31");
                         if let Some(x_ms_continuation) = &this.x_ms_continuation {
-                            req_builder = req_builder.header("x-ms-continuation", x_ms_continuation);
+                            req.insert_header("x-ms-continuation", x_ms_continuation);
                         }
-                        req_builder = req_builder.header("content-type", "application/json");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
-                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                            req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(x_ms_client_session_id) = &this.x_ms_client_session_id {
-                            req_builder = req_builder.header("x-ms-client-session-id", x_ms_client_session_id);
+                            req.insert_header("x-ms-client-session-id", x_ms_client_session_id);
                         }
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -870,7 +797,6 @@ pub mod time_series_types {
     }
     pub mod list {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::GetTypesPage;
         #[derive(Clone)]
         pub struct Builder {
@@ -892,40 +818,33 @@ pub mod time_series_types {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!("{}/timeseries/types", this.client.endpoint(),);
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core::Url::parse(&format!("{}/timeseries/types", this.client.endpoint(),))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2020-07-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-07-31");
                         if let Some(x_ms_continuation) = &this.x_ms_continuation {
-                            req_builder = req_builder.header("x-ms-continuation", x_ms_continuation);
+                            req.insert_header("x-ms-continuation", x_ms_continuation);
                         }
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
-                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                            req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(x_ms_client_session_id) = &this.x_ms_client_session_id {
-                            req_builder = req_builder.header("x-ms-client-session-id", x_ms_client_session_id);
+                            req.insert_header("x-ms-client-session-id", x_ms_client_session_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -945,7 +864,6 @@ pub mod time_series_types {
     }
     pub mod execute_batch {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::TypesBatchResponse;
         #[derive(Clone)]
         pub struct Builder {
@@ -963,38 +881,31 @@ pub mod time_series_types {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!("{}/timeseries/types/$batch", this.client.endpoint(),);
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
+                        let url = azure_core::Url::parse(&format!("{}/timeseries/types/$batch", this.client.endpoint(),))?;
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2020-07-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-07-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
-                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                            req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(x_ms_client_session_id) = &this.x_ms_client_session_id {
-                            req_builder = req_builder.header("x-ms-client-session-id", x_ms_client_session_id);
+                            req.insert_header("x-ms-client-session-id", x_ms_client_session_id);
                         }
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -1036,7 +947,6 @@ pub mod time_series_hierarchies {
     }
     pub mod list {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::GetHierarchiesPage;
         #[derive(Clone)]
         pub struct Builder {
@@ -1058,40 +968,33 @@ pub mod time_series_hierarchies {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!("{}/timeseries/hierarchies", this.client.endpoint(),);
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::GET);
+                        let url = azure_core::Url::parse(&format!("{}/timeseries/hierarchies", this.client.endpoint(),))?;
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2020-07-31");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-07-31");
                         if let Some(x_ms_continuation) = &this.x_ms_continuation {
-                            req_builder = req_builder.header("x-ms-continuation", x_ms_continuation);
+                            req.insert_header("x-ms-continuation", x_ms_continuation);
                         }
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
-                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                            req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(x_ms_client_session_id) = &this.x_ms_client_session_id {
-                            req_builder = req_builder.header("x-ms-client-session-id", x_ms_client_session_id);
+                            req.insert_header("x-ms-client-session-id", x_ms_client_session_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
@@ -1111,7 +1014,6 @@ pub mod time_series_hierarchies {
     }
     pub mod execute_batch {
         use super::models;
-        use azure_core::error::ResultExt;
         type Response = models::HierarchiesBatchResponse;
         #[derive(Clone)]
         pub struct Builder {
@@ -1129,38 +1031,31 @@ pub mod time_series_hierarchies {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::error::Result<Response>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url_str = &format!("{}/timeseries/hierarchies/$batch", this.client.endpoint(),);
-                        let mut url = url::Url::parse(url_str).context(azure_core::error::ErrorKind::DataConversion, "parse url")?;
-                        let mut req_builder = http::request::Builder::new();
-                        req_builder = req_builder.method(http::Method::POST);
+                        let url = azure_core::Url::parse(&format!("{}/timeseries/hierarchies/$batch", this.client.endpoint(),))?;
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
-                        let token_response = credential
-                            .get_token(&this.client.scopes().join(" "))
-                            .await
-                            .context(azure_core::error::ErrorKind::Other, "get bearer token")?;
-                        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                        url.query_pairs_mut().append_pair("api-version", "2020-07-31");
-                        req_builder = req_builder.header("content-type", "application/json");
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2020-07-31");
+                        req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
-                            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                            req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(x_ms_client_session_id) = &this.x_ms_client_session_id {
-                            req_builder = req_builder.header("x-ms-client-session-id", x_ms_client_session_id);
+                            req.insert_header("x-ms-client-session-id", x_ms_client_session_id);
                         }
-                        req_builder = req_builder.uri(url.as_str());
-                        let req = req_builder
-                            .body(req_body)
-                            .context(azure_core::error::ErrorKind::Other, "build request")?;
-                        let rsp = this
-                            .client
-                            .send(req)
-                            .await
-                            .context(azure_core::error::ErrorKind::Io, "execute request")?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             http::StatusCode::OK => {
