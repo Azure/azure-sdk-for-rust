@@ -103,7 +103,7 @@ impl Headers {
                 let v = v.as_str();
                 v.parse::<u64>()
                     .with_context(ErrorKind::DataConversion, || {
-                        format!("unable to parse header into u64 {key:?}: {v}",)
+                        format!("unable to parse header into u64 {key:?}: {v}")
                     })
             })
             .transpose()
