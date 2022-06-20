@@ -27,6 +27,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     /// of the request and pass them to the underlying transport.
     async fn execute_request(&self, request: &crate::Request) -> crate::Result<crate::Response>;
 
+    /// DEPRECATED: the status check will be responsibility of another policy (not the transport one).
     /// Send out the request and collect the response body.
     /// An error is returned if the status is not success.
     async fn execute_request_check_status(
