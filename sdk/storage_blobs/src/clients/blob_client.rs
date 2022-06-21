@@ -1,4 +1,4 @@
-use crate::{blob::requests::*, prelude::*, BA512Range};
+use crate::{blob::operations::*, prelude::*, BA512Range};
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     prelude::*,
@@ -13,6 +13,7 @@ use azure_storage::core::{
     },
 };
 use bytes::Bytes;
+use futures::StreamExt;
 use http::{
     method::Method,
     request::{Builder, Request},
@@ -81,20 +82,32 @@ impl BlobClient {
         GetBlobBuilder::new(self)
     }
 
+    // helper function that returns the entire blob stream
+    pub async fn get_content(&self) -> azure_core::Result<Vec<u8>> {
+        let mut blob = Vec::new();
+        let mut stream = Box::pin(self.get().stream(1024 * 8));
+        while let Some(value) = stream.next().await {
+            let data = value?.data;
+            println!("received {:?} bytes", data.len());
+            blob.extend(&data);
+        }
+        Ok(blob)
+    }
+
     pub fn get_properties(&self) -> GetBlobPropertiesBuilder {
-        GetBlobPropertiesBuilder::new(self)
+        GetBlobPropertiesBuilder::new(self.clone())
     }
 
-    pub fn get_metadata(&self) -> GetBlobMetadataBuilder {
-        GetBlobMetadataBuilder::new(self)
+    pub fn get_metadata(&self) -> GetMetadataBuilder {
+        GetMetadataBuilder::new(self.clone())
     }
 
-    pub fn set_metadata(&self) -> SetBlobMetadataBuilder {
-        SetBlobMetadataBuilder::new(self)
+    pub fn set_metadata(&self) -> SetMetadataBuilder {
+        SetMetadataBuilder::new(self.clone())
     }
 
-    pub fn set_blobtier(&self) -> SetBlobTierBuilder {
-        SetBlobTierBuilder::new(self)
+    pub fn set_blob_tier(&self) -> SetBlobTierBuilder {
+        SetBlobTierBuilder::new(self.clone())
     }
 
     pub fn update_page(
@@ -102,55 +115,55 @@ impl BlobClient {
         ba512_range: BA512Range,
         content: impl Into<Bytes>,
     ) -> UpdatePageBuilder {
-        UpdatePageBuilder::new(self, ba512_range, content)
+        UpdatePageBuilder::new(self.clone(), ba512_range, content)
     }
 
     pub fn get_page_ranges(&self) -> GetPageRangesBuilder {
-        GetPageRangesBuilder::new(self)
+        GetPageRangesBuilder::new(self.clone())
     }
 
     pub fn delete(&self) -> DeleteBlobBuilder {
-        DeleteBlobBuilder::new(self)
+        DeleteBlobBuilder::new(self.clone())
     }
 
     pub fn delete_snapshot(&self, snapshot: Snapshot) -> DeleteBlobSnapshotBuilder {
-        DeleteBlobSnapshotBuilder::new(self, snapshot)
+        DeleteBlobSnapshotBuilder::new(self.clone(), snapshot)
     }
 
     pub fn delete_version_id(&self, version_id: VersionId) -> DeleteBlobVersionBuilder {
-        DeleteBlobVersionBuilder::new(self, version_id)
+        DeleteBlobVersionBuilder::new(self.clone(), version_id)
     }
 
-    pub fn copy<'a>(&'a self, copy_source: &'a Url) -> CopyBlobBuilder<'a> {
-        CopyBlobBuilder::new(self, copy_source)
+    pub fn copy(&self, copy_source: Url) -> CopyBlobBuilder {
+        CopyBlobBuilder::new(self.clone(), copy_source)
     }
 
-    pub fn copy_from_url<'a>(&'a self, copy_source: &'a str) -> CopyBlobFromUrlBuilder<'a> {
-        CopyBlobFromUrlBuilder::new(self, copy_source)
+    pub fn copy_from_url(&self, copy_source: Url) -> CopyBlobFromUrlBuilder {
+        CopyBlobFromUrlBuilder::new(self.clone(), copy_source)
     }
 
     pub fn put_page_blob(&self, length: u128) -> PutPageBlobBuilder {
-        PutPageBlobBuilder::new(self, length)
+        PutPageBlobBuilder::new(self.clone(), length)
     }
 
     pub fn put_append_blob(&self) -> PutAppendBlobBuilder {
-        PutAppendBlobBuilder::new(self)
+        PutAppendBlobBuilder::new(self.clone())
     }
 
     pub fn get_block_list(&self) -> GetBlockListBuilder {
-        GetBlockListBuilder::new(self)
+        GetBlockListBuilder::new(self.clone())
     }
 
-    pub fn put_block_list<'a>(&'a self, block_list: &'a BlockList) -> PutBlockListBuilder {
-        PutBlockListBuilder::new(self, block_list)
+    pub fn put_block_list(&self, block_list: BlockList) -> PutBlockListBuilder {
+        PutBlockListBuilder::new(self.clone(), block_list)
     }
 
     pub fn put_block_blob(&self, body: impl Into<Bytes>) -> PutBlockBlobBuilder {
-        PutBlockBlobBuilder::new(self, body.into())
+        PutBlockBlobBuilder::new(self.clone(), body.into())
     }
 
     pub fn append_block(&self, body: impl Into<Bytes>) -> AppendBlockBuilder {
-        AppendBlockBuilder::new(self, body.into())
+        AppendBlockBuilder::new(self.clone(), body.into())
     }
 
     pub fn put_block(
@@ -158,22 +171,22 @@ impl BlobClient {
         block_id: impl Into<BlockId>,
         body: impl Into<Bytes>,
     ) -> PutBlockBuilder {
-        PutBlockBuilder::new(self, block_id, body)
+        PutBlockBuilder::new(self.clone(), block_id, body)
     }
 
     pub fn clear_page(&self, ba512_range: BA512Range) -> ClearPageBuilder {
-        ClearPageBuilder::new(self, ba512_range)
+        ClearPageBuilder::new(self.clone(), ba512_range)
     }
 
     pub fn acquire_lease<LD: Into<LeaseDuration>>(
         &self,
         lease_duration: LD,
     ) -> AcquireLeaseBuilder {
-        AcquireLeaseBuilder::new(self, lease_duration.into())
+        AcquireLeaseBuilder::new(self.clone(), lease_duration.into())
     }
 
     pub fn break_lease(&self) -> BreakLeaseBuilder {
-        BreakLeaseBuilder::new(self)
+        BreakLeaseBuilder::new(self.clone())
     }
 
     pub fn shared_access_signature(
@@ -218,7 +231,7 @@ impl BlobClient {
     }
 
     pub async fn exists(&self) -> azure_core::Result<bool> {
-        let result = self.get_properties().execute().await.map(|_| true);
+        let result = self.get_properties().into_future().await.map(|_| true);
         if let Err(err) = result {
             if let ErrorKind::HttpResponse { status, .. } = err.kind() {
                 return Ok(status != &404u16);

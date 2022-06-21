@@ -1,5 +1,6 @@
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
+use futures::StreamExt;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -32,8 +33,11 @@ async fn main() -> azure_core::Result<()> {
         .execute()
         .await?;
 
-    let result = blob_client.get().execute().await?;
-
+    // only get the first 8k chunk
+    let result = Box::pin(blob_client.get().stream(1024 * 8))
+        .next()
+        .await
+        .expect("stream failed")?;
     println!("{:?}", result);
 
     Ok(())

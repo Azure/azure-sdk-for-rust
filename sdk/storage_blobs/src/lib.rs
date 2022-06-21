@@ -57,6 +57,15 @@ impl From<VersionId> for BlobVersioning {
     }
 }
 
+impl AppendToUrlQuery for BlobVersioning {
+    fn append_to_url_query(&self, url: &mut url::Url) {
+        match self {
+            BlobVersioning::Snapshot(snapshot) => snapshot.append_to_url_query(url),
+            BlobVersioning::VersionId(version_id) => version_id.append_to_url_query(url),
+        }
+    }
+}
+
 impl AppendToUrlQuery for &BlobVersioning {
     fn append_to_url_query(&self, url: &mut url::Url) {
         match self {

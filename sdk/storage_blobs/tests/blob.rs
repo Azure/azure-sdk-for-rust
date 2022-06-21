@@ -69,7 +69,7 @@ async fn create_and_delete_container() {
         assert!(i1.permission == i2.permission);
     }
 
-    let res = container.get_properties().execute().await.unwrap();
+    let res = container.get_properties().into_future().await.unwrap();
     assert!(res.container.public_access == PublicAccess::None);
 
     let list = blob_service
@@ -374,11 +374,11 @@ async fn put_block_blob_and_get_properties() {
 
     trace!("created {:?}", blob_name);
 
-    let blob_properties = blob.get_properties().execute().await.unwrap();
+    let blob_properties = blob.get_properties().into_future().await.unwrap();
 
     assert_eq!(blob_properties.blob.properties.content_length, 6);
 
-    let _ = requires_send_future(blob.get_properties().execute());
+    let _ = requires_send_future(blob.get_properties().into_future());
 }
 
 #[tokio::test]

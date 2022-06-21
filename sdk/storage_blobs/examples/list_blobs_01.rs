@@ -60,7 +60,7 @@ async fn main() -> azure_core::Result<()> {
             .as_blob_client(format!("blob_at_root{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .execute()
+            .into_future()
             .await?;
     }
 
@@ -70,7 +70,7 @@ async fn main() -> azure_core::Result<()> {
             .as_blob_client(format!("firstfolder/blob_at_1stfolder{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .execute()
+            .into_future()
             .await?;
     }
 
@@ -80,7 +80,7 @@ async fn main() -> azure_core::Result<()> {
             .as_blob_client(format!("secondroot/blobsd{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .execute()
+            .into_future()
             .await?;
     }
 
@@ -90,7 +90,7 @@ async fn main() -> azure_core::Result<()> {
             .as_blob_client(format!("firstfolder/secondfolder/blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .execute()
+            .into_future()
             .await?;
     }
 
@@ -100,7 +100,7 @@ async fn main() -> azure_core::Result<()> {
             .as_blob_client(format!("firstfolder/thirdfolder/blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .execute()
+            .into_future()
             .await?;
     }
 
@@ -113,7 +113,7 @@ async fn main() -> azure_core::Result<()> {
             ))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .execute()
+            .into_future()
             .await?;
     }
 

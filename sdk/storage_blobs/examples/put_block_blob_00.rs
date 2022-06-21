@@ -34,7 +34,7 @@ async fn main() -> azure_core::Result<()> {
 
     // this is not mandatory but it helps preventing
     // spurious data to be uploaded.
-    let hash = md5::compute(&data[..]).into();
+    let hash = md5::compute(&data[..]);
 
     // The required parameters are container_name, blob_name and body.
     // The builder supports many more optional
@@ -43,8 +43,8 @@ async fn main() -> azure_core::Result<()> {
     let res = blob_client
         .put_block_blob(data.clone())
         .content_type("text/plain")
-        .hash(&hash)
-        .execute()
+        .hash(hash)
+        .into_future()
         .await?;
     println!("1-put_block_blob {:?}", res);
 
@@ -58,17 +58,20 @@ async fn main() -> azure_core::Result<()> {
 
     let res = blob_client
         .put_block("satanasso", data.clone())
-        .execute()
+        .into_future()
         .await?;
     println!("2-put_block {:?}", res);
 
-    let res = blob_client.put_block("pollastro", data).execute().await?;
+    let res = blob_client
+        .put_block("pollastro", data)
+        .into_future()
+        .await?;
     println!("3-put_block {:?}", res);
 
     let ret = blob_client
         .get_block_list()
         .block_list_type(BlockListType::All)
-        .execute()
+        .into_future()
         .await?;
 
     println!("GetBlockList == {:?}", ret);
@@ -76,34 +79,34 @@ async fn main() -> azure_core::Result<()> {
     let bl = ret.block_with_size_list.into();
     println!("bl == {:?}", bl);
 
-    let res = blob_client.put_block_list(&bl).execute().await?;
+    let res = blob_client.put_block_list(bl).into_future().await?;
     println!("PutBlockList == {:?}", res);
 
     let res = blob_client
         .acquire_lease(Duration::from_secs(60))
-        .execute()
+        .into_future()
         .await?;
     println!("Acquire lease == {:?}", res);
 
     let lease = blob_client.as_blob_lease_client(res.lease_id);
 
-    let res = lease.renew().execute().await?;
+    let res = lease.renew().into_future().await?;
     println!("Renew lease == {:?}", res);
 
     let res = blob_client
         .break_lease()
         .lease_break_period(Duration::from_secs(15))
-        .execute()
+        .into_future()
         .await?;
     println!("Break lease == {:?}", res);
 
-    let res = lease.release().execute().await?;
+    let res = lease.release().into_future().await?;
     println!("Release lease == {:?}", res);
 
     let res = blob_client
         .delete()
         .delete_snapshots_method(DeleteSnapshotsMethod::Include)
-        .execute()
+        .into_future()
         .await?;
     println!("Delete blob == {:?}", res);
 

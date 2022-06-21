@@ -1,7 +1,6 @@
 #[macro_use]
 extern crate log;
 
-use azure_core::error::{ErrorKind, ResultExt};
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 
@@ -30,12 +29,8 @@ async fn main() -> azure_core::Result<()> {
 
     trace!("Requesting blob");
 
-    let response = blob_client.get().execute().await?;
-
-    let s_content =
-        String::from_utf8(response.data.to_vec()).map_kind(ErrorKind::DataConversion)?;
-    println!("blob == {:?}", blob);
-    println!("s_content == {}", s_content);
+    let blob = blob_client.get_content().await?;
+    println!("response == {:?}", blob);
 
     Ok(())
 }

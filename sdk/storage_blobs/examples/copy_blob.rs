@@ -69,7 +69,7 @@ async fn main() -> azure_core::Result<()> {
     };
     println!("read only SAS url: '{}'", sas_url);
 
-    let response = destination_blob.copy(&sas_url).execute().await?;
+    let response = destination_blob.copy(sas_url).into_future().await?;
     println!("copy response == {:#?}", response);
 
     Ok(())

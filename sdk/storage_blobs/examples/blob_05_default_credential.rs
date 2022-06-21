@@ -39,11 +39,10 @@ async fn main() -> azure_core::Result<()> {
 
     trace!("Requesting blob");
 
-    let response = blob_client.get().execute().await?;
-
-    let s_content =
-        String::from_utf8(response.data.to_vec()).map_kind(ErrorKind::DataConversion)?;
+    let blob = blob_client.get_content().await?;
     println!("blob == {:?}", blob);
+
+    let s_content = String::from_utf8(blob).map_kind(ErrorKind::DataConversion)?;
     println!("s_content == {}", s_content);
 
     Ok(())

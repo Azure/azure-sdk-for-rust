@@ -1,3 +1,7 @@
+pub mod operations;
+mod source_content_md5;
+pub use source_content_md5::*;
+
 mod lease_blob_options;
 pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
 mod blob_block_type;
@@ -12,8 +16,6 @@ mod block_list;
 pub use self::block_list::BlockList;
 mod page_range_list;
 pub use self::page_range_list::PageRangeList;
-pub mod requests;
-pub mod responses;
 use crate::AccessTier;
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},

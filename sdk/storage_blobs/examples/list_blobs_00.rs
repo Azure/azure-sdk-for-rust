@@ -47,7 +47,7 @@ async fn main() -> azure_core::Result<()> {
             .as_blob_client(format!("blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .execute()
+            .into_future()
             .await?;
         println!("\tAdded blob {}", i);
     }

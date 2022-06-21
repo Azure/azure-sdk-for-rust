@@ -1,23 +1,44 @@
 use crate::headers::{self, Header};
 
-#[derive(Debug, Clone, Copy)]
-pub struct ContentLanguage<'a>(&'a str);
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ContentLanguage(std::borrow::Cow<'static, str>);
 
-impl<'a, S> From<S> for ContentLanguage<'a>
-where
-    S: Into<&'a str>,
-{
-    fn from(s: S) -> Self {
-        Self(s.into())
+impl ContentLanguage {
+    pub fn as_str(&self) -> &str {
+        self.0.as_ref()
     }
 }
 
-impl<'a> Header for ContentLanguage<'a> {
+impl From<&'static str> for ContentLanguage {
+    fn from(s: &'static str) -> Self {
+        Self(std::borrow::Cow::Borrowed(s))
+    }
+}
+
+impl From<String> for ContentLanguage {
+    fn from(s: String) -> Self {
+        Self(std::borrow::Cow::Owned(s))
+    }
+}
+
+impl From<&String> for ContentLanguage {
+    fn from(s: &String) -> Self {
+        Self(std::borrow::Cow::Owned(s.clone()))
+    }
+}
+
+impl ContentLanguage {
+    pub fn new(s: impl Into<ContentLanguage>) -> Self {
+        s.into()
+    }
+}
+
+impl<'a> Header for ContentLanguage {
     fn name(&self) -> headers::HeaderName {
-        http::header::CONTENT_LANGUAGE.into()
+        http::header::CONTENT_TYPE.into()
     }
 
     fn value(&self) -> headers::HeaderValue {
-        self.0.to_owned().into()
+        self.0.to_string().into()
     }
 }

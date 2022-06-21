@@ -1,4 +1,4 @@
-use crate::{blob::responses::ListBlobsResponse, prelude::*};
+use crate::{container::responses::ListBlobsResponse, prelude::*};
 use azure_core::{headers::add_optional_header, prelude::*};
 use futures::stream::{unfold, Stream};
 use http::{method::Method, status::StatusCode};

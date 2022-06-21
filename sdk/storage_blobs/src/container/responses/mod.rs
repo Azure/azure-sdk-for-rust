@@ -12,3 +12,5 @@ mod release_lease_response;
 pub use self::release_lease_response::ReleaseLeaseResponse;
 mod renew_lease_response;
 pub use self::renew_lease_response::RenewLeaseResponse;
+mod list_blobs_response;
+pub use self::list_blobs_response::ListBlobsResponse;

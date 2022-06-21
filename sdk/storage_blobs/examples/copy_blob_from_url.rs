@@ -30,17 +30,15 @@ async fn main() -> azure_core::Result<()> {
         .as_container_client(&destination_container)
         .as_blob_client(&destination_blob);
 
-    let source_url = format!(
-        "{}/{}/{}",
-        storage_account_client.blob_storage_url().as_str(),
-        source_container,
-        source_blob
-    );
+    let source_url = storage_account_client
+        .blob_storage_url()
+        .join(&source_container)?
+        .join(&source_blob)?;
 
     let response = blob_client
-        .copy_from_url(&source_url)
+        .copy_from_url(source_url)
         .is_synchronous(true)
-        .execute()
+        .into_future()
         .await?;
 
     println!("response == {:?}", response);

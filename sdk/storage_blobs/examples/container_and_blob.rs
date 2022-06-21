@@ -33,14 +33,14 @@ async fn main() -> azure_core::Result<()> {
 
     // this is not mandatory but it helps preventing
     // spurious data to be uploaded.
-    let hash = md5::compute(&data[..]).into();
+    let hash = md5::compute(&data[..]);
 
     let res = container_client
         .as_blob_client("blob0.txt")
         .put_block_blob(data.clone())
         .content_type("text/plain")
-        .hash(&hash)
-        .execute()
+        .hash(hash)
+        .into_future()
         .await?;
     println!("{:?}", res);
 
@@ -48,8 +48,8 @@ async fn main() -> azure_core::Result<()> {
         .as_blob_client("blob1.txt")
         .put_block_blob(data.clone())
         .content_type("text/plain")
-        .hash(&hash)
-        .execute()
+        .hash(hash)
+        .into_future()
         .await?;
     println!("{:?}", res);
 
@@ -57,8 +57,8 @@ async fn main() -> azure_core::Result<()> {
         .as_blob_client("blob2.txt")
         .put_block_blob(data)
         .content_type("text/plain")
-        .hash(&hash)
-        .execute()
+        .hash(hash)
+        .into_future()
         .await?;
     println!("{:?}", res);
 

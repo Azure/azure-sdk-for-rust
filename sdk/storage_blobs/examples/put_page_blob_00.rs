@@ -49,9 +49,9 @@ async fn main() -> azure_core::Result<()> {
     let res = blob_client
         .put_page_blob(1024 * 3)
         .content_type("text/plain")
-        .metadata(&metadata)
+        .metadata(metadata)
         .sequence_number(100)
-        .execute()
+        .into_future()
         .await?;
     println!("put_page_blob == {:?}", res);
 
@@ -60,41 +60,41 @@ async fn main() -> azure_core::Result<()> {
     // of bounds error will be thrown.
     let res = blob_client
         .update_page(BA512Range::new(0, 511)?, slice.clone())
-        .hash(&digest.into())
-        .execute()
+        .hash(digest)
+        .into_future()
         .await?;
     println!("update first page == {:?}", res);
 
     // update a second page with the same data
     let res = blob_client
         .update_page(BA512Range::new(512, 1023)?, slice.clone())
-        .hash(&digest.into())
-        .execute()
+        .hash(digest)
+        .into_future()
         .await?;
     println!("update second page == {:?}", res);
 
     // update the second page again with checks
     let res = blob_client
         .update_page(BA512Range::new(512, 1023)?, slice)
-        .hash(&digest.into())
+        .hash(digest)
         .sequence_number_condition(SequenceNumberCondition::Equal(100))
-        .execute()
+        .into_future()
         .await?;
     println!("update sequence number condition == {:?}", res);
 
     // let's get page ranges
-    let res = blob_client.get_page_ranges().execute().await?;
+    let res = blob_client.get_page_ranges().into_future().await?;
     println!("get page ranges == {:?}", res);
 
     // let's clear a page
     let res = blob_client
         .clear_page(BA512Range::new(0, 511)?)
-        .execute()
+        .into_future()
         .await?;
     println!("clear first page {:?}", res);
 
     // let's get page ranges again
-    let res = blob_client.get_page_ranges().execute().await?;
+    let res = blob_client.get_page_ranges().into_future().await?;
     println!("get page ranges == {:?}", res);
 
     Ok(())
