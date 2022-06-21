@@ -5,7 +5,7 @@ use azure_core::{
 };
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
-use futures::stream::StreamExt;
+use futures::StreamExt;
 
 #[tokio::test]
 async fn create_blob_and_stream_back() {
@@ -30,10 +30,10 @@ async fn code() -> azure_core::Result<()> {
     let container = storage.as_container_client(container_name);
     let blob = container.as_blob_client(file_name);
 
-    if blob_service
-        .list_containers()
-        .execute()
-        .await?
+    if Box::pin(blob_service.list_containers().stream())
+        .next()
+        .await
+        .unwrap()?
         .incomplete_vector
         .iter()
         .find(|x| x.name == container_name)

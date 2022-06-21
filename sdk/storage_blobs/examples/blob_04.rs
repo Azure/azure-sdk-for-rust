@@ -42,11 +42,11 @@ async fn main() -> azure_core::Result<()> {
 
         let block_id = Bytes::from(format!("{}", i));
         block_ids.push(block_id.clone());
-        let hash = md5::compute(slice.clone()).into();
+        let hash = md5::compute(slice.clone());
 
         let put_block_response = blob_client
             .put_block(block_id, slice)
-            .hash(&hash)
+            .hash(hash)
             .into_future()
             .await?;
 

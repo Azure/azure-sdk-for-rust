@@ -1,7 +1,7 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
-use futures::stream::StreamExt;
+use futures::StreamExt;
 use std::time::Duration;
 
 #[tokio::test]
@@ -21,7 +21,11 @@ async fn stream_list_blobs() {
     let blob_service = storage.as_blob_service_client();
     let container = storage.as_container_client(container_name);
 
-    let iv = blob_service.list_containers().execute().await.unwrap();
+    let iv = Box::pin(blob_service.list_containers().stream())
+        .next()
+        .await
+        .unwrap()
+        .unwrap();
 
     if iv
         .incomplete_vector

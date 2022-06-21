@@ -13,22 +13,22 @@ async fn lease() {
     container
         .create()
         .public_access(PublicAccess::None)
-        .execute()
+        .into_future()
         .await
         .unwrap();
 
     let res = container
         .acquire_lease(Duration::from_secs(30))
-        .execute()
+        .into_future()
         .await
         .unwrap();
     let lease_id = res.lease_id;
     let lease = container.as_container_lease_client(lease_id);
 
-    let _res = lease.renew().execute().await.unwrap();
-    let _res = lease.release().execute().await.unwrap();
+    let _res = lease.renew().into_future().await.unwrap();
+    let _res = lease.release().into_future().await.unwrap();
 
-    container.delete().execute().await.unwrap();
+    container.delete().into_future().await.unwrap();
 }
 
 #[tokio::test]
@@ -57,7 +57,7 @@ async fn break_lease() {
     let res = container
         .break_lease()
         .lease_break_period(Duration::from_secs(0))
-        .execute()
+        .into_future()
         .await
         .unwrap();
     assert!(res.lease_time == 0);

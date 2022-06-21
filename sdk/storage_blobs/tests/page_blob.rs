@@ -4,6 +4,7 @@ extern crate log;
 use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
+use futures::StreamExt;
 use std::sync::Arc;
 
 #[tokio::test]
@@ -16,10 +17,10 @@ async fn put_page_blob() {
     let container = storage.as_container_client(container_name);
     let blob = container.as_blob_client(blob_name);
 
-    if blob_service
-        .list_containers()
-        .execute()
+    if Box::pin(blob_service.list_containers().stream())
+        .next()
         .await
+        .unwrap()
         .unwrap()
         .incomplete_vector
         .iter()
@@ -40,7 +41,7 @@ async fn put_page_blob() {
 
     blob.put_page_blob(1024 * 64)
         .content_type("text/plain")
-        .metadata(&metadata)
+        .metadata(metadata)
         .into_future()
         .await
         .unwrap();
