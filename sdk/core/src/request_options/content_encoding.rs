@@ -8,7 +8,7 @@ impl ContentEncoding {
         self.0.as_ref()
     }
 
-    const fn from_static(s:&'static str) -> Self {
+    const fn from_static(s: &'static str) -> Self {
         Self(std::borrow::Cow::Borrowed(s))
     }
 }
