@@ -1,6 +1,6 @@
 use azure_core::error::{ErrorKind, ResultExt};
 use azure_core::{headers::*, Context, Policy, PolicyResult, Request};
-use http::header::AUTHORIZATION;
+use headers::AUTHORIZATION;
 use http::Method;
 use std::borrow::Cow;
 use std::sync::Arc;

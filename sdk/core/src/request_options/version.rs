@@ -20,7 +20,7 @@ where
 
 impl Header for Version {
     fn name(&self) -> headers::HeaderName {
-        headers::VERSION.into()
+        headers::VERSION
     }
 
     fn value(&self) -> headers::HeaderValue {

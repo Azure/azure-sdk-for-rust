@@ -22,7 +22,7 @@ where
 
 impl Header for ClientRequestId {
     fn name(&self) -> headers::HeaderName {
-        headers::CLIENT_REQUEST_ID.into()
+        headers::CLIENT_REQUEST_ID
     }
 
     fn value(&self) -> headers::HeaderValue {

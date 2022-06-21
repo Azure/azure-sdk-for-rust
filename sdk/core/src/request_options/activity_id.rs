@@ -20,7 +20,7 @@ where
 
 impl Header for ActivityId {
     fn name(&self) -> headers::HeaderName {
-        headers::ACTIVITY_ID.into()
+        headers::ACTIVITY_ID
     }
 
     fn value(&self) -> headers::HeaderValue {

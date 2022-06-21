@@ -1,5 +1,5 @@
 use azure_core::{Context, Policy, PolicyResult, Request};
-use http::header::AUTHORIZATION;
+use headers::AUTHORIZATION;
 use http::HeaderValue;
 use std::sync::Arc;
 

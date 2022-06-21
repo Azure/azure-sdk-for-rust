@@ -5,15 +5,18 @@ use crate::resources::document::Query;
 use crate::resources::ResourceType;
 use crate::ResourceQuota;
 use azure_core::collect_pinned_stream;
+use azure_core::headers;
+use azure_core::headers::HeaderValue;
 use azure_core::headers::{
     continuation_token_from_headers_optional, item_count_from_headers, session_token_from_headers,
 };
 use azure_core::prelude::*;
+use azure_core::CollectedResponse;
 use azure_core::Pageable;
 use azure_core::Response as HttpResponse;
 use azure_core::SessionToken;
 use chrono::{DateTime, Utc};
-use http::response::Response;
+use http::Method;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::convert::TryInto;
@@ -81,17 +84,17 @@ impl QueryDocumentsBuilder {
                         this.client.database_client().database_name(),
                         this.client.collection_name()
                     ),
-                    http::Method::POST,
+                    Method::POST,
                 );
 
                 // signal that this is a query
                 request.headers_mut().insert(
                     crate::headers::HEADER_DOCUMENTDB_ISQUERY,
-                    http::HeaderValue::from_str("true").unwrap(),
+                    HeaderValue::from_static("true"),
                 );
                 request.headers_mut().insert(
-                    http::header::CONTENT_TYPE,
-                    http::HeaderValue::from_str("application/query+json").unwrap(),
+                    headers::CONTENT_TYPE,
+                    HeaderValue::from_static("application/query+json"),
                 );
 
                 request.insert_headers(&this.if_match_condition);
@@ -137,13 +140,13 @@ pub struct DocumentQueryResult<T> {
     pub result: T,
 }
 
-impl<T> std::convert::TryFrom<Response<bytes::Bytes>> for DocumentQueryResult<T>
+impl<T> std::convert::TryFrom<CollectedResponse> for DocumentQueryResult<T>
 where
     T: DeserializeOwned,
 {
     type Error = azure_core::error::Error;
 
-    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
+    fn try_from(response: CollectedResponse) -> Result<Self, Self::Error> {
         use azure_core::error::ResultExt;
         serde_json::from_slice::<Self>(response.body()).with_context(
             azure_core::error::ErrorKind::DataConversion,

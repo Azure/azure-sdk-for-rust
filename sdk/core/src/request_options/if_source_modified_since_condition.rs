@@ -13,7 +13,6 @@ impl Header for IfSourceModifiedSinceCondition {
             IfSourceModifiedSinceCondition::Modified(_) => headers::SOURCE_IF_MODIFIED_SINCE,
             IfSourceModifiedSinceCondition::Unmodified(_) => headers::SOURCE_IF_UNMODIFIED_SINCE,
         }
-        .into()
     }
 
     fn value(&self) -> headers::HeaderValue {

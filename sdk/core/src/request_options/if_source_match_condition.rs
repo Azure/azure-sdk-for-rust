@@ -12,7 +12,6 @@ impl Header for IfSourceMatchCondition {
             IfSourceMatchCondition::Match(_) => headers::SOURCE_IF_MATCH,
             IfSourceMatchCondition::NotMatch(_) => headers::SOURCE_IF_NONE_MATCH,
         }
-        .into()
     }
 
     fn value(&self) -> headers::HeaderValue {

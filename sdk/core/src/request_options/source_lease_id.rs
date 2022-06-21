@@ -21,7 +21,7 @@ impl std::str::FromStr for SourceLeaseId {
 
 impl Header for SourceLeaseId {
     fn name(&self) -> headers::HeaderName {
-        headers::SOURCE_LEASE_ID.into()
+        headers::SOURCE_LEASE_ID
     }
 
     fn value(&self) -> headers::HeaderValue {

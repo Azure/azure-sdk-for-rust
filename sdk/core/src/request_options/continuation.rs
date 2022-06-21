@@ -15,7 +15,7 @@ impl Continuation {
 
 impl Header for Continuation {
     fn name(&self) -> headers::HeaderName {
-        headers::CONTINUATION.into()
+        headers::CONTINUATION
     }
 
     fn value(&self) -> headers::HeaderValue {

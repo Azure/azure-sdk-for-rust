@@ -1,5 +1,5 @@
 use azure_core::error::{Error, ErrorKind};
-use azure_core::headers::{self, AsHeaders};
+use azure_core::headers::{self, AsHeaders, HeaderValue};
 use std::fmt;
 
 /// Whether the resource should be included in the index.
@@ -54,13 +54,13 @@ impl AsHeaders for IndexingDirective {
         match self {
             IndexingDirective::Default => vec![].into_iter(),
             IndexingDirective::Exclude => vec![(
-                crate::headers::HEADER_INDEXING_DIRECTIVE.into(),
-                "Exclude".into(),
+                crate::headers::HEADER_INDEXING_DIRECTIVE,
+                HeaderValue::from_static("Exclude"),
             )]
             .into_iter(),
             IndexingDirective::Include => vec![(
                 crate::headers::HEADER_INDEXING_DIRECTIVE.into(),
-                "Include".into(),
+                HeaderValue::from_static("Include"),
             )]
             .into_iter(),
         }

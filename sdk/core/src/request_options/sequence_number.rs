@@ -17,7 +17,7 @@ impl From<u64> for SequenceNumber {
 
 impl Header for SequenceNumber {
     fn name(&self) -> headers::HeaderName {
-        headers::BLOB_SEQUENCE_NUMBER.into()
+        headers::BLOB_SEQUENCE_NUMBER
     }
 
     fn value(&self) -> headers::HeaderValue {

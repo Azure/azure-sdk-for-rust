@@ -48,7 +48,7 @@ pub fn content_crc64_from_headers_optional(
     headers: &Headers,
 ) -> azure_core::Result<Option<ConsistencyCRC64>> {
     headers
-        .get_as_str(CONTENT_CRC64)
+        .get_as_str(&CONTENT_CRC64)
         .map(|content_crc64| {
             ConsistencyCRC64::decode(content_crc64).with_context(ErrorKind::DataConversion, || {
                 format!("failed to decode content_crc64 from headers: {content_crc64}")
@@ -69,7 +69,7 @@ pub fn content_md5_from_headers_optional(
     headers: &Headers,
 ) -> azure_core::Result<Option<ConsistencyMD5>> {
     headers
-        .get_as_str(CONTENT_MD5)
+        .get_as_str(&CONTENT_MD5)
         .map(|content_md5| {
             ConsistencyMD5::decode(content_md5).with_context(ErrorKind::DataConversion, || {
                 format!("failed to decode content_md5 from headers: {content_md5}")

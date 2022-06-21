@@ -34,6 +34,6 @@ pub(crate) fn add_as_partition_key_header_serialized2(
 ) {
     request.headers_mut().insert(
         headers::HEADER_DOCUMENTDB_PARTITIONKEY,
-        http::header::HeaderValue::from_str(partition_key_serialized).unwrap(),
+        HeaderValue::from(partition_key_serialized.to_string()).unwrap(),
     );
 }

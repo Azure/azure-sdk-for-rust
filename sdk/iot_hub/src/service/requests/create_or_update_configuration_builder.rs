@@ -108,7 +108,7 @@ impl<'a> CreateOrUpdateConfigurationBuilder<'a> {
 
         match &self.etag {
             Some(etag) => {
-                request.insert_header(http::header::IF_MATCH, format!("\"{}\"", etag));
+                request.insert_header(headers::IF_MATCH, format!("\"{}\"", etag));
             }
             None => (),
         }

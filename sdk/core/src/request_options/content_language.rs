@@ -14,7 +14,7 @@ where
 
 impl<'a> Header for ContentLanguage<'a> {
     fn name(&self) -> headers::HeaderName {
-        http::header::CONTENT_LANGUAGE.into()
+        headers::CONTENT_LANGUAGE
     }
 
     fn value(&self) -> headers::HeaderValue {

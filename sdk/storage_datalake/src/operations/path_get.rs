@@ -94,7 +94,7 @@ impl GetFileResponse {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
 
         let data = collect_pinned_stream(pinned_stream).await?;
-        let content_range_header = headers.get(http::header::CONTENT_RANGE);
+        let content_range_header = headers.get(headers::CONTENT_RANGE);
         let content_range = match content_range_header {
             Some(hv) => {
                 Some(ContentRange::from_str(hv.as_str()).map_kind(ErrorKind::DataConversion)?)

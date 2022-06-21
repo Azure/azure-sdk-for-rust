@@ -2,10 +2,9 @@ use crate::headers::{HEADER_DATE, HEADER_VERSION};
 use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
 use crate::TimeNonce;
+use azure_core::headers::{HeaderValue, AUTHORIZATION};
 use azure_core::{Context, Policy, PolicyResult, Request};
 use hmac::{Hmac, Mac};
-use http::header::AUTHORIZATION;
-use http::HeaderValue;
 use sha2::Sha256;
 use std::borrow::Cow;
 use std::sync::Arc;
@@ -70,20 +69,20 @@ impl Policy for AuthorizationPolicy {
         };
 
         trace!(
-            "AuthorizationPolicy calculated authorization == {}: {}",
+            "AuthorizationPolicy calculated authorization == {:?}: {}",
             AUTHORIZATION,
             &auth
         );
 
         request
             .headers_mut()
-            .insert(HEADER_DATE, HeaderValue::from_str(&time_nonce.to_string())?);
+            .insert(HEADER_DATE, HeaderValue::from(time_nonce.to_string()));
         request
             .headers_mut()
             .insert(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION));
         request
             .headers_mut()
-            .insert(AUTHORIZATION, HeaderValue::from_str(&auth)?);
+            .insert(AUTHORIZATION, HeaderValue::from(auth));
 
         // now next[0] is safe (will not panic) because we checked
         // at the beginning of the function.

@@ -14,7 +14,7 @@ where
 
 impl<'a> Header for ContentDisposition<'a> {
     fn name(&self) -> headers::HeaderName {
-        http::header::CONTENT_DISPOSITION.into()
+        headers::CONTENT_DISPOSITION
     }
 
     fn value(&self) -> headers::HeaderValue {

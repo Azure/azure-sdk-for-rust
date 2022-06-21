@@ -1,6 +1,6 @@
 use crate::operations::*;
 use crate::resources::user::UserResponse;
-use azure_core::headers::{self, AsHeaders};
+use azure_core::headers::{self, AsHeaders, HeaderValue};
 use serde::de::DeserializeOwned;
 
 /// The consistency guarantee provided by Cosmos.
@@ -109,7 +109,7 @@ impl AsHeaders for ConsistencyLevel {
     fn as_headers(&self) -> Self::Iter {
         let mut headers = vec![(
             crate::headers::HEADER_CONSISTENCY_LEVEL.into(),
-            self.to_consistency_level_header().into(),
+            HeaderValue::from_static(self.to_consistency_level_header()),
         )];
 
         // if we have a Session consistency level we make sure to pass

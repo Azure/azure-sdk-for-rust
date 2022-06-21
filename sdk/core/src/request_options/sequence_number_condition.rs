@@ -14,7 +14,6 @@ impl Header for SequenceNumberCondition {
             SequenceNumberCondition::LessOrEqual(_) => headers::IF_SEQUENCE_NUMBER_LE,
             SequenceNumberCondition::Less(_) => headers::IF_SEQUENCE_NUMBER_LT,
         }
-        .into()
     }
 
     fn value(&self) -> headers::HeaderValue {

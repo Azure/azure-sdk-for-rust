@@ -13,7 +13,7 @@ impl MaxItemCount {
 
 impl Header for MaxItemCount {
     fn name(&self) -> headers::HeaderName {
-        headers::MAX_ITEM_COUNT.into()
+        headers::MAX_ITEM_COUNT
     }
 
     fn value(&self) -> headers::HeaderValue {

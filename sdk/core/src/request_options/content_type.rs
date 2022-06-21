@@ -24,7 +24,7 @@ where
 
 impl<'a> Header for ContentType<'a> {
     fn name(&self) -> headers::HeaderName {
-        http::header::CONTENT_TYPE.into()
+        headers::CONTENT_TYPE
     }
 
     fn value(&self) -> headers::HeaderValue {

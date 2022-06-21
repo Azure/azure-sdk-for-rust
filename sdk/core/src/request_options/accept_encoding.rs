@@ -31,7 +31,7 @@ where
 
 impl Header for AcceptEncoding {
     fn name(&self) -> headers::HeaderName {
-        http::header::ACCEPT_ENCODING.into()
+        headers::ACCEPT_ENCODING
     }
 
     fn value(&self) -> headers::HeaderValue {

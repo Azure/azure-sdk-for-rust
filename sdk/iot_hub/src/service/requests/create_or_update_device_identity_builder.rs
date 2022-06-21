@@ -62,7 +62,7 @@ impl<'a> CreateOrUpdateDeviceIdentityBuilder<'a> {
         if self.operation == IdentityOperation::Update {
             match &self.etag {
                 Some(etag) => {
-                    request.insert_header(http::header::IF_MATCH, format!("\"{}\"", etag));
+                    request.insert_header(headers::IF_MATCH, format!("\"{}\"", etag));
                 }
                 None => return Err(Error::message(ErrorKind::Other, "etag is not set")),
             }

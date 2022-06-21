@@ -67,7 +67,7 @@ impl TryFrom<(u64, u64)> for BA512Range {
 
 impl Header for BA512Range {
     fn name(&self) -> headers::HeaderName {
-        http::header::RANGE.into()
+        headers::RANGE.into()
     }
 
     fn value(&self) -> headers::HeaderValue {

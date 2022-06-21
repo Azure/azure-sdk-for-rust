@@ -14,7 +14,7 @@ where
 
 impl<'a> Header for ContentEncoding<'a> {
     fn name(&self) -> headers::HeaderName {
-        http::header::CONTENT_ENCODING.into()
+        headers::CONTENT_ENCODING
     }
 
     fn value(&self) -> headers::HeaderValue {

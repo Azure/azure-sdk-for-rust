@@ -50,7 +50,7 @@ impl Policy for SharedKeyAuthorizationPolicy {
 
         request
             .headers_mut()
-            .insert(http::header::AUTHORIZATION, HeaderValue::from_str(&auth)?);
+            .insert(headers::AUTHORIZATION, HeaderValue::from_str(&auth)?);
 
         // now next[0] is safe (will not panic) because we checked
         // at the beginning of the function.
@@ -86,23 +86,23 @@ fn string_to_sign(
     // content length must only be specified if != 0
     // this is valid from 2015-02-21
     let cl = http_headers
-        .get(http::header::CONTENT_LENGTH)
+        .get(headers::CONTENT_LENGTH)
         .map(|s| if s.as_str() == "0" { "" } else { s.as_str() })
         .unwrap_or("");
     format!(
         "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}{}",
         http_method.as_str(),
-        add_if_exists(http_headers, &http::header::CONTENT_ENCODING.into()),
-        add_if_exists(http_headers, &http::header::CONTENT_LANGUAGE.into()),
+        add_if_exists(http_headers, &headers::CONTENT_ENCODING.into()),
+        add_if_exists(http_headers, &headers::CONTENT_LANGUAGE.into()),
         cl,
         add_if_exists(http_headers, &azure_storage::headers::CONTENT_MD5.into()),
-        add_if_exists(http_headers, &http::header::CONTENT_TYPE.into()),
-        add_if_exists(http_headers, &http::header::DATE.into()),
-        add_if_exists(http_headers, &http::header::IF_MODIFIED_SINCE.into()),
-        add_if_exists(http_headers, &http::header::IF_MATCH.into()),
-        add_if_exists(http_headers, &http::header::IF_NONE_MATCH.into()),
-        add_if_exists(http_headers, &http::header::IF_UNMODIFIED_SINCE.into()),
-        add_if_exists(http_headers, &http::header::RANGE.into()),
+        add_if_exists(http_headers, &headers::CONTENT_TYPE.into()),
+        add_if_exists(http_headers, &headers::DATE.into()),
+        add_if_exists(http_headers, &headers::IF_MODIFIED_SINCE.into()),
+        add_if_exists(http_headers, &headers::IF_MATCH.into()),
+        add_if_exists(http_headers, &headers::IF_NONE_MATCH.into()),
+        add_if_exists(http_headers, &headers::IF_UNMODIFIED_SINCE.into()),
+        add_if_exists(http_headers, &headers::RANGE.into()),
         canonicalize_header(http_headers),
         canonicalized_resource(storage_account_name, url)
     )
