@@ -5,7 +5,8 @@ pub struct Delimiter(String);
 
 impl AppendToUrlQuery for Delimiter {
     fn append_to_url_query(&self, url: &mut url::Url) {
-        url.query_pairs_mut().append_pair("delimiter", self.0.as_ref());
+        url.query_pairs_mut()
+            .append_pair("delimiter", self.0.as_ref());
     }
 }
 
