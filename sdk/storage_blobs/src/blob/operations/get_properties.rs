@@ -3,7 +3,7 @@ use azure_core::{headers::*, prelude::*, RequestId};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
-pub struct GetBlobPropertiesBuilder {
+pub struct GetPropertiesBuilder {
     blob_client: BlobClient,
     blob_versioning: Option<BlobVersioning>,
     timeout: Option<Timeout>,
@@ -11,7 +11,7 @@ pub struct GetBlobPropertiesBuilder {
     client_request_id: Option<ClientRequestId>,
 }
 
-impl GetBlobPropertiesBuilder {
+impl GetPropertiesBuilder {
     pub(crate) fn new(blob_client: BlobClient) -> Self {
         Self {
             blob_client,
@@ -81,3 +81,12 @@ impl GetPropertiesResponse {
     }
 }
 pub type Response = futures::future::BoxFuture<'static, azure_core::Result<GetPropertiesResponse>>;
+
+#[cfg(feature = "into_future")]
+impl std::future::IntoFuture for GetPropertiesBuilder {
+    type IntoFuture = Response;
+    type Output = <Response as std::future::Future>::Output;
+    fn into_future(self) -> Self::IntoFuture {
+        Self::into_future(self)
+    }
+}

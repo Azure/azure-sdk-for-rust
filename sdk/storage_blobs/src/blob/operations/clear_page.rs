@@ -84,3 +84,12 @@ azure_storage::response_from_headers!(ClearPageResponse,
                date_from_headers => date: DateTime<Utc>
 );
 pub type Response = futures::future::BoxFuture<'static, azure_core::Result<ClearPageResponse>>;
+
+#[cfg(feature = "into_future")]
+impl std::future::IntoFuture for ClearPageBuilder {
+    type IntoFuture = Response;
+    type Output = <Response as std::future::Future>::Output;
+    fn into_future(self) -> Self::IntoFuture {
+        Self::into_future(self)
+    }
+}

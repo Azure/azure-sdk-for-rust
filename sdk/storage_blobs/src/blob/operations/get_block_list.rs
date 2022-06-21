@@ -97,3 +97,12 @@ impl GetBlockListResponse {
     }
 }
 pub type Response = futures::future::BoxFuture<'static, azure_core::Result<GetBlockListResponse>>;
+
+#[cfg(feature = "into_future")]
+impl std::future::IntoFuture for GetBlockListBuilder {
+    type IntoFuture = Response;
+    type Output = <Response as std::future::Future>::Output;
+    fn into_future(self) -> Self::IntoFuture {
+        Self::into_future(self)
+    }
+}

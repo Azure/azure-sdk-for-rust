@@ -128,3 +128,12 @@ impl PutBlockBlobResponse {
 }
 
 pub type Response = futures::future::BoxFuture<'static, azure_core::Result<PutBlockBlobResponse>>;
+
+#[cfg(feature = "into_future")]
+impl std::future::IntoFuture for PutBlockBlobBuilder {
+    type IntoFuture = Response;
+    type Output = <Response as std::future::Future>::Output;
+    fn into_future(self) -> Self::IntoFuture {
+        Self::into_future(self)
+    }
+}

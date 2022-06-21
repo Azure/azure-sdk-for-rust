@@ -135,3 +135,12 @@ impl TryFrom<&Headers> for CopyBlobResponse {
     }
 }
 pub type Response = futures::future::BoxFuture<'static, azure_core::Result<CopyBlobResponse>>;
+
+#[cfg(feature = "into_future")]
+impl std::future::IntoFuture for CopyBlobBuilder {
+    type IntoFuture = Response;
+    type Output = <Response as std::future::Future>::Output;
+    fn into_future(self) -> Self::IntoFuture {
+        Self::into_future(self)
+    }
+}

@@ -60,3 +60,12 @@ azure_storage::response_from_headers!(RenewLeaseResponse,
                date_from_headers => date: DateTime<Utc>
 );
 pub type Response = futures::future::BoxFuture<'static, azure_core::Result<RenewLeaseResponse>>;
+
+#[cfg(feature = "into_future")]
+impl std::future::IntoFuture for RenewLeaseBuilder {
+    type IntoFuture = Response;
+    type Output = <Response as std::future::Future>::Output;
+    fn into_future(self) -> Self::IntoFuture {
+        Self::into_future(self)
+    }
+}

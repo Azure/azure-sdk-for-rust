@@ -91,8 +91,8 @@ impl BlobClient {
         Ok(blob)
     }
 
-    pub fn get_properties(&self) -> GetBlobPropertiesBuilder {
-        GetBlobPropertiesBuilder::new(self.clone())
+    pub fn get_properties(&self) -> GetPropertiesBuilder {
+        GetPropertiesBuilder::new(self.clone())
     }
 
     pub fn get_metadata(&self) -> GetMetadataBuilder {

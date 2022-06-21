@@ -10,18 +10,18 @@ use bytes::Bytes;
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
-pub struct PutBlockBuilder<'a> {
+pub struct PutBlockBuilder {
     blob_client: BlobClient,
     block_id: BlockId,
     body: Bytes,
     #[allow(unused)]
-    hash: Option<&'a Hash>,
+    hash: Option<Hash>,
     client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
 }
 
-impl<'a> PutBlockBuilder<'a> {
+impl<'a> PutBlockBuilder {
     pub(crate) fn new(
         blob_client: BlobClient,
         block_id: impl Into<BlockId>,
@@ -39,7 +39,7 @@ impl<'a> PutBlockBuilder<'a> {
     }
 
     setters! {
-        hash: &'a Hash => Some(hash),
+        hash: Hash => Some(hash),
         client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
@@ -101,3 +101,12 @@ impl PutBlockResponse {
     }
 }
 pub type Response = futures::future::BoxFuture<'static, azure_core::Result<PutBlockResponse>>;
+
+#[cfg(feature = "into_future")]
+impl std::future::IntoFuture for PutBlockBuilder {
+    type IntoFuture = Response;
+    type Output = <Response as std::future::Future>::Output;
+    fn into_future(self) -> Self::IntoFuture {
+        Self::into_future(self)
+    }
+}
