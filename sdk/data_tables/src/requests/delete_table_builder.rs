@@ -1,14 +1,10 @@
 use crate::{prelude::*, responses::*};
 use azure_core::{
     error::{Error, ErrorKind},
-    headers::add_optional_header,
     prelude::*,
 };
-use http::{method::Method, status::StatusCode};
+use http::method::Method;
 use std::convert::TryInto;
-
-#[cfg(test)]
-use std::println as debug;
 
 #[derive(Debug, Clone)]
 pub struct DeleteTableBuilder<'a> {
@@ -34,27 +30,19 @@ impl<'a> DeleteTableBuilder<'a> {
             .map_err(|()| Error::message(ErrorKind::Other, "invalid table URL"))?
             .pop()
             .push(&format!("Tables('{}')", self.table_client.table_name()));
-        debug!("url = {}", url);
 
-        let request = self.table_client.prepare_request(
-            url.as_str(),
-            &Method::DELETE,
-            &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
-                request = request.header("Accept", "application/json");
-                request
-            },
-            None,
-        )?;
-
-        debug!("request == {:#?}\n", request);
+        let mut request = self
+            .table_client
+            .prepare_request(url.as_str(), Method::DELETE, None)?;
+        request.add_optional_header(&self.client_request_id);
+        request.insert_header("Accept", "application/json");
 
         let response = self
             .table_client
             .http_client()
-            .execute_request_check_status(request.0, StatusCode::NO_CONTENT)
+            .execute_request_check_status(&request)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 }

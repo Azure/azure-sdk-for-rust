@@ -104,11 +104,11 @@ impl<'a> CreateOrUpdateConfigurationBuilder<'a> {
             self.service_client.iot_hub_name, &self.configuration_id, API_VERSION
         );
 
-        let mut request = self.service_client.prepare_request(&uri, Method::PUT);
+        let mut request = self.service_client.prepare_request(&uri, Method::PUT)?;
 
         match &self.etag {
             Some(etag) => {
-                request = request.header(http::header::IF_MATCH, format!("\"{}\"", etag));
+                request.insert_header(http::header::IF_MATCH, format!("\"{}\"", etag));
             }
             None => (),
         }
@@ -127,11 +127,11 @@ impl<'a> CreateOrUpdateConfigurationBuilder<'a> {
         };
 
         let body = azure_core::to_json(&body)?;
-        let request = request.body(body)?;
+        request.set_body(body);
 
         self.service_client
             .http_client()
-            .execute_request_check_status(request, http::StatusCode::OK)
+            .execute_request_check_status(&request)
             .await?
             .try_into()
     }

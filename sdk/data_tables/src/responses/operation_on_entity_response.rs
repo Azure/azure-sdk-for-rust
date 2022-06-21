@@ -1,7 +1,5 @@
-use azure_core::{error::Error, headers::etag_from_headers, Etag};
+use azure_core::{error::Error, headers::etag_from_headers, CollectedResponse, Etag};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
-use bytes::Bytes;
-use http::Response;
 use std::convert::{TryFrom, TryInto};
 
 #[derive(Debug, Clone)]
@@ -10,13 +8,10 @@ pub struct OperationOnEntityResponse {
     pub etag: Etag,
 }
 
-impl TryFrom<&Response<Bytes>> for OperationOnEntityResponse {
+impl TryFrom<CollectedResponse> for OperationOnEntityResponse {
     type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
-        debug!("{}", std::str::from_utf8(response.body())?);
-        debug!("headers == {:#?}", response.headers());
-
+    fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         Ok(OperationOnEntityResponse {
             common_storage_response_headers: response.headers().try_into()?,
             etag: etag_from_headers(response.headers())?.into(),

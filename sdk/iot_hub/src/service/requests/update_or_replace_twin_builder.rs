@@ -1,6 +1,5 @@
 use azure_core::error::Error;
-use bytes::Bytes;
-use http::{Method, Response, StatusCode};
+use http::Method;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -13,7 +12,7 @@ use crate::service::{ServiceClient, API_VERSION};
 /// updating or replacing a device or module twin.
 pub struct UpdateOrReplaceTwinBuilder<'a, R>
 where
-    R: TryFrom<Response<Bytes>, Error = Error>,
+    R: TryFrom<crate::service::CollectedResponse, Error = Error>,
 {
     service_client: &'a ServiceClient,
     pub(crate) device_id: String,
@@ -27,7 +26,7 @@ where
 
 impl<'a, R> UpdateOrReplaceTwinBuilder<'a, R>
 where
-    R: TryFrom<Response<Bytes>, Error = Error>,
+    R: TryFrom<crate::service::CollectedResponse, Error = Error>,
 {
     pub(crate) fn new(
         service_client: &'a ServiceClient,
@@ -147,17 +146,17 @@ where
             ),
         };
 
-        let mut request = self.service_client.prepare_request(&uri, self.method);
+        let mut request = self.service_client.prepare_request(&uri, self.method)?;
         if let Some(if_match) = self.if_match {
-            request = request.header(http::header::IF_MATCH, format!("\"{}\"", if_match));
+            request.insert_header(http::header::IF_MATCH, format!("\"{}\"", if_match));
         }
         let body = azure_core::to_json(&body)?;
 
-        let request = request.body(body)?;
+        request.set_body(body);
 
         self.service_client
             .http_client()
-            .execute_request_check_status(request, StatusCode::OK)
+            .execute_request_check_status(&request)
             .await?
             .try_into()
     }

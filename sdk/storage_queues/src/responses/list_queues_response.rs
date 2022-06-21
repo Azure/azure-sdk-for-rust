@@ -1,9 +1,7 @@
 use azure_core::error::{Error, ErrorKind, ResultExt};
-use azure_core::prelude::*;
+use azure_core::{prelude::*, CollectedResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use azure_storage::xml::read_xml;
-use bytes::Bytes;
-use http::response::Response;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -56,9 +54,9 @@ pub struct Queue {
     pub metadata: Option<std::collections::HashMap<String, String>>,
 }
 
-impl std::convert::TryFrom<&Response<Bytes>> for ListQueuesResponse {
+impl std::convert::TryFrom<CollectedResponse> for ListQueuesResponse {
     type Error = Error;
-    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
+    fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         let headers = response.headers();
         let body = response.body();
 

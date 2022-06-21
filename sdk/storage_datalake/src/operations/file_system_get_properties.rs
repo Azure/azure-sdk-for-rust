@@ -1,12 +1,12 @@
 use crate::clients::FileSystemClient;
 use crate::{util::*, Properties};
 use azure_core::error::ResultExt;
-use azure_core::prelude::*;
 use azure_core::{
     error::ErrorKind,
     headers::{etag_from_headers, last_modified_from_headers},
     AppendToUrlQuery, Etag, Response as HttpResponse,
 };
+use azure_core::{prelude::*, Request};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use chrono::{DateTime, Utc};
 use std::convert::TryInto;
@@ -45,9 +45,7 @@ impl GetFileSystemPropertiesBuilder {
             self.timeout.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("resource", "filesystem");
 
-            let mut request = this
-                .client
-                .prepare_request(url.as_str(), http::Method::HEAD);
+            let mut request = Request::new(url, http::Method::HEAD);
 
             request.insert_headers(&this.client_request_id);
             request.insert_headers(&ContentLength::new(0));

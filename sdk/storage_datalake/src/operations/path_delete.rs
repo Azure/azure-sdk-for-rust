@@ -1,6 +1,6 @@
 use crate::clients::PathClient;
 use crate::request_options::*;
-use azure_core::prelude::*;
+use azure_core::{prelude::*, Request};
 use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
@@ -60,9 +60,7 @@ impl<C: PathClient + 'static> DeletePathBuilder<C> {
             self.recursive.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = this
-                .client
-                .prepare_request(url.as_str(), http::Method::DELETE);
+            let mut request = Request::new(url, http::Method::DELETE);
 
             request.insert_headers(&this.client_request_id);
             request.insert_headers(&this.if_match_condition);

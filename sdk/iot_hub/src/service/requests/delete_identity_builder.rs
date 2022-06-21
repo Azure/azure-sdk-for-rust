@@ -1,6 +1,6 @@
 use crate::service::{ServiceClient, API_VERSION};
 
-use http::{Method, StatusCode};
+use http::Method;
 
 /// The DeleteIdentityBuilder is used to construct a request to delete a module or device identity.
 pub struct DeleteIdentityBuilder<'a> {
@@ -38,16 +38,14 @@ impl<'a> DeleteIdentityBuilder<'a> {
             ),
         };
 
-        let request = self
-            .service_client
-            .prepare_request(&uri, Method::DELETE)
-            .header(http::header::IF_MATCH, format!("\"{}\"", &self.if_match));
+        let mut request = self.service_client.prepare_request(&uri, Method::DELETE)?;
+        request.insert_header(http::header::IF_MATCH, format!("\"{}\"", &self.if_match));
 
-        let request = request.body(azure_core::EMPTY_BODY)?;
+        request.set_body(azure_core::EMPTY_BODY);
 
         self.service_client
             .http_client()
-            .execute_request_check_status(request, StatusCode::NO_CONTENT)
+            .execute_request_check_status(&request)
             .await?;
         Ok(())
     }

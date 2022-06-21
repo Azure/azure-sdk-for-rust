@@ -1,11 +1,9 @@
 use crate::{prelude::*, requests::*};
 
+use azure_core::Request;
 use azure_storage::core::clients::StorageAccountClient;
 use bytes::Bytes;
-use http::{
-    method::Method,
-    request::{Builder, Request},
-};
+use http::method::Method;
 use std::sync::Arc;
 
 pub trait AsPartitionKeyClient<PK: Into<String>> {
@@ -58,12 +56,10 @@ impl PartitionKeyClient {
     pub(crate) fn prepare_request(
         &self,
         url: &str,
-        method: &Method,
-        http_header_adder: &dyn Fn(Builder) -> Builder,
+        method: Method,
         request_body: Option<Bytes>,
-    ) -> azure_core::Result<(Request<Bytes>, url::Url)> {
-        self.table_client
-            .prepare_request(url, method, http_header_adder, request_body)
+    ) -> azure_core::Result<Request> {
+        self.table_client.prepare_request(url, method, request_body)
     }
 }
 

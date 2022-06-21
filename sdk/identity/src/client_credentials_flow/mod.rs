@@ -80,7 +80,7 @@ pub async fn perform(
         content_type::APPLICATION_X_WWW_FORM_URLENCODED,
     );
     req.set_body(encoded);
-    let rsp = http_client.execute_request2(&req).await?;
+    let rsp = http_client.execute_request(&req).await?;
     let rsp_status = rsp.status();
     let rsp_body = rsp.into_body().await;
     if !rsp_status.is_success() {

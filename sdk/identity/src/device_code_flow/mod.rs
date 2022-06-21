@@ -180,5 +180,5 @@ async fn post_form(
         content_type::APPLICATION_X_WWW_FORM_URLENCODED,
     );
     req.set_body(form_body);
-    http_client.execute_request2(&req).await
+    http_client.execute_request(&req).await
 }

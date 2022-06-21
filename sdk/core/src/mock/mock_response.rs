@@ -1,14 +1,14 @@
 use bytes::Bytes;
-use http::{header, HeaderMap, StatusCode};
+use http::{header, StatusCode};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-use crate::{collect_pinned_stream, error, BytesStream, Response};
+use crate::{collect_pinned_stream, error, headers::Headers, BytesStream, Response};
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct MockResponse {
     status: StatusCode,
-    headers: HeaderMap,
+    headers: Headers,
     body: Bytes,
 }
 
@@ -25,7 +25,7 @@ impl From<MockResponse> for Response {
 }
 
 impl MockResponse {
-    pub(crate) fn new(status: StatusCode, headers: HeaderMap, body: Bytes) -> Self {
+    pub(crate) fn new(status: StatusCode, headers: Headers, body: Bytes) -> Self {
         Self {
             status,
             headers,
@@ -61,7 +61,7 @@ impl<'de> Deserialize<'de> for MockResponse {
     {
         use serde::de::Error;
         let r = SerializedMockResponse::deserialize(deserializer)?;
-        let mut headers = HeaderMap::new();
+        let mut headers = Headers::new();
         for (n, v) in r.headers.iter() {
             let name = header::HeaderName::from_lowercase(n.as_bytes()).map_err(Error::custom)?;
             let value = header::HeaderValue::from_str(&v).map_err(Error::custom)?;
@@ -81,7 +81,7 @@ impl Serialize for MockResponse {
     {
         let mut headers = BTreeMap::new();
         for (h, v) in self.headers.iter() {
-            headers.insert(h.as_str().into(), v.to_str().unwrap().into());
+            headers.insert(h.as_str().into(), v.as_str().into());
         }
         let status = self.status.as_u16();
         let body = base64::encode(&self.body as &[u8]);

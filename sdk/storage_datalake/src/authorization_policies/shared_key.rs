@@ -43,7 +43,7 @@ impl Policy for SharedKeyAuthorizationPolicy {
         let auth = generate_authorization(
             request.headers(),
             request.url(),
-            &request.method(),
+            request.method(),
             &self.credential.account_name,
             &self.credential.account_key,
         );

@@ -1,8 +1,5 @@
 use crate::{blob::responses::CopyBlobResponse, prelude::*, RehydratePriority};
-use azure_core::{
-    headers::{add_mandatory_header, add_optional_header, add_optional_header_ref, COPY_SOURCE},
-    prelude::*,
-};
+use azure_core::{headers::COPY_SOURCE, prelude::*};
 use std::convert::TryInto;
 use url::Url;
 
@@ -64,40 +61,31 @@ impl<'a> CopyBlobBuilder<'a> {
 
         self.timeout.append_to_url_query(&mut url);
 
-        trace!("url == {:?}", url);
-
-        let (request, _url) = self.blob_client.prepare_request(
-            url.as_str(),
-            &http::Method::PUT,
-            &|mut request| {
-                request = request.header(COPY_SOURCE, self.source_url.as_str());
-                if let Some(metadata) = &self.metadata {
-                    for m in metadata.iter() {
-                        request = add_mandatory_header(&m, request);
-                    }
-                }
-                request = add_optional_header(&self.sequence_number_condition, request);
-                request = add_optional_header(&self.if_modified_since_condition, request);
-                request = add_optional_header(&self.if_match_condition, request);
-                request = add_optional_header(&self.access_tier, request);
-                request = add_optional_header_ref(&self.lease_id, request);
-                request = add_optional_header(&self.client_request_id, request);
-                request = add_optional_header(&self.if_source_since_condition, request);
-                request = add_optional_header(&self.if_source_match_condition, request);
-                request = add_optional_header_ref(&self.source_lease_id, request);
-                request = add_mandatory_header(&self.rehydrate_priority, request);
-                request
-            },
-            None,
-        )?;
+        let mut request =
+            self.blob_client
+                .prepare_request(url.as_str(), http::Method::PUT, None)?;
+        request.insert_header(COPY_SOURCE, self.source_url.as_str().to_owned());
+        if let Some(metadata) = &self.metadata {
+            for m in metadata.iter() {
+                request.add_mandatory_header(&m);
+            }
+        }
+        request.add_optional_header(&self.sequence_number_condition);
+        request.add_optional_header(&self.if_modified_since_condition);
+        request.add_optional_header(&self.if_match_condition);
+        request.add_optional_header(&self.access_tier);
+        request.add_optional_header_ref(&self.lease_id);
+        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header(&self.if_source_since_condition);
+        request.add_optional_header(&self.if_source_match_condition);
+        request.add_optional_header_ref(&self.source_lease_id);
+        request.add_mandatory_header(&self.rehydrate_priority);
 
         let response = self
             .blob_client
             .http_client()
-            .execute_request_check_status(request, http::StatusCode::ACCEPTED)
+            .execute_request_check_status(&request)
             .await?;
-
-        debug!("response.headers() == {:#?}", response.headers());
 
         (response.headers()).try_into()
     }

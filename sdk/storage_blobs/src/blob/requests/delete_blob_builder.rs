@@ -1,8 +1,5 @@
 use crate::{blob::responses::DeleteBlobResponse, prelude::*};
-use azure_core::{
-    headers::{add_mandatory_header, add_optional_header, add_optional_header_ref},
-    prelude::*,
-};
+use azure_core::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct DeleteBlobBuilder<'a> {
@@ -36,27 +33,18 @@ impl<'a> DeleteBlobBuilder<'a> {
 
         self.timeout.append_to_url_query(&mut url);
 
-        trace!("delete_blob url == {:?}", url);
-
-        let (request, _url) = self.blob_client.prepare_request(
-            url.as_str(),
-            &http::Method::DELETE,
-            &|mut request| {
-                request = add_optional_header_ref(&self.lease_id, request);
-                request = add_optional_header(&self.client_request_id, request);
-                request = add_mandatory_header(&self.delete_snapshots_method, request);
-                request
-            },
-            None,
-        )?;
+        let mut request =
+            self.blob_client
+                .prepare_request(url.as_str(), http::Method::DELETE, None)?;
+        request.add_optional_header_ref(&self.lease_id);
+        request.add_optional_header(&self.client_request_id);
+        request.add_mandatory_header(&self.delete_snapshots_method);
 
         let response = self
             .blob_client
             .http_client()
-            .execute_request_check_status(request, http::StatusCode::ACCEPTED)
+            .execute_request_check_status(&request)
             .await?;
-
-        debug!("response.headers() == {:#?}", response.headers());
 
         DeleteBlobResponse::from_headers(response.headers())
     }

@@ -1,4 +1,5 @@
 use crate::blob::BlockWithSizeList;
+use azure_core::headers::Headers;
 use azure_core::{
     headers::{
         date_from_headers, etag_from_headers_optional, last_modified_from_headers_optional,
@@ -7,7 +8,6 @@ use azure_core::{
     RequestId,
 };
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
 use std::str::from_utf8;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -21,7 +21,7 @@ pub struct GetBlockListResponse {
 
 impl GetBlockListResponse {
     pub(crate) fn from_response(
-        headers: &HeaderMap,
+        headers: &Headers,
         body: &[u8],
     ) -> azure_core::Result<GetBlockListResponse> {
         let etag = etag_from_headers_optional(headers)?;

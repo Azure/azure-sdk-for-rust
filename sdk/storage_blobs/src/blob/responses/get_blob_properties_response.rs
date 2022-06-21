@@ -1,10 +1,10 @@
 use crate::blob::Blob;
+use azure_core::headers::Headers;
 use azure_core::{
     headers::{date_from_headers, request_id_from_headers},
     RequestId,
 };
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
 
 #[derive(Debug, Clone)]
 pub struct GetBlobPropertiesResponse {
@@ -15,11 +15,9 @@ pub struct GetBlobPropertiesResponse {
 
 impl GetBlobPropertiesResponse {
     pub(crate) fn from_response(
-        headers: &HeaderMap,
+        headers: &Headers,
         blob: Blob,
     ) -> azure_core::Result<GetBlobPropertiesResponse> {
-        debug!("headers == {:#?}", headers);
-
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;
 

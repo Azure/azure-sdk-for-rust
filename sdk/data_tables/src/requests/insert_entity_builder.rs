@@ -1,8 +1,8 @@
 use crate::{prelude::*, responses::*, TransactionOperation};
 use azure_core::{
     error::{Error, ErrorKind},
-    headers::{add_mandatory_header, add_optional_header},
     prelude::*,
+    Request,
 };
 use http::method::Method;
 use serde::{de::DeserializeOwned, Serialize};
@@ -43,33 +43,26 @@ impl<'a> InsertEntityBuilder<'a> {
             .push(self.table_client.table_name());
 
         self.timeout.append_to_url_query(&mut url);
-        debug!("url = {}", url);
 
         let request_body_serialized = serde_json::to_string(entity)?;
-        debug!("payload == {}", request_body_serialized);
 
-        let request = self.table_client.prepare_request(
+        let mut request = self.table_client.prepare_request(
             url.as_str(),
-            &Method::POST,
-            &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
-                request = add_mandatory_header(&self.return_entity, request);
-                request = request.header("Accept", "application/json;odata=fullmetadata");
-                request = request.header("Content-Type", "application/json");
-                request
-            },
+            Method::POST,
             Some(bytes::Bytes::from(request_body_serialized)),
         )?;
-
-        debug!("request == {:#?}\n", request);
+        request.add_optional_header(&self.client_request_id);
+        request.add_mandatory_header(&self.return_entity);
+        request.insert_header("Accept", "application/json;odata=fullmetadata");
+        request.insert_header("Content-Type", "application/json");
 
         let response = self
             .table_client
             .http_client()
-            .execute_request_check_status(request.0, self.return_entity.expected_return_code())
+            .execute_request_check_status(&request)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 
     pub fn to_transaction_operation<E>(
@@ -85,14 +78,12 @@ impl<'a> InsertEntityBuilder<'a> {
             .pop()
             .push(self.table_client.table_name());
 
-        let request = http::Request::builder()
-            .method(Method::POST)
-            .uri(url.as_str());
-        let request = add_optional_header(&self.client_request_id, request);
-        let request = request.header("Accept", "application/json;odata=fullmetadata");
-        let request = request.header("Content-Type", "application/json");
+        let mut request = Request::new(url, Method::POST);
+        request.add_optional_header(&self.client_request_id);
+        request.insert_header("Accept", "application/json;odata=fullmetadata");
+        request.insert_header("Content-Type", "application/json");
 
-        let request = request.body(serde_json::to_string(entity)?)?;
+        request.set_body(serde_json::to_vec(entity)?);
 
         Ok(TransactionOperation::new(request))
     }

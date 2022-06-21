@@ -3,11 +3,8 @@ use crate::{
     responses::*,
     TransactionOperation,
 };
-use azure_core::{
-    headers::{add_mandatory_header, add_optional_header},
-    prelude::*,
-};
-use http::{method::Method, StatusCode};
+use azure_core::{prelude::*, Request};
+use http::method::Method;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -38,41 +35,31 @@ impl<'a> DeleteEntityBuilder<'a> {
         let mut url = self.entity_client.url().clone();
 
         self.timeout.append_to_url_query(&mut url);
-        debug!("url = {}", url);
 
-        let request = self.entity_client.prepare_request(
-            url.as_str(),
-            &Method::DELETE,
-            &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
-                request = add_mandatory_header(&self.if_match, request);
-                request
-            },
-            None,
-        )?;
-
-        debug!("request == {:#?}\n", request);
+        let mut request = self
+            .entity_client
+            .prepare_request(url.as_str(), Method::DELETE, None)?;
+        request.add_optional_header(&self.client_request_id);
+        request.add_mandatory_header(&self.if_match);
 
         let response = self
             .entity_client
             .http_client()
-            .execute_request_check_status(request.0, StatusCode::NO_CONTENT)
+            .execute_request_check_status(&request)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 
     pub fn to_transaction_operation(&self) -> azure_core::Result<TransactionOperation> {
         let url = self.entity_client.url();
 
-        let request = http::Request::builder()
-            .method(Method::DELETE)
-            .uri(url.as_str());
-        let request = add_optional_header(&self.client_request_id, request);
-        let request = request.header("Accept", "application/json;odata=minimalmetadata");
-        let request = request.header("If-Match", "*");
+        let mut request = Request::new(url.clone(), Method::DELETE);
+        request.add_optional_header(&self.client_request_id);
+        request.insert_header("Accept", "application/json;odata=minimalmetadata");
+        request.insert_header("If-Match", "*");
 
-        let request = request.body("".to_owned())?;
+        request.set_body("");
 
         Ok(TransactionOperation::new(request))
     }

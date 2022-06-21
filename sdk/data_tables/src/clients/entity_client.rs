@@ -1,10 +1,10 @@
 use crate::{prelude::*, requests::*};
-use azure_core::error::{Error, ErrorKind};
-use bytes::Bytes;
-use http::{
-    method::Method,
-    request::{Builder, Request},
+use azure_core::{
+    error::{Error, ErrorKind},
+    Request,
 };
+use bytes::Bytes;
+use http::method::Method;
 use std::sync::Arc;
 use url::Url;
 
@@ -101,12 +101,11 @@ impl EntityClient {
     pub(crate) fn prepare_request(
         &self,
         url: &str,
-        method: &Method,
-        http_header_adder: &dyn Fn(Builder) -> Builder,
+        method: Method,
         request_body: Option<Bytes>,
-    ) -> azure_core::Result<(Request<Bytes>, url::Url)> {
+    ) -> azure_core::Result<Request> {
         self.partition_key_client
-            .prepare_request(url, method, http_header_adder, request_body)
+            .prepare_request(url, method, request_body)
     }
 }
 

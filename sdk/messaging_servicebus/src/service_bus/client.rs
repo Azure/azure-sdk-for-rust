@@ -64,7 +64,7 @@ impl Client {
     /// Receive and delete a message
     pub async fn receive_and_delete_message(&self) -> Result<String, Error> {
         body_bytes_to_utf8(
-            &receive_and_delete_message(
+            receive_and_delete_message(
                 &self.http_client,
                 &self.namespace,
                 &self.queue,
@@ -72,7 +72,7 @@ impl Client {
                 &self.signing_key,
             )
             .await?
-            .into_body(),
+            .body(),
         )
     }
 
@@ -86,7 +86,7 @@ impl Client {
     /// use `peek_lock_message2`.
     pub async fn peek_lock_message(&self, lock_expiry: Option<Duration>) -> Result<String, Error> {
         body_bytes_to_utf8(
-            &peek_lock_message(
+            peek_lock_message(
                 &self.http_client,
                 &self.namespace,
                 &self.queue,
@@ -95,7 +95,7 @@ impl Client {
                 lock_expiry,
             )
             .await?
-            .into_body(),
+            .body(),
         )
     }
 

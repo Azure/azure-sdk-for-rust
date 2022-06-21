@@ -1,6 +1,6 @@
 use crate::{blob::responses::GetBlobResponse, prelude::*, Header};
 use azure_core::{
-    headers::{add_optional_header, add_optional_header_ref, AsHeaders, CLIENT_REQUEST_ID},
+    headers::{AsHeaders, CLIENT_REQUEST_ID},
     prelude::*,
 };
 use futures::stream::Stream;
@@ -69,36 +69,21 @@ impl<'a> GetBlobBuilder<'a> {
         self.blob_versioning.append_to_url_query(&mut url);
         self.timeout.append_to_url_query(&mut url);
 
-        trace!("url == {:?}", url);
-
-        let (request, _url) = self.blob_client.prepare_request(
-            url.as_str(),
-            &http::Method::GET,
-            &|mut request| {
-                if let Some(item) = &self.range {
-                    for (name, value) in item.as_headers() {
-                        request = request.header(name.as_str(), value.as_str())
-                    }
-                }
-                request = add_optional_header(&self.client_request_id, request);
-                request = add_optional_header_ref(&self.lease_id, request);
-                request
-            },
-            None,
-        )?;
-
-        debug!("request == {:#?}", request);
-
-        let expected_status_code = if self.range.is_some() {
-            http::StatusCode::PARTIAL_CONTENT
-        } else {
-            http::StatusCode::OK
-        };
+        let mut request =
+            self.blob_client
+                .prepare_request(url.as_str(), http::Method::GET, None)?;
+        if let Some(item) = &self.range {
+            for (name, value) in item.as_headers() {
+                request.insert_header(name, value);
+            }
+        }
+        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header_ref(&self.lease_id);
 
         let response = self
             .blob_client
             .http_client()
-            .execute_request_check_status(request, expected_status_code)
+            .execute_request_check_status(&request)
             .await?;
 
         (self.blob_client.blob_name(), response).try_into()

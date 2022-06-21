@@ -1,9 +1,6 @@
 use crate::{prelude::*, responses::*, IfMatchCondition, TransactionOperation};
-use azure_core::{
-    headers::{add_mandatory_header, add_optional_header},
-    prelude::*,
-};
-use http::{method::Method, StatusCode};
+use azure_core::{prelude::*, Request};
+use http::method::Method;
 use serde::Serialize;
 use std::convert::TryInto;
 
@@ -46,35 +43,28 @@ impl<'a> UpdateOrMergeEntityBuilder<'a> {
         E: Serialize,
     {
         let url = self.entity_client.url();
-        debug!("url = {}", url);
 
         let request_body_serialized = serde_json::to_string(entity)?;
-        debug!("payload == {}", request_body_serialized);
 
-        let request = self.entity_client.prepare_request(
+        let mut request = self.entity_client.prepare_request(
             url.as_str(),
             match self.operation {
-                Operation::Merge => &crate::MERGE,
-                Operation::Update => &Method::PUT,
-            },
-            &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
-                request = request.header("Content-Type", "application/json");
-                request = add_mandatory_header(if_match_condition, request);
-                request
+                Operation::Merge => crate::MERGE.to_owned(),
+                Operation::Update => Method::PUT,
             },
             Some(bytes::Bytes::from(request_body_serialized)),
         )?;
-
-        debug!("request == {:#?}\n", request);
+        request.add_optional_header(&self.client_request_id);
+        request.insert_header("Content-Type", "application/json");
+        request.add_mandatory_header(if_match_condition);
 
         let response = self
             .entity_client
             .http_client()
-            .execute_request_check_status(request.0, StatusCode::NO_CONTENT)
+            .execute_request_check_status(&request)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 
     pub fn to_transaction_operation<E>(
@@ -87,18 +77,19 @@ impl<'a> UpdateOrMergeEntityBuilder<'a> {
     {
         let url = self.entity_client.url();
 
-        let request = http::Request::builder()
-            .method(match self.operation {
-                Operation::Merge => &crate::MERGE,
-                Operation::Update => &Method::PUT,
-            })
-            .uri(url.as_str());
-        let request = add_optional_header(&self.client_request_id, request);
-        let request = request.header("Accept", "application/json;odata=fullmetadata");
-        let request = request.header("Content-Type", "application/json");
-        let request = add_mandatory_header(if_match_condition, request);
+        let mut request = Request::new(
+            url.clone(),
+            match self.operation {
+                Operation::Merge => crate::MERGE.to_owned(),
+                Operation::Update => Method::PUT,
+            },
+        );
+        request.add_optional_header(&self.client_request_id);
+        request.insert_header("Accept", "application/json;odata=fullmetadata");
+        request.insert_header("Content-Type", "application/json");
+        request.add_mandatory_header(if_match_condition);
 
-        let request = request.body(serde_json::to_string(entity)?)?;
+        request.set_body(serde_json::to_vec(entity)?);
 
         Ok(TransactionOperation::new(request))
     }

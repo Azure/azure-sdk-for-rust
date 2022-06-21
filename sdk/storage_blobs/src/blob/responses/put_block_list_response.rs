@@ -2,13 +2,12 @@ use azure_core::{
     error::{ErrorKind, ResultExt},
     headers::{
         date_from_headers, etag_from_headers, last_modified_from_headers, request_id_from_headers,
-        request_server_encrypted_from_headers,
+        request_server_encrypted_from_headers, Headers,
     },
     RequestId,
 };
 use azure_storage::{headers::content_md5_from_headers, ConsistencyMD5};
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PutBlockListResponse {
@@ -21,7 +20,7 @@ pub struct PutBlockListResponse {
 }
 
 impl PutBlockListResponse {
-    pub(crate) fn from_headers(headers: &HeaderMap) -> azure_core::Result<PutBlockListResponse> {
+    pub(crate) fn from_headers(headers: &Headers) -> azure_core::Result<PutBlockListResponse> {
         debug!("headers == {:#?}", headers);
 
         let etag = etag_from_headers(headers)?;

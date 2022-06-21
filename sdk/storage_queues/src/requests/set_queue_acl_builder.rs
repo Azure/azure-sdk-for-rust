@@ -1,7 +1,6 @@
 use crate::clients::QueueClient;
 use crate::responses::*;
 use crate::QueueStoredAccessPolicy;
-use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 
 use azure_storage::StoredAccessPolicyList;
@@ -55,26 +54,20 @@ impl<'a> SetQueueACLBuilder<'a> {
             qapl.to_xml()
         };
 
-        debug!("xml about to be sent == {}", xml_body);
-
-        let request = self.queue_client.storage_client().prepare_request(
+        let mut request = self.queue_client.storage_client().prepare_request(
             url.as_str(),
-            &http::method::Method::PUT,
-            &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
-                request
-            },
+            http::method::Method::PUT,
             Some(xml_body.into()),
         )?;
+        request.add_optional_header(&self.client_request_id);
 
         let response = self
             .queue_client
             .storage_client()
-            .storage_account_client()
             .http_client()
-            .execute_request_check_status(request.0, http::status::StatusCode::NO_CONTENT)
+            .execute_request_check_status(&request)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 }

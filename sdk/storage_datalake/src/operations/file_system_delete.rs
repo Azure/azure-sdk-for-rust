@@ -1,5 +1,5 @@
 use crate::clients::FileSystemClient;
-use azure_core::prelude::*;
+use azure_core::{prelude::*, Request};
 use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
@@ -41,9 +41,7 @@ impl DeleteFileSystemBuilder {
             self.timeout.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("resource", "filesystem");
 
-            let mut request = this
-                .client
-                .prepare_request(url.as_str(), http::Method::DELETE);
+            let mut request = Request::new(url, http::Method::DELETE);
 
             request.insert_headers(&this.client_request_id);
             request.insert_headers(&this.if_modified_since_condition);

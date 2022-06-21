@@ -3,7 +3,7 @@ use azure_core::{
     error::{ErrorKind, ResultExt},
     headers::{
         date_from_headers, etag_from_headers, last_modified_from_headers, request_id_from_headers,
-        server_from_headers, version_from_headers,
+        server_from_headers, version_from_headers, Headers,
     },
     RequestId,
 };
@@ -13,7 +13,6 @@ use azure_storage::{
     ConsistencyMD5,
 };
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
 use std::convert::TryFrom;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -29,10 +28,9 @@ pub struct CopyBlobFromUrlResponse {
     pub date: DateTime<Utc>,
 }
 
-impl TryFrom<&HeaderMap> for CopyBlobFromUrlResponse {
+impl TryFrom<&Headers> for CopyBlobFromUrlResponse {
     type Error = crate::Error;
-    fn try_from(headers: &HeaderMap) -> azure_core::Result<Self> {
-        debug!("headers == {:#?}", headers);
+    fn try_from(headers: &Headers) -> azure_core::Result<Self> {
         Ok(Self {
             content_md5: content_md5_from_headers_optional(headers)
                 .map_kind(ErrorKind::DataConversion)?,

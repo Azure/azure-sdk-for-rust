@@ -2,7 +2,7 @@ use crate::{container::requests::*, prelude::PublicAccess};
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     prelude::*,
-    HttpClient,
+    HttpClient, Request,
 };
 use azure_storage::{
     core::clients::{AsStorageClient, StorageAccountClient, StorageClient, StorageCredentials},
@@ -12,10 +12,7 @@ use azure_storage::{
     },
 };
 use bytes::Bytes;
-use http::{
-    method::Method,
-    request::{Builder, Request},
-};
+use http::method::Method;
 use std::sync::Arc;
 
 pub trait AsContainerClient<CN: Into<String>> {
@@ -113,12 +110,11 @@ impl ContainerClient {
     pub(crate) fn prepare_request(
         &self,
         url: &str,
-        method: &Method,
-        http_header_adder: &dyn Fn(Builder) -> Builder,
+        method: Method,
         request_body: Option<Bytes>,
-    ) -> azure_core::Result<(Request<Bytes>, url::Url)> {
+    ) -> azure_core::Result<Request> {
         self.storage_client
-            .prepare_request(url, method, http_header_adder, request_body)
+            .prepare_request(url, method, request_body)
             .map_kind(ErrorKind::DataConversion)
     }
 

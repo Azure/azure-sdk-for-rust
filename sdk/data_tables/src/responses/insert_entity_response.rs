@@ -2,11 +2,9 @@ use crate::EntityWithMetadata;
 use azure_core::{
     error::{Error, ErrorKind},
     headers::{etag_from_headers, get_str_from_headers},
-    Etag,
+    CollectedResponse, Etag,
 };
-use azure_storage::core::{headers::CommonStorageResponseHeaders, util::HeaderMapExt};
-use bytes::Bytes;
-use http::Response;
+use azure_storage::core::headers::CommonStorageResponseHeaders;
 use serde::de::DeserializeOwned;
 use std::convert::{TryFrom, TryInto};
 use url::Url;
@@ -22,35 +20,31 @@ where
     pub entity_with_metadata: Option<EntityWithMetadata<E>>,
 }
 
-impl<E> TryFrom<&Response<Bytes>> for InsertEntityResponse<E>
+impl<E> TryFrom<CollectedResponse> for InsertEntityResponse<E>
 where
     E: DeserializeOwned,
 {
     type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
-        debug!("{}", std::str::from_utf8(response.body())?);
-        debug!("headers == {:#?}", response.headers());
-
-        let entity_with_metadata =
-            match get_str_from_headers(response.headers(), "preference-applied")? {
-                "return-no-content" => None,
-                "return-content" => Some(response.try_into()?),
-                _ => {
-                    return Err(Error::message(
-                        ErrorKind::Other,
-                        "Unexpected value for preference-applied header",
-                    ))
-                }
-            };
+    fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
+        let headers = response.headers();
+        let entity_with_metadata = match get_str_from_headers(headers, "preference-applied")? {
+            "return-no-content" => None,
+            "return-content" => Some(response.clone().try_into()?),
+            _ => {
+                return Err(Error::message(
+                    ErrorKind::Other,
+                    "Unexpected value for preference-applied header",
+                ))
+            }
+        };
 
         Ok(InsertEntityResponse {
-            common_storage_response_headers: response.headers().try_into()?,
-            etag: etag_from_headers(response.headers())?.into(),
-            location: response
-                .headers()
-                .get_as_str("location")
-                .map(Url::parse)
+            common_storage_response_headers: headers.try_into()?,
+            etag: etag_from_headers(headers)?.into(),
+            location: headers
+                .get("location")
+                .map(|location| Url::parse(location.as_str()))
                 .transpose()?,
             entity_with_metadata,
         })

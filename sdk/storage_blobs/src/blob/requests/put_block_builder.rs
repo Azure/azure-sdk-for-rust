@@ -1,8 +1,5 @@
 use crate::{blob::responses::PutBlockResponse, prelude::*};
-use azure_core::{
-    headers::{add_optional_header, add_optional_header_ref},
-    prelude::*,
-};
+use azure_core::prelude::*;
 use bytes::Bytes;
 
 #[derive(Debug, Clone)]
@@ -48,26 +45,19 @@ impl<'a> PutBlockBuilder<'a> {
         self.block_id.append_to_url_query(&mut url);
         url.query_pairs_mut().append_pair("comp", "block");
 
-        let (request, _url) = self.blob_client.prepare_request(
+        let mut request = self.blob_client.prepare_request(
             url.as_str(),
-            &http::Method::PUT,
-            &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
-                request = add_optional_header_ref(&self.lease_id, request);
-                request
-            },
+            http::Method::PUT,
             Some(self.body.clone()),
         )?;
-
-        trace!("request.headers() == {:#?}", request.headers());
+        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header_ref(&self.lease_id);
 
         let response = self
             .blob_client
             .http_client()
-            .execute_request_check_status(request, http::StatusCode::CREATED)
+            .execute_request_check_status(&request)
             .await?;
-
-        debug!("response.headers() == {:#?}", response.headers());
 
         PutBlockResponse::from_headers(response.headers())
     }

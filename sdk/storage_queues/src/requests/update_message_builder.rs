@@ -1,9 +1,7 @@
 use crate::clients::PopReceiptClient;
 use crate::prelude::*;
 use crate::responses::*;
-use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
-
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -41,8 +39,6 @@ impl<'a> UpdateMessageBuilder<'a> {
         self.visibility_timeout.append_to_url_query(&mut url);
         self.timeout.append_to_url_query(&mut url);
 
-        trace!("url == {}", url.as_str());
-
         // since the format is fixed we just decorate the message with the tags.
         // This could be made optional in the future and/or more
         // stringent.
@@ -51,24 +47,20 @@ impl<'a> UpdateMessageBuilder<'a> {
             new_body.as_ref()
         );
 
-        debug!("message about to be put == {}", message);
-
-        let request = self.pop_receipt_client.storage_client().prepare_request(
+        let mut request = self.pop_receipt_client.storage_client().prepare_request(
             url.as_str(),
-            &http::method::Method::PUT,
-            &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
-                request
-            },
+            http::method::Method::PUT,
             Some(message.into()),
         )?;
+        request.add_optional_header(&self.client_request_id);
 
         let response = self
             .pop_receipt_client
+            .storage_client()
             .http_client()
-            .execute_request_check_status(request.0, http::status::StatusCode::NO_CONTENT)
+            .execute_request_check_status(&request)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 }

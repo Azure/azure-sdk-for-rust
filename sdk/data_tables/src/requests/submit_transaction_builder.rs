@@ -1,10 +1,9 @@
 use crate::{prelude::*, responses::*};
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
-    headers::add_optional_header,
     prelude::*,
 };
-use http::{method::Method, StatusCode};
+use http::method::Method;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -39,36 +38,29 @@ impl<'a> SubmitTransactionBuilder<'a> {
             .push("$batch");
 
         self.timeout.append_to_url_query(&mut url);
-        debug!("url = {}", url);
 
         let payload = batch.to_string().map_kind(ErrorKind::DataConversion)?;
-        debug!("payload == {}", payload);
 
-        let request = self.partition_key_client.prepare_request(
+        let mut request = self.partition_key_client.prepare_request(
             url.as_str(),
-            &Method::POST,
-            &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
-                request = request.header(
-                    "Content-Type",
-                    &format!(
-                        "multipart/mixed; boundary=batch_{}",
-                        batch.batch_uuid().hyphenated()
-                    ),
-                );
-                request
-            },
+            Method::POST,
             Some(bytes::Bytes::from(payload)),
         )?;
-
-        debug!("request == {:#?}\n", request);
+        request.add_optional_header(&self.client_request_id);
+        request.insert_header(
+            "Content-Type",
+            &format!(
+                "multipart/mixed; boundary=batch_{}",
+                batch.batch_uuid().hyphenated()
+            ),
+        );
 
         let response = self
             .partition_key_client
             .http_client()
-            .execute_request_check_status(request.0, StatusCode::ACCEPTED)
+            .execute_request_check_status(&request)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 }

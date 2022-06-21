@@ -1,13 +1,8 @@
-use azure_core::{
-    error::{Error, ErrorKind, ResultExt},
-    HttpClient,
-};
-use bytes::Bytes;
+use azure_core::{error::Error, CollectedResponse, HttpClient, Request, Url};
 use chrono::Duration;
 use http::{
     header::{AUTHORIZATION, CONTENT_LENGTH},
     method::Method,
-    Request, Response,
 };
 use ring::hmac;
 use std::{ops::Add, sync::Arc};
@@ -29,7 +24,7 @@ fn prepare_request(
     body: Option<String>,
     policy_name: &str,
     signing_key: &hmac::Key,
-) -> Result<http::Request<Bytes>, Error> {
+) -> azure_core::Result<Request> {
     // generate sas auth
     let sas = generate_signature(
         policy_name,
@@ -39,24 +34,21 @@ fn prepare_request(
     );
 
     // create request builder
-    let mut request = Request::builder();
-
-    // add method and uri
-    request = request.method(method).uri(url);
+    let mut request = Request::new(Url::parse(url)?, method);
 
     // add auth header with sas
-    request = request.header(AUTHORIZATION, sas);
+    request.insert_header(AUTHORIZATION, sas);
 
     // get req body to return
-    let ret = match body {
-        Some(msg) => request.body(Bytes::from(msg)),
+    match body {
+        Some(msg) => request.set_body(msg),
         None => {
-            request = request.header(CONTENT_LENGTH, 0); // added to avoid truncation errors
-            request.body(azure_core::EMPTY_BODY)
+            request.insert_header(CONTENT_LENGTH, "0"); // added to avoid truncation errors
+            request.set_body(azure_core::EMPTY_BODY);
         }
-    }?;
+    }
 
-    Ok(ret)
+    Ok(request)
 }
 
 /// Generates a SAS signature
@@ -95,7 +87,7 @@ async fn send_message(
     policy_name: &str,
     signing_key: &hmac::Key,
     msg: &str,
-) -> Result<(), Error> {
+) -> azure_core::Result<()> {
     let url = format!(
         "https://{}.servicebus.windows.net/{}/messages",
         namespace, queue
@@ -110,7 +102,8 @@ async fn send_message(
     )?;
 
     http_client
-        .execute_request_check_status(req, http::StatusCode::CREATED)
+        .as_ref()
+        .execute_request_check_status(&req)
         .await?;
     Ok(())
 }
@@ -122,7 +115,7 @@ async fn receive_and_delete_message(
     queue: &str,
     policy_name: &str,
     signing_key: &hmac::Key,
-) -> Result<Response<Bytes>, Error> {
+) -> azure_core::Result<CollectedResponse> {
     let url = format!(
         "https://{}.servicebus.windows.net/{}/messages/head",
         namespace, queue
@@ -131,7 +124,8 @@ async fn receive_and_delete_message(
     let req = prepare_request(&url, Method::DELETE, None, policy_name, signing_key)?;
 
     http_client
-        .execute_request_check_status(req, http::StatusCode::OK)
+        .as_ref()
+        .execute_request_check_status(&req)
         .await
 }
 
@@ -150,7 +144,7 @@ async fn peek_lock_message(
     policy_name: &str,
     signing_key: &hmac::Key,
     lock_expiry: Option<Duration>,
-) -> Result<Response<Bytes>, Error> {
+) -> azure_core::Result<CollectedResponse> {
     let url = craft_peek_lock_url(namespace, queue, lock_expiry)?;
 
     let req = prepare_request(
@@ -162,7 +156,8 @@ async fn peek_lock_message(
     )?;
 
     http_client
-        .execute_request_check_status(req, http::StatusCode::CREATED)
+        .as_ref()
+        .execute_request_check_status(&req)
         .await
 }
 
@@ -177,7 +172,7 @@ async fn peek_lock_message2(
     policy_name: &str,
     signing_key: &hmac::Key,
     lock_expiry: Option<Duration>,
-) -> Result<PeekLockResponse, Error> {
+) -> azure_core::Result<PeekLockResponse> {
     let url = craft_peek_lock_url(namespace, queue, lock_expiry)?;
 
     let req = prepare_request(
@@ -188,20 +183,14 @@ async fn peek_lock_message2(
         signing_key,
     )?;
 
-    let res = http_client.execute_request(req).await?;
+    let res = http_client.execute_request(&req).await?;
 
     let status = res.status();
     let lock_location: String = match res.headers().get("Location") {
-        Some(header_value) => header_value
-            .to_str()
-            .context(
-                ErrorKind::DataConversion,
-                "failed to get lock location from header",
-            )?
-            .to_owned(),
+        Some(header_value) => header_value.as_str().to_owned(),
         _ => "".to_owned(),
     };
-    let body = body_bytes_to_utf8(res.body())?;
+    let body = body_bytes_to_utf8(&res.into_body().await)?;
 
     Ok(PeekLockResponse {
         body,
@@ -235,7 +224,7 @@ impl PeekLockResponse {
     }
 
     /// Delete message in the lock
-    pub async fn delete_message(&self) -> Result<Response<Bytes>, Error> {
+    pub async fn delete_message(&self) -> azure_core::Result<CollectedResponse> {
         let req = prepare_request(
             &self.lock_location.clone(),
             Method::DELETE,
@@ -245,7 +234,8 @@ impl PeekLockResponse {
         )?;
 
         self.http_client
-            .execute_request_check_status(req, http::StatusCode::OK)
+            .as_ref()
+            .execute_request_check_status(&req)
             .await
     }
 
@@ -260,9 +250,9 @@ impl PeekLockResponse {
         )?;
 
         self.http_client
-            .execute_request_check_status(req, http::StatusCode::OK)
+            .as_ref()
+            .execute_request_check_status(&req)
             .await?;
-
         Ok(())
     }
 
@@ -277,9 +267,9 @@ impl PeekLockResponse {
         )?;
 
         self.http_client
-            .execute_request_check_status(req, http::StatusCode::OK)
+            .as_ref()
+            .execute_request_check_status(&req)
             .await?;
-
         Ok(())
     }
 }

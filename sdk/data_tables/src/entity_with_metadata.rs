@@ -1,6 +1,5 @@
 use crate::EntityMetadata;
-use bytes::Bytes;
-use http::Response;
+use azure_core::CollectedResponse;
 use serde::de::DeserializeOwned;
 use std::convert::TryFrom;
 
@@ -10,13 +9,13 @@ pub struct EntityWithMetadata<E: DeserializeOwned> {
     pub entity: E,
 }
 
-impl<S> TryFrom<&Response<Bytes>> for EntityWithMetadata<S>
+impl<S> TryFrom<CollectedResponse> for EntityWithMetadata<S>
 where
     S: DeserializeOwned,
 {
     type Error = serde_json::Error;
 
-    fn try_from(response: &Response<Bytes>) -> Result<Self, Self::Error> {
+    fn try_from(response: CollectedResponse) -> Result<Self, Self::Error> {
         Ok(EntityWithMetadata {
             metadata: serde_json::from_slice(response.body())?,
             entity: serde_json::from_slice(response.body())?,

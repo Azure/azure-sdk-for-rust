@@ -1,6 +1,5 @@
 use crate::service::resources::{AuthenticationMechanism, ConnectionState};
 use azure_core::error::Error;
-use http::Response;
 use serde::Deserialize;
 
 /// The representation of a module identity
@@ -30,10 +29,10 @@ pub struct ModuleIdentityResponse {
     pub module_id: String,
 }
 
-impl std::convert::TryFrom<Response<bytes::Bytes>> for ModuleIdentityResponse {
+impl std::convert::TryFrom<crate::service::CollectedResponse> for ModuleIdentityResponse {
     type Error = Error;
 
-    fn try_from(response: Response<bytes::Bytes>) -> azure_core::Result<Self> {
+    fn try_from(response: crate::service::CollectedResponse) -> azure_core::Result<Self> {
         let body = response.body();
 
         let module_identity_response: ModuleIdentityResponse = serde_json::from_slice(body)?;

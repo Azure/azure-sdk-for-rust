@@ -20,9 +20,8 @@ impl HttpError {
         let mut error_code = get_error_code_from_header(&response);
         let mut headers = HashMap::new();
 
-        for (name, value) in response.headers() {
-            let value = String::from_utf8_lossy(value.as_bytes()).to_string();
-            headers.insert(name.to_string(), value);
+        for (name, value) in response.headers().iter() {
+            headers.insert(name.as_str().to_string(), value.as_str().to_string());
         }
 
         let body = response.into_body().await;
@@ -73,14 +72,7 @@ impl std::error::Error for HttpError {}
 ///
 /// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
 fn get_error_code_from_header(response: &Response) -> Option<String> {
-    Some(
-        response
-            .headers()
-            .get(http::header::HeaderName::from_static("x-ms-error-code"))?
-            .to_str()
-            .ok()?
-            .to_owned(),
-    )
+    response.headers().get_as_string("x-ms-error-code")
 }
 
 /// Gets the error code if it's present in the body

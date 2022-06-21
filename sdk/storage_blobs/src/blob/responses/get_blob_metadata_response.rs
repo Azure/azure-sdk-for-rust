@@ -1,10 +1,11 @@
 use azure_core::{
-    headers::{date_from_headers, etag_from_headers, request_id_from_headers, server_from_headers},
+    headers::{
+        date_from_headers, etag_from_headers, request_id_from_headers, server_from_headers, Headers,
+    },
     prelude::*,
     RequestId,
 };
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
 use std::convert::TryFrom;
 
 #[derive(Debug, Clone)]
@@ -16,10 +17,10 @@ pub struct GetBlobMetadataResponse {
     pub metadata: Metadata,
 }
 
-impl TryFrom<&HeaderMap> for GetBlobMetadataResponse {
+impl TryFrom<&Headers> for GetBlobMetadataResponse {
     type Error = crate::Error;
 
-    fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
+    fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
         debug!("headers == {:#?}", headers);
 
         Ok(GetBlobMetadataResponse {

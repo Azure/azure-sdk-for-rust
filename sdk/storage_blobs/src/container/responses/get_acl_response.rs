@@ -1,13 +1,13 @@
 use crate::container::{public_access_from_header, PublicAccess};
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
-    headers::REQUEST_ID,
+    headers::{Headers, REQUEST_ID},
     RequestId,
 };
 use azure_storage::core::StoredAccessPolicyList;
 use bytes::Bytes;
 use chrono::{DateTime, FixedOffset};
-use http::{header, HeaderMap};
+use http::header;
 use std::convert::TryFrom;
 use uuid::Uuid;
 
@@ -21,10 +21,10 @@ pub struct GetACLResponse {
     pub stored_access_policy_list: StoredAccessPolicyList,
 }
 
-impl TryFrom<(&Bytes, &HeaderMap)> for GetACLResponse {
+impl TryFrom<(&Bytes, &Headers)> for GetACLResponse {
     type Error = crate::Error;
 
-    fn try_from((body, header_map): (&Bytes, &HeaderMap)) -> azure_core::Result<Self> {
+    fn try_from((body, header_map): (&Bytes, &Headers)) -> azure_core::Result<Self> {
         GetACLResponse::from_response(body, header_map)
     }
 }
@@ -33,12 +33,12 @@ impl GetACLResponse {
     // this should be named into and be consuming
     pub(crate) fn from_response(
         body: &Bytes,
-        headers: &HeaderMap,
+        headers: &Headers,
     ) -> azure_core::Result<GetACLResponse> {
         let public_access = public_access_from_header(headers)?;
 
         let etag = match headers.get(header::ETAG) {
-            Some(etag) => etag.to_str().map_kind(ErrorKind::DataConversion)?,
+            Some(etag) => etag.as_str(),
             None => {
                 static E: header::HeaderName = header::ETAG;
                 return Err(Error::message(ErrorKind::DataConversion, E.as_str()));
@@ -46,7 +46,7 @@ impl GetACLResponse {
         };
 
         let last_modified = match headers.get(header::LAST_MODIFIED) {
-            Some(last_modified) => last_modified.to_str().map_kind(ErrorKind::DataConversion)?,
+            Some(last_modified) => last_modified.as_str(),
             None => {
                 static LM: header::HeaderName = header::LAST_MODIFIED;
                 return Err(Error::message(ErrorKind::DataConversion, LM.as_str()));
@@ -56,12 +56,12 @@ impl GetACLResponse {
             DateTime::parse_from_rfc2822(last_modified).map_kind(ErrorKind::DataConversion)?;
 
         let request_id = match headers.get(REQUEST_ID) {
-            Some(request_id) => request_id.to_str().map_kind(ErrorKind::DataConversion)?,
+            Some(request_id) => request_id.as_str(),
             None => return Err(Error::message(ErrorKind::DataConversion, REQUEST_ID)),
         };
 
         let date = match headers.get(header::DATE) {
-            Some(date) => date.to_str().map_kind(ErrorKind::DataConversion)?,
+            Some(date) => date.as_str(),
             None => {
                 static D: header::HeaderName = header::DATE;
                 return Err(Error::message(ErrorKind::DataConversion, D.as_str()));

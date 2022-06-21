@@ -1,10 +1,10 @@
 use azure_core::{
     headers::{
         client_request_id_from_headers_optional, request_id_from_headers, version_from_headers,
+        Headers,
     },
     RequestId,
 };
-use http::HeaderMap;
 use std::convert::TryFrom;
 
 #[derive(Debug, Clone)]
@@ -14,10 +14,10 @@ pub struct SetBlobTierResponse {
     pub version: String,
 }
 
-impl TryFrom<&HeaderMap> for SetBlobTierResponse {
+impl TryFrom<&Headers> for SetBlobTierResponse {
     type Error = crate::Error;
 
-    fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
+    fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
         debug!("headers == {:#?}", headers);
 
         Ok(SetBlobTierResponse {

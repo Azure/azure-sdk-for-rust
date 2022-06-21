@@ -2,7 +2,7 @@
 #[macro_export]
 macro_rules! response_from_headers {
     ($cn:ident, $($fh:path => $na:ident: $typ:ty),+) => {
-        use http::HeaderMap;
+        use azure_core::headers::Headers;
 
         #[derive(Debug, Clone, PartialEq)]
         pub struct $cn {
@@ -10,7 +10,7 @@ macro_rules! response_from_headers {
         }
 
         impl $cn {
-            pub(crate) fn from_headers(headers: &HeaderMap) -> Result<$cn, $crate::Error> {
+            pub(crate) fn from_headers(headers: &Headers) -> Result<$cn, $crate::Error> {
                $(
                     let $na = $fh(headers)?;
                 )+

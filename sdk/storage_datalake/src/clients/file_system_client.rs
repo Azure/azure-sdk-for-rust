@@ -88,13 +88,13 @@ impl FileSystemClient {
         SetFileSystemPropertiesBuilder::new(self.clone(), Some(properties))
     }
 
-    pub(crate) fn prepare_request(
-        &self,
-        uri: &str,
-        http_method: http::Method,
-    ) -> azure_core::Request {
-        self.data_lake_client.prepare_request(uri, http_method)
-    }
+    // pub(crate) fn prepare_request(
+    //     &self,
+    //     uri: &str,
+    //     http_method: http::Method,
+    // ) -> azure_core::Request {
+    //     self.data_lake_client.prepare_request(uri, http_method)
+    // }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {
         self.data_lake_client.pipeline()

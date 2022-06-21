@@ -1,12 +1,11 @@
 use crate::{prelude::*, responses::*, ContinuationNextPartitionAndRowKey};
 use azure_core::{
     error::{Error, ErrorKind},
-    headers::add_optional_header,
     prelude::*,
     AppendToUrlQuery,
 };
 use futures::stream::{unfold, Stream};
-use http::{method::Method, status::StatusCode};
+use http::method::Method;
 use serde::de::DeserializeOwned;
 use std::convert::TryInto;
 
@@ -56,28 +55,19 @@ impl<'a> QueryEntityBuilder<'a> {
         self.continuation_next_partition_and_row_key
             .append_to_url_query(&mut url);
 
-        debug!("list entities url = {}", url);
-
-        let request = self.table_client.prepare_request(
-            url.as_str(),
-            &Method::GET,
-            &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
-                request = request.header("Accept", "application/json;odata=fullmetadata");
-                request
-            },
-            None,
-        )?;
-
-        debug!("request == {:#?}\n", request);
+        let mut request = self
+            .table_client
+            .prepare_request(url.as_str(), Method::GET, None)?;
+        request.add_optional_header(&self.client_request_id);
+        request.insert_header("Accept", "application/json;odata=fullmetadata");
 
         let response = self
             .table_client
             .http_client()
-            .execute_request_check_status(request.0, StatusCode::OK)
+            .execute_request_check_status(&request)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 
     pub fn stream<E>(self) -> impl Stream<Item = azure_core::Result<QueryEntityResponse<E>>> + 'a

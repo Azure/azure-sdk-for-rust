@@ -1,5 +1,4 @@
 use azure_core::error::Error;
-use http::response::Response;
 use serde::Deserialize;
 
 /// The DirectMethodResponse struct contains the response
@@ -12,10 +11,10 @@ pub struct InvokeMethodResponse {
     pub payload: Option<serde_json::Value>,
 }
 
-impl std::convert::TryFrom<Response<bytes::Bytes>> for InvokeMethodResponse {
+impl std::convert::TryFrom<crate::service::CollectedResponse> for InvokeMethodResponse {
     type Error = Error;
 
-    fn try_from(response: Response<bytes::Bytes>) -> azure_core::Result<Self> {
+    fn try_from(response: crate::service::CollectedResponse) -> azure_core::Result<Self> {
         let body = response.body();
 
         let invoke_method_response: InvokeMethodResponse = serde_json::from_slice(body)?;
