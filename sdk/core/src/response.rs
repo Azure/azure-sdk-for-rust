@@ -94,18 +94,22 @@ impl CollectedResponse {
             body,
         }
     }
+
     /// Get the status
     pub fn status(&self) -> &StatusCode {
         &self.status
     }
+
     /// Get the headers
     pub fn headers(&self) -> &Headers {
         &self.headers
     }
+
     /// Get the body
     pub fn body(&self) -> &Bytes {
         &self.body
     }
+
     /// Into the body
     pub fn into_body(self) -> Bytes {
         self.body

@@ -13,9 +13,7 @@ impl ContinuationNextTableName {
     }
 
     pub fn from_header_optional(headers: &Headers) -> azure_core::Result<Option<Self>> {
-        let header_as_str = headers
-            .get("x-ms-continuation-NextTableName")
-            .map(|item| item.as_str());
+        let header_as_str = headers.get_as_str("x-ms-continuation-NextTableName");
 
         Ok(header_as_str
             .filter(|h| !h.is_empty())

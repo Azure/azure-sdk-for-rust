@@ -16,13 +16,9 @@ impl ContinuationNextPartitionAndRowKey {
     }
 
     pub fn from_header_optional(headers: &Headers) -> azure_core::Result<Option<Self>> {
-        let partition_header_as_str = headers
-            .get("x-ms-continuation-NextPartitionKey")
-            .map(|item| item.as_str());
+        let partition_header_as_str = headers.get_as_str("x-ms-continuation-NextPartitionKey");
 
-        let row_header_as_str = headers
-            .get("x-ms-continuation-NextRowKey")
-            .map(|item| item.as_str());
+        let row_header_as_str = headers.get_as_str("x-ms-continuation-NextRowKey");
 
         Ok(partition_header_as_str.filter(|h| !h.is_empty()).map(|h| {
             ContinuationNextPartitionAndRowKey::new(
