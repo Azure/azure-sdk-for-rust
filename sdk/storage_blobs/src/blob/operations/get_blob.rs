@@ -1,17 +1,13 @@
 use crate::{blob::Blob, prelude::*};
 use azure_core::{
     error::{ErrorKind, ResultExt},
-    headers::{
-        add_optional_header, add_optional_header_ref, date_from_headers, request_id_from_headers,
-        AsHeaders,
-    },
-    prelude::{ContentRange, *},
-    RequestId,
+    headers::*,
+    prelude::*,
+    CollectedResponse, RequestId,
 };
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use futures::stream::Stream;
-use http::Response;
 use std::{
     convert::{TryFrom, TryInto},
     str::FromStr,
@@ -53,36 +49,21 @@ impl<'a> GetBlobBuilder<'a> {
         self.blob_versioning.append_to_url_query(&mut url);
         self.timeout.append_to_url_query(&mut url);
 
-        trace!("url == {:?}", url);
-
-        let (request, _url) = self.blob_client.prepare_request(
-            url.as_str(),
-            &http::Method::GET,
-            &|mut request| {
-                if let Some(item) = &self.range {
-                    for (name, value) in item.as_headers() {
-                        request = request.header(name.as_str(), value.as_str())
-                    }
-                }
-                request = add_optional_header_ref(&self.client_request_id, request);
-                request = add_optional_header(&self.lease_id, request);
-                request
-            },
-            None,
-        )?;
-
-        debug!("request == {:#?}", request);
-
-        let expected_status_code = if self.range.is_some() {
-            http::StatusCode::PARTIAL_CONTENT
-        } else {
-            http::StatusCode::OK
-        };
+        let mut request =
+            self.blob_client
+                .prepare_request(url.as_str(), http::Method::GET, None)?;
+        if let Some(item) = &self.range {
+            for (name, value) in item.as_headers() {
+                request.insert_header(name, value);
+            }
+        }
+        request.add_optional_header_ref(&self.client_request_id);
+        request.add_optional_header(&self.lease_id);
 
         let response = self
             .blob_client
             .http_client()
-            .execute_request_check_status(request, expected_status_code)
+            .execute_request_check_status(&request)
             .await?;
 
         (self.blob_client.blob_name(), response).try_into()
@@ -158,20 +139,17 @@ pub struct GetBlobResponse {
     pub content_range: Option<ContentRange>,
 }
 
-impl TryFrom<(&str, Response<Bytes>)> for GetBlobResponse {
+impl TryFrom<(&str, CollectedResponse)> for GetBlobResponse {
     type Error = crate::Error;
-    fn try_from((blob_name, response): (&str, Response<Bytes>)) -> azure_core::Result<Self> {
-        debug!("response.headers() == {:#?}", response.headers());
-
+    fn try_from((blob_name, response): (&str, CollectedResponse)) -> azure_core::Result<Self> {
         let request_id = request_id_from_headers(response.headers())?;
         let date = date_from_headers(response.headers())?;
 
         let content_range_header = response.headers().get(http::header::CONTENT_RANGE);
         let content_range = match content_range_header {
-            Some(hv) => Some(
-                ContentRange::from_str(hv.to_str().map_kind(ErrorKind::DataConversion)?)
-                    .map_kind(ErrorKind::DataConversion)?,
-            ),
+            Some(hv) => {
+                Some(ContentRange::from_str(hv.as_str()).map_kind(ErrorKind::DataConversion)?)
+            }
             None => None,
         };
 

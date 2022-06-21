@@ -1,7 +1,6 @@
 use crate::responses::*;
 use crate::QueueServiceProperties;
 use azure_core::error::{ErrorKind, ResultExt};
-use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 use azure_storage::core::clients::StorageClient;
 use std::convert::TryInto;
@@ -46,25 +45,20 @@ impl<'a> SetQueueServicePropertiesBuilder<'a> {
 
         let xml_body = serde_xml_rs::to_string(&queue_service_properties)
             .map_kind(ErrorKind::DataConversion)?;
-        debug!("xml about to be sent == {}", xml_body);
 
-        let request = self.storage_client.prepare_request(
+        let mut request = self.storage_client.prepare_request(
             url.as_str(),
-            &http::method::Method::PUT,
-            &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
-                request
-            },
+            http::method::Method::PUT,
             Some(xml_body.into()),
         )?;
+        request.add_optional_header(&self.client_request_id);
 
         let response = self
             .storage_client
-            .storage_account_client()
             .http_client()
-            .execute_request_check_status(request.0, http::status::StatusCode::ACCEPTED)
+            .execute_request_check_status(&request)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 }

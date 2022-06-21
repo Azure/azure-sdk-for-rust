@@ -1,18 +1,13 @@
 use crate::{prelude::*, BA512Range};
 use azure_core::{
     error::{ErrorKind, ResultExt},
-    headers::{
-        add_mandatory_header, add_optional_header, date_from_headers, etag_from_headers,
-        last_modified_from_headers, request_id_from_headers, request_server_encrypted_from_headers,
-        sequence_number_from_headers, BLOB_TYPE, PAGE_WRITE,
-    },
+    headers::*,
     prelude::*,
     RequestId,
 };
 use azure_storage::{headers::content_md5_from_headers, ConsistencyMD5};
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
 
 #[derive(Debug, Clone)]
 pub struct UpdatePageBuilder {
@@ -65,35 +60,26 @@ impl UpdatePageBuilder {
             self.timeout.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("comp", "page");
 
-            trace!("url == {:?}", url);
-
-            let (request, _url) = self.blob_client.prepare_request(
+            let mut request = self.blob_client.prepare_request(
                 url.as_str(),
-                &http::Method::PUT,
-                &|mut request| {
-                    request = request.header(PAGE_WRITE, "update");
-                    request = request.header(BLOB_TYPE, "PageBlob");
-                    request = add_mandatory_header(&self.ba512_range, request);
-                    request = add_optional_header(&self.sequence_number_condition, request);
-                    request = add_optional_header(&self.hash, request);
-                    request = add_optional_header(&self.if_modified_since_condition, request);
-                    request = add_optional_header(&self.if_match_condition, request);
-                    request = add_optional_header(&self.client_request_id, request);
-                    request = add_optional_header(&self.lease_id, request);
-                    request
-                },
+                http::Method::PUT,
                 Some(self.content.clone()),
             )?;
-
-            trace!("request.headers() == {:#?}", request.headers());
+            request.insert_header(PAGE_WRITE, "update");
+            request.insert_header(BLOB_TYPE, "PageBlob");
+            request.add_mandatory_header(&self.ba512_range);
+            request.add_optional_header(&self.sequence_number_condition);
+            request.add_optional_header(&self.hash);
+            request.add_optional_header(&self.if_modified_since_condition);
+            request.add_optional_header(&self.if_match_condition);
+            request.add_optional_header(&self.client_request_id);
+            request.add_optional_header(&self.lease_id);
 
             let response = self
                 .blob_client
                 .http_client()
-                .execute_request_check_status(request, http::StatusCode::CREATED)
+                .execute_request_check_status(&request)
                 .await?;
-
-            debug!("response.headers() == {:#?}", response.headers());
 
             UpdatePageResponse::from_headers(response.headers())
         })
@@ -112,7 +98,7 @@ pub struct UpdatePageResponse {
 }
 
 impl UpdatePageResponse {
-    pub(crate) fn from_headers(headers: &HeaderMap) -> azure_core::Result<UpdatePageResponse> {
+    pub(crate) fn from_headers(headers: &Headers) -> azure_core::Result<UpdatePageResponse> {
         let etag = etag_from_headers(headers)?;
         let last_modified = last_modified_from_headers(headers)?;
         let content_md5 = content_md5_from_headers(headers).map_kind(ErrorKind::DataConversion)?;

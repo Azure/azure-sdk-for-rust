@@ -41,7 +41,7 @@ impl Policy for AuthorizationPolicy {
                     let auth = generate_authorization(
                         request.headers(),
                         request.url(),
-                        &request.method(),
+                        request.method(),
                         account,
                         key,
                         ctx.get()

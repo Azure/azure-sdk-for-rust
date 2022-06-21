@@ -3,6 +3,7 @@ use crate::request_options::*;
 use crate::Properties;
 use azure_core::headers::{etag_from_headers, last_modified_from_headers};
 use azure_core::prelude::*;
+use azure_core::Request;
 use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
@@ -83,9 +84,7 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
             self.retain_uncommitted_data.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = this
-                .client
-                .prepare_request(url.as_str(), http::Method::PATCH);
+            let mut request = Request::new(url, http::Method::PATCH);
 
             request.insert_headers(&this.client_request_id);
             request.insert_headers(&this.properties);

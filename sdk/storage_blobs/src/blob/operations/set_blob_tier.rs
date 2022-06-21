@@ -1,14 +1,9 @@
 use crate::prelude::*;
 use azure_core::{
-    error::{Error, ErrorKind},
-    headers::{
-        add_mandatory_header, add_optional_header, client_request_id_from_headers_optional,
-        request_id_from_headers, version_from_headers,
-    },
+    headers::*,
     prelude::*,
     RequestId,
 };
-use http::HeaderMap;
 use std::convert::{TryFrom, TryInto};
 
 #[derive(Debug, Clone)]
@@ -46,58 +41,22 @@ impl SetBlobTierBuilder {
 
     pub fn into_future(self) -> Response {
         Box::pin(async move {
-            // Get the blob properties first. Need this to determine what HTTP status code to expect later.
-            let blob_properties = self.blob_client.get_properties().into_future().await?;
-            let blob_tier = blob_properties.blob.properties.access_tier;
-            let blob_tier = match blob_tier {
-                Some(bt) => bt,
-                None => {
-                    return Err(Error::message(
-                        ErrorKind::DataConversion,
-                        "Unable to determine current access tier for blob.",
-                    ))
-                }
-            };
-
             let mut url = self.blob_client.url_with_segments(None)?;
-
             url.query_pairs_mut().append_pair("comp", "tier");
             self.blob_versioning.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
-            trace!("url == {:?}", url);
-
-            let (request, _url) = self.blob_client.prepare_request(
-                url.as_str(),
-                &http::Method::PUT,
-                &|mut request| {
-                    request = add_mandatory_header(&self.access_tier, request);
-                    request = add_optional_header(&self.client_request_id, request);
-                    request = add_optional_header(&self.rehydrate_priority, request);
-
-                    request
-                },
-                None,
-            )?;
-
-            info!("request == {:?}", request);
-
-            let expected_status: http::StatusCode;
-
-            match blob_tier {
-                AccessTier::Hot | AccessTier::Cool => expected_status = http::StatusCode::OK,
-                AccessTier::Archive => {
-                    match &self.access_tier {
-                        AccessTier::Archive => expected_status = http::StatusCode::OK,
-                        _ => expected_status = http::StatusCode::ACCEPTED,
-                    };
-                }
-            }
+            let mut request =
+                self.blob_client
+                    .prepare_request(url.as_str(), http::Method::PUT, None)?;
+            request.add_mandatory_header(&self.access_tier);
+            request.add_optional_header(&self.client_request_id);
+            request.add_optional_header(&self.rehydrate_priority);
 
             let response = self
                 .blob_client
                 .http_client()
-                .execute_request_check_status(request, expected_status)
+                .execute_request_check_status(&request)
                 .await?;
 
             response.headers().try_into()
@@ -112,10 +71,10 @@ pub struct SetBlobTierResponse {
     pub version: String,
 }
 
-impl TryFrom<&HeaderMap> for SetBlobTierResponse {
+impl TryFrom<&Headers> for SetBlobTierResponse {
     type Error = crate::Error;
 
-    fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
+    fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
         debug!("headers == {:#?}", headers);
 
         Ok(SetBlobTierResponse {

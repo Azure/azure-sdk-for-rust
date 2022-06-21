@@ -10,16 +10,11 @@ use crate::{
 };
 use azure_core::auth::TokenCredential;
 use azure_core::error::{Error, ErrorKind, ResultExt};
-use azure_core::Request as CoreRequest;
+use azure_core::Request;
 use azure_core::{headers::*, Pipeline};
 use azure_core::{ClientOptions, HttpClient};
 use bytes::Bytes;
-use http::header::AsHeaderName;
-use http::HeaderMap;
-use http::{
-    method::Method,
-    request::{Builder, Request},
-};
+use http::method::Method;
 use std::sync::Arc;
 use url::Url;
 
@@ -428,11 +423,10 @@ impl StorageAccountClient {
     pub fn prepare_request(
         &self,
         url: &str,
-        method: &Method,
-        http_header_adder: &dyn Fn(Builder) -> Builder,
+        method: Method,
         service_type: ServiceType,
         request_body: Option<Bytes>,
-    ) -> azure_core::Result<(Request<Bytes>, url::Url)> {
+    ) -> azure_core::Result<Request> {
         let dt = chrono::Utc::now();
         let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
@@ -447,71 +441,58 @@ impl StorageAccountClient {
             }
         }
 
-        let mut request = Request::builder();
-        request = request.method(method).uri(url.as_str());
+        let mut request = Request::new(url, method);
 
         // let's add content length to avoid "chunking" errors.
-        request = match request_body {
-            Some(ref b) => request.header(CONTENT_LENGTH, &b.len().to_string() as &str),
-            None => request.header(CONTENT_LENGTH, "0"),
+        match request_body {
+            Some(ref b) => request.insert_header(CONTENT_LENGTH, b.len().to_string()),
+            None => request.insert_header(CONTENT_LENGTH, "0"),
         };
 
-        // This will give the caller the ability to add custom headers.
-        // The closure is needed to because request.headers_mut().set_raw(...) requires
-        // a Cow with 'static lifetime...
-        request = http_header_adder(request);
-
-        request = request
-            .header(MS_DATE, time)
-            .header(HEADER_VERSION, AZURE_VERSION);
+        request.insert_header(MS_DATE, time);
+        request.insert_header(HEADER_VERSION, AZURE_VERSION);
 
         // We sign the request only if it is not already signed (with the signature of an
         // SAS token for example)
-        let request = match &self.storage_credentials {
+        match &self.storage_credentials {
             StorageCredentials::Key(account, key) => {
-                if !url.query_pairs().any(|(k, _)| k == "sig") {
+                if !request.url().query_pairs().any(|(k, _)| k == "sig") {
                     let auth = generate_authorization(
-                        request.headers_ref().unwrap(),
-                        &url,
-                        method,
+                        request.headers(),
+                        request.url(),
+                        request.method(),
                         account,
                         key,
                         service_type,
                     );
-                    request.header(AUTHORIZATION, auth)
-                } else {
-                    request
+                    request.insert_header(AUTHORIZATION, auth);
                 }
             }
             StorageCredentials::SASToken(_query_pairs) => {
-                // no headers to add here, the authentication
-                // is in the URL
-                request
+                // no headers to add here, the authentication is in the URL
             }
             StorageCredentials::BearerToken(token) => {
-                request.header(AUTHORIZATION, format!("Bearer {}", token))
+                request.insert_header(AUTHORIZATION, format!("Bearer {}", token))
             }
             StorageCredentials::TokenCredential(token_credential) => {
                 let bearer_token_future = token_credential.get_token(STORAGE_TOKEN_SCOPE);
                 let bearer_token = futures::executor::block_on(bearer_token_future)
                     .context(ErrorKind::Credential, "failed to get bearer token")?;
 
-                request.header(
+                request.insert_header(
                     AUTHORIZATION,
                     format!("Bearer {}", bearer_token.token.secret()),
                 )
             }
         };
 
-        let request = if let Some(request_body) = request_body {
-            request.body(request_body)
+        if let Some(request_body) = request_body {
+            request.set_body(request_body);
         } else {
-            request.body(azure_core::EMPTY_BODY)
-        }?;
+            request.set_body(azure_core::EMPTY_BODY);
+        };
 
-        trace!("using request == {:#?}", request);
-
-        Ok((request, url))
+        Ok(request)
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {
@@ -519,8 +500,8 @@ impl StorageAccountClient {
     }
 
     /// Prepares' an `azure_core::Request`.
-    pub(crate) fn blob_storage_request(&self, http_method: http::Method) -> CoreRequest {
-        CoreRequest::new(self.blob_storage_url().clone(), http_method)
+    pub(crate) fn blob_storage_request(&self, http_method: http::Method) -> Request {
+        Request::new(self.blob_storage_url().clone(), http_method)
     }
 }
 
@@ -538,29 +519,29 @@ impl ClientAccountSharedAccessSignature for StorageAccountClient {
 }
 
 fn generate_authorization(
-    h: &HeaderMap,
-    u: &url::Url,
+    headers: &Headers,
+    url: &url::Url,
     method: &Method,
     account: &str,
     key: &str,
     service_type: ServiceType,
 ) -> String {
-    let str_to_sign = string_to_sign(h, u, method, account, service_type);
+    let str_to_sign = string_to_sign(headers, url, method, account, service_type);
     let auth = sign(&str_to_sign, key).unwrap();
     format!("SharedKey {}:{}", account, auth)
 }
 
-fn add_if_exists<K: AsHeaderName>(h: &HeaderMap, key: K) -> &str {
-    match h.get(key) {
-        Some(ce) => ce.to_str().unwrap(),
+fn add_if_exists<K: Into<HeaderName>>(headers: &Headers, key: K) -> &str {
+    match headers.get(key.into()) {
+        Some(value) => value.as_str(),
         None => "",
     }
 }
 
 #[allow(unknown_lints)]
 fn string_to_sign(
-    h: &HeaderMap,
-    u: &url::Url,
+    headers: &Headers,
+    url: &url::Url,
     method: &Method,
     account: &str,
     service_type: ServiceType,
@@ -570,35 +551,35 @@ fn string_to_sign(
             format!(
                 "{}\n{}\n{}\n{}\n{}",
                 method.as_str(),
-                add_if_exists(h, CONTENT_MD5),
-                add_if_exists(h, CONTENT_TYPE),
-                add_if_exists(h, MS_DATE),
-                canonicalized_resource_table(account, u)
+                add_if_exists(headers, CONTENT_MD5),
+                add_if_exists(headers, CONTENT_TYPE),
+                add_if_exists(headers, MS_DATE),
+                canonicalized_resource_table(account, url)
             )
         }
         _ => {
             // content lenght must only be specified if != 0
             // this is valid from 2015-02-21
-            let cl = h
+            let cl = headers
                 .get(CONTENT_LENGTH)
-                .map(|s| if s == "0" { "" } else { s.to_str().unwrap() })
+                .map(|s| if s.as_str() == "0" { "" } else { s.as_str() })
                 .unwrap_or("");
             format!(
                 "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}{}",
                 method.as_str(),
-                add_if_exists(h, CONTENT_ENCODING),
-                add_if_exists(h, CONTENT_LANGUAGE),
+                add_if_exists(headers, CONTENT_ENCODING),
+                add_if_exists(headers, CONTENT_LANGUAGE),
                 cl,
-                add_if_exists(h, CONTENT_MD5),
-                add_if_exists(h, CONTENT_TYPE),
-                add_if_exists(h, DATE),
-                add_if_exists(h, IF_MODIFIED_SINCE),
-                add_if_exists(h, IF_MATCH),
-                add_if_exists(h, IF_NONE_MATCH),
-                add_if_exists(h, IF_UNMODIFIED_SINCE),
-                add_if_exists(h, RANGE),
-                canonicalize_header(h),
-                canonicalized_resource(account, u)
+                add_if_exists(headers, CONTENT_MD5),
+                add_if_exists(headers, CONTENT_TYPE),
+                add_if_exists(headers, DATE),
+                add_if_exists(headers, IF_MODIFIED_SINCE),
+                add_if_exists(headers, IF_MATCH),
+                add_if_exists(headers, IF_NONE_MATCH),
+                add_if_exists(headers, IF_UNMODIFIED_SINCE),
+                add_if_exists(headers, RANGE),
+                canonicalize_header(headers),
+                canonicalized_resource(account, url)
             )
         }
     }
@@ -624,19 +605,17 @@ fn string_to_sign(
     //
 }
 
-fn canonicalize_header(h: &HeaderMap) -> String {
-    let mut v_headers = h
+fn canonicalize_header(headers: &Headers) -> String {
+    let mut v_headers = headers
         .iter()
-        .filter(|(k, _v)| k.as_str().starts_with("x-ms"))
-        .map(|(k, _)| k.as_str())
+        .filter(|(name, _value)| name.as_str().starts_with("x-ms"))
         .collect::<Vec<_>>();
-    v_headers.sort_unstable();
+    v_headers.sort_unstable_by_key(|(name, _value)| name.as_str());
 
     let mut can = String::new();
 
-    for header_name in v_headers {
-        let s = h.get(header_name).unwrap().to_str().unwrap();
-        can = can + header_name + ":" + s + "\n";
+    for (name, value) in v_headers {
+        can = can + name.as_str() + ":" + value.as_str() + "\n";
     }
     can
 }

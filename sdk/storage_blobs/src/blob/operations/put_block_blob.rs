@@ -1,18 +1,13 @@
 use crate::prelude::*;
 use azure_core::{
     error::{ErrorKind, ResultExt},
-    headers::{
-        add_mandatory_header, add_optional_header, date_from_headers, etag_from_headers,
-        last_modified_from_headers, request_id_from_headers, request_server_encrypted_from_headers,
-        BLOB_TYPE,
-    },
+    headers::*,
     prelude::*,
     RequestId,
 };
 use azure_storage::{headers::consistency_from_headers, ConsistencyCRC64, ConsistencyMD5};
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
 
 #[derive(Debug, Clone)]
 pub struct PutBlockBlobBuilder {
@@ -68,38 +63,31 @@ impl PutBlockBlobBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
-            trace!("url == {:?}", url);
-
-            let (request, _url) = self.blob_client.prepare_request(
+            let mut request = self.blob_client.prepare_request(
                 url.as_str(),
-                &http::Method::PUT,
-                &|mut request| {
-                    request = request.header(BLOB_TYPE, "BlockBlob");
-                    request = add_optional_header(&self.hash, request);
-                    request = add_optional_header(&self.content_type, request);
-                    request = add_optional_header(&self.content_encoding, request);
-                    request = add_optional_header(&self.content_language, request);
-                    request = add_optional_header(&self.content_disposition, request);
-                    if let Some(metadata) = &self.metadata {
-                        for m in metadata.iter() {
-                            request = add_mandatory_header(&m, request);
-                        }
-                    }
-                    request = add_optional_header(&self.access_tier, request);
-                    request = add_optional_header(&self.lease_id, request);
-                    request = add_optional_header(&self.client_request_id, request);
-                    request
-                },
+                http::Method::PUT,
                 Some(self.body.clone()),
             )?;
+            request.insert_header(BLOB_TYPE, "BlockBlob");
+            request.add_optional_header(&self.hash);
+            request.add_optional_header(&self.content_type);
+            request.add_optional_header(&self.content_encoding);
+            request.add_optional_header(&self.content_language);
+            request.add_optional_header(&self.content_disposition);
+            if let Some(metadata) = &self.metadata {
+                for m in metadata.iter() {
+                    request.add_mandatory_header(&m);
+                }
+            }
+            request.add_optional_header(&self.access_tier);
+            request.add_optional_header(&self.lease_id);
+            request.add_optional_header(&self.client_request_id);
 
             let response = self
                 .blob_client
                 .http_client()
-                .execute_request_check_status(request, http::StatusCode::CREATED)
+                .execute_request_check_status(&request)
                 .await?;
-
-            debug!("response.headers() == {:#?}", response.headers());
 
             PutBlockBlobResponse::from_headers(response.headers())
         })
@@ -118,9 +106,7 @@ pub struct PutBlockBlobResponse {
 }
 
 impl PutBlockBlobResponse {
-    pub fn from_headers(headers: &HeaderMap) -> azure_core::Result<PutBlockBlobResponse> {
-        debug!("headers == {:#?}", headers);
-
+    pub fn from_headers(headers: &Headers) -> azure_core::Result<PutBlockBlobResponse> {
         let etag = etag_from_headers(headers)?;
         let last_modified = last_modified_from_headers(headers)?;
         let (content_md5, content_crc64) =

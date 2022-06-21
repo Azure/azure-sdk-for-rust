@@ -1,9 +1,8 @@
 use azure_core::error::Error;
 use azure_core::headers::{get_str_from_headers, rfc2822_from_headers_mandatory};
+use azure_core::CollectedResponse;
 use azure_storage::core::headers::CommonStorageResponseHeaders;
-use bytes::Bytes;
 use chrono::{DateTime, Utc};
-use http::response::Response;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -13,12 +12,10 @@ pub struct UpdateMessageResponse {
     pub pop_receipt: String,
 }
 
-impl std::convert::TryFrom<&Response<Bytes>> for UpdateMessageResponse {
+impl std::convert::TryFrom<CollectedResponse> for UpdateMessageResponse {
     type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
-        debug!("response == {:?}", response);
-
+    fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         Ok(UpdateMessageResponse {
             common_storage_response_headers: response.headers().try_into()?,
             time_next_visible: rfc2822_from_headers_mandatory(

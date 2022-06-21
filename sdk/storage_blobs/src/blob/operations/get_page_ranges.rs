@@ -1,14 +1,6 @@
 use crate::{blob::PageRangeList, prelude::*};
-use azure_core::{
-    headers::{
-        add_optional_header, date_from_headers, etag_from_headers, last_modified_from_headers,
-        request_id_from_headers,
-    },
-    prelude::*,
-    RequestId,
-};
+use azure_core::{headers::*, prelude::*, RequestId};
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
 use std::str::from_utf8;
 
 pub struct GetPageRangesBuilder {
@@ -45,26 +37,17 @@ impl<'a> GetPageRangesBuilder {
             self.blob_versioning.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
-            debug!("url == {:?}", url);
-
-            let (request, _url) = self.blob_client.prepare_request(
-                url.as_str(),
-                &http::Method::GET,
-                &|mut request| {
-                    request = add_optional_header(&self.lease_id, request);
-                    request = add_optional_header(&self.client_request_id, request);
-                    request
-                },
-                None,
-            )?;
+            let mut request =
+                self.blob_client
+                    .prepare_request(url.as_str(), http::Method::GET, None)?;
+            request.add_optional_header(&self.lease_id);
+            request.add_optional_header(&self.client_request_id);
 
             let response = self
                 .blob_client
                 .http_client()
-                .execute_request_check_status(request, http::StatusCode::OK)
+                .execute_request_check_status(&request)
                 .await?;
-
-            debug!("response.headers() == {:#?}", response.headers());
 
             GetPageRangesResponse::from_response(response.headers(), response.body())
         })
@@ -82,7 +65,7 @@ pub struct GetPageRangesResponse {
 
 impl GetPageRangesResponse {
     pub(crate) fn from_response(
-        headers: &HeaderMap,
+        headers: &Headers,
         body: &[u8],
     ) -> azure_core::Result<GetPageRangesResponse> {
         let etag = etag_from_headers(headers)?;

@@ -1,6 +1,6 @@
 use crate::service::responses::InvokeMethodResponse;
 use crate::service::{ServiceClient, API_VERSION};
-use http::{Method, StatusCode};
+use http::Method;
 use serde::Serialize;
 use std::convert::TryInto;
 
@@ -74,7 +74,7 @@ impl<'a> InvokeMethodBuilder<'a> {
             ),
         };
 
-        let request = self.iot_hub_service.prepare_request(&uri, Method::POST);
+        let mut request = self.iot_hub_service.prepare_request(&uri, Method::POST)?;
         let method = InvokeMethodBody {
             connect_timeout_in_seconds: self.connect_time_out,
             method_name: &self.method_name,
@@ -84,11 +84,11 @@ impl<'a> InvokeMethodBuilder<'a> {
 
         let body = azure_core::to_json(&method)?;
 
-        let request = request.body(body)?;
+        request.set_body(body);
 
         self.iot_hub_service
             .http_client()
-            .execute_request_check_status(request, StatusCode::OK)
+            .execute_request_check_status(&request)
             .await?
             .try_into()
     }

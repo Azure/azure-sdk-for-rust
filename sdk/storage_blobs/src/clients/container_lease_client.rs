@@ -1,11 +1,8 @@
 use crate::{container::requests::*, prelude::*};
-use azure_core::{prelude::*, HttpClient};
+use azure_core::{prelude::*, HttpClient, Request};
 use azure_storage::core::prelude::*;
 use bytes::Bytes;
-use http::{
-    method::Method,
-    request::{Builder, Request},
-};
+use http::method::Method;
 use std::sync::Arc;
 
 pub trait AsContainerLeaseClient {
@@ -68,11 +65,10 @@ impl ContainerLeaseClient {
     pub(crate) fn prepare_request(
         &self,
         url: &str,
-        method: &Method,
-        http_header_adder: &dyn Fn(Builder) -> Builder,
+        method: Method,
         request_body: Option<Bytes>,
-    ) -> azure_core::Result<(Request<Bytes>, url::Url)> {
+    ) -> azure_core::Result<Request> {
         self.container_client
-            .prepare_request(url, method, http_header_adder, request_body)
+            .prepare_request(url, method, request_body)
     }
 }

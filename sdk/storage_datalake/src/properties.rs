@@ -1,6 +1,6 @@
 use azure_core::error::{Error, ErrorKind, ResultExt};
+use azure_core::headers::Headers;
 use azure_core::headers::{self, Header, PROPERTIES};
-use http::HeaderMap;
 use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
@@ -49,16 +49,11 @@ impl Header for Properties {
     }
 }
 
-impl TryFrom<&HeaderMap> for Properties {
+impl TryFrom<&Headers> for Properties {
     type Error = crate::Error;
 
-    fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
-        let header_value = headers
-            .get(PROPERTIES)
-            .ok_or_else(|| Error::message(ErrorKind::Other, PROPERTIES.to_owned()))?
-            .to_str()
-            .map_kind(ErrorKind::DataConversion)?;
-
+    fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
+        let header_value = headers.get_as_str_or_err(PROPERTIES)?;
         Properties::try_from(header_value)
     }
 }

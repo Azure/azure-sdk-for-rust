@@ -3,7 +3,7 @@
 use crate::service::{responses::QueryResponse, ServiceClient, API_VERSION};
 use azure_core::prelude::*;
 use azure_core::setters;
-use http::{Method, StatusCode};
+use http::Method;
 use serde::Serialize;
 use std::convert::TryInto;
 
@@ -61,14 +61,14 @@ impl<'a> QueryBuilder<'a> {
         };
         let body = azure_core::to_json(&query_body)?;
 
-        let request = self.service_client.prepare_request(&uri, Method::POST);
-        let request = azure_core::headers::add_optional_header(&self.continuation, request);
-        let request = azure_core::headers::add_mandatory_header(&self.max_item_count, request);
-        let request = request.body(body)?;
+        let mut request = self.service_client.prepare_request(&uri, Method::POST)?;
+        request.add_optional_header(&self.continuation);
+        request.add_mandatory_header(&self.max_item_count);
+        request.set_body(body);
 
         self.service_client
             .http_client()
-            .execute_request_check_status(request, StatusCode::OK)
+            .execute_request_check_status(&request)
             .await?
             .try_into()
     }

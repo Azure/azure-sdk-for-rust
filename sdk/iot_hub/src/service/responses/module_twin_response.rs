@@ -2,7 +2,6 @@ use crate::service::resources::{
     AuthenticationType, ConnectionState, Status, TwinProperties, X509ThumbPrint,
 };
 use azure_core::error::Error;
-use http::Response;
 use serde::Deserialize;
 
 /// The representation of a response for a module twin request.
@@ -37,10 +36,10 @@ pub struct ModuleTwinResponse {
     pub x509_thumbprint: X509ThumbPrint,
 }
 
-impl std::convert::TryFrom<Response<bytes::Bytes>> for ModuleTwinResponse {
+impl std::convert::TryFrom<crate::service::CollectedResponse> for ModuleTwinResponse {
     type Error = Error;
 
-    fn try_from(response: Response<bytes::Bytes>) -> azure_core::Result<Self> {
+    fn try_from(response: crate::service::CollectedResponse) -> azure_core::Result<Self> {
         let body = response.body();
 
         let module_twin_response: ModuleTwinResponse = serde_json::from_slice(body)?;

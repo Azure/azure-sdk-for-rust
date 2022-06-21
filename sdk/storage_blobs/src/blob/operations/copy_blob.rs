@@ -5,17 +5,12 @@ use crate::{
 };
 use azure_core::{
     error::{ErrorKind, ResultExt},
-    headers::{
-        add_mandatory_header, add_optional_header, client_request_id_from_headers_optional,
-        date_from_headers, etag_from_headers, last_modified_from_headers, request_id_from_headers,
-        server_from_headers, version_from_headers, COPY_SOURCE,
-    },
+    headers::*,
     prelude::*,
     RequestId,
 };
 use azure_storage::core::{copy_id_from_headers, CopyId};
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
 use std::convert::{TryFrom, TryInto};
 use url::Url;
 
@@ -77,41 +72,31 @@ impl CopyBlobBuilder {
             let mut url = self.blob_client.url_with_segments(None)?;
 
             self.timeout.append_to_url_query(&mut url);
-
-            trace!("url == {:?}", url);
-
-            let (request, _url) = self.blob_client.prepare_request(
-                url.as_str(),
-                &http::Method::PUT,
-                &|mut request| {
-                    request = request.header(COPY_SOURCE, self.source_url.as_str());
-                    if let Some(metadata) = &self.metadata {
-                        for m in metadata.iter() {
-                            request = add_mandatory_header(&m, request);
-                        }
-                    }
-                    request = add_optional_header(&self.sequence_number_condition, request);
-                    request = add_optional_header(&self.if_modified_since_condition, request);
-                    request = add_optional_header(&self.if_match_condition, request);
-                    request = add_optional_header(&self.access_tier, request);
-                    request = add_optional_header(&self.lease_id, request);
-                    request = add_optional_header(&self.client_request_id, request);
-                    request = add_optional_header(&self.if_source_since_condition, request);
-                    request = add_optional_header(&self.if_source_match_condition, request);
-                    request = add_optional_header(&self.source_lease_id, request);
-                    request = add_mandatory_header(&self.rehydrate_priority, request);
-                    request
-                },
-                None,
-            )?;
+            let mut request =
+                self.blob_client
+                    .prepare_request(url.as_str(), http::Method::PUT, None)?;
+            request.insert_header(COPY_SOURCE, self.source_url.as_str().to_owned());
+            if let Some(metadata) = &self.metadata {
+                for m in metadata.iter() {
+                    request.add_mandatory_header(&m);
+                }
+            }
+            request.add_optional_header(&self.sequence_number_condition);
+            request.add_optional_header(&self.if_modified_since_condition);
+            request.add_optional_header(&self.if_match_condition);
+            request.add_optional_header(&self.access_tier);
+            request.add_optional_header(&self.lease_id);
+            request.add_optional_header(&self.client_request_id);
+            request.add_optional_header(&self.if_source_since_condition);
+            request.add_optional_header(&self.if_source_match_condition);
+            request.add_optional_header(&self.source_lease_id);
+            request.add_mandatory_header(&self.rehydrate_priority);
 
             let response = self
                 .blob_client
                 .http_client()
-                .execute_request_check_status(request, http::StatusCode::ACCEPTED)
+                .execute_request_check_status(&request)
                 .await?;
-
-            debug!("response.headers() == {:#?}", response.headers());
 
             (response.headers()).try_into()
         })
@@ -131,10 +116,10 @@ pub struct CopyBlobResponse {
     pub client_request_id: Option<String>,
 }
 
-impl TryFrom<&HeaderMap> for CopyBlobResponse {
+impl TryFrom<&Headers> for CopyBlobResponse {
     type Error = crate::Error;
 
-    fn try_from(headers: &HeaderMap) -> azure_core::Result<Self> {
+    fn try_from(headers: &Headers) -> azure_core::Result<Self> {
         trace!("CopyBlobResponse headers == {:#?}", headers);
         Ok(Self {
             etag: etag_from_headers(headers)?,

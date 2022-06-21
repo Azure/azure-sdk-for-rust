@@ -1,17 +1,13 @@
 use crate::prelude::*;
 use azure_core::{
     error::{ErrorKind, ResultExt},
-    headers::{
-        add_mandatory_header, add_optional_header, date_from_headers, etag_from_headers,
-        last_modified_from_headers, request_id_from_headers, request_server_encrypted_from_headers,
-    },
+    headers::*,
     prelude::*,
     RequestId,
 };
 use azure_storage::{headers::content_md5_from_headers, ConsistencyMD5};
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
 
 #[derive(Debug, Clone)]
 pub struct PutBlockListBuilder {
@@ -68,8 +64,6 @@ impl PutBlockListBuilder {
             url.query_pairs_mut().append_pair("comp", "blocklist");
             self.timeout.append_to_url_query(&mut url);
 
-            trace!("url == {:?}", url);
-
             let body = self.block_list.to_xml();
             let body_bytes = Bytes::from(body);
 
@@ -77,40 +71,34 @@ impl PutBlockListBuilder {
             // if needed, but i think it's best to calculate it.
             let md5 = {
                 let hash = md5::compute(body_bytes.clone());
-                debug!("md5 hash: {:02X}", hash);
                 base64::encode(hash.0)
             };
 
-            let (request, _url) = self.blob_client.prepare_request(
+            let mut request = self.blob_client.prepare_request(
                 url.as_str(),
-                &http::Method::PUT,
-                &|mut request| {
-                    request = request.header("Content-MD5", &md5);
-                    request = add_optional_header(&self.content_type, request);
-                    request = add_optional_header(&self.content_encoding, request);
-                    request = add_optional_header(&self.content_language, request);
-                    request = add_optional_header(&self.content_disposition, request);
-                    request = add_optional_header(&self.content_md5, request);
-                    if let Some(metadata) = &self.metadata {
-                        for m in metadata.iter() {
-                            request = add_mandatory_header(&m, request);
-                        }
-                    }
-                    request = add_optional_header(&self.access_tier, request);
-                    request = add_optional_header(&self.lease_id, request);
-                    request = add_optional_header(&self.client_request_id, request);
-                    request
-                },
+                http::Method::PUT,
                 Some(body_bytes),
             )?;
+            request.insert_header("Content-MD5", &md5);
+            request.add_optional_header(&self.content_type);
+            request.add_optional_header(&self.content_encoding);
+            request.add_optional_header(&self.content_language);
+            request.add_optional_header(&self.content_disposition);
+            request.add_optional_header(&self.content_md5);
+            if let Some(metadata) = &self.metadata {
+                for m in metadata.iter() {
+                    request.add_mandatory_header(&m);
+                }
+            }
+            request.add_optional_header(&self.access_tier);
+            request.add_optional_header(&self.lease_id);
+            request.add_optional_header(&self.client_request_id);
 
             let response = self
                 .blob_client
                 .http_client()
-                .execute_request_check_status(request, http::StatusCode::CREATED)
+                .execute_request_check_status(&request)
                 .await?;
-
-            debug!("response.headers() == {:#?}", response.headers());
 
             PutBlockListResponse::from_headers(response.headers())
         })
@@ -128,9 +116,7 @@ pub struct PutBlockListResponse {
 }
 
 impl PutBlockListResponse {
-    pub(crate) fn from_headers(headers: &HeaderMap) -> azure_core::Result<PutBlockListResponse> {
-        debug!("headers == {:#?}", headers);
-
+    pub(crate) fn from_headers(headers: &Headers) -> azure_core::Result<PutBlockListResponse> {
         let etag = etag_from_headers(headers)?;
         let last_modified = last_modified_from_headers(headers)?;
         let content_md5 = content_md5_from_headers(headers).map_kind(ErrorKind::DataConversion)?;

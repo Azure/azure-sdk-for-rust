@@ -69,8 +69,8 @@ impl Request {
         result
     }
 
-    pub fn method(&self) -> Method {
-        self.method.clone()
+    pub fn method(&self) -> &Method {
+        &self.method
     }
 
     pub fn insert_headers<T: AsHeaders>(&mut self, headers: &T) {
@@ -117,19 +117,5 @@ impl Request {
 
     pub fn add_mandatory_header<T: crate::Header>(&mut self, item: &T) {
         self.insert_header(item.name(), item.value())
-    }
-}
-
-/// Temporary hack to convert preexisting requests into the new format. It
-/// will be removed as soon as we remove the dependency from `http::Request`.
-impl From<http::Request<bytes::Bytes>> for Request {
-    fn from(request: http::Request<bytes::Bytes>) -> Self {
-        let (parts, body) = request.into_parts();
-        Self {
-            url: Url::parse(&parts.uri.to_string()).unwrap(),
-            method: parts.method,
-            headers: parts.headers.into(),
-            body: Body::Bytes(body),
-        }
     }
 }

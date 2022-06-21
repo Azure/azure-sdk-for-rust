@@ -1,11 +1,8 @@
 use crate::{container::public_access_from_header, prelude::*};
-use azure_core::{
-    headers::{add_optional_header, add_optional_header_ref, AsHeaders},
-    prelude::*,
-};
+use azure_core::{headers::AsHeaders, prelude::*};
 use azure_storage::core::StoredAccessPolicyList;
 use bytes::Bytes;
-use http::{method::Method, status::StatusCode};
+use http::method::Method;
 
 #[derive(Debug, Clone)]
 pub struct SetACLBuilder<'a> {
@@ -46,26 +43,23 @@ impl<'a> SetACLBuilder<'a> {
 
         let xml = self.stored_access_policy_list.map(|xml| xml.to_xml());
 
-        let request = self.container_client.prepare_request(
+        let mut request = self.container_client.prepare_request(
             url.as_str(),
-            &Method::PUT,
-            &|mut request| {
-                for (name, value) in self.public_access.as_headers() {
-                    request = request.header(name.as_str(), value.as_str())
-                }
-                request = add_optional_header(&self.client_request_id, request);
-                request = add_optional_header_ref(&self.lease_id, request);
-                request
-            },
+            Method::PUT,
             xml.map(Bytes::from),
         )?;
+        for (name, value) in self.public_access.as_headers() {
+            request.insert_header(name, value);
+        }
+        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header_ref(&self.lease_id);
 
         let response = self
             .container_client
             .storage_client()
             .storage_account_client()
             .http_client()
-            .execute_request_check_status(request.0, StatusCode::OK)
+            .execute_request_check_status(&request)
             .await?;
 
         public_access_from_header(response.headers())

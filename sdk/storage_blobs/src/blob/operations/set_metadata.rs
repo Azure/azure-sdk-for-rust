@@ -1,14 +1,6 @@
 use crate::prelude::*;
-use azure_core::{
-    headers::{
-        add_mandatory_header, add_optional_header, date_from_headers, etag_from_headers,
-        request_id_from_headers, server_from_headers,
-    },
-    prelude::*,
-    RequestId,
-};
+use azure_core::{headers::*, prelude::*, RequestId};
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
 use std::convert::{TryFrom, TryInto};
 
 #[derive(Debug, Clone)]
@@ -45,30 +37,21 @@ impl SetMetadataBuilder {
             url.query_pairs_mut().append_pair("comp", "metadata");
             self.timeout.append_to_url_query(&mut url);
 
-            trace!("url == {:?}", url);
-
-            let (request, _url) = self.blob_client.prepare_request(
-                url.as_str(),
-                &http::Method::PUT,
-                &|mut request| {
-                    request = add_optional_header(&self.client_request_id, request);
-                    request = add_optional_header(&self.lease_id, request);
-                    if let Some(metadata) = &self.metadata {
-                        for m in metadata.iter() {
-                            request = add_mandatory_header(&m, request);
-                        }
-                    }
-                    request
-                },
-                None,
-            )?;
-
-            info!("request == {:?}", request);
+            let mut request =
+                self.blob_client
+                    .prepare_request(url.as_str(), http::Method::PUT, None)?;
+            request.add_optional_header(&self.client_request_id);
+            request.add_optional_header(&self.lease_id);
+            if let Some(metadata) = &self.metadata {
+                for m in metadata.iter() {
+                    request.add_mandatory_header(&m);
+                }
+            }
 
             let response = self
                 .blob_client
                 .http_client()
-                .execute_request_check_status(request, http::StatusCode::OK)
+                .execute_request_check_status(&request)
                 .await?;
 
             response.headers().try_into()
@@ -84,12 +67,10 @@ pub struct SetMetadataResponse {
     pub date: DateTime<Utc>,
 }
 
-impl TryFrom<&HeaderMap> for SetMetadataResponse {
+impl TryFrom<&Headers> for SetMetadataResponse {
     type Error = crate::Error;
 
-    fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
-        debug!("headers == {:#?}", headers);
-
+    fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
         Ok(SetMetadataResponse {
             request_id: request_id_from_headers(headers)?,
             etag: etag_from_headers(headers)?,

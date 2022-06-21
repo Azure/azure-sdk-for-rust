@@ -2,6 +2,7 @@ use crate::clients::FileSystemClient;
 use crate::util::*;
 use crate::Properties;
 use azure_core::prelude::{ClientRequestId, ContentLength, Timeout};
+use azure_core::Request;
 use azure_core::{
     headers::{etag_from_headers, last_modified_from_headers},
     AppendToUrlQuery, Etag, Response as HttpResponse,
@@ -47,7 +48,7 @@ impl CreateFileSystemBuilder {
             url.query_pairs_mut().append_pair("resource", "filesystem");
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = this.client.prepare_request(url.as_str(), http::Method::PUT);
+            let mut request = Request::new(url, http::Method::PUT);
 
             request.insert_headers(&this.client_request_id);
             request.insert_headers(&this.properties);

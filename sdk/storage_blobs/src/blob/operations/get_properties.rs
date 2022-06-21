@@ -1,11 +1,6 @@
 use crate::{blob::Blob, prelude::*};
-use azure_core::{
-    headers::{add_optional_header, date_from_headers, request_id_from_headers},
-    prelude::*,
-    RequestId,
-};
+use azure_core::{headers::*, prelude::*, RequestId};
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
 
 #[derive(Debug, Clone)]
 pub struct GetBlobPropertiesBuilder {
@@ -41,26 +36,17 @@ impl GetBlobPropertiesBuilder {
             self.timeout.append_to_url_query(&mut url);
             self.blob_versioning.append_to_url_query(&mut url);
 
-            trace!("url == {:?}", url);
-
-            let (request, _url) = self.blob_client.prepare_request(
-                url.as_str(),
-                &http::Method::HEAD,
-                &|mut request| {
-                    request = add_optional_header(&self.lease_id, request);
-                    request = add_optional_header(&self.client_request_id, request);
-                    request
-                },
-                None,
-            )?;
+            let mut request =
+                self.blob_client
+                    .prepare_request(url.as_str(), http::Method::HEAD, None)?;
+            request.add_optional_header(&self.lease_id);
+            request.add_optional_header(&self.client_request_id);
 
             let response = self
                 .blob_client
                 .http_client()
-                .execute_request_check_status(request, http::StatusCode::OK)
+                .execute_request_check_status(&request)
                 .await?;
-
-            debug!("response.headers() == {:#?}", response.headers());
 
             // TODO: Fix this
             //let blob = Blob::from_headers(&blob_name, &container_name, snapshot_time, &headers)?;
@@ -79,7 +65,7 @@ pub struct GetPropertiesResponse {
 
 impl GetPropertiesResponse {
     pub(crate) fn from_response(
-        headers: &HeaderMap,
+        headers: &Headers,
         blob: Blob,
     ) -> azure_core::Result<GetPropertiesResponse> {
         debug!("headers == {:#?}", headers);

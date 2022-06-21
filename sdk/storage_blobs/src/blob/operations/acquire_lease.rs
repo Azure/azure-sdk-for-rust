@@ -1,8 +1,7 @@
 use crate::prelude::*;
 use azure_core::{
     headers::{
-        add_mandatory_header, add_optional_header, add_optional_header_ref, date_from_headers,
-        etag_from_headers, last_modified_from_headers, lease_id_from_headers,
+        date_from_headers, etag_from_headers, last_modified_from_headers, lease_id_from_headers,
         request_id_from_headers, LEASE_ACTION,
     },
     prelude::*,
@@ -46,26 +45,19 @@ impl AcquireLeaseBuilder {
             url.query_pairs_mut().append_pair("comp", "lease");
             self.timeout.append_to_url_query(&mut url);
 
-            trace!("url == {:?}", url);
-
-            let (request, _url) = self.blob_client.prepare_request(
-                url.as_str(),
-                &http::Method::PUT,
-                &|mut request| {
-                    request = request.header(LEASE_ACTION, "acquire");
-                    request = add_mandatory_header(&self.lease_duration, request);
-                    request = add_optional_header_ref(&self.proposed_lease_id.as_ref(), request);
-                    request = add_optional_header(&self.client_request_id, request);
-                    request = add_optional_header_ref(&self.lease_id.as_ref(), request);
-                    request
-                },
-                None,
-            )?;
+            let mut request =
+                self.blob_client
+                    .prepare_request(url.as_str(), http::Method::PUT, None)?;
+            request.insert_header(LEASE_ACTION, "acquire");
+            request.add_mandatory_header(&self.lease_duration);
+            request.add_optional_header(&self.proposed_lease_id);
+            request.add_optional_header(&self.client_request_id);
+            request.add_optional_header(&self.lease_id);
 
             let response = self
                 .blob_client
                 .http_client()
-                .execute_request_check_status(request, http::StatusCode::CREATED)
+                .execute_request_check_status(&request)
                 .await?;
 
             AcquireLeaseResponse::from_headers(response.headers())

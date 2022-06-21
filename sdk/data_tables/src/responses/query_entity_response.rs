@@ -1,8 +1,6 @@
 use crate::ContinuationNextPartitionAndRowKey;
-use azure_core::error::Error;
+use azure_core::{error::Error, CollectedResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
-use bytes::Bytes;
-use http::Response;
 use serde::de::DeserializeOwned;
 use std::convert::{TryFrom, TryInto};
 
@@ -25,13 +23,10 @@ struct QueryEntityResponseInternal<E> {
     pub value: Vec<E>,
 }
 
-impl<E: DeserializeOwned> TryFrom<&Response<Bytes>> for QueryEntityResponse<E> {
+impl<E: DeserializeOwned> TryFrom<CollectedResponse> for QueryEntityResponse<E> {
     type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
-        debug!("{}", std::str::from_utf8(response.body())?);
-        debug!("headers == {:#?}", response.headers());
-
+    fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         let query_entity_response_internal: QueryEntityResponseInternal<E> =
             serde_json::from_slice(response.body())?;
 

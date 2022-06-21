@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::responses::*;
-use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
 
 use std::convert::TryInto;
@@ -39,8 +38,6 @@ impl<'a> PutMessageBuilder<'a> {
         self.ttl.append_to_url_query(&mut url);
         self.timeout.append_to_url_query(&mut url);
 
-        trace!("url == {}", url.as_str());
-
         // since the format is fixed we just decorate the message with the tags.
         // This could be made optional in the future and/or more
         // stringent.
@@ -49,26 +46,20 @@ impl<'a> PutMessageBuilder<'a> {
             body.as_ref()
         );
 
-        debug!("message about to be posted == {}", message);
-
-        let request = self.queue_client.storage_client().prepare_request(
+        let mut request = self.queue_client.storage_client().prepare_request(
             url.as_str(),
-            &http::method::Method::POST,
-            &|mut request| {
-                request = add_optional_header(&self.client_request_id, request);
-                request
-            },
+            http::method::Method::POST,
             Some(message.into()),
         )?;
+        request.add_optional_header(&self.client_request_id);
 
         let response = self
             .queue_client
             .storage_client()
-            .storage_account_client()
             .http_client()
-            .execute_request_check_status(request.0, http::status::StatusCode::CREATED)
+            .execute_request_check_status(&request)
             .await?;
 
-        (&response).try_into()
+        response.try_into()
     }
 }

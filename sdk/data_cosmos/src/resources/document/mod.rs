@@ -11,9 +11,8 @@ pub use query::{Param, Query};
 use super::Resource;
 use crate::headers;
 
-use azure_core::headers::{AsHeaders, HeaderName, HeaderValue};
+use azure_core::headers::{AsHeaders, HeaderName, HeaderValue, Headers};
 use azure_core::Header;
-use http::header::HeaderMap;
 use serde::de::DeserializeOwned;
 
 /// User-defined content in JSON format.
@@ -40,12 +39,12 @@ impl<T> Document<T> {
     }
 }
 
-impl<T> std::convert::TryFrom<(&HeaderMap, &[u8])> for Document<T>
+impl<T> std::convert::TryFrom<(&Headers, &[u8])> for Document<T>
 where
     T: DeserializeOwned,
 {
     type Error = azure_core::error::Error;
-    fn try_from((_, body): (&HeaderMap, &[u8])) -> Result<Self, Self::Error> {
+    fn try_from((_, body): (&Headers, &[u8])) -> Result<Self, Self::Error> {
         use azure_core::error::ResultExt;
         serde_json::from_slice::<Self>(body).with_context(
             azure_core::error::ErrorKind::DataConversion,

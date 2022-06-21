@@ -1,54 +1,23 @@
+use crate::headers::Headers;
 use bytes::Bytes;
 use futures::Stream;
 use futures::StreamExt;
-use http::{HeaderMap, StatusCode};
+use http::StatusCode;
 use std::pin::Pin;
 
-type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send + Sync>>;
-
-#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
-#[cfg(not(target_arch = "wasm32"))]
-pub(crate) struct ResponseBuilder {
-    status: StatusCode,
-    headers: HeaderMap,
-}
-
-#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
-#[cfg(not(target_arch = "wasm32"))]
-impl ResponseBuilder {
-    pub fn new(status: StatusCode) -> Self {
-        Self {
-            status,
-            headers: HeaderMap::new(),
-        }
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn with_header(
-        &mut self,
-        key: &http::header::HeaderName,
-        value: http::HeaderValue,
-    ) -> &mut Self {
-        self.headers.append(key, value);
-        self
-    }
-
-    pub fn with_pinned_stream(self, response: PinnedStream) -> Response {
-        Response::new(self.status, self.headers, response)
-    }
-}
+pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send + Sync>>;
 
 /// An HTTP Response.
 pub struct Response {
     status: StatusCode,
-    headers: HeaderMap,
+    headers: Headers,
     body: PinnedStream,
 }
 
 impl Response {
     #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
     #[cfg(not(target_arch = "wasm32"))]
-    pub(crate) fn new(status: StatusCode, headers: HeaderMap, body: PinnedStream) -> Self {
+    pub(crate) fn new(status: StatusCode, headers: Headers, body: PinnedStream) -> Self {
         Self {
             status,
             headers,
@@ -62,12 +31,12 @@ impl Response {
     }
 
     /// Get the headers from the response.
-    pub fn headers(&self) -> &HeaderMap {
+    pub fn headers(&self) -> &Headers {
         &self.headers
     }
 
     /// Deconstruct the HTTP response into its components.
-    pub fn deconstruct(self) -> (StatusCode, HeaderMap, PinnedStream) {
+    pub fn deconstruct(self) -> (StatusCode, Headers, PinnedStream) {
         (self.status, self.headers, self.body)
     }
 
@@ -106,4 +75,43 @@ pub async fn collect_pinned_stream(mut pinned_stream: PinnedStream) -> crate::er
     }
 
     Ok(final_result.into())
+}
+
+/// A response with the body collected as bytes
+#[derive(Debug, Clone)]
+pub struct CollectedResponse {
+    status: StatusCode,
+    headers: Headers,
+    body: Bytes,
+}
+
+impl CollectedResponse {
+    /// Create a new instance
+    pub fn new(status: StatusCode, headers: Headers, body: Bytes) -> Self {
+        Self {
+            status,
+            headers,
+            body,
+        }
+    }
+
+    /// Get the status
+    pub fn status(&self) -> &StatusCode {
+        &self.status
+    }
+
+    /// Get the headers
+    pub fn headers(&self) -> &Headers {
+        &self.headers
+    }
+
+    /// Get the body
+    pub fn body(&self) -> &Bytes {
+        &self.body
+    }
+
+    /// Into the body
+    pub fn into_body(self) -> Bytes {
+        self.body
+    }
 }

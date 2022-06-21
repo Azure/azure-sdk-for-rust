@@ -1,14 +1,6 @@
 use crate::prelude::*;
-use azure_core::{
-    headers::{
-        add_optional_header, date_from_headers, etag_from_headers, request_id_from_headers,
-        server_from_headers,
-    },
-    prelude::*,
-    RequestId,
-};
+use azure_core::{headers::*, prelude::*, RequestId};
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
 use std::convert::{TryFrom, TryInto};
 
 #[derive(Debug, Clone)]
@@ -46,23 +38,16 @@ impl GetMetadataBuilder {
             self.blob_versioning.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
-            trace!("url == {:?}", url);
-
-            let (request, _url) = self.blob_client.prepare_request(
-                url.as_str(),
-                &http::Method::GET,
-                &|mut request| {
-                    request = add_optional_header(&self.client_request_id, request);
-                    request = add_optional_header(&self.lease_id, request);
-                    request
-                },
-                None,
-            )?;
+            let mut request =
+                self.blob_client
+                    .prepare_request(url.as_str(), http::Method::GET, None)?;
+            request.add_optional_header(&self.client_request_id);
+            request.add_optional_header(&self.lease_id);
 
             let response = self
                 .blob_client
                 .http_client()
-                .execute_request_check_status(request, http::StatusCode::OK)
+                .execute_request_check_status(&request)
                 .await?;
 
             response.headers().try_into()
@@ -79,10 +64,10 @@ pub struct GetMetadataResponse {
     pub metadata: Metadata,
 }
 
-impl TryFrom<&HeaderMap> for GetMetadataResponse {
+impl TryFrom<&Headers> for GetMetadataResponse {
     type Error = crate::Error;
 
-    fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
+    fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
         debug!("headers == {:#?}", headers);
 
         Ok(GetMetadataResponse {

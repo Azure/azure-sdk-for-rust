@@ -1,17 +1,13 @@
 use crate::prelude::*;
 use azure_core::{
     error::{ErrorKind, ResultExt},
-    headers::{
-        add_optional_header, add_optional_header_ref, date_from_headers, request_id_from_headers,
-        request_server_encrypted_from_headers,
-    },
+    headers::*,
     prelude::*,
     RequestId,
 };
 use azure_storage::{headers::consistency_from_headers, ConsistencyCRC64, ConsistencyMD5};
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
 
 #[derive(Debug, Clone)]
 pub struct PutBlockBuilder<'a> {
@@ -57,26 +53,19 @@ impl<'a> PutBlockBuilder<'a> {
             self.block_id.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("comp", "block");
 
-            let (request, _url) = self.blob_client.prepare_request(
+            let mut request = self.blob_client.prepare_request(
                 url.as_str(),
-                &http::Method::PUT,
-                &|mut request| {
-                    request = add_optional_header(&self.client_request_id, request);
-                    request = add_optional_header_ref(&self.lease_id.as_ref(), request);
-                    request
-                },
+                http::Method::PUT,
                 Some(self.body.clone()),
             )?;
-
-            trace!("request.headers() == {:#?}", request.headers());
+            request.add_optional_header(&self.client_request_id);
+            request.add_optional_header(&self.lease_id);
 
             let response = self
                 .blob_client
                 .http_client()
-                .execute_request_check_status(request, http::StatusCode::CREATED)
+                .execute_request_check_status(&request)
                 .await?;
-
-            debug!("response.headers() == {:#?}", response.headers());
 
             PutBlockResponse::from_headers(response.headers())
         })
@@ -93,7 +82,7 @@ pub struct PutBlockResponse {
 }
 
 impl PutBlockResponse {
-    pub(crate) fn from_headers(headers: &HeaderMap) -> azure_core::Result<PutBlockResponse> {
+    pub(crate) fn from_headers(headers: &Headers) -> azure_core::Result<PutBlockResponse> {
         debug!("{:#?}", headers);
 
         let (content_md5, content_crc64) =

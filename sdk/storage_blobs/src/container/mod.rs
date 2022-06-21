@@ -1,6 +1,6 @@
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
-    headers::{self, AsHeaders},
+    headers::{self, AsHeaders, Headers},
 };
 pub mod requests;
 pub mod responses;
@@ -15,7 +15,7 @@ use azure_core::{
 };
 use azure_storage::parsing_xml::{cast_must, cast_optional, traverse};
 use chrono::{DateTime, Utc};
-use http::{header, HeaderMap};
+use http::header;
 use std::{collections::HashMap, str::FromStr};
 use xml::{Element, Xml};
 
@@ -40,12 +40,9 @@ impl AsHeaders for PublicAccess {
     }
 }
 
-pub(crate) fn public_access_from_header(
-    header_map: &HeaderMap,
-) -> azure_core::Result<PublicAccess> {
+pub(crate) fn public_access_from_header(header_map: &Headers) -> azure_core::Result<PublicAccess> {
     let pa = match header_map.get(BLOB_PUBLIC_ACCESS) {
-        Some(pa) => PublicAccess::from_str(pa.to_str().map_kind(ErrorKind::DataConversion)?)
-            .map_kind(ErrorKind::DataConversion)?,
+        Some(pa) => PublicAccess::from_str(pa.as_str()).map_kind(ErrorKind::DataConversion)?,
         None => PublicAccess::None,
     };
     Ok(pa)
@@ -89,97 +86,40 @@ impl Container {
 
     pub(crate) fn from_response<NAME>(
         name: NAME,
-        headers: &HeaderMap,
+        headers: &Headers,
     ) -> azure_core::Result<Container>
     where
         NAME: Into<String>,
     {
-        let last_modified = match headers.get(header::LAST_MODIFIED) {
-            Some(last_modified) => last_modified.to_str().map_kind(ErrorKind::DataConversion)?,
-            None => {
-                static LM: header::HeaderName = header::LAST_MODIFIED;
-                return Err(Error::message(ErrorKind::DataConversion, LM.as_str()));
-            }
-        };
+        let last_modified = headers.get_as_str_or_err(header::LAST_MODIFIED)?;
         let last_modified =
             DateTime::parse_from_rfc2822(last_modified).map_kind(ErrorKind::DataConversion)?;
         let last_modified = DateTime::from_utc(last_modified.naive_utc(), Utc);
 
-        let e_tag = match headers.get(header::ETAG) {
-            Some(e_tag) => e_tag
-                .to_str()
-                .map_kind(ErrorKind::DataConversion)?
-                .to_owned(),
-            None => {
-                return Err(Error::message(
-                    ErrorKind::DataConversion,
-                    header::ETAG.as_str(),
-                ));
-            }
-        };
+        let e_tag = headers.get_as_string_or_err(header::ETAG)?;
 
-        let lease_status = match headers.get(LEASE_STATUS) {
-            Some(lease_status) => lease_status.to_str().map_kind(ErrorKind::DataConversion)?,
-            None => return Err(Error::message(ErrorKind::DataConversion, LEASE_STATUS)),
-        };
+        let lease_status = headers.get_as_str_or_err(LEASE_STATUS)?;
         let lease_status =
             LeaseStatus::from_str(lease_status).map_kind(ErrorKind::DataConversion)?;
 
-        let lease_state = match headers.get(LEASE_STATE) {
-            Some(lease_state) => lease_state.to_str().map_kind(ErrorKind::DataConversion)?,
-            None => return Err(Error::message(ErrorKind::DataConversion, LEASE_STATE)),
-        };
+        let lease_state = headers.get_as_str_or_err(LEASE_STATE)?;
         let lease_state = LeaseState::from_str(lease_state).map_kind(ErrorKind::DataConversion)?;
 
-        let lease_duration = match headers.get(LEASE_DURATION) {
-            Some(lease_duration) => Some(
-                LeaseDuration::from_str(
-                    lease_duration
-                        .to_str()
-                        .map_kind(ErrorKind::DataConversion)?,
-                )
-                .map_kind(ErrorKind::DataConversion)?,
-            ),
-            None => None,
-        };
+        let lease_duration = headers.get_as_enum(LEASE_DURATION)?;
 
         let public_access = public_access_from_header(headers)?;
 
-        let has_immutability_policy = match headers.get(HAS_IMMUTABILITY_POLICY) {
-            Some(has_immutability_policy) => bool::from_str(
-                has_immutability_policy
-                    .to_str()
-                    .map_kind(ErrorKind::DataConversion)?,
-            )
-            .map_kind(ErrorKind::DataConversion)?,
-            None => {
-                return Err(Error::message(
-                    ErrorKind::DataConversion,
-                    HAS_IMMUTABILITY_POLICY,
-                ))
-            }
-        };
+        let has_immutability_policy =
+            bool::from_str(headers.get_as_str_or_err(HAS_IMMUTABILITY_POLICY)?)
+                .map_kind(ErrorKind::DataConversion)?;
 
-        let has_legal_hold = match headers.get(HAS_LEGAL_HOLD) {
-            Some(has_legal_hold) => bool::from_str(
-                has_legal_hold
-                    .to_str()
-                    .map_kind(ErrorKind::DataConversion)?,
-            )
-            .map_kind(ErrorKind::DataConversion)?,
-            None => return Err(Error::message(ErrorKind::DataConversion, HAS_LEGAL_HOLD)),
-        };
+        let has_legal_hold = bool::from_str(headers.get_as_str_or_err(HAS_LEGAL_HOLD)?)
+            .map_kind(ErrorKind::DataConversion)?;
 
         let mut metadata: HashMap<String, String> = HashMap::new();
-        for (key, value) in headers {
+        for (key, value) in headers.iter() {
             if key.as_str().starts_with(META_PREFIX) {
-                metadata.insert(
-                    key.as_str().to_owned(),
-                    value
-                        .to_str()
-                        .map_kind(ErrorKind::DataConversion)?
-                        .to_owned(),
-                );
+                metadata.insert(key.as_str().to_owned(), value.as_str().to_owned());
             }
         }
 

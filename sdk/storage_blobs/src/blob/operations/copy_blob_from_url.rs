@@ -5,9 +5,8 @@ use crate::{
 use azure_core::{
     error::{ErrorKind, ResultExt},
     headers::{
-        add_mandatory_header, add_optional_header, date_from_headers, etag_from_headers,
-        last_modified_from_headers, request_id_from_headers, server_from_headers,
-        version_from_headers, COPY_SOURCE, REQUIRES_SYNC,
+        date_from_headers, etag_from_headers, last_modified_from_headers, request_id_from_headers,
+        server_from_headers, version_from_headers, Headers, *,
     },
     prelude::*,
     RequestId,
@@ -18,7 +17,6 @@ use azure_storage::{
     ConsistencyMD5,
 };
 use chrono::{DateTime, Utc};
-use http::HeaderMap;
 use std::convert::{TryFrom, TryInto};
 use url::Url;
 
@@ -76,33 +74,28 @@ impl CopyBlobFromUrlBuilder {
 
             trace!("url == {:?}", url);
 
-            let (request, _url) = self.blob_client.prepare_request(
-                url.as_str(),
-                &http::Method::PUT,
-                &|mut request| {
-                    request = request.header(COPY_SOURCE, self.source_url.as_str());
-                    request = request.header(REQUIRES_SYNC, format!("{}", self.is_synchronous));
-                    if let Some(metadata) = &self.metadata {
-                        for m in metadata.iter() {
-                            request = add_mandatory_header(&m, request);
-                        }
-                    }
-                    request = add_optional_header(&self.if_modified_since_condition, request);
-                    request = add_optional_header(&self.if_match_condition, request);
-                    request = add_optional_header(&self.lease_id, request);
-                    request = add_optional_header(&self.client_request_id, request);
-                    request = add_optional_header(&self.if_source_since_condition, request);
-                    request = add_optional_header(&self.if_source_match_condition, request);
-                    request = add_optional_header(&self.source_content_md5, request);
-                    request
-                },
-                None,
-            )?;
+            let mut request =
+                self.blob_client
+                    .prepare_request(url.as_str(), http::Method::PUT, None)?;
+            request.insert_header(COPY_SOURCE, self.source_url.to_string());
+            request.insert_header(REQUIRES_SYNC, format!("{}", self.is_synchronous));
+            if let Some(metadata) = &self.metadata {
+                for m in metadata.iter() {
+                    request.add_mandatory_header(&m);
+                }
+            }
+            request.add_optional_header(&self.if_modified_since_condition);
+            request.add_optional_header(&self.if_match_condition);
+            request.add_optional_header(&self.lease_id);
+            request.add_optional_header(&self.client_request_id);
+            request.add_optional_header(&self.if_source_since_condition);
+            request.add_optional_header(&self.if_source_match_condition);
+            request.add_optional_header(&self.source_content_md5);
 
             let response = self
                 .blob_client
                 .http_client()
-                .execute_request_check_status(request, http::StatusCode::ACCEPTED)
+                .execute_request_check_status(&request)
                 .await?;
 
             debug!("response.headers() == {:#?}", response.headers());
@@ -125,10 +118,9 @@ pub struct CopyBlobFromUrlResponse {
     pub date: DateTime<Utc>,
 }
 
-impl TryFrom<&HeaderMap> for CopyBlobFromUrlResponse {
+impl TryFrom<&Headers> for CopyBlobFromUrlResponse {
     type Error = crate::Error;
-    fn try_from(headers: &HeaderMap) -> azure_core::Result<Self> {
-        debug!("headers == {:#?}", headers);
+    fn try_from(headers: &Headers) -> azure_core::Result<Self> {
         Ok(Self {
             content_md5: content_md5_from_headers_optional(headers)
                 .map_kind(ErrorKind::DataConversion)?,

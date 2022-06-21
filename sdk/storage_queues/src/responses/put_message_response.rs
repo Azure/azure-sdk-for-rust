@@ -1,10 +1,9 @@
 use azure_core::error::{Error, ErrorKind, ResultExt};
 use azure_core::headers::utc_date_from_rfc2822;
+use azure_core::CollectedResponse;
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use azure_storage::xml::read_xml;
-use bytes::Bytes;
 use chrono::{DateTime, Utc};
-use http::response::Response;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -42,14 +41,12 @@ struct QueueMessageInternal {
     pub time_next_visible: String,
 }
 
-impl std::convert::TryFrom<&Response<Bytes>> for PutMessageResponse {
+impl std::convert::TryFrom<CollectedResponse> for PutMessageResponse {
     type Error = Error;
-    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
+    fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         let headers = response.headers();
         let body = response.body();
 
-        debug!("headers == {:?}", headers);
-        debug!("body == {:#?}", body);
         let response: PutMessageResponseInternal =
             read_xml(body).map_kind(ErrorKind::DataConversion)?;
         let queue_message = response.queue_message;

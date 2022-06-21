@@ -3,6 +3,7 @@ use crate::request_options::*;
 use crate::Properties;
 use azure_core::headers::{etag_from_headers, last_modified_from_headers};
 use azure_core::prelude::*;
+use azure_core::Request;
 use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use chrono::{DateTime, Utc};
@@ -71,7 +72,7 @@ impl<C: PathClient + 'static> PutPathBuilder<C> {
             self.mode.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = this.client.prepare_request(url.as_str(), http::Method::PUT);
+            let mut request = Request::new(url, http::Method::PUT);
 
             request.insert_headers(&this.client_request_id);
             request.insert_headers(&this.properties);
@@ -148,7 +149,7 @@ impl<C: PathClient + 'static> RenamePathBuilder<C> {
             self.mode.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = this.client.prepare_request(url.as_str(), http::Method::PUT);
+            let mut request = Request::new(url, http::Method::PUT);
 
             request.insert_headers(&this.client_request_id);
             request.insert_headers(&this.properties);

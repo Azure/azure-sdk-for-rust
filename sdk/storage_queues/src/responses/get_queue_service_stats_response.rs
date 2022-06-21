@@ -1,9 +1,10 @@
-use azure_core::error::{Error, ErrorKind, ResultExt};
+use azure_core::{
+    error::{Error, ErrorKind, ResultExt},
+    CollectedResponse,
+};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use azure_storage::core::xml::read_xml;
-use bytes::Bytes;
 use chrono::{DateTime, Utc};
-use http::response::Response;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -34,10 +35,10 @@ struct GeoReplication {
     pub last_sync_time: Option<String>,
 }
 
-impl std::convert::TryFrom<&Response<Bytes>> for GetQueueServiceStatsResponse {
+impl std::convert::TryFrom<CollectedResponse> for GetQueueServiceStatsResponse {
     type Error = Error;
 
-    fn try_from(response: &Response<Bytes>) -> azure_core::Result<Self> {
+    fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         let headers = response.headers();
         let body = response.body();
 

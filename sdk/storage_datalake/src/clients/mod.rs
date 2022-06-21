@@ -12,7 +12,6 @@ pub use file_system_client::FileSystemClient;
 
 pub trait PathClient: Debug + Clone + Send + Sync {
     fn url(&self) -> azure_core::Result<url::Url>;
-    fn prepare_request(&self, uri: &str, http_method: http::Method) -> azure_core::Request;
     fn pipeline(&self) -> &azure_core::Pipeline;
     fn context(&self) -> &azure_core::Context;
 }

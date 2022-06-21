@@ -120,7 +120,7 @@ impl TokenCredential for ImdsManagedIdentityCredential {
             req.headers_mut().insert("X-IDENTITY-HEADER", val);
         };
 
-        let rsp = self.http_client.execute_request2(&req).await?;
+        let rsp = self.http_client.execute_request(&req).await?;
         let rsp_status = rsp.status();
         let rsp_body = rsp.into_body().await;
 

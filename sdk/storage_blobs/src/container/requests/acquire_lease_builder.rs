@@ -1,9 +1,6 @@
 use crate::{container::responses::AcquireLeaseResponse, prelude::*};
-use azure_core::{
-    headers::{add_mandatory_header, add_optional_header, add_optional_header_ref, LEASE_ACTION},
-    prelude::*,
-};
-use http::{method::Method, status::StatusCode};
+use azure_core::{headers::LEASE_ACTION, prelude::*};
+use http::method::Method;
 
 #[derive(Debug, Clone)]
 pub struct AcquireLeaseBuilder<'a> {
@@ -45,26 +42,21 @@ impl<'a> AcquireLeaseBuilder<'a> {
 
         self.timeout.append_to_url_query(&mut url);
 
-        let request = self.container_client.prepare_request(
-            url.as_str(),
-            &Method::PUT,
-            &|mut request| {
-                request = request.header(LEASE_ACTION, "acquire");
-                request = add_mandatory_header(&self.lease_duration, request);
-                request = add_optional_header(&self.client_request_id, request);
-                request = add_optional_header_ref(&self.lease_id, request);
-                request = add_optional_header_ref(&self.proposed_lease_id, request);
-                request
-            },
-            None,
-        )?;
+        let mut request = self
+            .container_client
+            .prepare_request(url.as_str(), Method::PUT, None)?;
+        request.insert_header(LEASE_ACTION, "acquire");
+        request.add_mandatory_header(&self.lease_duration);
+        request.add_optional_header(&self.client_request_id);
+        request.add_optional_header_ref(&self.lease_id);
+        request.add_optional_header_ref(&self.proposed_lease_id);
 
         let response = self
             .container_client
             .storage_client()
             .storage_account_client()
             .http_client()
-            .execute_request_check_status(request.0, StatusCode::CREATED)
+            .execute_request_check_status(&request)
             .await?;
 
         AcquireLeaseResponse::from_headers(response.headers())

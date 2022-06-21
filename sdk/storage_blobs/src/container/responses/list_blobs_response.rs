@@ -1,12 +1,11 @@
 use crate::blob::Blob;
 use azure_core::{
-    error::{ErrorKind, ResultExt},
+    error::{Error, ErrorKind, ResultExt},
     headers::{date_from_headers, request_id_from_headers},
     prelude::NextMarker,
-    RequestId,
+    CollectedResponse, RequestId,
 };
 use azure_storage::xml::read_xml;
-use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use std::convert::TryFrom;
 
@@ -45,13 +44,12 @@ pub struct BlobPrefix {
     pub name: String,
 }
 
-impl TryFrom<&http::Response<Bytes>> for ListBlobsResponse {
-    type Error = crate::Error;
+impl TryFrom<CollectedResponse> for ListBlobsResponse {
+    type Error = Error;
 
-    fn try_from(response: &http::Response<Bytes>) -> azure_core::Result<Self> {
+    fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         let body = response.body();
 
-        trace!("body == {:?}", body);
         let list_blobs_response_internal: ListBlobsResponseInternal =
             read_xml(body).map_kind(ErrorKind::DataConversion)?;
 
@@ -71,6 +69,8 @@ impl TryFrom<&http::Response<Bytes>> for ListBlobsResponse {
 
 #[cfg(test)]
 mod tests {
+    use bytes::Bytes;
+
     use super::*;
 
     #[test]

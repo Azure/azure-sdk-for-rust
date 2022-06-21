@@ -38,23 +38,18 @@ impl BreakLeaseBuilder {
 
             trace!("url == {:?}", url);
 
-            let (request, _url) = self.blob_client.prepare_request(
-                url.as_str(),
-                &http::Method::PUT,
-                &|mut request| {
-                    request = request.header(LEASE_ACTION, "break");
-                    request = add_optional_header(&self.lease_break_period, request);
-                    request = add_optional_header_ref(&self.lease_id.as_ref(), request);
-                    request = add_optional_header(&self.client_request_id, request);
-                    request
-                },
-                None,
-            )?;
+            let mut request =
+                self.blob_client
+                    .prepare_request(url.as_str(), http::Method::PUT, None)?;
+            request.insert_header(LEASE_ACTION, "break");
+            request.add_optional_header(&self.lease_break_period);
+            request.add_optional_header(&self.lease_id);
+            request.add_optional_header(&self.client_request_id);
 
             let response = self
                 .blob_client
                 .http_client()
-                .execute_request_check_status(request, http::StatusCode::ACCEPTED)
+                .execute_request_check_status(&request)
                 .await?;
 
             BreakLeaseResponse::from_headers(response.headers())

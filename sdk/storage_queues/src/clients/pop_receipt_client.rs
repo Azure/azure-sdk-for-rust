@@ -1,7 +1,5 @@
 use crate::prelude::*;
 use crate::requests::*;
-use azure_core::HttpClient;
-
 use azure_storage::core::clients::StorageClient;
 use std::sync::Arc;
 
@@ -43,13 +41,6 @@ impl PopReceiptClient {
 
     pub(crate) fn storage_client(&self) -> &StorageClient {
         self.queue_client.storage_client()
-    }
-
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.queue_client
-            .storage_client()
-            .storage_account_client()
-            .http_client()
     }
 
     pub(crate) fn pop_receipt_url(&self) -> azure_core::Result<url::Url> {
