@@ -7,11 +7,15 @@ impl ContentLanguage {
     pub fn as_str(&self) -> &str {
         self.0.as_ref()
     }
+
+    const fn from_static(s:&'static str) -> Self {
+        Self(std::borrow::Cow::Borrowed(s))
+    }
 }
 
 impl From<&'static str> for ContentLanguage {
     fn from(s: &'static str) -> Self {
-        Self(std::borrow::Cow::Borrowed(s))
+        Self::from_static(s)
     }
 }
 
