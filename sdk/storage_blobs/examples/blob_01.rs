@@ -23,16 +23,6 @@ async fn main() -> azure_core::Result<()> {
     let container_client = storage_client.as_container_client(&container_name);
     let blob_client = container_client.as_blob_client("SorgeniaReorganizeRebuildIndexes.zip");
 
-    let _res = container_client
-        .list_blobs()
-        .include_copy(true)
-        .include_deleted(true)
-        .include_metadata(true)
-        .include_snapshots(true)
-        .include_uncommitted_blobs(true)
-        .execute()
-        .await?;
-
     // only get the first 8k chunk
     let result = Box::pin(blob_client.get().stream(1024 * 8))
         .next()

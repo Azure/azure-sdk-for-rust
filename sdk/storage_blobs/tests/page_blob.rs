@@ -29,7 +29,7 @@ async fn put_page_blob() {
         container
             .create()
             .public_access(PublicAccess::None)
-            .execute()
+            .into_future()
             .await
             .unwrap();
     }
@@ -41,7 +41,7 @@ async fn put_page_blob() {
     blob.put_page_blob(1024 * 64)
         .content_type("text/plain")
         .metadata(&metadata)
-        .execute()
+        .into_future()
         .await
         .unwrap();
 

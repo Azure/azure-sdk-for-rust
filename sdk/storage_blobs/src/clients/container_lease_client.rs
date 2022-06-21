@@ -1,4 +1,4 @@
-use crate::{container::requests::*, prelude::*};
+use crate::{container::operations::*, prelude::*};
 use azure_core::{prelude::*, HttpClient, Request};
 use azure_storage::core::prelude::*;
 use bytes::Bytes;
@@ -55,11 +55,11 @@ impl ContainerLeaseClient {
     }
 
     pub fn release(&self) -> ReleaseLeaseBuilder {
-        ReleaseLeaseBuilder::new(self)
+        ReleaseLeaseBuilder::new(self.clone())
     }
 
     pub fn renew(&self) -> RenewLeaseBuilder {
-        RenewLeaseBuilder::new(self)
+        RenewLeaseBuilder::new(self.clone())
     }
 
     pub(crate) fn prepare_request(

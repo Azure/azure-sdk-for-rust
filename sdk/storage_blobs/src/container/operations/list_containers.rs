@@ -1,7 +1,6 @@
-use crate::container::{
-    incomplete_vector_from_container_response, responses::ListContainersResponse,
-};
-use azure_core::{headers::request_id_from_headers, prelude::*};
+use super::super::IncompleteVector;
+use crate::container::{incomplete_vector_from_container_response, Container};
+use azure_core::{headers::request_id_from_headers, prelude::*, RequestId};
 use azure_storage::core::prelude::*;
 use futures::stream::{unfold, Stream};
 use http::method::Method;
@@ -42,7 +41,7 @@ impl<'a> ListContainersBuilder<'a> {
         timeout: Timeout => Some(timeout),
     }
 
-    pub async fn execute(&self) -> azure_core::Result<ListContainersResponse> {
+    async fn execute(&self) -> azure_core::Result<ListContainersResponse> {
         let mut url = self
             .storage_client
             .storage_account_client()
@@ -126,5 +125,17 @@ impl<'a> ListContainersBuilder<'a> {
                 Some((Ok(response), next_marker))
             }
         })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ListContainersResponse {
+    pub incomplete_vector: IncompleteVector<Container>,
+    pub request_id: RequestId,
+}
+
+impl ListContainersResponse {
+    pub fn is_complete(&self) -> bool {
+        self.incomplete_vector.is_complete()
     }
 }

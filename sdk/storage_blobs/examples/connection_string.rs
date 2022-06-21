@@ -20,14 +20,14 @@ async fn main() -> azure_core::Result<()> {
     let container_client = storage_client.as_container_client(&container_name);
     let blob_service = storage_client.as_blob_service_client();
 
-    let iv = blob_service.list_containers().execute().await?;
-
-    if iv
-        .incomplete_vector
-        .iter()
-        .any(|item| item.name == container_name)
-    {
-        panic!("The specified container must not exists!");
+    let mut stream = Box::pin(blob_service.list_containers().stream());
+    while let Some(result) = stream.next().await {
+        let container = result?;
+        for container in container.incomplete_vector.as_ref() {
+            if container.name == container_name {
+                panic!("The specified container must not exists!");
+            }
+        }
     }
 
     // create the container
@@ -35,7 +35,7 @@ async fn main() -> azure_core::Result<()> {
         .create()
         .public_access(PublicAccess::None)
         .timeout(Duration::from_secs(100))
-        .execute()
+        .into_future()
         .await?;
     println!("Container {} created", container_name);
 
@@ -51,16 +51,6 @@ async fn main() -> azure_core::Result<()> {
     }
 
     let max_results = NonZeroU32::new(3).unwrap();
-    let iv = container_client
-        .list_blobs()
-        .max_results(max_results)
-        .execute()
-        .await?;
-
-    println!("List blob returned {} blobs.", iv.blobs.blobs.len());
-    for cont in iv.blobs.blobs.iter() {
-        println!("\t{}\t{} bytes", cont.name, cont.properties.content_length);
-    }
 
     let mut stream = Box::pin(
         container_client
@@ -81,7 +71,7 @@ async fn main() -> azure_core::Result<()> {
         cnt += 1;
     }
 
-    container_client.delete().execute().await?;
+    container_client.delete().into_future().await?;
     println!("Container {} deleted", container_name);
 
     Ok(())

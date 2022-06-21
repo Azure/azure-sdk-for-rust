@@ -41,18 +41,18 @@ async fn break_lease() {
     container
         .create()
         .public_access(PublicAccess::None)
-        .execute()
+        .into_future()
         .await
         .unwrap();
 
     let res = container
         .acquire_lease(Duration::from_secs(30))
-        .execute()
+        .into_future()
         .await
         .unwrap();
 
     let lease = container.as_container_lease_client(res.lease_id);
-    lease.renew().execute().await.unwrap();
+    lease.renew().into_future().await.unwrap();
 
     let res = container
         .break_lease()
@@ -62,7 +62,7 @@ async fn break_lease() {
         .unwrap();
     assert!(res.lease_time == 0);
 
-    container.delete().execute().await.unwrap();
+    container.delete().into_future().await.unwrap();
 }
 
 fn initialize() -> Arc<StorageAccountClient> {

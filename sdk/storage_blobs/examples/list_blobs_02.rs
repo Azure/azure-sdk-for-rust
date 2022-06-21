@@ -1,5 +1,6 @@
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
+use futures::StreamExt;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -32,10 +33,13 @@ async fn create_container_and_list(
 ) -> azure_core::Result<()> {
     let container_client = storage_client.as_container_client(container_name);
 
-    container_client.create().execute().await?;
+    container_client.create().into_future().await?;
 
     // list empty container
-    let iv = container_client.list_blobs().execute().await?;
+    let iv = Box::pin(container_client.list_blobs().stream())
+        .next()
+        .await
+        .expect("stream failed")?;
     println!("List blob returned {} blobs.", iv.blobs.blobs.len());
 
     for i in 0..3 {
@@ -49,10 +53,13 @@ async fn create_container_and_list(
     }
 
     // list full container
-    let iv = container_client.list_blobs().execute().await?;
+    let iv = Box::pin(container_client.list_blobs().stream())
+        .next()
+        .await
+        .expect("stream failed")?;
     println!("List blob returned {} blobs.", iv.blobs.blobs.len());
 
-    container_client.delete().execute().await?;
+    container_client.delete().into_future().await?;
     println!("Container {} deleted", container_name);
 
     Ok(())

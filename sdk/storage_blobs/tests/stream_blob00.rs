@@ -42,7 +42,7 @@ async fn code() -> azure_core::Result<()> {
         container
             .create()
             .public_access(PublicAccess::None)
-            .execute()
+            .into_future()
             .await?;
     }
 
@@ -50,7 +50,7 @@ async fn code() -> azure_core::Result<()> {
 
     blob.put_block_blob(string)
         .content_type("text/plain")
-        .execute()
+        .into_future()
         .await?;
 
     println!("{}/{} blob created!", container_name, file_name);
@@ -101,7 +101,7 @@ async fn code() -> azure_core::Result<()> {
 
     blob.delete()
         .delete_snapshots_method(DeleteSnapshotsMethod::Include)
-        .execute()
+        .into_future()
         .await?;
 
     println!("{}/{} blob deleted!", container_name, file_name);

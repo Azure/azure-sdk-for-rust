@@ -1,15 +1,72 @@
-use crate::container::{public_access_from_header, PublicAccess};
+use crate::{
+    container::{public_access_from_header, PublicAccess},
+    prelude::*,
+};
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     headers::{Headers, REQUEST_ID},
+    prelude::*,
     RequestId,
 };
 use azure_storage::core::StoredAccessPolicyList;
 use bytes::Bytes;
 use chrono::{DateTime, FixedOffset};
-use http::header;
-use std::convert::TryFrom;
+use http::{header, method::Method};
+use std::convert::{TryFrom, TryInto};
 use uuid::Uuid;
+
+#[derive(Debug, Clone)]
+pub struct GetACLBuilder {
+    container_client: ContainerClient,
+    client_request_id: Option<ClientRequestId>,
+    timeout: Option<Timeout>,
+    lease_id: Option<LeaseId>,
+}
+
+impl GetACLBuilder {
+    pub(crate) fn new(container_client: ContainerClient) -> Self {
+        Self {
+            container_client,
+            client_request_id: None,
+            timeout: None,
+            lease_id: None,
+        }
+    }
+
+    setters! {
+        client_request_id: ClientRequestId => Some(client_request_id),
+        timeout: Timeout => Some(timeout),
+        lease_id: LeaseId => Some(lease_id),
+    }
+
+    pub fn into_future(self) -> Response {
+        Box::pin(async move {
+            let mut url = self.container_client.url_with_segments(None)?;
+
+            url.query_pairs_mut().append_pair("restype", "container");
+            url.query_pairs_mut().append_pair("comp", "acl");
+
+            self.timeout.append_to_url_query(&mut url);
+
+            let mut request =
+                self.container_client
+                    .prepare_request(url.as_str(), Method::GET, None)?;
+            request.add_optional_header(&self.client_request_id);
+            request.add_optional_header(&self.lease_id);
+
+            let response = self
+                .container_client
+                .storage_client()
+                .storage_account_client()
+                .http_client()
+                .execute_request_check_status(&request)
+                .await?;
+
+            // todo: parse SAS policies
+            (response.body(), response.headers()).try_into()
+        })
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct GetACLResponse {
@@ -82,3 +139,5 @@ impl GetACLResponse {
         })
     }
 }
+
+pub type Response = futures::future::BoxFuture<'static, azure_core::Result<GetACLResponse>>;

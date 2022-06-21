@@ -1,5 +1,6 @@
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
+use futures::StreamExt;
 use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
@@ -23,14 +24,22 @@ async fn main() -> azure_core::Result<()> {
             .as_storage_client();
     let blob_service_client = storage_client.as_blob_service_client();
 
-    let response = storage_client
-        .as_container_client("azuresdkforrust")
-        .list_blobs()
-        .execute()
-        .await?;
+    let response = Box::pin(
+        storage_client
+            .as_container_client("azuresdkforrust")
+            .list_blobs()
+            .stream(),
+    )
+    .next()
+    .await
+    .expect("stream failed")?;
+
     println!("key response = {:#?}", response);
 
-    let response = blob_service_client.list_containers().execute().await?;
+    let response = Box::pin(blob_service_client.list_containers().stream())
+        .next()
+        .await
+        .expect("stream failed")?;
     println!("key response = {:#?}", response);
 
     // let's test a SAS token
@@ -40,7 +49,10 @@ async fn main() -> azure_core::Result<()> {
     let blob_service_client =
         StorageAccountClient::new_sas_token(http_client.clone(), &account, sas_token)?
             .as_blob_service_client();
-    let response = blob_service_client.list_containers().execute().await?;
+    let response = Box::pin(blob_service_client.list_containers().stream())
+        .next()
+        .await
+        .expect("stream failed")?;
     println!("sas response = {:#?}", response);
 
     Ok(())

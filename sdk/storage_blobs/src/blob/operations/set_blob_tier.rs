@@ -1,9 +1,5 @@
 use crate::prelude::*;
-use azure_core::{
-    headers::*,
-    prelude::*,
-    RequestId,
-};
+use azure_core::{headers::*, prelude::*, RequestId};
 use std::convert::{TryFrom, TryInto};
 
 #[derive(Debug, Clone)]

@@ -300,7 +300,7 @@ mod integration_tests {
 
         container_client
             .create()
-            .execute()
+            .into_future()
             .await
             .expect("create container should succeed");
 
@@ -308,13 +308,13 @@ mod integration_tests {
         container_client
             .as_blob_client("hello.txt")
             .put_block_blob("world")
-            .execute()
+            .into_future()
             .await
             .expect("put block blob should succeed");
         let properties = container_client
             .as_blob_client("hello.txt")
             .get_properties()
-            .execute()
+            .into_future()
             .await
             .expect("get properties should succeed");
         assert_eq!(properties.blob.name, "hello.txt");
@@ -330,7 +330,7 @@ mod integration_tests {
 
         container_client
             .delete()
-            .execute()
+            .into_future()
             .await
             .expect("delete container should succeed");
     }

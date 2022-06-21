@@ -37,7 +37,7 @@ async fn stream_list_blobs() {
         .create()
         .public_access(PublicAccess::None)
         .timeout(Duration::from_secs(100))
-        .execute()
+        .into_future()
         .await
         .unwrap();
 
@@ -47,7 +47,7 @@ async fn stream_list_blobs() {
             .as_blob_client(format!("blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .execute()
+            .into_future()
             .await
             .unwrap();
     }
@@ -71,5 +71,5 @@ async fn stream_list_blobs() {
         cnt += 1;
     }
 
-    container.delete().execute().await.unwrap();
+    container.delete().into_future().await.unwrap();
 }

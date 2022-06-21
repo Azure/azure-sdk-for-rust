@@ -2,8 +2,7 @@ use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     headers::{self, AsHeaders, Headers},
 };
-pub mod requests;
-pub mod responses;
+pub mod operations;
 
 use super::IncompleteVector;
 use azure_core::{

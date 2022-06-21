@@ -1,6 +1,7 @@
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use bytes::Bytes;
+use futures::StreamExt;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -25,7 +26,7 @@ async fn main() -> azure_core::Result<()> {
     let res = container_client
         .create()
         .public_access(PublicAccess::None)
-        .execute()
+        .into_future()
         .await?;
     println!("{:?}", res);
 
@@ -62,11 +63,16 @@ async fn main() -> azure_core::Result<()> {
         .await?;
     println!("{:?}", res);
 
-    let res = container_client
-        .list_blobs()
-        .include_metadata(true)
-        .execute()
-        .await?;
+    // only get the first set of blobs in the list
+    let res = Box::pin(
+        container_client
+            .list_blobs()
+            .include_metadata(true)
+            .stream(),
+    )
+    .next()
+    .await
+    .expect("stream failed")?;
     println!("{:?}", res);
 
     Ok(())

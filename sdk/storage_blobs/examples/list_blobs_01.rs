@@ -1,6 +1,6 @@
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
-use futures::stream::StreamExt;
+use futures::StreamExt;
 use std::{num::NonZeroU32, time::Duration};
 
 #[tokio::main]
@@ -22,7 +22,10 @@ async fn main() -> azure_core::Result<()> {
     let blob_service_client = storage_client.as_blob_service_client();
     let container_client = storage_client.as_container_client(&container_name);
 
-    let iv = blob_service_client.list_containers().execute().await?;
+    let iv = Box::pin(blob_service_client.list_containers().stream())
+        .next()
+        .await
+        .expect("stream failed")?;
 
     if iv
         .incomplete_vector
@@ -37,18 +40,22 @@ async fn main() -> azure_core::Result<()> {
         .create()
         .public_access(PublicAccess::None)
         .timeout(Duration::from_secs(100))
-        .execute()
+        .into_future()
         .await?;
     println!("Container {} created", container_name);
 
     println!("Checking that container is empty");
 
-    let iv = container_client
-        .list_blobs()
-        .max_results(NonZeroU32::new(100u32).unwrap())
-        .delimiter("/")
-        .execute()
-        .await?;
+    let iv = Box::pin(
+        container_client
+            .list_blobs()
+            .max_results(NonZeroU32::new(100u32).unwrap())
+            .delimiter("/")
+            .stream(),
+    )
+    .next()
+    .await
+    .expect("stream failed")?;
 
     assert!(iv.blobs.blobs.is_empty());
 
@@ -117,12 +124,16 @@ async fn main() -> azure_core::Result<()> {
             .await?;
     }
 
-    let iv = container_client
-        .list_blobs()
-        .max_results(NonZeroU32::new(100u32).unwrap())
-        .delimiter("/")
-        .execute()
-        .await?;
+    let iv = Box::pin(
+        container_client
+            .list_blobs()
+            .max_results(NonZeroU32::new(100u32).unwrap())
+            .delimiter("/")
+            .stream(),
+    )
+    .next()
+    .await
+    .expect("stream failed")?;
 
     println!(
         "List blob / returned {} blobs with blob_prefix == {:?}",
@@ -132,13 +143,17 @@ async fn main() -> azure_core::Result<()> {
     iv.blobs.blobs.iter().for_each(|b| println!("\t{}", b.name));
     assert_eq!(iv.blobs.blobs.len(), 4);
 
-    let iv = container_client
-        .list_blobs()
-        .max_results(NonZeroU32::new(100u32).unwrap())
-        .prefix("firstfolder/")
-        .delimiter("/")
-        .execute()
-        .await?;
+    let iv = Box::pin(
+        container_client
+            .list_blobs()
+            .max_results(NonZeroU32::new(100u32).unwrap())
+            .prefix("firstfolder/")
+            .delimiter("/")
+            .stream(),
+    )
+    .next()
+    .await
+    .expect("stream failed")?;
 
     println!(
         "List blob firstfolder/ returned {} blobs with blob_prefix == {:?}",
@@ -169,7 +184,7 @@ async fn main() -> azure_core::Result<()> {
         cnt += 1;
     }
 
-    container_client.delete().execute().await?;
+    container_client.delete().into_future().await?;
     println!("Container {} deleted", container_name);
 
     Ok(())

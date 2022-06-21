@@ -80,7 +80,10 @@ async fn main() -> azure_core::Result<()> {
 
     // now we enumerate the containers in the
     // specified storage account.
-    let containers = blob_service_client.list_containers().execute().await?;
+    let containers = Box::pin(blob_service_client.list_containers().stream())
+        .next()
+        .await
+        .expect("stream failed")?;
     println!("\nList containers completed succesfully: {:?}", containers);
 
     // now let's refresh the token, if available

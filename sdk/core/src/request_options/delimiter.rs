@@ -1,22 +1,22 @@
 use crate::AppendToUrlQuery;
 
 #[derive(Debug, Clone)]
-pub struct Delimiter<'a>(&'a str);
+pub struct Delimiter(String);
 
-impl<'a> Delimiter<'a> {
-    pub fn new(delimiter: &'a str) -> Self {
-        Self(delimiter)
-    }
-}
-
-impl<'a> AppendToUrlQuery for Delimiter<'a> {
+impl AppendToUrlQuery for Delimiter {
     fn append_to_url_query(&self, url: &mut url::Url) {
-        url.query_pairs_mut().append_pair("delimiter", self.0);
+        url.query_pairs_mut().append_pair("delimiter", self.0.as_ref());
     }
 }
 
-impl<'a> From<&'a str> for Delimiter<'a> {
-    fn from(delimiter: &'a str) -> Self {
+impl From<&str> for Delimiter {
+    fn from(delimiter: &str) -> Self {
+        Self(delimiter.into())
+    }
+}
+
+impl From<String> for Delimiter {
+    fn from(delimiter: String) -> Self {
         Self(delimiter)
     }
 }
