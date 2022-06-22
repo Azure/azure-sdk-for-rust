@@ -22,15 +22,11 @@ pub struct PutBlockBuilder {
 }
 
 impl<'a> PutBlockBuilder {
-    pub(crate) fn new(
-        blob_client: BlobClient,
-        block_id: impl Into<BlockId>,
-        body: impl Into<Bytes>,
-    ) -> Self {
+    pub(crate) fn new(blob_client: BlobClient, block_id: BlockId, body: Bytes) -> Self {
         Self {
             blob_client,
-            block_id: block_id.into(),
-            body: body.into(),
+            block_id,
+            body,
             hash: None,
             client_request_id: None,
             timeout: None,

@@ -112,7 +112,7 @@ impl BlobClient {
         ba512_range: BA512Range,
         content: impl Into<Bytes>,
     ) -> UpdatePageBuilder {
-        UpdatePageBuilder::new(self.clone(), ba512_range, content)
+        UpdatePageBuilder::new(self.clone(), ba512_range, content.into())
     }
 
     pub fn get_page_ranges(&self) -> GetPageRangesBuilder {
@@ -168,7 +168,7 @@ impl BlobClient {
         block_id: impl Into<BlockId>,
         body: impl Into<Bytes>,
     ) -> PutBlockBuilder {
-        PutBlockBuilder::new(self.clone(), block_id, body)
+        PutBlockBuilder::new(self.clone(), block_id.into(), body.into())
     }
 
     pub fn clear_page(&self, ba512_range: BA512Range) -> ClearPageBuilder {

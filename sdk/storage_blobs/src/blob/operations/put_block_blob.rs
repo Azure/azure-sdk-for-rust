@@ -27,10 +27,10 @@ pub struct PutBlockBlobBuilder {
 }
 
 impl PutBlockBlobBuilder {
-    pub(crate) fn new(blob_client: BlobClient, body: impl Into<Bytes>) -> Self {
+    pub(crate) fn new(blob_client: BlobClient, body: Bytes) -> Self {
         Self {
             blob_client,
-            body: body.into(),
+            body,
             hash: None,
             content_type: None,
             content_encoding: None,

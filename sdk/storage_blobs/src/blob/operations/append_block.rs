@@ -15,7 +15,7 @@ pub struct AppendBlockBuilder {
 }
 
 impl AppendBlockBuilder {
-    pub(crate) fn new(blob_client: BlobClient, body: impl Into<Bytes>) -> Self {
+    pub(crate) fn new(blob_client: BlobClient, body: Bytes) -> Self {
         Self {
             blob_client,
             body: body.into(),

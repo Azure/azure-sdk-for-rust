@@ -24,15 +24,11 @@ pub struct UpdatePageBuilder {
 }
 
 impl UpdatePageBuilder {
-    pub(crate) fn new(
-        blob_client: BlobClient,
-        ba512_range: BA512Range,
-        content: impl Into<Bytes>,
-    ) -> Self {
+    pub(crate) fn new(blob_client: BlobClient, ba512_range: BA512Range, content: Bytes) -> Self {
         Self {
             blob_client,
             ba512_range,
-            content: content.into(),
+            content,
             hash: None,
             sequence_number_condition: None,
             if_modified_since_condition: None,
