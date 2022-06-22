@@ -38,7 +38,6 @@ impl PageRangeList {
     pub fn try_from_xml(xml: &str) -> azure_core::Result<Self> {
         let pl: PageList =
             serde_xml_rs::de::from_reader(xml.as_bytes()).map_kind(ErrorKind::DataConversion)?;
-        debug!("pl == {:?}", pl);
 
         let mut prl = PageRangeList { ranges: Vec::new() };
 

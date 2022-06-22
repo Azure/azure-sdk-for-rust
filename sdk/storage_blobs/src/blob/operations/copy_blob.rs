@@ -120,7 +120,6 @@ impl TryFrom<&Headers> for CopyBlobResponse {
     type Error = crate::Error;
 
     fn try_from(headers: &Headers) -> azure_core::Result<Self> {
-        trace!("CopyBlobResponse headers == {:#?}", headers);
         Ok(Self {
             etag: etag_from_headers(headers)?,
             last_modified: last_modified_from_headers(headers)?,

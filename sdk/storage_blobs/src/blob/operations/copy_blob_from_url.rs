@@ -72,8 +72,6 @@ impl CopyBlobFromUrlBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
-            trace!("url == {:?}", url);
-
             let mut request =
                 self.blob_client
                     .prepare_request(url.as_str(), http::Method::PUT, None)?;
@@ -97,8 +95,6 @@ impl CopyBlobFromUrlBuilder {
                 .http_client()
                 .execute_request_check_status(&request)
                 .await?;
-
-            debug!("response.headers() == {:#?}", response.headers());
 
             (response.headers()).try_into()
         })

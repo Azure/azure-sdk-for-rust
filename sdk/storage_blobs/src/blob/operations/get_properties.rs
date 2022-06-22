@@ -68,8 +68,6 @@ impl GetPropertiesResponse {
         headers: &Headers,
         blob: Blob,
     ) -> azure_core::Result<GetPropertiesResponse> {
-        debug!("headers == {:#?}", headers);
-
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;
 

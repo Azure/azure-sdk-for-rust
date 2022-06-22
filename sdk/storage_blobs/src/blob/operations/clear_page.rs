@@ -48,8 +48,6 @@ impl ClearPageBuilder {
             self.timeout.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("comp", "page");
 
-            trace!("url == {:?}", url);
-
             let mut request =
                 self.blob_client
                     .prepare_request(url.as_str(), http::Method::PUT, None)?;
@@ -68,8 +66,6 @@ impl ClearPageBuilder {
                 .http_client()
                 .execute_request_check_status(&request)
                 .await?;
-
-            debug!("response.headers() == {:#?}", response.headers());
 
             ClearPageResponse::from_headers(response.headers())
         })

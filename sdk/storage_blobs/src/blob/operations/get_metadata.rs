@@ -68,8 +68,6 @@ impl TryFrom<&Headers> for GetMetadataResponse {
     type Error = crate::Error;
 
     fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
-        debug!("headers == {:#?}", headers);
-
         Ok(GetMetadataResponse {
             request_id: request_id_from_headers(headers)?,
             etag: etag_from_headers(headers)?,

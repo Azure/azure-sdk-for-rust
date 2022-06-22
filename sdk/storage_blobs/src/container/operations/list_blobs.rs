@@ -134,7 +134,6 @@ impl<'a> ListBlobsBuilder<'a> {
         unfold(Some(States::Init), move |next_marker: Option<States>| {
             let req = self.clone();
             async move {
-                debug!("next_marker == {:?}", &next_marker);
                 let response = match next_marker {
                     Some(States::Init) => req.execute().await,
                     Some(States::NextMarker(next_marker)) => {

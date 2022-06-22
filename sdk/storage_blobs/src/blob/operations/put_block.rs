@@ -83,8 +83,6 @@ pub struct PutBlockResponse {
 
 impl PutBlockResponse {
     pub(crate) fn from_headers(headers: &Headers) -> azure_core::Result<PutBlockResponse> {
-        debug!("{:#?}", headers);
-
         let (content_md5, content_crc64) =
             consistency_from_headers(headers).map_kind(ErrorKind::DataConversion)?;
         let request_id = request_id_from_headers(headers)?;

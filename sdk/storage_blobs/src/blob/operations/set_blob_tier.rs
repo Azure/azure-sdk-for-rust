@@ -71,8 +71,6 @@ impl TryFrom<&Headers> for SetBlobTierResponse {
     type Error = crate::Error;
 
     fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
-        debug!("headers == {:#?}", headers);
-
         Ok(SetBlobTierResponse {
             request_id: request_id_from_headers(headers)?,
             client_request_id: client_request_id_from_headers_optional(headers),

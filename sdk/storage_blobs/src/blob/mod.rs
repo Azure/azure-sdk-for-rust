@@ -204,7 +204,6 @@ impl Blob {
         blob_name: BN,
         h: &Headers,
     ) -> azure_core::Result<Blob> {
-        trace!("\n{:?}", h);
 
         #[cfg(not(feature = "azurite_workaround"))]
         let creation_time = {
@@ -212,7 +211,6 @@ impl Blob {
             let creation_time =
                 DateTime::parse_from_rfc2822(creation_time).map_kind(ErrorKind::DataConversion)?;
             let creation_time = DateTime::from_utc(creation_time.naive_utc(), Utc);
-            trace!("creation_time == {:?}", creation_time);
             creation_time
         };
         #[cfg(feature = "azurite_workaround")]

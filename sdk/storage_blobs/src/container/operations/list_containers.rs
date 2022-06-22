@@ -75,10 +75,7 @@ impl<'a> ListContainersBuilder<'a> {
             .execute_request_check_status(&request)
             .await?;
 
-        debug!("response == {:?}", response);
-
         let body = std::str::from_utf8(response.body())?;
-        debug!("body == {}", body);
 
         let incomplete_vector = incomplete_vector_from_container_response(body)?;
         let request_id = request_id_from_headers(response.headers())?;
@@ -98,7 +95,6 @@ impl<'a> ListContainersBuilder<'a> {
         unfold(Some(States::Init), move |next_marker: Option<States>| {
             let req = self.clone();
             async move {
-                debug!("next_marker == {:?}", &next_marker);
                 let response = match next_marker {
                     Some(States::Init) => req.execute().await,
                     Some(States::NextMarker(next_marker)) => {

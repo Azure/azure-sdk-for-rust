@@ -36,8 +36,6 @@ impl BreakLeaseBuilder {
             url.query_pairs_mut().append_pair("comp", "lease");
             self.timeout.append_to_url_query(&mut url);
 
-            trace!("url == {:?}", url);
-
             let mut request =
                 self.blob_client
                     .prepare_request(url.as_str(), http::Method::PUT, None)?;

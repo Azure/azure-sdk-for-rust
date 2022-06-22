@@ -44,8 +44,6 @@ impl GetBlockListBuilder {
             self.block_list_type.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
-            debug!("url == {:?}", url);
-
             let mut request =
                 self.blob_client
                     .prepare_request(url.as_str(), http::Method::GET, None)?;
@@ -57,8 +55,6 @@ impl GetBlockListBuilder {
                 .http_client()
                 .execute_request_check_status(&request)
                 .await?;
-
-            debug!("response.headers() == {:#?}", response.headers());
 
             GetBlockListResponse::from_response(response.headers(), response.body())
         })

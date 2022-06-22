@@ -89,11 +89,6 @@ impl<'a> GetBlobBuilder<'a> {
                 States::End => return None,
             };
 
-            debug!(
-                "remaining.start == {}, chunk_size == {}, remaining.end == {}",
-                remaining.start, chunk_size, remaining.end
-            );
-
             let range = if remaining.start + chunk_size > remaining.end {
                 Range::new(remaining.start, remaining.end)
             } else {
@@ -106,8 +101,6 @@ impl<'a> GetBlobBuilder<'a> {
                 Ok(response) => response,
                 Err(err) => return Some((Err(err), States::End)),
             };
-
-            debug!("response.content_range == {:?}", response.content_range);
 
             // now that we know what the remote blob size is, let's update the
             // boundary. We do this only if it's smaller than the requested size because the could
