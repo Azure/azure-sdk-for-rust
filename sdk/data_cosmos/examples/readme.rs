@@ -35,7 +35,7 @@ async fn main() -> azure_core::Result<()> {
     // Let's get Cosmos account and master key from env variables.
     // This helps automated testing.
     let master_key =
-        std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
+        std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
     let database_name = std::env::args()

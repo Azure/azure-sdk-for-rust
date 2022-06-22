@@ -33,7 +33,7 @@ async fn main() -> azure_core::Result<()> {
         .expect("please specify collection name as second command line parameter");
 
     let master_key =
-        std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
+        std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
     let authorization_token = permission::AuthorizationToken::primary_from_base64(&master_key)?;
