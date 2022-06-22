@@ -209,8 +209,7 @@ impl Blob {
             let creation_time = h.get_as_str_or_err(CREATION_TIME)?;
             let creation_time =
                 DateTime::parse_from_rfc2822(creation_time).map_kind(ErrorKind::DataConversion)?;
-            let creation_time = DateTime::from_utc(creation_time.naive_utc(), Utc);
-            creation_time
+            DateTime::from_utc(creation_time.naive_utc(), Utc)
         };
         #[cfg(feature = "azurite_workaround")]
         let creation_time = get_creation_time(h)?;
