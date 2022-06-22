@@ -85,11 +85,11 @@ impl QueryDocumentsBuilder {
                 );
 
                 // signal that this is a query
-                request.headers_mut().insert(
+                request.insert_header(
                     crate::headers::HEADER_DOCUMENTDB_ISQUERY,
                     http::HeaderValue::from_str("true").unwrap(),
                 );
-                request.headers_mut().insert(
+                request.insert_header(
                     http::header::CONTENT_TYPE,
                     http::HeaderValue::from_str("application/query+json").unwrap(),
                 );
