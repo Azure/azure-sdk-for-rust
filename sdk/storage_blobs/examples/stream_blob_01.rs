@@ -1,5 +1,5 @@
 use azure_storage::core::prelude::*;
-use azure_storage_blobs::{blob::responses::GetBlobResponse, prelude::*};
+use azure_storage_blobs::prelude::*;
 use futures::stream::StreamExt;
 
 // This example shows how to stream data from a blob. We will create a simple blob first, the we
@@ -29,18 +29,10 @@ async fn main() -> azure_core::Result<()> {
             .as_container_client(&container_name)
             .as_blob_client(file_name);
 
-    let mut stream = Box::pin(get_blob_stream(&blob_client));
-
+    let mut stream = Box::pin(blob_client.get().stream(1024));
     while let Some(res) = stream.next().await {
         println!("{:?}", res.unwrap());
     }
 
     Ok(())
-}
-
-fn get_blob_stream(
-    blob_client: &'_ BlobClient,
-) -> impl futures::Stream<Item = azure_core::Result<GetBlobResponse>> + '_ {
-    let stream = blob_client.get().stream(1024);
-    stream
 }

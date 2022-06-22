@@ -20,17 +20,7 @@ async fn main() -> azure_core::Result<()> {
     let storage_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
             .as_storage_client();
-    let blob_service_client = storage_client.as_blob_service_client();
     let container_client = storage_client.as_container_client(container_name);
-
-    let res = blob_service_client
-        .list_containers()
-        .client_request_id("ciccio")
-        .include_metadata(true)
-        .execute()
-        .await?;
-
-    println!("{:?}", res);
 
     let mut metadata = Metadata::new();
     metadata.insert("prova".to_owned(), "pollo".to_owned());
@@ -43,13 +33,13 @@ async fn main() -> azure_core::Result<()> {
     container_client
         .create()
         .public_access(PublicAccess::Container)
-        .metadata(&metadata)
+        .metadata(metadata)
         .timeout(Duration::from_secs(100))
-        .execute()
+        .into_future()
         .await?;
 
     // get acl without stored access policy list
-    let result = container_client.get_acl().execute().await?;
+    let result = container_client.get_acl().into_future().await?;
     println!("\nget_acl() == {:?}", result);
 
     // set stored acess policy list
@@ -62,12 +52,12 @@ async fn main() -> azure_core::Result<()> {
 
     let _result = container_client
         .set_acl(PublicAccess::Blob)
-        .stored_access_policy_list(&sapl)
-        .execute()
+        .stored_access_policy_list(sapl.clone())
+        .into_future()
         .await?;
 
     // now we get back the acess policy list and compare to the one created
-    let result = container_client.get_acl().execute().await?;
+    let result = container_client.get_acl().into_future().await?;
 
     println!("\nget_acl() == {:?}", result);
 
@@ -91,19 +81,19 @@ async fn main() -> azure_core::Result<()> {
         assert!(i1.permission == i2.permission);
     }
 
-    let res = container_client.get_properties().execute().await?;
+    let res = container_client.get_properties().into_future().await?;
     println!("\nget_properties() == {:?}", res);
 
     let res = container_client
         .acquire_lease(Duration::from_secs(15))
-        .execute()
+        .into_future()
         .await?;
     println!("\nacquire_lease() == {:?}", res);
 
     container_client
         .delete()
-        .lease_id(&res.lease_id) // we need to specify the lease or it won't work!
-        .execute()
+        .lease_id(res.lease_id) // we need to specify the lease or it won't work!
+        .into_future()
         .await?;
 
     Ok(())

@@ -1,6 +1,6 @@
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
-use futures::stream::StreamExt;
+use futures::StreamExt;
 use std::{num::NonZeroU32, time::Duration};
 
 #[tokio::main]
@@ -22,7 +22,10 @@ async fn main() -> azure_core::Result<()> {
     let blob_service = storage_client.as_blob_service_client();
     let container_client = storage_client.as_container_client(&container_name);
 
-    let iv = blob_service.list_containers().execute().await?;
+    let iv = Box::pin(blob_service.list_containers().stream())
+        .next()
+        .await
+        .expect("stream failed")?;
 
     if iv
         .incomplete_vector
@@ -37,7 +40,7 @@ async fn main() -> azure_core::Result<()> {
         .create()
         .public_access(PublicAccess::None)
         .timeout(Duration::from_secs(100))
-        .execute()
+        .into_future()
         .await?;
     println!("Container {} created", container_name);
 
@@ -47,16 +50,20 @@ async fn main() -> azure_core::Result<()> {
             .as_blob_client(format!("blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .execute()
+            .into_future()
             .await?;
         println!("\tAdded blob {}", i);
     }
 
-    let iv = container_client
-        .list_blobs()
-        .max_results(NonZeroU32::new(3u32).unwrap())
-        .execute()
-        .await?;
+    let iv = Box::pin(
+        container_client
+            .list_blobs()
+            .max_results(NonZeroU32::new(3u32).unwrap())
+            .stream(),
+    )
+    .next()
+    .await
+    .expect("stream failed")?;
 
     println!("List blob returned {} blobs.", iv.blobs.blobs.len());
     for cont in iv.blobs.blobs.iter() {
@@ -82,7 +89,7 @@ async fn main() -> azure_core::Result<()> {
         cnt += 1;
     }
 
-    container_client.delete().execute().await?;
+    container_client.delete().into_future().await?;
     println!("Container {} deleted", container_name);
 
     Ok(())

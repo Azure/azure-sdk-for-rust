@@ -1,4 +1,4 @@
-use crate::{container::requests::*, prelude::PublicAccess};
+use crate::{container::operations::*, prelude::PublicAccess};
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     prelude::*,
@@ -73,23 +73,23 @@ impl ContainerClient {
     }
 
     pub fn create(&self) -> CreateBuilder {
-        CreateBuilder::new(self)
+        CreateBuilder::new(self.clone())
     }
 
     pub fn delete(&self) -> DeleteBuilder {
-        DeleteBuilder::new(self)
+        DeleteBuilder::new(self.clone())
     }
 
     pub fn get_acl(&self) -> GetACLBuilder {
-        GetACLBuilder::new(self)
+        GetACLBuilder::new(self.clone())
     }
 
     pub fn set_acl(&self, public_access: PublicAccess) -> SetACLBuilder {
-        SetACLBuilder::new(self, public_access)
+        SetACLBuilder::new(self.clone(), public_access)
     }
 
     pub fn get_properties(&self) -> GetPropertiesBuilder {
-        GetPropertiesBuilder::new(self)
+        GetPropertiesBuilder::new(self.clone())
     }
 
     pub fn list_blobs(&self) -> ListBlobsBuilder {
@@ -100,11 +100,11 @@ impl ContainerClient {
         &self,
         lease_duration: LD,
     ) -> AcquireLeaseBuilder {
-        AcquireLeaseBuilder::new(self, lease_duration.into())
+        AcquireLeaseBuilder::new(self.clone(), lease_duration.into())
     }
 
     pub fn break_lease(&self) -> BreakLeaseBuilder {
-        BreakLeaseBuilder::new(self)
+        BreakLeaseBuilder::new(self.clone())
     }
 
     pub(crate) fn prepare_request(
@@ -167,12 +167,12 @@ mod integration_tests {
 
         container_client
             .create()
-            .execute()
+            .into_future()
             .await
             .expect("create container should succeed");
         container_client
             .delete()
-            .execute()
+            .into_future()
             .await
             .expect("delete container should succeed");
     }
@@ -184,7 +184,7 @@ mod integration_tests {
 
         container_client
             .create()
-            .execute()
+            .into_future()
             .await
             .expect("create container should succeed");
 
@@ -192,7 +192,7 @@ mod integration_tests {
         container_client
             .as_blob_client("hello.txt")
             .put_block_blob("world")
-            .execute()
+            .into_future()
             .await
             .expect("put block blob should succeed");
         let list = container_client
@@ -214,7 +214,7 @@ mod integration_tests {
 
         container_client
             .delete()
-            .execute()
+            .into_future()
             .await
             .expect("delete container should succeed");
     }

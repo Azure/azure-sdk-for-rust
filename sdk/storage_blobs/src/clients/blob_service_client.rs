@@ -27,7 +27,7 @@ impl BlobServiceClient {
         Arc::new(Self { storage_client })
     }
 
-    pub fn list_containers(&self) -> crate::container::requests::ListContainersBuilder {
-        crate::container::requests::ListContainersBuilder::new(&self.storage_client)
+    pub fn list_containers(&self) -> crate::container::operations::ListContainersBuilder {
+        crate::container::operations::ListContainersBuilder::new(&self.storage_client)
     }
 }
