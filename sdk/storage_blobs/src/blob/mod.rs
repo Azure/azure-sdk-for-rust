@@ -29,7 +29,7 @@ use std::{collections::HashMap, convert::TryInto, str::FromStr};
 
 #[cfg(feature = "azurite_workaround")]
 fn get_creation_time(h: &Headers) -> azure_core::Result<Option<DateTime<Utc>>> {
-    if let Some(creation_time) = h.get(CREATION_TIME) {
+    if let Some(creation_time) = h.get(&headers::CREATION_TIME) {
         // Check that the creation time is valid
         let creation_time = creation_time.as_str();
         let creation_time =
