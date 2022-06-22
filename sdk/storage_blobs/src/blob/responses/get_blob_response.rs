@@ -1,7 +1,7 @@
 use crate::blob::Blob;
 use azure_core::{
     error::{ErrorKind, ResultExt},
-    headers::{date_from_headers, request_id_from_headers},
+    headers::{self, date_from_headers, request_id_from_headers},
     prelude::ContentRange,
     CollectedResponse, RequestId,
 };
@@ -24,7 +24,7 @@ impl TryFrom<(&str, CollectedResponse)> for GetBlobResponse {
         let request_id = request_id_from_headers(response.headers())?;
         let date = date_from_headers(response.headers())?;
 
-        let content_range_header = response.headers().get(headers::CONTENT_RANGE);
+        let content_range_header = response.headers().get(&headers::CONTENT_RANGE);
         let content_range = match content_range_header {
             Some(hv) => {
                 Some(ContentRange::from_str(hv.as_str()).map_kind(ErrorKind::DataConversion)?)

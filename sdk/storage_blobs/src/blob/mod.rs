@@ -15,25 +15,15 @@ pub use self::page_range_list::PageRangeList;
 pub mod requests;
 pub mod responses;
 use crate::AccessTier;
-use azure_core::content_type::APPLICATION_OCTET_STREAM;
-use azure_core::headers::{
-    Headers, CACHE_CONTROL, CONTENT_DISPOSITION, CONTENT_ENCODING, CONTENT_LANGUAGE,
-    CONTENT_LENGTH, CONTENT_TYPE, LAST_MODIFIED,
-};
+use azure_core::content_type;
+use azure_core::headers::Headers;
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
-    headers::{
-        BLOB_ACCESS_TIER, BLOB_SEQUENCE_NUMBER, BLOB_TYPE, COPY_COMPLETION_TIME, COPY_PROGRESS,
-        COPY_SOURCE, COPY_STATUS, COPY_STATUS_DESCRIPTION, CREATION_TIME, ETAG, LEASE_DURATION,
-        LEASE_STATE, LEASE_STATUS, META_PREFIX, SERVER_ENCRYPTED,
-    },
+    headers,
     parsing::from_azure_time,
     Etag, LeaseDuration, LeaseState, LeaseStatus,
 };
-use azure_storage::{
-    headers::{CONTENT_CRC64, CONTENT_MD5, COPY_ID},
-    ConsistencyCRC64, ConsistencyMD5, CopyId, CopyProgress,
-};
+use azure_storage::{ConsistencyCRC64, ConsistencyMD5, CopyId, CopyProgress};
 use chrono::{DateTime, Utc};
 use std::{collections::HashMap, convert::TryInto, str::FromStr};
 
@@ -208,7 +198,7 @@ impl Blob {
 
         #[cfg(not(feature = "azurite_workaround"))]
         let creation_time = {
-            let creation_time = h.get_as_str_or_err(CREATION_TIME)?;
+            let creation_time = h.get_as_str_or_err(&headers::CREATION_TIME)?;
             let creation_time =
                 DateTime::parse_from_rfc2822(creation_time).map_kind(ErrorKind::DataConversion)?;
             let creation_time = DateTime::from_utc(creation_time.naive_utc(), Utc);
@@ -219,100 +209,99 @@ impl Blob {
         let creation_time = get_creation_time(h)?;
 
         let content_type = h
-            .get_as_str(CONTENT_TYPE)
-            .unwrap_or(APPLICATION_OCTET_STREAM)
+            .get_as_str(&headers::CONTENT_TYPE)
+            .unwrap_or(content_type::APPLICATION_OCTET_STREAM.as_str())
             .to_string();
 
-        let content_length = h.get_as_u64_or_err(CONTENT_LENGTH)?;
+        let content_length = h.get_as_u64_or_err(&headers::CONTENT_LENGTH)?;
 
-        let last_modified = h.get_as_str_or_err(LAST_MODIFIED)?;
+        let last_modified = h.get_as_str_or_err(&headers::LAST_MODIFIED)?;
         let last_modified = from_azure_time(last_modified)?;
 
-        let etag = h.get_as_str_or_err(ETAG)?;
+        let etag = h.get_as_str_or_err(&headers::ETAG)?;
         let etag = etag.into();
 
-        let blob_sequence_number = h.get_as_u64(BLOB_SEQUENCE_NUMBER)?;
+        let blob_sequence_number = h.get_as_u64(&headers::BLOB_SEQUENCE_NUMBER)?;
 
         let blob_type = h
-            .get_as_str(BLOB_TYPE)
-            .ok_or_else(|| Error::message(ErrorKind::DataConversion, BLOB_TYPE))?
+            .get_as_str_or_err(&headers::BLOB_TYPE)?
             .parse::<BlobType>()
             .map_kind(ErrorKind::DataConversion)?;
 
-        let access_tier = h
-            .get_as_enum(BLOB_ACCESS_TIER)
-            .map_kind(ErrorKind::DataConversion)?;
+        let access_tier = h.get_as_enum(&headers::BLOB_ACCESS_TIER)?;
 
-        let content_encoding = h.get_as_string(CONTENT_ENCODING);
+        let content_encoding = h.get_as_string(&headers::CONTENT_ENCODING);
 
-        let content_language = h.get_as_string(CONTENT_LANGUAGE);
+        let content_language = h.get_as_string(&headers::CONTENT_LANGUAGE);
 
         let content_md5 = h
-            .get_as_str(CONTENT_MD5)
+            .get_as_str(&headers::CONTENT_MD5)
             .map(|header| ConsistencyMD5::decode(header.as_bytes()))
             .transpose()
             .map_kind(ErrorKind::DataConversion)?;
 
         let content_crc64 = h
-            .get_as_str(CONTENT_CRC64)
+            .get_as_str(&azure_storage::headers::CONTENT_CRC64)
             .map(|header| ConsistencyCRC64::decode(header.as_bytes()))
             .transpose()
             .map_kind(ErrorKind::DataConversion)?;
 
-        let cache_control = h.get_as_string(CACHE_CONTROL);
+        let cache_control = h.get_as_string(&headers::CACHE_CONTROL);
 
-        let content_disposition = h.get_as_string(CONTENT_DISPOSITION);
+        let content_disposition = h.get_as_string(&headers::CONTENT_DISPOSITION);
 
-        let lease_status = h
-            .get_as_enum(LEASE_STATUS)
-            .map_kind(ErrorKind::DataConversion)?
-            .ok_or_else(|| Error::message(ErrorKind::DataConversion, LEASE_STATUS))?;
+        let lease_status = h.get_as_enum(&headers::LEASE_STATUS)?.ok_or_else(|| {
+            Error::message(
+                ErrorKind::DataConversion,
+                headers::LEASE_STATUS.as_str().to_string(),
+            )
+        })?;
 
         let lease_state = h
-            .get_as_enum(LEASE_STATE)
+            .get_as_enum(&headers::LEASE_STATE)
             .map_kind(ErrorKind::DataConversion)?
-            .ok_or_else(|| Error::message(ErrorKind::DataConversion, LEASE_STATE))?;
+            .ok_or_else(|| {
+                Error::message(
+                    ErrorKind::DataConversion,
+                    headers::LEASE_STATE.as_str().to_string(),
+                )
+            })?;
 
-        let lease_duration = h
-            .get_as_enum(LEASE_DURATION)
-            .map_kind(ErrorKind::DataConversion)?;
+        let lease_duration = h.get_as_enum(&headers::LEASE_DURATION)?;
 
         let copy_id = h
-            .get_as_string(COPY_ID)
+            .get_as_string(&azure_storage::headers::COPY_ID)
             .map(|c| (&c as &str).try_into())
-            .transpose()
-            .map_kind(ErrorKind::DataConversion)?;
+            .transpose()?;
 
-        let copy_status = h
-            .get_as_enum(COPY_STATUS)
-            .map_kind(ErrorKind::DataConversion)?;
+        let copy_status = h.get_as_enum(&headers::COPY_STATUS)?;
 
-        let copy_source = h.get_as_string(COPY_SOURCE);
+        let copy_source = h.get_as_string(&headers::COPY_SOURCE);
 
         let copy_progress = h
-            .get_as_str(COPY_PROGRESS)
+            .get_as_str(&headers::COPY_PROGRESS)
             .and_then(|cp| Some(CopyProgress::from_str(cp).ok())?);
 
-        let copy_completion_time: Option<DateTime<Utc>> =
-            h.get_as_str(COPY_COMPLETION_TIME).and_then(|cct| {
+        let copy_completion_time: Option<DateTime<Utc>> = h
+            .get_as_str(&headers::COPY_COMPLETION_TIME)
+            .and_then(|cct| {
                 Some(DateTime::from_utc(
                     DateTime::parse_from_rfc2822(cct).ok()?.naive_utc(),
                     Utc,
                 ))
             });
 
-        let copy_status_description = h.get_as_string(COPY_STATUS_DESCRIPTION);
+        let copy_status_description = h.get_as_string(&headers::COPY_STATUS_DESCRIPTION);
 
         let server_encrypted = h
-            .get_as_str(SERVER_ENCRYPTED)
-            .ok_or_else(|| Error::message(ErrorKind::DataConversion, SERVER_ENCRYPTED))?
+            .get_as_str_or_err(&headers::SERVER_ENCRYPTED)?
             .parse::<bool>()
             .map_kind(ErrorKind::DataConversion)?;
 
         let mut metadata = HashMap::new();
         for (name, value) in h.iter() {
             let name = name.as_str();
-            if let Some(name) = name.strip_prefix(META_PREFIX) {
+            if let Some(name) = name.strip_prefix(headers::META_PREFIX.as_str()) {
                 metadata.insert(name.to_string(), value.as_str().to_string());
             }
         }
@@ -376,8 +365,6 @@ impl Blob {
 }
 
 pub(crate) fn copy_status_from_headers(headers: &Headers) -> azure_core::Result<CopyStatus> {
-    let val = headers
-        .get(azure_core::headers::COPY_STATUS)
-        .ok_or_else(|| Error::message(ErrorKind::DataConversion, COPY_STATUS))?;
-    CopyStatus::from_str(val.as_str()).map_kind(ErrorKind::DataConversion)
+    let val = headers.get_or_err(&headers::COPY_STATUS)?;
+    CopyStatus::from_str(val.as_str())
 }

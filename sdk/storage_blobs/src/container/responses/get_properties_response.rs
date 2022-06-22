@@ -1,7 +1,7 @@
-use crate::{container::Container, headers};
+use crate::container::Container;
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
-    headers::{Headers, REQUEST_ID},
+    headers::{Headers, REQUEST_ID, self},
     RequestId,
 };
 use chrono::{DateTime, FixedOffset};
@@ -29,6 +29,7 @@ impl GetPropertiesResponse {
         headers: &Headers,
     ) -> azure_core::Result<GetPropertiesResponse> {
         let request_id = headers.get_as_str_or_err(&REQUEST_ID)?;
+        let request_id = Uuid::parse_str(request_id).map_kind(ErrorKind::DataConversion)?;
 
         let date = match headers.get(&headers::DATE) {
             Some(date) => {
