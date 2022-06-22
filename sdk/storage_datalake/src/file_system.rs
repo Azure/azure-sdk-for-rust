@@ -100,7 +100,7 @@ mod tests {
     #[test]
     fn test_path_serialization() {
         let payload = json!({
-            "contentLength": 100 as i64,
+            "contentLength": 100_i64,
             "etag": "etag",
             "group": "group",
             "isDirectory": true,

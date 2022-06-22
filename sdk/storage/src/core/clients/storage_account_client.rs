@@ -634,7 +634,7 @@ fn canonicalized_resource(account: &str, u: &url::Url) -> String {
 
     for p in paths {
         can_res.push('/');
-        can_res.push_str(&*p);
+        can_res.push_str(p);
     }
     can_res += "\n";
 
