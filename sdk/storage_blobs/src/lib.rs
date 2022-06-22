@@ -70,7 +70,7 @@ create_enum!(RehydratePriority, (High, "High"), (Standard, "Standard"));
 
 impl Header for RehydratePriority {
     fn name(&self) -> azure_core::headers::HeaderName {
-        headers::REHYDRATE_PRIORITY.into()
+        headers::REHYDRATE_PRIORITY
     }
 
     fn value(&self) -> azure_core::headers::HeaderValue {

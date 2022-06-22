@@ -1,9 +1,6 @@
-use azure_core::{error::Error, CollectedResponse, HttpClient, Request, Url};
+use azure_core::{error::Error, headers, CollectedResponse, HttpClient, Request, Url};
 use chrono::Duration;
-use http::{
-    header::{AUTHORIZATION, CONTENT_LENGTH},
-    method::Method,
-};
+use http::Method;
 use ring::hmac;
 use std::{ops::Add, sync::Arc};
 use url::form_urlencoded::{self, Serializer};
@@ -37,13 +34,13 @@ fn prepare_request(
     let mut request = Request::new(Url::parse(url)?, method);
 
     // add auth header with sas
-    request.insert_header(AUTHORIZATION, sas);
+    request.insert_header(headers::AUTHORIZATION, sas);
 
     // get req body to return
     match body {
         Some(msg) => request.set_body(msg),
         None => {
-            request.insert_header(CONTENT_LENGTH, "0"); // added to avoid truncation errors
+            request.insert_header(headers::CONTENT_LENGTH, "0"); // added to avoid truncation errors
             request.set_body(azure_core::EMPTY_BODY);
         }
     }
@@ -186,7 +183,7 @@ async fn peek_lock_message2(
     let res = http_client.execute_request(&req).await?;
 
     let status = res.status();
-    let lock_location: String = match res.headers().get("Location") {
+    let lock_location: String = match res.headers().get(&headers::LOCATION) {
         Some(header_value) => header_value.as_str().to_owned(),
         _ => "".to_owned(),
     };

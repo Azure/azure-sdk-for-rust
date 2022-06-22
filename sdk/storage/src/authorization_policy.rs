@@ -1,12 +1,10 @@
+use crate::clients::{ServiceType, StorageCredentials};
 use azure_core::error::{ErrorKind, ResultExt};
 use azure_core::{headers::*, Context, Policy, PolicyResult, Request};
-use headers::AUTHORIZATION;
 use http::Method;
 use std::borrow::Cow;
 use std::sync::Arc;
 use url::Url;
-
-use crate::clients::{ServiceType, StorageCredentials};
 
 const STORAGE_TOKEN_SCOPE: &str = "https://storage.azure.com/";
 
@@ -95,7 +93,7 @@ fn generate_authorization(
     format!("SharedKey {}:{}", account, auth)
 }
 
-fn add_if_exists<'a>(h: &'a Headers, key: &'static str) -> &'a str {
+fn add_if_exists<'a>(h: &'a Headers, key: &HeaderName) -> &'a str {
     h.get(key).map(|ce| ce.as_str()).unwrap_or_default()
 }
 
@@ -112,9 +110,9 @@ fn string_to_sign(
             format!(
                 "{}\n{}\n{}\n{}\n{}",
                 method.as_str(),
-                add_if_exists(h, CONTENT_MD5),
-                add_if_exists(h, CONTENT_TYPE),
-                add_if_exists(h, MS_DATE),
+                add_if_exists(h, &CONTENT_MD5),
+                add_if_exists(h, &CONTENT_TYPE),
+                add_if_exists(h, &MS_DATE),
                 canonicalized_resource_table(account, u)
             )
         }
@@ -122,23 +120,23 @@ fn string_to_sign(
             // content length must only be specified if != 0
             // this is valid from 2015-02-21
             let content_length = h
-                .get(CONTENT_LENGTH)
+                .get(&CONTENT_LENGTH)
                 .map(|v| if v.as_str() == "0" { "" } else { v.as_str() })
                 .unwrap_or_default();
             format!(
                 "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}{}",
                 method.as_str(),
-                add_if_exists(h, CONTENT_ENCODING),
-                add_if_exists(h, CONTENT_LANGUAGE),
+                add_if_exists(h, &CONTENT_ENCODING),
+                add_if_exists(h, &CONTENT_LANGUAGE),
                 content_length,
-                add_if_exists(h, CONTENT_MD5),
-                add_if_exists(h, CONTENT_TYPE),
-                add_if_exists(h, DATE),
-                add_if_exists(h, IF_MODIFIED_SINCE),
-                add_if_exists(h, IF_MATCH),
-                add_if_exists(h, IF_NONE_MATCH),
-                add_if_exists(h, IF_UNMODIFIED_SINCE),
-                add_if_exists(h, RANGE),
+                add_if_exists(h, &CONTENT_MD5),
+                add_if_exists(h, &CONTENT_TYPE),
+                add_if_exists(h, &DATE),
+                add_if_exists(h, &IF_MODIFIED_SINCE),
+                add_if_exists(h, &IF_MATCH),
+                add_if_exists(h, &IF_NONE_MATCH),
+                add_if_exists(h, &IF_UNMODIFIED_SINCE),
+                add_if_exists(h, &RANGE),
                 canonicalize_header(h),
                 canonicalized_resource(account, u)
             )
@@ -157,7 +155,7 @@ fn canonicalize_header(h: &Headers) -> String {
     let mut can = String::new();
 
     for header_name in v_headers {
-        let s = h.get(header_name.clone()).unwrap().as_str();
+        let s = h.get(header_name).unwrap().as_str();
         let header_name = header_name.as_str();
         can = format!("{can}{header_name}:{s}\n");
     }

@@ -22,7 +22,7 @@ impl std::convert::TryFrom<crate::service::CollectedResponse> for QueryResponse 
         Ok(QueryResponse {
             result: serde_json::from_slice(body)?,
             continuation_token: continuation_token_from_headers_optional(headers)?,
-            item_type: get_str_from_headers(headers, headers::ITEM_TYPE)?.to_string(),
+            item_type: get_str_from_headers(headers, &headers::ITEM_TYPE)?.to_string(),
         })
     }
 }

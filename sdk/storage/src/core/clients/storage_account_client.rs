@@ -9,7 +9,7 @@ use crate::{
 };
 use azure_core::auth::TokenCredential;
 use azure_core::error::{Error, ErrorKind, ResultExt};
-use azure_core::Request;
+use azure_core::{headers, Request};
 use azure_core::{headers::*, Pipeline};
 use azure_core::{ClientOptions, HttpClient};
 use bytes::Bytes;
@@ -446,8 +446,8 @@ impl StorageAccountClient {
             None => request.insert_header(CONTENT_LENGTH, "0"),
         };
 
-        request.insert_header(MS_DATE, time);
-        request.insert_header(HEADER_VERSION, AZURE_VERSION);
+        request.insert_header(headers::MS_DATE, time);
+        request.insert_header(headers::VERSION, AZURE_VERSION);
 
         // We sign the request only if it is not already signed (with the signature of an
         // SAS token for example)
@@ -528,7 +528,7 @@ fn generate_authorization(
     format!("SharedKey {}:{}", account, auth)
 }
 
-fn add_if_exists(headers: &Headers, key: &HeaderName) -> &str {
+fn add_if_exists<'a>(headers: &'a Headers, key: &HeaderName) -> &'a str {
     match headers.get(key) {
         Some(value) => value.as_str(),
         None => "",
@@ -560,7 +560,7 @@ fn string_to_sign(
             let cl = headers
                 .get(&CONTENT_LENGTH)
                 .map(|s| {
-                    if s.as_str() == HeaderValue::from_static("0") {
+                    if s == &HeaderValue::from_static("0") {
                         ""
                     } else {
                         s.as_str()

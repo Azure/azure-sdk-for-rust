@@ -1,5 +1,4 @@
 use azure_core::{prelude::IfMatchCondition, CollectedResponse};
-use http::response::Response;
 
 /// A document's attributes
 #[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]

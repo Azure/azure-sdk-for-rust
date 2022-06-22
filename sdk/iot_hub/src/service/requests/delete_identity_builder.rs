@@ -1,5 +1,5 @@
 use crate::service::{ServiceClient, API_VERSION};
-
+use azure_core::headers;
 use http::Method;
 
 /// The DeleteIdentityBuilder is used to construct a request to delete a module or device identity.

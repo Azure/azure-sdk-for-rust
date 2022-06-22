@@ -1,4 +1,5 @@
 use azure_core::error::Error;
+use azure_core::headers;
 use http::Method;
 use serde::Serialize;
 use std::collections::HashMap;

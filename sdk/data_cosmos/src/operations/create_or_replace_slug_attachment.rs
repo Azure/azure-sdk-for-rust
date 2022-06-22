@@ -4,10 +4,10 @@ use crate::resources::Attachment;
 use crate::ResourceQuota;
 
 use azure_core::headers::{etag_from_headers, session_token_from_headers, HeaderValue};
-use azure_core::prelude::*;
 use azure_core::Response as HttpResponse;
 use azure_core::SessionToken;
 use azure_core::{collect_pinned_stream, headers};
+use azure_core::{content_type, prelude::*};
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use http::Method;
@@ -66,17 +66,19 @@ impl CreateOrReplaceSlugAttachmentBuilder {
             let body = self.body;
             request.headers_mut().insert(
                 headers::CONTENT_TYPE,
-                HeaderValue::from_str(self.content_type.as_deref().unwrap_or("text/plain"))
-                    .unwrap(),
+                match self.content_type {
+                    Some(content_type) => HeaderValue::from(content_type),
+                    None => content_type::TEXT_PLAIN,
+                },
             );
 
             request.headers_mut().insert(
                 "Slug",
-                HeaderValue::from_str(self.client.attachment_name()).unwrap(),
+                HeaderValue::from(self.client.attachment_name().to_string()),
             );
             request.headers_mut().insert(
                 headers::CONTENT_LENGTH,
-                HeaderValue::from_str(&format!("{}", body.len())).unwrap(),
+                HeaderValue::from(format!("{}", body.len())),
             );
 
             request.set_body(body);

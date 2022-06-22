@@ -1,11 +1,10 @@
-use crate::container::Container;
+use crate::{container::Container, headers};
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     headers::{Headers, REQUEST_ID},
     RequestId,
 };
 use chrono::{DateTime, FixedOffset};
-use http::header;
 use std::convert::TryFrom;
 use uuid::Uuid;
 
@@ -29,19 +28,14 @@ impl GetPropertiesResponse {
         container_name: &str,
         headers: &Headers,
     ) -> azure_core::Result<GetPropertiesResponse> {
-        let request_id = match headers.get(REQUEST_ID) {
-            Some(request_id) => {
-                Uuid::parse_str(request_id.as_str()).map_kind(ErrorKind::DataConversion)?
-            }
-            None => return Err(Error::message(ErrorKind::DataConversion, REQUEST_ID)),
-        };
+        let request_id = headers.get_as_str_or_err(&REQUEST_ID)?;
 
-        let date = match headers.get(header::DATE) {
+        let date = match headers.get(&headers::DATE) {
             Some(date) => {
                 DateTime::parse_from_rfc2822(date.as_str()).map_kind(ErrorKind::DataConversion)?
             }
             None => {
-                static D: header::HeaderName = header::DATE;
+                static D: headers::HeaderName = headers::DATE;
                 return Err(Error::message(ErrorKind::DataConversion, D.as_str()));
             }
         };

@@ -192,6 +192,12 @@ impl HeaderName {
     }
 }
 
+impl From<&'static str> for HeaderName {
+    fn from(s: &'static str) -> Self {
+        Self::from_static(s)
+    }
+}
+
 impl From<String> for HeaderName {
     fn from(s: String) -> Self {
         Self(std::borrow::Cow::Owned(s))
@@ -209,6 +215,12 @@ impl HeaderValue {
 
     pub fn as_str(&self) -> &str {
         self.0.as_ref()
+    }
+}
+
+impl From<&'static str> for HeaderValue {
+    fn from(s: &'static str) -> Self {
+        Self::from_static(s)
     }
 }
 

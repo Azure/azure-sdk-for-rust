@@ -1,13 +1,12 @@
 use crate::container::{public_access_from_header, PublicAccess};
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
-    headers::{Headers, REQUEST_ID},
+    headers::{self, Headers, REQUEST_ID},
     RequestId,
 };
 use azure_storage::core::StoredAccessPolicyList;
 use bytes::Bytes;
 use chrono::{DateTime, FixedOffset};
-use http::header;
 use std::convert::TryFrom;
 use uuid::Uuid;
 
@@ -37,33 +36,30 @@ impl GetACLResponse {
     ) -> azure_core::Result<GetACLResponse> {
         let public_access = public_access_from_header(headers)?;
 
-        let etag = match headers.get(header::ETAG) {
+        let etag = match headers.get(&headers::ETAG) {
             Some(etag) => etag.as_str(),
             None => {
-                static E: header::HeaderName = header::ETAG;
+                static E: headers::HeaderName = headers::ETAG;
                 return Err(Error::message(ErrorKind::DataConversion, E.as_str()));
             }
         };
 
-        let last_modified = match headers.get(header::LAST_MODIFIED) {
+        let last_modified = match headers.get(&headers::LAST_MODIFIED) {
             Some(last_modified) => last_modified.as_str(),
             None => {
-                static LM: header::HeaderName = header::LAST_MODIFIED;
+                static LM: headers::HeaderName = headers::LAST_MODIFIED;
                 return Err(Error::message(ErrorKind::DataConversion, LM.as_str()));
             }
         };
         let last_modified =
             DateTime::parse_from_rfc2822(last_modified).map_kind(ErrorKind::DataConversion)?;
 
-        let request_id = match headers.get(REQUEST_ID) {
-            Some(request_id) => request_id.as_str(),
-            None => return Err(Error::message(ErrorKind::DataConversion, REQUEST_ID)),
-        };
+        let request_id = headers.get_as_str_or_err(&REQUEST_ID)?;
 
-        let date = match headers.get(header::DATE) {
+        let date = match headers.get(&headers::DATE) {
             Some(date) => date.as_str(),
             None => {
-                static D: header::HeaderName = header::DATE;
+                static D: headers::HeaderName = headers::DATE;
                 return Err(Error::message(ErrorKind::DataConversion, D.as_str()));
             }
         };
