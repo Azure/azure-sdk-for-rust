@@ -804,9 +804,8 @@ impl ServiceClient {
     /// Prepares a request that can be used by any request builders.
     pub(crate) fn prepare_request(&self, uri: &str, method: Method) -> azure_core::Result<Request> {
         let mut request = Request::new(Url::parse(uri)?, method);
-        let headers = request.headers_mut();
-        headers.insert(headers::AUTHORIZATION, &self.sas_token);
-        headers.insert(headers::CONTENT_TYPE, content_type::APPLICATION_JSON);
+        request.insert_header(headers::AUTHORIZATION, &self.sas_token);
+        request.insert_header(headers::CONTENT_TYPE, content_type::APPLICATION_JSON);
         Ok(request)
     }
 }

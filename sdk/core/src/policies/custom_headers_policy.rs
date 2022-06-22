@@ -32,9 +32,7 @@ impl Policy for CustomHeadersPolicy {
                         header_name,
                         header_value
                     );
-                    request
-                        .headers_mut()
-                        .insert(header_name.clone(), header_value.clone());
+                    request.insert_header(header_name.clone(), header_value.clone());
                 });
         }
 

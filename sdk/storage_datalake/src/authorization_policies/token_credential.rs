@@ -48,9 +48,7 @@ impl Policy for TokenCredentialAuthorizationPolicy {
         let token = self.credential.get_token(&self.resource).await?;
         let auth_header_value = format!("Bearer {}", token.token.secret());
 
-        request
-            .headers_mut()
-            .insert(headers::AUTHORIZATION, HeaderValue::from(auth_header_value));
+        request.insert_header(headers::AUTHORIZATION, HeaderValue::from(auth_header_value));
 
         next[0].send(ctx, request, &next[1..]).await
     }

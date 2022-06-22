@@ -92,7 +92,7 @@ impl QueryDocumentsBuilder {
                     crate::headers::HEADER_DOCUMENTDB_ISQUERY,
                     HeaderValue::from_static("true"),
                 );
-                request.headers_mut().insert(
+                request.insert_header(
                     headers::CONTENT_TYPE,
                     HeaderValue::from_static("application/query+json"),
                 );

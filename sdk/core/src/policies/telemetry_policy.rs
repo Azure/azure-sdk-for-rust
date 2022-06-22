@@ -64,9 +64,7 @@ impl Policy for TelemetryPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        request
-            .headers_mut()
-            .insert(USER_AGENT, HeaderValue::from(self.header.to_string()));
+        request.insert_header(USER_AGENT, HeaderValue::from(self.header.to_string()));
 
         next[0].send(ctx, request, &next[1..]).await
     }

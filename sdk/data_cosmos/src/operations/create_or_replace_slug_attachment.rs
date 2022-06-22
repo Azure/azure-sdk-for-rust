@@ -65,7 +65,7 @@ impl CreateOrReplaceSlugAttachmentBuilder {
                 &mut request,
             );
             let body = self.body;
-            request.headers_mut().insert(
+            request.insert_header(
                 headers::CONTENT_TYPE,
                 match self.content_type {
                     Some(content_type) => HeaderValue::from(content_type),
@@ -77,7 +77,7 @@ impl CreateOrReplaceSlugAttachmentBuilder {
                 "Slug",
                 HeaderValue::from(self.client.attachment_name().to_string()),
             );
-            request.headers_mut().insert(
+            request.insert_header(
                 headers::CONTENT_LENGTH,
                 HeaderValue::from(format!("{}", body.len())),
             );

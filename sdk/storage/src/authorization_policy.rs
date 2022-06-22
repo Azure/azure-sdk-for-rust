@@ -45,7 +45,7 @@ impl Policy for AuthorizationPolicy {
                         ctx.get()
                             .expect("ServiceType must be in the Context at this point"),
                     );
-                    request.headers_mut().insert(AUTHORIZATION, auth)
+                    request.insert_header(AUTHORIZATION, auth)
                 }
                 request
             }
@@ -58,9 +58,7 @@ impl Policy for AuthorizationPolicy {
                 request
             }
             StorageCredentials::BearerToken(token) => {
-                request
-                    .headers_mut()
-                    .insert(AUTHORIZATION, format!("Bearer {}", token));
+                request.insert_header(AUTHORIZATION, format!("Bearer {}", token));
                 request
             }
             StorageCredentials::TokenCredential(token_credential) => {
@@ -68,7 +66,7 @@ impl Policy for AuthorizationPolicy {
                 let bearer_token = futures::executor::block_on(bearer_token_future)
                     .context(ErrorKind::Credential, "failed to get bearer token")?;
 
-                request.headers_mut().insert(
+                request.insert_header(
                     AUTHORIZATION,
                     format!("Bearer {}", bearer_token.token.secret()),
                 );

@@ -28,15 +28,14 @@ impl Policy for SharedKeyAuthorizationPolicy {
             "Authorization policies cannot be the last policy of a pipeline"
         );
 
-        let headers_mut = request.headers_mut();
-        headers_mut.insert(
+        request.insert_header(
             azure_core::headers::MS_DATE,
             HeaderValue::from(format!(
                 "{}",
                 chrono::Utc::now().format("%a, %d %h %Y %T GMT")
             )),
         );
-        headers_mut.insert(
+        request.insert_header(
             azure_core::headers::VERSION,
             HeaderValue::from_static("2019-12-12"),
         ); // TODO: Remove duplication with storage_account_client.rs
@@ -49,9 +48,7 @@ impl Policy for SharedKeyAuthorizationPolicy {
             &self.credential.account_key,
         );
 
-        request
-            .headers_mut()
-            .insert(headers::AUTHORIZATION, HeaderValue::from(auth));
+        request.insert_header(headers::AUTHORIZATION, HeaderValue::from(auth));
 
         // now next[0] is safe (will not panic) because we checked
         // at the beginning of the function.

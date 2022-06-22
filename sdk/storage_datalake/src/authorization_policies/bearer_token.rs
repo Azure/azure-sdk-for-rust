@@ -31,9 +31,7 @@ impl Policy for BearerTokenAuthorizationPolicy {
 
         let auth_header_value = format!("Bearer {}", &self.bearer_token);
 
-        request
-            .headers_mut()
-            .insert(headers::AUTHORIZATION, HeaderValue::from(auth_header_value));
+        request.insert_header(headers::AUTHORIZATION, HeaderValue::from(auth_header_value));
 
         // now next[0] is safe (will not panic) because we checked
         // at the beginning of the function.
