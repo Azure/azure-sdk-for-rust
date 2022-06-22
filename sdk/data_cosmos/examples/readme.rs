@@ -32,7 +32,7 @@ impl azure_data_cosmos::CosmosEntity for MySampleStruct {
 // 5. Check the remaining documents.
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    // Let's get Cosmos account and master key from env variables.
+    // Let's get Cosmos account and access key from env variables.
     // This helps automated testing.
     let primary_key =
         std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");

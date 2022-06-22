@@ -3,8 +3,8 @@ use chrono::*;
 use url::Url;
 
 pub fn main() {
-    let master_key =
-        std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
+    let access_key =
+        std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
     let start = Utc::now() - Duration::days(1);
     let end = Utc::now() + Duration::days(1);
@@ -18,7 +18,7 @@ pub fn main() {
     };
 
     let sas = BlobSASBuilder::new(&path)
-        .with_key(&master_key)
+        .with_key(&access_key)
         .with_validity_start(&start)
         .with_validity_end(&end)
         .with_ip_range(&ip_range)
@@ -34,7 +34,7 @@ pub fn main() {
     .unwrap();
 
     let sas = ContainerSASBuilder::new(&path)
-        .with_key(&master_key)
+        .with_key(&access_key)
         .with_validity_start(&start)
         .with_validity_end(&end)
         .with_ip_range(&ip_range)

@@ -37,7 +37,7 @@ impl<'a> azure_data_cosmos::CosmosEntity<'a> for MySampleStruct {
 // 1. Create 10 documents in the collection.
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    // Let's get Cosmos account and master key from env variables.
+    // Let's get Cosmos account and access key from env variables.
     let primary_key =
         std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");

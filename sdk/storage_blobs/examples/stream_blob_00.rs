@@ -14,11 +14,11 @@ use std::{cell::RefCell, rc::Rc};
 async fn main() -> azure_core::Result<()> {
     let file_name = "azure_sdk_for_rust_stream_test.txt";
 
-    // First we retrieve the account name and master key from environment variables.
+    // First we retrieve the account name and access key from environment variables.
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
-    let master_key =
-        std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
+    let access_key =
+        std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
     let container_name = std::env::args()
         .nth(1)
@@ -27,7 +27,7 @@ async fn main() -> azure_core::Result<()> {
     let http_client = azure_core::new_http_client();
 
     let blob_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key)
             .as_container_client(&container_name)
             .as_blob_client(file_name);
 
