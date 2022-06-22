@@ -96,7 +96,7 @@ extern crate serde;
 extern crate azure_core;
 
 pub mod clients;
-pub mod operations;
+mod operations;
 pub mod prelude;
 pub mod resources;
 
