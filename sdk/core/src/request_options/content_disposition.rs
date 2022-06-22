@@ -31,13 +31,7 @@ impl From<&String> for ContentDisposition {
     }
 }
 
-impl ContentDisposition {
-    pub fn new(s: impl Into<ContentDisposition>) -> Self {
-        s.into()
-    }
-}
-
-impl<'a> Header for ContentDisposition {
+impl Header for ContentDisposition {
     fn name(&self) -> headers::HeaderName {
         http::header::CONTENT_TYPE.into()
     }

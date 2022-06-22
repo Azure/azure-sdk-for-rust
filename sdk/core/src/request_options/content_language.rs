@@ -31,13 +31,7 @@ impl From<&String> for ContentLanguage {
     }
 }
 
-impl ContentLanguage {
-    pub fn new(s: impl Into<ContentLanguage>) -> Self {
-        s.into()
-    }
-}
-
-impl<'a> Header for ContentLanguage {
+impl Header for ContentLanguage {
     fn name(&self) -> headers::HeaderName {
         http::header::CONTENT_TYPE.into()
     }

@@ -31,13 +31,7 @@ impl From<&String> for ContentEncoding {
     }
 }
 
-impl ContentEncoding {
-    pub fn new(s: impl Into<ContentEncoding>) -> Self {
-        s.into()
-    }
-}
-
-impl<'a> Header for ContentEncoding {
+impl Header for ContentEncoding {
     fn name(&self) -> headers::HeaderName {
         http::header::CONTENT_TYPE.into()
     }
