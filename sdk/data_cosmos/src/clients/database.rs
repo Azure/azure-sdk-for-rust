@@ -1,4 +1,4 @@
-use super::*;
+use crate::clients::*;
 use crate::operations::*;
 use crate::resources::collection::PartitionKey;
 use crate::ReadonlyString;
@@ -20,45 +20,22 @@ impl DatabaseClient {
         }
     }
 
-    /// Get a [`CosmosClient`].
-    pub fn cosmos_client(&self) -> &CosmosClient {
-        &self.client
-    }
-
-    /// Convert into a [`CollectionClient`]
-    pub fn collection_client<S: Into<ReadonlyString>>(
-        &self,
-        collection_name: S,
-    ) -> CollectionClient {
-        CollectionClient::new(self.clone(), collection_name)
-    }
-
-    /// Convert into a [`UserClient`]
-    pub fn user_client<S: Into<ReadonlyString>>(&self, user_name: S) -> UserClient {
-        UserClient::new(self.clone(), user_name)
-    }
-
-    /// Get the database's name
-    pub fn database_name(&self) -> &str {
-        &self.database_name
-    }
-
-    /// Get the database
+    /// Get the database.
     pub fn get_database(&self) -> GetDatabaseBuilder {
         GetDatabaseBuilder::new(self.clone())
     }
 
-    /// Delete the database
+    /// Delete the database.
     pub fn delete_database(&self) -> DeleteDatabaseBuilder {
         DeleteDatabaseBuilder::new(self.clone())
     }
 
-    /// List collections in the database
+    /// List collections in the database.
     pub fn list_collections(&self) -> ListCollectionsBuilder {
         ListCollectionsBuilder::new(self.clone())
     }
 
-    /// Create a collection
+    /// Create a collection.
     pub fn create_collection<S: Into<String>, P: Into<PartitionKey>>(
         &self,
         collection_name: S,
@@ -67,22 +44,32 @@ impl DatabaseClient {
         CreateCollectionBuilder::new(self.clone(), collection_name.into(), partition_key.into())
     }
 
-    /// List users
+    /// List users.
     pub fn list_users(&self) -> ListUsersBuilder {
         ListUsersBuilder::new(self.clone())
     }
 
-    /// Convert into a [`CollectionClient`]
-    pub fn into_collection_client<S: Into<ReadonlyString>>(
-        self,
+    /// Convert into a [`CollectionClient`].
+    pub fn collection_client<S: Into<ReadonlyString>>(
+        &self,
         collection_name: S,
     ) -> CollectionClient {
-        CollectionClient::new(self, collection_name)
+        CollectionClient::new(self.clone(), collection_name)
     }
 
-    /// Convert into a [`UserClient`]
-    pub fn into_user_client<S: Into<ReadonlyString>>(self, user_name: S) -> UserClient {
-        UserClient::new(self, user_name)
+    /// Convert into a [`UserClient`].
+    pub fn user_client<S: Into<ReadonlyString>>(&self, user_name: S) -> UserClient {
+        UserClient::new(self.clone(), user_name)
+    }
+
+    /// Get a [`CosmosClient`].
+    pub fn cosmos_client(&self) -> &CosmosClient {
+        &self.client
+    }
+
+    /// Get the database's name.
+    pub fn database_name(&self) -> &str {
+        &self.database_name
     }
 
     pub(crate) fn prepare_pipeline(&self, method: Method) -> Request {
