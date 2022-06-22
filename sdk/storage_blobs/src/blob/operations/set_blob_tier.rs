@@ -7,7 +7,7 @@ pub struct SetBlobTierBuilder {
     blob_client: BlobClient,
     // Request Headers
     access_tier: AccessTier,
-    client_request_id: Option<ClientRequestId>,
+    context: Context,
     rehydrate_priority: Option<RehydratePriority>,
 
     // URI Parameters
@@ -20,7 +20,7 @@ impl SetBlobTierBuilder {
         Self {
             blob_client,
             access_tier: AccessTier::Archive,
-            client_request_id: None,
+            context: Context::new(),
             rehydrate_priority: Some(RehydratePriority::Standard),
             blob_versioning: None,
             timeout: None,
@@ -29,13 +29,13 @@ impl SetBlobTierBuilder {
 
     setters! {
         access_tier: AccessTier => access_tier,
-        client_request_id: ClientRequestId => Some(client_request_id),
+
         rehydrate_priority: RehydratePriority => Some(rehydrate_priority),
         blob_versioning: BlobVersioning => Some(blob_versioning),
         timeout: Timeout => Some(timeout),
     }
 
-    pub fn into_future(self) -> Response {
+    pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.blob_client.url_with_segments(None)?;
             url.query_pairs_mut().append_pair("comp", "tier");
@@ -46,15 +46,13 @@ impl SetBlobTierBuilder {
                 self.blob_client
                     .prepare_request(url.as_str(), http::Method::PUT, None)?;
             request.add_mandatory_header(&self.access_tier);
-            request.add_optional_header(&self.client_request_id);
+
             request.add_optional_header(&self.rehydrate_priority);
 
             let response = self
                 .blob_client
-                .http_client()
-                .execute_request_check_status(&request)
+                .send(&mut self.context, &mut request)
                 .await?;
-
             response.headers().try_into()
         })
     }

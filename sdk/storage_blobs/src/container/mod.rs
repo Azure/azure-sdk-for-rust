@@ -4,7 +4,6 @@ use azure_core::{
 };
 pub mod operations;
 
-use super::IncompleteVector;
 use azure_core::{
     headers::{
         BLOB_PUBLIC_ACCESS, HAS_IMMUTABILITY_POLICY, HAS_LEGAL_HOLD, LEASE_DURATION, LEASE_STATE,
@@ -223,27 +222,4 @@ impl Container {
             metadata,
         })
     }
-}
-
-pub(crate) fn incomplete_vector_from_container_response(
-    body: &str,
-) -> azure_core::Result<IncompleteVector<Container>> {
-    let elem: Element = body.parse().map_kind(ErrorKind::Other)?;
-
-    let mut v = Vec::new();
-
-    for container in
-        traverse(&elem, &["Containers", "Container"], true).map_kind(ErrorKind::Other)?
-    {
-        v.push(Container::parse(container)?);
-    }
-
-    let next_marker =
-        match cast_optional::<String>(&elem, &["NextMarker"]).map_kind(ErrorKind::Other)? {
-            Some(ref nm) if nm.is_empty() => None,
-            Some(nm) => Some(nm.into()),
-            None => None,
-        };
-
-    Ok(IncompleteVector::new(next_marker, v))
 }

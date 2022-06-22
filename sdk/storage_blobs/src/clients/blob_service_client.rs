@@ -1,4 +1,7 @@
-use azure_storage::core::clients::{AsStorageClient, StorageAccountClient, StorageClient};
+use azure_core::{Context, Request, Response};
+use azure_storage::core::clients::{
+    AsStorageClient, ServiceType, StorageAccountClient, StorageClient,
+};
 use std::sync::Arc;
 
 pub trait AsBlobServiceClient {
@@ -19,7 +22,7 @@ impl AsBlobServiceClient for Arc<StorageAccountClient> {
 
 #[derive(Debug, Clone)]
 pub struct BlobServiceClient {
-    storage_client: Arc<StorageClient>,
+    pub(crate) storage_client: Arc<StorageClient>,
 }
 
 impl BlobServiceClient {
@@ -28,6 +31,16 @@ impl BlobServiceClient {
     }
 
     pub fn list_containers(&self) -> crate::container::operations::ListContainersBuilder {
-        crate::container::operations::ListContainersBuilder::new(&self.storage_client)
+        crate::container::operations::ListContainersBuilder::new(self.clone())
+    }
+
+    pub(crate) async fn send(
+        &self,
+        context: &mut Context,
+        request: &mut Request,
+    ) -> azure_core::Result<Response> {
+        self.storage_client
+            .send(context, request, ServiceType::Blob)
+            .await
     }
 }

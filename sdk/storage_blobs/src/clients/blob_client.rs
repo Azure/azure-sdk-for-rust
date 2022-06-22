@@ -2,7 +2,7 @@ use crate::{blob::operations::*, prelude::*, BA512Range};
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     prelude::*,
-    HttpClient, Request,
+    HttpClient, Request, Response,
 };
 use azure_storage::core::{
     clients::StorageCredentials,
@@ -224,6 +224,14 @@ impl BlobClient {
     ) -> azure_core::Result<Request> {
         self.container_client
             .prepare_request(url, method, request_body)
+    }
+
+    pub(crate) async fn send(
+        &self,
+        context: &mut Context,
+        request: &mut Request,
+    ) -> azure_core::Result<Response> {
+        self.container_client.send(context, request).await
     }
 
     pub async fn exists(&self) -> azure_core::Result<bool> {

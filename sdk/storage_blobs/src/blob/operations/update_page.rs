@@ -18,7 +18,7 @@ pub struct UpdatePageBuilder {
     sequence_number_condition: Option<SequenceNumberCondition>,
     if_modified_since_condition: Option<IfModifiedSinceCondition>,
     if_match_condition: Option<IfMatchCondition>,
-    client_request_id: Option<ClientRequestId>,
+    context: Context,
     timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
 }
@@ -33,7 +33,7 @@ impl UpdatePageBuilder {
             sequence_number_condition: None,
             if_modified_since_condition: None,
             if_match_condition: None,
-            client_request_id: None,
+            context: Context::new(),
             timeout: None,
             lease_id: None,
         }
@@ -44,12 +44,12 @@ impl UpdatePageBuilder {
         sequence_number_condition: SequenceNumberCondition => Some(sequence_number_condition),
         if_modified_since_condition: IfModifiedSinceCondition => Some(if_modified_since_condition),
         if_match_condition: IfMatchCondition => Some(if_match_condition),
-        client_request_id: ClientRequestId => Some(client_request_id),
+
         timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
     }
 
-    pub fn into_future(self) -> Response {
+    pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.blob_client.url_with_segments(None)?;
 
@@ -68,15 +68,13 @@ impl UpdatePageBuilder {
             request.add_optional_header(&self.hash);
             request.add_optional_header(&self.if_modified_since_condition);
             request.add_optional_header(&self.if_match_condition);
-            request.add_optional_header(&self.client_request_id);
+
             request.add_optional_header(&self.lease_id);
 
             let response = self
                 .blob_client
-                .http_client()
-                .execute_request_check_status(&request)
+                .send(&mut self.context, &mut request)
                 .await?;
-
             UpdatePageResponse::from_headers(response.headers())
         })
     }

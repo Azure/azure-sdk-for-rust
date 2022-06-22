@@ -22,16 +22,14 @@ async fn main() -> azure_core::Result<()> {
     let blob_service_client = storage_client.as_blob_service_client();
     let container_client = storage_client.as_container_client(&container_name);
 
-    let iv = Box::pin(blob_service_client.list_containers().stream())
+    let iv = blob_service_client
+        .list_containers()
+        .into_stream()
         .next()
         .await
         .expect("stream failed")?;
 
-    if iv
-        .incomplete_vector
-        .iter()
-        .any(|item| item.name == container_name)
-    {
+    if iv.containers.iter().any(|item| item.name == container_name) {
         panic!("The specified container must not exists!");
     }
 
@@ -46,16 +44,14 @@ async fn main() -> azure_core::Result<()> {
 
     println!("Checking that container is empty");
 
-    let iv = Box::pin(
-        container_client
-            .list_blobs()
-            .max_results(NonZeroU32::new(100u32).unwrap())
-            .delimiter("/")
-            .stream(),
-    )
-    .next()
-    .await
-    .expect("stream failed")?;
+    let iv = container_client
+        .list_blobs()
+        .max_results(NonZeroU32::new(100u32).unwrap())
+        .delimiter("/")
+        .into_stream()
+        .next()
+        .await
+        .expect("stream failed")?;
 
     assert!(iv.blobs.blobs.is_empty());
 
@@ -124,16 +120,14 @@ async fn main() -> azure_core::Result<()> {
             .await?;
     }
 
-    let iv = Box::pin(
-        container_client
-            .list_blobs()
-            .max_results(NonZeroU32::new(100u32).unwrap())
-            .delimiter("/")
-            .stream(),
-    )
-    .next()
-    .await
-    .expect("stream failed")?;
+    let iv = container_client
+        .list_blobs()
+        .max_results(NonZeroU32::new(100u32).unwrap())
+        .delimiter("/")
+        .into_stream()
+        .next()
+        .await
+        .expect("stream failed")?;
 
     println!(
         "List blob / returned {} blobs with blob_prefix == {:?}",
@@ -143,17 +137,15 @@ async fn main() -> azure_core::Result<()> {
     iv.blobs.blobs.iter().for_each(|b| println!("\t{}", b.name));
     assert_eq!(iv.blobs.blobs.len(), 4);
 
-    let iv = Box::pin(
-        container_client
-            .list_blobs()
-            .max_results(NonZeroU32::new(100u32).unwrap())
-            .prefix("firstfolder/")
-            .delimiter("/")
-            .stream(),
-    )
-    .next()
-    .await
-    .expect("stream failed")?;
+    let iv = container_client
+        .list_blobs()
+        .max_results(NonZeroU32::new(100u32).unwrap())
+        .prefix("firstfolder/")
+        .delimiter("/")
+        .into_stream()
+        .next()
+        .await
+        .expect("stream failed")?;
 
     println!(
         "List blob firstfolder/ returned {} blobs with blob_prefix == {:?}",
@@ -163,12 +155,10 @@ async fn main() -> azure_core::Result<()> {
     iv.blobs.blobs.iter().for_each(|b| println!("\t{}", b.name));
     assert_eq!(iv.blobs.blobs.len(), 3);
 
-    let mut stream = Box::pin(
-        container_client
-            .list_blobs()
-            .max_results(NonZeroU32::new(5u32).unwrap())
-            .stream(),
-    );
+    let mut stream = container_client
+        .list_blobs()
+        .max_results(NonZeroU32::new(5u32).unwrap())
+        .into_stream();
 
     println!("Streaming results without prefix");
     let mut cnt: i32 = 0;

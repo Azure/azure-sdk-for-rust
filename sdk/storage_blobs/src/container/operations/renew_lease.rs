@@ -7,7 +7,7 @@ pub type RenewLeaseResponse = AcquireLeaseResponse;
 #[derive(Debug, Clone)]
 pub struct RenewLeaseBuilder {
     container_lease_client: ContainerLeaseClient,
-    client_request_id: Option<ClientRequestId>,
+    context: Context,
     timeout: Option<Timeout>,
 }
 
@@ -15,12 +15,12 @@ impl RenewLeaseBuilder {
     pub(crate) fn new(container_lease_client: ContainerLeaseClient) -> Self {
         Self {
             container_lease_client,
-            client_request_id: None,
+            context: Context::new(),
             timeout: None,
         }
     }
 
-    pub fn into_future(self) -> Response {
+    pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.container_lease_client.url_with_segments(None)?;
 
@@ -34,12 +34,10 @@ impl RenewLeaseBuilder {
                     .prepare_request(url.as_str(), Method::PUT, None)?;
             request.insert_header(LEASE_ACTION, "renew");
             request.add_mandatory_header(self.container_lease_client.lease_id());
-            request.add_optional_header(&self.client_request_id);
 
             let response = self
                 .container_lease_client
-                .http_client()
-                .execute_request_check_status(&request)
+                .send(&mut self.context, &mut request)
                 .await?;
 
             RenewLeaseResponse::from_headers(response.headers())

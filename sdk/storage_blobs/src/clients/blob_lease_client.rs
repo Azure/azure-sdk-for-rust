@@ -1,5 +1,5 @@
 use crate::{blob::operations::*, prelude::*};
-use azure_core::{prelude::*, HttpClient, Request};
+use azure_core::{prelude::*, Context, Request, Response};
 use azure_storage::core::prelude::*;
 use bytes::Bytes;
 use http::method::Method;
@@ -31,10 +31,6 @@ impl BlobLeaseClient {
 
     pub fn lease_id(&self) -> &LeaseId {
         &self.lease_id
-    }
-
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.blob_client.http_client()
     }
 
     #[allow(dead_code)]
@@ -78,5 +74,13 @@ impl BlobLeaseClient {
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
         self.blob_client.prepare_request(url, method, request_body)
+    }
+
+    pub(crate) async fn send(
+        &self,
+        context: &mut Context,
+        request: &mut Request,
+    ) -> azure_core::Result<Response> {
+        self.blob_client.send(context, request).await
     }
 }

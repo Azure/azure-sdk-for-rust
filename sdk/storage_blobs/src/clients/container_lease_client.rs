@@ -1,5 +1,5 @@
 use crate::{container::operations::*, prelude::*};
-use azure_core::{prelude::*, HttpClient, Request};
+use azure_core::{prelude::*, Context, Request, Response};
 use azure_storage::core::prelude::*;
 use bytes::Bytes;
 use http::method::Method;
@@ -31,10 +31,6 @@ impl ContainerLeaseClient {
 
     pub fn lease_id(&self) -> &LeaseId {
         &self.lease_id
-    }
-
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.container_client.http_client()
     }
 
     #[allow(dead_code)]
@@ -70,5 +66,13 @@ impl ContainerLeaseClient {
     ) -> azure_core::Result<Request> {
         self.container_client
             .prepare_request(url, method, request_body)
+    }
+
+    pub(crate) async fn send(
+        &self,
+        context: &mut Context,
+        request: &mut Request,
+    ) -> azure_core::Result<Response> {
+        self.container_client.send(context, request).await
     }
 }

@@ -22,16 +22,14 @@ async fn main() -> azure_core::Result<()> {
     let blob_service = storage_client.as_blob_service_client();
     let container_client = storage_client.as_container_client(&container_name);
 
-    let iv = Box::pin(blob_service.list_containers().stream())
+    let iv = blob_service
+        .list_containers()
+        .into_stream()
         .next()
         .await
         .expect("stream failed")?;
 
-    if iv
-        .incomplete_vector
-        .iter()
-        .any(|item| item.name == container_name)
-    {
+    if iv.containers.iter().any(|item| item.name == container_name) {
         panic!("The specified container must not exists!");
     }
 
@@ -55,27 +53,23 @@ async fn main() -> azure_core::Result<()> {
         println!("\tAdded blob {}", i);
     }
 
-    let iv = Box::pin(
-        container_client
-            .list_blobs()
-            .max_results(NonZeroU32::new(3u32).unwrap())
-            .stream(),
-    )
-    .next()
-    .await
-    .expect("stream failed")?;
+    let iv = container_client
+        .list_blobs()
+        .max_results(NonZeroU32::new(3u32).unwrap())
+        .into_stream()
+        .next()
+        .await
+        .expect("stream failed")?;
 
     println!("List blob returned {} blobs.", iv.blobs.blobs.len());
     for cont in iv.blobs.blobs.iter() {
         println!("\t{}\t{} bytes", cont.name, cont.properties.content_length);
     }
 
-    let mut stream = Box::pin(
-        container_client
-            .list_blobs()
-            .max_results(NonZeroU32::new(3u32).unwrap())
-            .stream(),
-    );
+    let mut stream = container_client
+        .list_blobs()
+        .max_results(NonZeroU32::new(3u32).unwrap())
+        .into_stream();
 
     let mut cnt: i32 = 0;
     while let Some(value) = stream.next().await {

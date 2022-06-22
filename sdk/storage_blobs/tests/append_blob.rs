@@ -27,7 +27,9 @@ async fn put_append_blob() {
     let container = storage.as_container_client(container_name);
     let blob = container.as_blob_client(blob_name);
 
-    if Box::pin(blob_service.list_containers().stream())
+    if blob_service
+        .list_containers()
+        .into_stream()
         .next()
         .await
         .unwrap()

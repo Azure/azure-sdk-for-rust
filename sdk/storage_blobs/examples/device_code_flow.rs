@@ -80,7 +80,9 @@ async fn main() -> azure_core::Result<()> {
 
     // now we enumerate the containers in the
     // specified storage account.
-    let containers = Box::pin(blob_service_client.list_containers().stream())
+    let containers = blob_service_client
+        .list_containers()
+        .into_stream()
         .next()
         .await
         .expect("stream failed")?;

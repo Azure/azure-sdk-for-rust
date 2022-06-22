@@ -1,7 +1,9 @@
 use crate::core::clients::{ServiceType, StorageAccountClient};
 use crate::operations::*;
-use azure_core::error::{Error, ErrorKind};
-use azure_core::Request;
+use azure_core::{
+    error::{Error, ErrorKind},
+    Context, Request, Response,
+};
 use bytes::Bytes;
 use http::method::Method;
 use std::sync::Arc;
@@ -93,5 +95,16 @@ impl StorageClient {
     ) -> azure_core::Result<Request> {
         self.storage_account_client
             .prepare_request(url, method, ServiceType::Blob, request_body)
+    }
+
+    pub async fn send(
+        &self,
+        context: &mut Context,
+        request: &mut Request,
+        service_type: ServiceType,
+    ) -> azure_core::Result<Response> {
+        self.storage_account_client
+            .send(context, request, service_type)
+            .await
     }
 }

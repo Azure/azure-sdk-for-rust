@@ -8,7 +8,7 @@ pub struct DeleteBlobBuilder {
     delete_snapshots_method: DeleteSnapshotsMethod,
     timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
-    client_request_id: Option<ClientRequestId>,
+    context: Context,
 }
 
 impl DeleteBlobBuilder {
@@ -18,7 +18,7 @@ impl DeleteBlobBuilder {
             delete_snapshots_method: DeleteSnapshotsMethod::Include,
             timeout: None,
             lease_id: None,
-            client_request_id: None,
+            context: Context::new(),
         }
     }
 
@@ -26,10 +26,10 @@ impl DeleteBlobBuilder {
         delete_snapshots_method: DeleteSnapshotsMethod => delete_snapshots_method,
         timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
-        client_request_id: ClientRequestId => Some(client_request_id),
+
     }
 
-    pub fn into_future(self) -> Response {
+    pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.blob_client.url_with_segments(None)?;
 
@@ -39,15 +39,13 @@ impl DeleteBlobBuilder {
                 self.blob_client
                     .prepare_request(url.as_str(), http::Method::DELETE, None)?;
             request.add_optional_header(&self.lease_id);
-            request.add_optional_header(&self.client_request_id);
+
             request.add_mandatory_header(&self.delete_snapshots_method);
 
             let response = self
                 .blob_client
-                .http_client()
-                .execute_request_check_status(&request)
+                .send(&mut self.context, &mut request)
                 .await?;
-
             DeleteBlobResponse::from_headers(response.headers())
         })
     }

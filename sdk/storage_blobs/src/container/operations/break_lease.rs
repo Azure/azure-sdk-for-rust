@@ -10,7 +10,7 @@ use http::method::Method;
 #[derive(Debug, Clone)]
 pub struct BreakLeaseBuilder {
     container_client: ContainerClient,
-    client_request_id: Option<ClientRequestId>,
+    context: Context,
     timeout: Option<Timeout>,
     lease_break_period: Option<LeaseBreakPeriod>,
     lease_id: Option<LeaseId>,
@@ -20,7 +20,7 @@ impl BreakLeaseBuilder {
     pub(crate) fn new(container_client: ContainerClient) -> BreakLeaseBuilder {
         Self {
             container_client,
-            client_request_id: None,
+            context: Context::new(),
             timeout: None,
             lease_break_period: None,
             lease_id: None,
@@ -30,11 +30,11 @@ impl BreakLeaseBuilder {
     setters! {
         lease_id: LeaseId => Some(lease_id),
         lease_break_period: LeaseBreakPeriod => Some(lease_break_period),
-        client_request_id: ClientRequestId => Some(client_request_id),
+
         timeout: Timeout => Some(timeout),
     }
 
-    pub fn into_future(self) -> Response {
+    pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.container_client.url_with_segments(None)?;
 
@@ -47,16 +47,13 @@ impl BreakLeaseBuilder {
                 self.container_client
                     .prepare_request(url.as_str(), Method::PUT, None)?;
             request.insert_header(LEASE_ACTION, "break");
-            request.add_optional_header(&self.client_request_id);
+
             request.add_optional_header(&self.lease_id);
             request.add_optional_header(&self.lease_break_period);
 
             let response = self
                 .container_client
-                .storage_client()
-                .storage_account_client()
-                .http_client()
-                .execute_request_check_status(&request)
+                .send(&mut self.context, &mut request)
                 .await?;
 
             BreakLeaseResponse::from_headers(response.headers())

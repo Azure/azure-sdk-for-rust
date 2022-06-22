@@ -29,10 +29,10 @@ pub struct CopyBlobFromUrlBuilder {
     if_match_condition: Option<IfMatchCondition>,
     timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
-    client_request_id: Option<ClientRequestId>,
     if_source_since_condition: Option<IfSourceModifiedSinceCondition>,
     if_source_match_condition: Option<IfSourceMatchCondition>,
     source_content_md5: Option<SourceContentMD5>,
+    context: Context,
 }
 
 impl CopyBlobFromUrlBuilder {
@@ -46,10 +46,10 @@ impl CopyBlobFromUrlBuilder {
             if_match_condition: None,
             timeout: None,
             lease_id: None,
-            client_request_id: None,
             if_source_since_condition: None,
             if_source_match_condition: None,
             source_content_md5: None,
+            context: Context::new(),
         }
     }
 
@@ -60,13 +60,12 @@ impl CopyBlobFromUrlBuilder {
         if_match_condition: IfMatchCondition => Some(if_match_condition),
         timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
-        client_request_id: ClientRequestId => Some(client_request_id),
         if_source_since_condition: IfSourceModifiedSinceCondition => Some(if_source_since_condition),
         if_source_match_condition: IfSourceMatchCondition => Some(if_source_match_condition),
         source_content_md5: SourceContentMD5 => Some(source_content_md5),
     }
 
-    pub fn into_future(self) -> Response {
+    pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.blob_client.url_with_segments(None)?;
 
@@ -85,15 +84,13 @@ impl CopyBlobFromUrlBuilder {
             request.add_optional_header(&self.if_modified_since_condition);
             request.add_optional_header(&self.if_match_condition);
             request.add_optional_header(&self.lease_id);
-            request.add_optional_header(&self.client_request_id);
             request.add_optional_header(&self.if_source_since_condition);
             request.add_optional_header(&self.if_source_match_condition);
             request.add_optional_header(&self.source_content_md5);
 
             let response = self
                 .blob_client
-                .http_client()
-                .execute_request_check_status(&request)
+                .send(&mut self.context, &mut request)
                 .await?;
 
             (response.headers()).try_into()

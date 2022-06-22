@@ -23,30 +23,26 @@ async fn main() -> azure_core::Result<()> {
     let container_client = storage_client.as_container_client(container_name);
 
     let max_results = NonZeroU32::new(3).unwrap();
-    let mut iv = Box::pin(
-        blob_service_client
-            .list_containers()
-            .max_results(max_results)
-            .stream(),
-    );
+    let mut iv = blob_service_client
+        .list_containers()
+        .max_results(max_results)
+        .into_stream();
 
     let mut count = 0;
     while let Some(result) = iv.next().await {
         let container = result?;
-        count += container.incomplete_vector.len();
-        for container in container.incomplete_vector.iter() {
+        count += container.containers.len();
+        for container in container.containers.iter() {
             println!("\t{}", container.name);
         }
     }
 
     println!("List containers returned {} containers.", count);
 
-    let mut stream = Box::pin(
-        container_client
-            .list_blobs()
-            .max_results(max_results)
-            .stream(),
-    );
+    let mut stream = container_client
+        .list_blobs()
+        .max_results(max_results)
+        .into_stream();
 
     let mut count = 0;
     while let Some(result) = stream.next().await {

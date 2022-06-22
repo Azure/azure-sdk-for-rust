@@ -9,14 +9,13 @@ use azure_storage::{headers::consistency_from_headers, ConsistencyCRC64, Consist
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
 pub struct PutBlockBuilder {
     blob_client: BlobClient,
     block_id: BlockId,
     body: Bytes,
     #[allow(unused)]
     hash: Option<Hash>,
-    client_request_id: Option<ClientRequestId>,
+    context: Context,
     timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
 }
@@ -28,7 +27,7 @@ impl<'a> PutBlockBuilder {
             block_id,
             body,
             hash: None,
-            client_request_id: None,
+            context: Context::new(),
             timeout: None,
             lease_id: None,
         }
@@ -36,12 +35,12 @@ impl<'a> PutBlockBuilder {
 
     setters! {
         hash: Hash => Some(hash),
-        client_request_id: ClientRequestId => Some(client_request_id),
+
         timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
     }
 
-    pub fn into_future(self) -> Response {
+    pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.blob_client.url_with_segments(None)?;
 
@@ -54,15 +53,13 @@ impl<'a> PutBlockBuilder {
                 http::Method::PUT,
                 Some(self.body.clone()),
             )?;
-            request.add_optional_header(&self.client_request_id);
+
             request.add_optional_header(&self.lease_id);
 
             let response = self
                 .blob_client
-                .http_client()
-                .execute_request_check_status(&request)
+                .send(&mut self.context, &mut request)
                 .await?;
-
             PutBlockResponse::from_headers(response.headers())
         })
     }

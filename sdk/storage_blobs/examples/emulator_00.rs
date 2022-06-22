@@ -18,15 +18,13 @@ async fn main() -> azure_core::Result<()> {
         .await?;
     println!("{:?}", res);
 
-    let res = Box::pin(
-        container_client
-            .list_blobs()
-            .include_metadata(true)
-            .stream(),
-    )
-    .next()
-    .await
-    .expect("stream failed")?;
+    let res = container_client
+        .list_blobs()
+        .include_metadata(true)
+        .into_stream()
+        .next()
+        .await
+        .expect("stream failed")?;
     println!("{:?}", res);
 
     Ok(())

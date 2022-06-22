@@ -9,7 +9,7 @@ pub struct SetACLBuilder {
     container_client: ContainerClient,
     public_access: PublicAccess,
     stored_access_policy_list: Option<StoredAccessPolicyList>,
-    client_request_id: Option<ClientRequestId>,
+    context: Context,
     timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
 }
@@ -20,7 +20,7 @@ impl SetACLBuilder {
             container_client,
             public_access,
             stored_access_policy_list: None,
-            client_request_id: None,
+            context: Context::new(),
             timeout: None,
             lease_id: None,
         }
@@ -28,12 +28,12 @@ impl SetACLBuilder {
 
     setters! {
         lease_id: LeaseId => Some(lease_id),
-        client_request_id: ClientRequestId => Some(client_request_id),
+
         timeout: Timeout => Some(timeout),
         stored_access_policy_list: StoredAccessPolicyList => Some(stored_access_policy_list),
     }
 
-    pub fn into_future(self) -> Response {
+    pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.container_client.url_with_segments(None)?;
 
@@ -52,15 +52,12 @@ impl SetACLBuilder {
             for (name, value) in self.public_access.as_headers() {
                 request.insert_header(name, value);
             }
-            request.add_optional_header(&self.client_request_id);
+
             request.add_optional_header(&self.lease_id);
 
             let response = self
                 .container_client
-                .storage_client()
-                .storage_account_client()
-                .http_client()
-                .execute_request_check_status(&request)
+                .send(&mut self.context, &mut request)
                 .await?;
 
             public_access_from_header(response.headers())

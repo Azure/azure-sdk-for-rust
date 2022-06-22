@@ -24,19 +24,19 @@ async fn main() -> azure_core::Result<()> {
             .as_storage_client();
     let blob_service_client = storage_client.as_blob_service_client();
 
-    let response = Box::pin(
-        storage_client
-            .as_container_client("azuresdkforrust")
-            .list_blobs()
-            .stream(),
-    )
-    .next()
-    .await
-    .expect("stream failed")?;
+    let response = storage_client
+        .as_container_client("azuresdkforrust")
+        .list_blobs()
+        .into_stream()
+        .next()
+        .await
+        .expect("stream failed")?;
 
     println!("key response = {:#?}", response);
 
-    let response = Box::pin(blob_service_client.list_containers().stream())
+    let response = blob_service_client
+        .list_containers()
+        .into_stream()
         .next()
         .await
         .expect("stream failed")?;
@@ -49,7 +49,9 @@ async fn main() -> azure_core::Result<()> {
     let blob_service_client =
         StorageAccountClient::new_sas_token(http_client.clone(), &account, sas_token)?
             .as_blob_service_client();
-    let response = Box::pin(blob_service_client.list_containers().stream())
+    let response = blob_service_client
+        .list_containers()
+        .into_stream()
         .next()
         .await
         .expect("stream failed")?;

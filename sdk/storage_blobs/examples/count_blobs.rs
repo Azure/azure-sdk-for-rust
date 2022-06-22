@@ -19,7 +19,7 @@ async fn main() -> azure_core::Result<()> {
             .as_container_client(&container);
 
     let mut count: usize = 0;
-    let mut list_blobs = Box::pin(container_client.list_blobs().stream());
+    let mut list_blobs = container_client.list_blobs().into_stream();
     while let Some(list_blobs_response) = list_blobs.next().await {
         let list_blobs_response = list_blobs_response?;
         count += list_blobs_response.blobs.blobs.len();

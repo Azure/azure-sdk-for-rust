@@ -6,8 +6,8 @@ use chrono::{DateTime, Utc};
 pub struct ChangeLeaseBuilder {
     blob_lease_client: BlobLeaseClient,
     proposed_lease_id: ProposedLeaseId,
-    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl ChangeLeaseBuilder {
@@ -18,17 +18,16 @@ impl ChangeLeaseBuilder {
         Self {
             blob_lease_client,
             proposed_lease_id,
-            client_request_id: None,
             timeout: None,
+            context: Context::new(),
         }
     }
 
     setters! {
-        client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
     }
 
-    pub fn into_future(self) -> Response {
+    pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.blob_lease_client.url_with_segments(None)?;
 
@@ -41,12 +40,10 @@ impl ChangeLeaseBuilder {
             request.insert_header(LEASE_ACTION, "change");
             request.add_mandatory_header(self.blob_lease_client.lease_id());
             request.add_mandatory_header(&self.proposed_lease_id);
-            request.add_optional_header(&self.client_request_id);
 
             let response = self
                 .blob_lease_client
-                .http_client()
-                .execute_request_check_status(&request)
+                .send(&mut self.context, &mut request)
                 .await?;
 
             ChangeLeaseResponse::from_headers(response.headers())

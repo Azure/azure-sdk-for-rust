@@ -36,7 +36,9 @@ async fn create_container_and_list(
     container_client.create().into_future().await?;
 
     // list empty container
-    let iv = Box::pin(container_client.list_blobs().stream())
+    let iv = container_client
+        .list_blobs()
+        .into_stream()
         .next()
         .await
         .expect("stream failed")?;
@@ -53,7 +55,9 @@ async fn create_container_and_list(
     }
 
     // list full container
-    let iv = Box::pin(container_client.list_blobs().stream())
+    let iv = container_client
+        .list_blobs()
+        .into_stream()
         .next()
         .await
         .expect("stream failed")?;

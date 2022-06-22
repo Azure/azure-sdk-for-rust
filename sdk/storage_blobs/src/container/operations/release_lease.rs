@@ -10,7 +10,7 @@ use http::method::Method;
 #[derive(Debug, Clone)]
 pub struct ReleaseLeaseBuilder {
     container_lease_client: ContainerLeaseClient,
-    client_request_id: Option<ClientRequestId>,
+    context: Context,
     timeout: Option<Timeout>,
 }
 
@@ -18,17 +18,17 @@ impl ReleaseLeaseBuilder {
     pub(crate) fn new(container_lease_client: ContainerLeaseClient) -> Self {
         Self {
             container_lease_client,
-            client_request_id: None,
+            context: Context::new(),
             timeout: None,
         }
     }
 
     setters! {
-        client_request_id: ClientRequestId => Some(client_request_id),
+
         timeout: Timeout => Some(timeout),
     }
 
-    pub fn into_future(self) -> Response {
+    pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.container_lease_client.url_with_segments(None)?;
 
@@ -41,13 +41,12 @@ impl ReleaseLeaseBuilder {
                 self.container_lease_client
                     .prepare_request(url.as_str(), Method::PUT, None)?;
             request.insert_header(LEASE_ACTION, "release");
-            request.add_optional_header(&self.client_request_id);
+
             request.add_mandatory_header(self.container_lease_client.lease_id());
 
             let response = self
                 .container_lease_client
-                .http_client()
-                .execute_request_check_status(&request)
+                .send(&mut self.context, &mut request)
                 .await?;
 
             ReleaseLeaseResponse::from_headers(response.headers())

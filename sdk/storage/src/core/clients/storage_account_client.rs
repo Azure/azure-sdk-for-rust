@@ -8,11 +8,12 @@ use crate::{
         AccountSharedAccessSignatureBuilder, ClientAccountSharedAccessSignature,
     },
 };
-use azure_core::auth::TokenCredential;
-use azure_core::error::{Error, ErrorKind, ResultExt};
-use azure_core::Request;
-use azure_core::{headers::*, Pipeline};
-use azure_core::{ClientOptions, HttpClient};
+use azure_core::{
+    auth::TokenCredential,
+    error::{Error, ErrorKind, ResultExt},
+    headers::*,
+    ClientOptions, Context, HttpClient, Pipeline, Request, Response,
+};
 use bytes::Bytes;
 use http::method::Method;
 use std::sync::Arc;
@@ -497,6 +498,17 @@ impl StorageAccountClient {
 
     pub(crate) fn pipeline(&self) -> &Pipeline {
         &self.pipeline
+    }
+
+    pub async fn send(
+        &self,
+        context: &mut Context,
+        request: &mut Request,
+        service_type: ServiceType,
+    ) -> azure_core::Result<Response> {
+        self.pipeline
+            .send(context.insert(service_type), request)
+            .await
     }
 
     /// Prepares' an `azure_core::Request`.

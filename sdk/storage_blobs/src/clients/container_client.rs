@@ -2,10 +2,12 @@ use crate::{container::operations::*, prelude::PublicAccess};
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     prelude::*,
-    HttpClient, Request,
+    Request, Response,
 };
 use azure_storage::{
-    core::clients::{AsStorageClient, StorageAccountClient, StorageClient, StorageCredentials},
+    core::clients::{
+        AsStorageClient, ServiceType, StorageAccountClient, StorageClient, StorageCredentials,
+    },
     shared_access_signature::{
         service_sas::{BlobSharedAccessSignatureBuilder, BlobSignedResource, SetResources},
         SasToken,
@@ -53,10 +55,6 @@ impl ContainerClient {
         self.storage_client.as_ref()
     }
 
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.storage_client.storage_account_client().http_client()
-    }
-
     pub(crate) fn storage_account_client(&self) -> &StorageAccountClient {
         self.storage_client.storage_account_client()
     }
@@ -93,7 +91,7 @@ impl ContainerClient {
     }
 
     pub fn list_blobs(&self) -> ListBlobsBuilder {
-        ListBlobsBuilder::new(self)
+        ListBlobsBuilder::new(self.clone())
     }
 
     pub fn acquire_lease<LD: Into<LeaseDuration>>(
@@ -105,6 +103,16 @@ impl ContainerClient {
 
     pub fn break_lease(&self) -> BreakLeaseBuilder {
         BreakLeaseBuilder::new(self.clone())
+    }
+
+    pub(crate) async fn send(
+        &self,
+        context: &mut Context,
+        request: &mut Request,
+    ) -> azure_core::Result<Response> {
+        self.storage_client
+            .send(context, request, ServiceType::Blob)
+            .await
     }
 
     pub(crate) fn prepare_request(

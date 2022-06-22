@@ -7,7 +7,7 @@ use std::convert::{TryFrom, TryInto};
 pub struct SetMetadataBuilder {
     blob_client: BlobClient,
     lease_id: Option<LeaseId>,
-    client_request_id: Option<ClientRequestId>,
+    context: Context,
     timeout: Option<Timeout>,
     metadata: Option<Metadata>,
 }
@@ -17,7 +17,7 @@ impl SetMetadataBuilder {
         Self {
             blob_client,
             lease_id: None,
-            client_request_id: None,
+            context: Context::new(),
             timeout: None,
             metadata: None,
         }
@@ -26,11 +26,11 @@ impl SetMetadataBuilder {
     setters! {
         lease_id: LeaseId => Some(lease_id),
         timeout: Timeout => Some(timeout),
-        client_request_id: ClientRequestId => Some(client_request_id),
+
         metadata: Metadata => Some(metadata),
     }
 
-    pub fn into_future(self) -> Response {
+    pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.blob_client.url_with_segments(None)?;
 
@@ -40,7 +40,7 @@ impl SetMetadataBuilder {
             let mut request =
                 self.blob_client
                     .prepare_request(url.as_str(), http::Method::PUT, None)?;
-            request.add_optional_header(&self.client_request_id);
+
             request.add_optional_header(&self.lease_id);
             if let Some(metadata) = &self.metadata {
                 for m in metadata.iter() {
@@ -50,10 +50,8 @@ impl SetMetadataBuilder {
 
             let response = self
                 .blob_client
-                .http_client()
-                .execute_request_check_status(&request)
+                .send(&mut self.context, &mut request)
                 .await?;
-
             response.headers().try_into()
         })
     }

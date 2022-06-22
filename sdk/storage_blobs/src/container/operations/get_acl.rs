@@ -3,6 +3,7 @@ use crate::{
     prelude::*,
 };
 use azure_core::{
+    collect_pinned_stream,
     error::{Error, ErrorKind, ResultExt},
     headers::{Headers, REQUEST_ID},
     prelude::*,
@@ -18,7 +19,7 @@ use uuid::Uuid;
 #[derive(Debug, Clone)]
 pub struct GetACLBuilder {
     container_client: ContainerClient,
-    client_request_id: Option<ClientRequestId>,
+    context: Context,
     timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
 }
@@ -27,19 +28,19 @@ impl GetACLBuilder {
     pub(crate) fn new(container_client: ContainerClient) -> Self {
         Self {
             container_client,
-            client_request_id: None,
+            context: Context::new(),
             timeout: None,
             lease_id: None,
         }
     }
 
     setters! {
-        client_request_id: ClientRequestId => Some(client_request_id),
+
         timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
     }
 
-    pub fn into_future(self) -> Response {
+    pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.container_client.url_with_segments(None)?;
 
@@ -51,19 +52,19 @@ impl GetACLBuilder {
             let mut request =
                 self.container_client
                     .prepare_request(url.as_str(), Method::GET, None)?;
-            request.add_optional_header(&self.client_request_id);
+
             request.add_optional_header(&self.lease_id);
 
             let response = self
                 .container_client
-                .storage_client()
-                .storage_account_client()
-                .http_client()
-                .execute_request_check_status(&request)
+                .send(&mut self.context, &mut request)
                 .await?;
 
+            let (_, headers, body) = response.deconstruct();
+            let body = collect_pinned_stream(body).await?;
+
             // todo: parse SAS policies
-            (response.body(), response.headers()).try_into()
+            (body, headers).try_into()
         })
     }
 }
@@ -78,10 +79,10 @@ pub struct GetACLResponse {
     pub stored_access_policy_list: StoredAccessPolicyList,
 }
 
-impl TryFrom<(&Bytes, &Headers)> for GetACLResponse {
+impl TryFrom<(Bytes, Headers)> for GetACLResponse {
     type Error = crate::Error;
 
-    fn try_from((body, header_map): (&Bytes, &Headers)) -> azure_core::Result<Self> {
+    fn try_from((body, header_map): (Bytes, Headers)) -> azure_core::Result<Self> {
         GetACLResponse::from_response(body, header_map)
     }
 }
@@ -89,10 +90,10 @@ impl TryFrom<(&Bytes, &Headers)> for GetACLResponse {
 impl GetACLResponse {
     // this should be named into and be consuming
     pub(crate) fn from_response(
-        body: &Bytes,
-        headers: &Headers,
+        body: Bytes,
+        headers: Headers,
     ) -> azure_core::Result<GetACLResponse> {
-        let public_access = public_access_from_header(headers)?;
+        let public_access = public_access_from_header(&headers)?;
 
         let etag = match headers.get(header::ETAG) {
             Some(etag) => etag.as_str(),
@@ -127,7 +128,7 @@ impl GetACLResponse {
         let date = DateTime::parse_from_rfc2822(date).map_kind(ErrorKind::DataConversion)?;
 
         let stored_access_policy_list =
-            StoredAccessPolicyList::from_xml(body).map_kind(ErrorKind::DataConversion)?;
+            StoredAccessPolicyList::from_xml(&body).map_kind(ErrorKind::DataConversion)?;
 
         Ok(GetACLResponse {
             public_access,
