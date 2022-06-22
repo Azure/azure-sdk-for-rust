@@ -51,7 +51,7 @@ pub(crate) fn serialize_partition_key<PK: Serialize>(pk: &PK) -> azure_core::Res
     )
 }
 
-pub(crate) fn add_as_partition_key_header_serialized2(
+pub(crate) fn add_as_partition_key_header_serialized(
     partition_key_serialized: &str,
     request: &mut HttpRequest,
 ) {

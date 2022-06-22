@@ -49,7 +49,7 @@ impl DeleteDocumentBuilder {
             }
             request.insert_headers(&self.allow_tentative_writes);
 
-            crate::cosmos_entity::add_as_partition_key_header_serialized2(
+            crate::cosmos_entity::add_as_partition_key_header_serialized(
                 self.client.partition_key_serialized(),
                 &mut request,
             );

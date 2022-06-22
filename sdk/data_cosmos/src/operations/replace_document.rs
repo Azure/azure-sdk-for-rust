@@ -1,4 +1,4 @@
-use crate::cosmos_entity::{add_as_partition_key_header_serialized2, serialize_partition_key};
+use crate::cosmos_entity::{add_as_partition_key_header_serialized, serialize_partition_key};
 use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::resources::document::DocumentAttributes;
@@ -63,7 +63,7 @@ impl<D: Serialize + Send + 'static> ReplaceDocumentBuilder<D> {
                 .partition_key
                 .as_deref()
                 .unwrap_or_else(|| self.client.partition_key_serialized());
-            add_as_partition_key_header_serialized2(partition_key, &mut request);
+            add_as_partition_key_header_serialized(partition_key, &mut request);
 
             request.insert_headers(&self.indexing_directive);
             request.insert_headers(&self.if_match_condition);

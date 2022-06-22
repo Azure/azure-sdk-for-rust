@@ -1,4 +1,4 @@
-//! TODO: Documentation
+//! All the operations the SDK supports against the Cosmos service.
 
 #![allow(missing_docs)]
 
