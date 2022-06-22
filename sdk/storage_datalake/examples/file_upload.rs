@@ -63,8 +63,8 @@ async fn main() -> azure_core::Result<()> {
 async fn create_data_lake_client() -> azure_core::Result<DataLakeClient> {
     let account_name = std::env::var("ADLSGEN2_STORAGE_ACCOUNT")
         .expect("Set env variable ADLSGEN2_STORAGE_ACCOUNT first!");
-    let account_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
-        .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
+    let account_key = std::env::var("ADLSGEN2_STORAGE_ACCESS_KEY")
+        .expect("Set env variable ADLSGEN2_STORAGE_ACCESS_KEY first!");
 
     Ok(DataLakeClient::new(
         StorageSharedKeyCredential::new(account_name, account_key),

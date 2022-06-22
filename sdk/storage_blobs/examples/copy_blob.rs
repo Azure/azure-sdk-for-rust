@@ -4,15 +4,15 @@ use chrono::{Duration, Utc};
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    // First we retrieve the account name and master key from environment variables.
+    // First we retrieve the account name and access key from environment variables.
     let source_account = std::env::var("SOURCE_STORAGE_ACCOUNT")
         .expect("Set env variable SOURCE_STORAGE_ACCOUNT first!");
-    let source_master_key = std::env::var("SOURCE_STORAGE_MASTER_KEY")
-        .expect("Set env variable SOURCE_STORAGE_MASTER_KEY first!");
+    let source_access_key = std::env::var("SOURCE_STORAGE_ACCESS_KEY")
+        .expect("Set env variable SOURCE_STORAGE_ACCESS_KEY first!");
     let destination_account = std::env::var("DESTINATION_STORAGE_ACCOUNT")
         .expect("Set env variable DESTINATION_STORAGE_ACCOUNT first!");
-    let destination_master_key = std::env::var("DESTINATION_STORAGE_MASTER_KEY")
-        .expect("Set env variable DESTINATION_STORAGE_MASTER_KEY first!");
+    let destination_access_key = std::env::var("DESTINATION_STORAGE_ACCESS_KEY")
+        .expect("Set env variable DESTINATION_STORAGE_ACCESS_KEY first!");
 
     let source_container_name = std::env::args()
         .nth(1)
@@ -33,7 +33,7 @@ async fn main() -> azure_core::Result<()> {
     let source_storage_account_client = StorageAccountClient::new_access_key(
         http_client.clone(),
         &source_account,
-        &source_master_key,
+        &source_access_key,
     );
     let source_blob = source_storage_account_client
         .as_container_client(&source_container_name)
@@ -42,7 +42,7 @@ async fn main() -> azure_core::Result<()> {
     let destination_blob = StorageAccountClient::new_access_key(
         http_client.clone(),
         &destination_account,
-        &destination_master_key,
+        &destination_access_key,
     )
     .as_container_client(&destination_container_name)
     .as_blob_client(&destination_blob_name);
