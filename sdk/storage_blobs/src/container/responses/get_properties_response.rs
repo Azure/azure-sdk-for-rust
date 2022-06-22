@@ -1,7 +1,7 @@
 use crate::container::Container;
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
-    headers::{Headers, REQUEST_ID, self},
+    headers::{self, Headers, REQUEST_ID},
     RequestId,
 };
 use chrono::{DateTime, FixedOffset};
