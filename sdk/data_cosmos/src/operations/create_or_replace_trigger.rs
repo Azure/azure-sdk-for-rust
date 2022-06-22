@@ -44,6 +44,7 @@ impl CreateOrReplaceTriggerBuilder {
         context: Context => context,
     }
 
+    #[must_use]
     pub fn into_future(self) -> CreateOrReplaceTrigger {
         Box::pin(async move {
             let mut request = if self.is_create {

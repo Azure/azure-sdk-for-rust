@@ -40,6 +40,7 @@ impl CreateOrReplaceAttachmentBuilder {
         context: Context => context,
     }
 
+    #[must_use]
     pub fn into_future(self) -> CreateOrReplaceAttachment {
         Box::pin(async move {
             let mut req = if self.is_create {

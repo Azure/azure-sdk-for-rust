@@ -16,6 +16,7 @@ impl Default for Context {
 
 impl Context {
     /// Creates a new, empty Context.
+    #[must_use]
     pub fn new() -> Self {
         Self {
             type_map: HashMap::new(),
@@ -60,6 +61,7 @@ impl Context {
     /// Returns a reference of the entity of the specified type signature, if it exists.
     ///
     /// If there is no entity with the specific type signature, `None` is returned instead.
+    #[must_use]
     pub fn get<E>(&self) -> Option<&E>
     where
         E: Send + Sync + 'static,
@@ -70,11 +72,13 @@ impl Context {
     }
 
     /// Returns the number of entities in the type map.
+    #[must_use]
     pub fn len(&self) -> usize {
         self.type_map.len()
     }
 
     /// Returns `true` if the type map is empty, `false` otherwise.
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.type_map.is_empty()
     }

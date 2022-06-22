@@ -24,21 +24,25 @@ impl TriggerClient {
     }
 
     /// Get a [`CosmosClient`]
+    #[must_use]
     pub fn cosmos_client(&self) -> &CosmosClient {
         self.collection.cosmos_client()
     }
 
     /// Get a [`DatabaseClient`]
+    #[must_use]
     pub fn database_client(&self) -> &DatabaseClient {
         self.collection.database_client()
     }
 
     /// Get a [`CollectionClient`]
+    #[must_use]
     pub fn collection_client(&self) -> &CollectionClient {
         &self.collection
     }
 
     /// Get the trigger name
+    #[must_use]
     pub fn trigger_name(&self) -> &str {
         &self.trigger_name
     }
@@ -86,6 +90,7 @@ impl TriggerClient {
     }
 
     /// Delete a trigger
+    #[must_use]
     pub fn delete_trigger(&self) -> DeleteTriggerBuilder {
         DeleteTriggerBuilder::new(self.clone())
     }

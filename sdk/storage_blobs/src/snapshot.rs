@@ -9,6 +9,7 @@ use azure_core::AppendToUrlQuery;
 pub struct Snapshot(String);
 
 impl Snapshot {
+    #[must_use]
     pub fn new(snapshot: String) -> Self {
         Self(snapshot)
     }

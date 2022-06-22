@@ -22,21 +22,25 @@ impl StoredProcedureClient {
     }
 
     /// Get a [`CosmosClient`]
+    #[must_use]
     pub fn cosmos_client(&self) -> &CosmosClient {
         self.collection.cosmos_client()
     }
 
     /// Get a [`DatabaseClient`]
+    #[must_use]
     pub fn database_client(&self) -> &DatabaseClient {
         self.collection.database_client()
     }
 
     /// Get the [`CollectionClient`]
+    #[must_use]
     pub fn collection_client(&self) -> &CollectionClient {
         &self.collection
     }
 
     /// Get the stored procedure's name
+    #[must_use]
     pub fn stored_procedure_name(&self) -> &str {
         &self.stored_procedure_name
     }
@@ -58,11 +62,13 @@ impl StoredProcedureClient {
     }
 
     /// Execute the stored procedure
+    #[must_use]
     pub fn execute_stored_procedure(&self) -> ExecuteStoredProcedureBuilder {
         ExecuteStoredProcedureBuilder::new(self.clone())
     }
 
     /// Delete the stored procedure
+    #[must_use]
     pub fn delete_stored_procedure(&self) -> DeleteStoredProcedureBuilder {
         DeleteStoredProcedureBuilder::new(self.clone())
     }

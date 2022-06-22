@@ -39,6 +39,7 @@ impl TableServiceClient {
         }))
     }
 
+    #[must_use]
     pub fn list(&self) -> ListTablesBuilder {
         ListTablesBuilder::new(self)
     }

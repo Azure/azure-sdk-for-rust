@@ -21,6 +21,7 @@ pub struct ExpirySeconds(u64);
 
 impl ExpirySeconds {
     /// Create an `ExpirySeconds` from a `u64`
+    #[must_use]
     pub fn new(secs: u64) -> Self {
         Self(secs)
     }

@@ -21,6 +21,7 @@ impl DatabaseClient {
     }
 
     /// Get a [`CosmosClient`].
+    #[must_use]
     pub fn cosmos_client(&self) -> &CosmosClient {
         &self.client
     }
@@ -39,21 +40,25 @@ impl DatabaseClient {
     }
 
     /// Get the database's name
+    #[must_use]
     pub fn database_name(&self) -> &str {
         &self.database_name
     }
 
     /// Get the database
+    #[must_use]
     pub fn get_database(&self) -> GetDatabaseBuilder {
         GetDatabaseBuilder::new(self.clone())
     }
 
     /// Delete the database
+    #[must_use]
     pub fn delete_database(&self) -> DeleteDatabaseBuilder {
         DeleteDatabaseBuilder::new(self.clone())
     }
 
     /// List collections in the database
+    #[must_use]
     pub fn list_collections(&self) -> ListCollectionsBuilder {
         ListCollectionsBuilder::new(self.clone())
     }
@@ -68,6 +73,7 @@ impl DatabaseClient {
     }
 
     /// List users
+    #[must_use]
     pub fn list_users(&self) -> ListUsersBuilder {
         ListUsersBuilder::new(self.clone())
     }

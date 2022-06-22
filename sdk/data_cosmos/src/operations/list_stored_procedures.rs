@@ -33,6 +33,7 @@ impl ListStoredProceduresBuilder {
         context: Context => context,
     }
 
+    #[must_use]
     pub fn into_stream(self) -> ListStoredProcedures {
         let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();

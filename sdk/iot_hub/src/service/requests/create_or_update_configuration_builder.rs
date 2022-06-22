@@ -46,6 +46,7 @@ impl<'a> CreateOrUpdateConfigurationBuilder<'a> {
 
     /// Sets the device content for the configuration
     /// The content cannot be updated once it has been created.
+    #[must_use]
     pub fn device_content(mut self, device_content: serde_json::Value) -> Self {
         self.content.device_content = Some(device_content);
         self
@@ -53,6 +54,7 @@ impl<'a> CreateOrUpdateConfigurationBuilder<'a> {
 
     /// Sets the module content for the configuration.
     /// The content cannot be updated once it has been created.
+    #[must_use]
     pub fn module_content(mut self, module_content: serde_json::Value) -> Self {
         self.content.module_content = Some(module_content);
         self
@@ -60,6 +62,7 @@ impl<'a> CreateOrUpdateConfigurationBuilder<'a> {
 
     /// Sets the module content for the configuration
     /// The content cannot be updated once it has been created.
+    #[must_use]
     pub fn modules_content(mut self, modules_content: serde_json::Value) -> Self {
         self.content.modules_content = Some(modules_content);
         self
@@ -76,6 +79,7 @@ impl<'a> CreateOrUpdateConfigurationBuilder<'a> {
     }
 
     /// Add multiple metrics to the configuration.
+    #[must_use]
     pub fn metrics(mut self, metrics: HashMap<String, String>) -> Self {
         self.metrics = metrics;
         self
@@ -92,6 +96,7 @@ impl<'a> CreateOrUpdateConfigurationBuilder<'a> {
     }
 
     /// Add multiple labels to the configuration.
+    #[must_use]
     pub fn labels(mut self, labels: HashMap<String, String>) -> Self {
         self.labels = labels;
         self

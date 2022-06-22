@@ -33,6 +33,7 @@ impl ReplaceCollectionBuilder {
         context: Context => context,
     }
 
+    #[must_use]
     pub fn into_future(self) -> ReplaceCollection {
         Box::pin(async move {
             let mut request = self

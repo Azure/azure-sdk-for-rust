@@ -4,10 +4,12 @@ use crate::headers::{self, Header};
 pub struct ContentType<'a>(&'a str);
 
 impl<'a> ContentType<'a> {
+    #[must_use]
     pub fn new(s: &'a str) -> Self {
         Self(s)
     }
 
+    #[must_use]
     pub fn as_str(&self) -> &str {
         self.0
     }

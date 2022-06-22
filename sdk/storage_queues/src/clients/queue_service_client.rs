@@ -28,22 +28,26 @@ impl QueueServiceClient {
         Arc::new(Self { storage_client })
     }
 
+    #[must_use]
     pub fn list_queues(&self) -> crate::requests::ListQueuesBuilder {
         crate::requests::ListQueuesBuilder::new(&self.storage_client)
     }
 
+    #[must_use]
     pub fn get_queue_service_properties(
         &self,
     ) -> crate::requests::GetQueueServicePropertiesBuilder {
         crate::requests::GetQueueServicePropertiesBuilder::new(&self.storage_client)
     }
 
+    #[must_use]
     pub fn set_queue_service_properties(
         &self,
     ) -> crate::requests::SetQueueServicePropertiesBuilder {
         crate::requests::SetQueueServicePropertiesBuilder::new(&self.storage_client)
     }
 
+    #[must_use]
     pub fn get_queue_service_stats(&self) -> crate::requests::GetQueueServiceStatsBuilder {
         crate::requests::GetQueueServiceStatsBuilder::new(&self.storage_client)
     }

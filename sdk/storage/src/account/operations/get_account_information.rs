@@ -24,6 +24,7 @@ impl GetAccountInformationBuilder {
         context: Context => context,
     }
 
+    #[must_use]
     pub fn into_future(mut self) -> GetAccountInformation {
         Box::pin(async move {
             let mut request = self

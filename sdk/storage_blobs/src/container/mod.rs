@@ -69,6 +69,7 @@ impl AsRef<str> for Container {
 }
 
 impl Container {
+    #[must_use]
     pub fn new(name: &str) -> Container {
         Container {
             name: name.to_owned(),

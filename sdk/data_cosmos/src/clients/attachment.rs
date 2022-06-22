@@ -25,36 +25,43 @@ impl AttachmentClient {
     }
 
     /// Get a [`CosmosClient`].
+    #[must_use]
     pub fn cosmos_client(&self) -> &CosmosClient {
         self.document_client().cosmos_client()
     }
 
     /// Get a [`DatabaseClient`].
+    #[must_use]
     pub fn database_client(&self) -> &DatabaseClient {
         self.document_client().database_client()
     }
 
     /// Get a [`CollectionClient`].
+    #[must_use]
     pub fn collection_client(&self) -> &CollectionClient {
         self.document_client().collection_client()
     }
 
     /// Get a [`DocumentClient`].
+    #[must_use]
     pub fn document_client(&self) -> &DocumentClient {
         &self.document
     }
 
     /// Get the attachment name.
+    #[must_use]
     pub fn attachment_name(&self) -> &str {
         &self.attachment_name
     }
 
     /// Initiate a request to get an attachment.
+    #[must_use]
     pub fn get(&self) -> GetAttachmentBuilder {
         GetAttachmentBuilder::new(self.clone())
     }
 
     /// Initiate a request to delete an attachment.
+    #[must_use]
     pub fn delete(&self) -> DeleteAttachmentBuilder {
         DeleteAttachmentBuilder::new(self.clone())
     }

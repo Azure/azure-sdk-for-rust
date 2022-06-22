@@ -27,11 +27,13 @@ impl CollectionClient {
     }
 
     /// Get a [`CosmosClient`].
+    #[must_use]
     pub fn cosmos_client(&self) -> &CosmosClient {
         self.database.cosmos_client()
     }
 
     /// Get a [`DatabaseClient`].
+    #[must_use]
     pub fn database_client(&self) -> &DatabaseClient {
         &self.database
     }
@@ -67,16 +69,19 @@ impl CollectionClient {
     }
 
     /// Get the collection name
+    #[must_use]
     pub fn collection_name(&self) -> &str {
         &self.collection_name
     }
 
     /// Get a collection
+    #[must_use]
     pub fn get_collection(&self) -> GetCollectionBuilder {
         GetCollectionBuilder::new(self.clone())
     }
 
     /// Delete a collection
+    #[must_use]
     pub fn delete_collection(&self) -> DeleteCollectionBuilder {
         DeleteCollectionBuilder::new(self.clone())
     }
@@ -90,6 +95,7 @@ impl CollectionClient {
     }
 
     /// list documents in a collection
+    #[must_use]
     pub fn list_documents(&self) -> ListDocumentsBuilder {
         ListDocumentsBuilder::new(self.clone())
     }
@@ -108,21 +114,25 @@ impl CollectionClient {
     }
 
     /// list stored procedures in a collection
+    #[must_use]
     pub fn list_stored_procedures(&self) -> ListStoredProceduresBuilder {
         ListStoredProceduresBuilder::new(self.clone())
     }
 
     /// list user defined functions in a collection
+    #[must_use]
     pub fn list_user_defined_functions(&self) -> ListUserDefinedFunctionsBuilder {
         ListUserDefinedFunctionsBuilder::new(self.clone())
     }
 
     /// list triggers in a collection
+    #[must_use]
     pub fn list_triggers(&self) -> ListTriggersBuilder {
         ListTriggersBuilder::new(self.clone())
     }
 
     /// list the partition key ranges in a collection
+    #[must_use]
     pub fn get_partition_key_ranges(&self) -> GetPartitionKeyRangesBuilder {
         GetPartitionKeyRangesBuilder::new(self.clone())
     }

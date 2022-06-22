@@ -58,6 +58,7 @@ impl PopReceiptClient {
 
     /// Deletes the message. The message must not have been
     /// made visible again or this call would fail.
+    #[must_use]
     pub fn delete(&self) -> DeleteMessageBuilder {
         DeleteMessageBuilder::new(self)
     }

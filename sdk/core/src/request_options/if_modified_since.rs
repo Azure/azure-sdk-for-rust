@@ -5,6 +5,7 @@ use chrono::{DateTime, Utc};
 pub struct IfModifiedSince(DateTime<Utc>);
 
 impl IfModifiedSince {
+    #[must_use]
     pub fn new(time: DateTime<Utc>) -> Self {
         Self(time)
     }

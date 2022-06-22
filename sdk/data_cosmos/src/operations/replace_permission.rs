@@ -29,6 +29,7 @@ impl ReplacePermissionBuilder {
         context: Context => context,
     }
 
+    #[must_use]
     pub fn into_future(self) -> ReplacePermission {
         Box::pin(async move {
             let mut request = self

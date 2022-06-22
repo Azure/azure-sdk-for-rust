@@ -33,6 +33,7 @@ impl<'a> CreateOrUpdateDeviceIdentityBuilder<'a> {
     }
 
     /// Sets a device capability on the device
+    #[must_use]
     pub fn device_capability(mut self, desired_capability: DesiredCapability) -> Self {
         match desired_capability {
             DesiredCapability::IotEdge => self.capabilities.iotedge = true,

@@ -4,6 +4,7 @@ use azure_core::AppendToUrlQuery;
 pub struct Top(u32);
 
 impl Top {
+    #[must_use]
     pub fn new(s: u32) -> Self {
         Self(s)
     }

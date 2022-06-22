@@ -43,6 +43,7 @@ impl ListDocumentsBuilder {
         partition_range_id: String => Some(PartitionRangeId::new(partition_range_id)),
     }
 
+    #[must_use]
     pub fn into_stream<T>(self) -> ListDocuments<T>
     where
         T: DeserializeOwned + Send + Sync,

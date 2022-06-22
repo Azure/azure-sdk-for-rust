@@ -26,6 +26,7 @@ impl DeleteStoredProcedureBuilder {
         consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 
+    #[must_use]
     pub fn into_future(self) -> DeleteStoredProcedure {
         Box::pin(async move {
             let mut request = self

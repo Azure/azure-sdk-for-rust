@@ -14,6 +14,7 @@ use crate::headers::{self, Header};
 pub struct Accept(String);
 
 impl Accept {
+    #[must_use]
     pub fn new(s: String) -> Self {
         Self(s)
     }

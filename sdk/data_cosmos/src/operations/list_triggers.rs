@@ -36,6 +36,7 @@ impl ListTriggersBuilder {
         context: Context => context,
     }
 
+    #[must_use]
     pub fn into_stream(self) -> ListTriggers {
         let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();

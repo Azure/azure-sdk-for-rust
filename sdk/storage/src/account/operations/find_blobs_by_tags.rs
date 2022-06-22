@@ -37,6 +37,7 @@ impl FindBlobsByTagsBuilder {
     }
 
     // TODO: Make this a stream instead of a `Future`
+    #[must_use]
     pub fn into_future(mut self) -> FindBlobsByTags {
         Box::pin(async move {
             let mut request = self

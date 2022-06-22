@@ -18,26 +18,31 @@ pub struct DocumentAttributes {
 impl DocumentAttributes {
     /// a unique identifier that is also hierarchical per the resource
     /// stack on the resource model.
+    #[must_use]
     pub fn rid(&self) -> &str {
         &self.rid
     }
 
     /// the last updated timestamp of the resource.
+    #[must_use]
     pub fn ts(&self) -> u64 {
         self.ts
     }
 
     ///  the unique addressable URI for the resource
+    #[must_use]
     pub fn _self(&self) -> &str {
         &self._self
     }
 
     /// resource etag required for optimistic concurrency control
+    #[must_use]
     pub fn etag(&self) -> &str {
         &self.etag
     }
 
     /// the addressable path for the attachments resource
+    #[must_use]
     pub fn attachments(&self) -> &str {
         &self.attachments
     }

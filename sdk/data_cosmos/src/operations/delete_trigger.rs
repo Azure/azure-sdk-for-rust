@@ -28,6 +28,7 @@ impl DeleteTriggerBuilder {
         context: Context => context,
     }
 
+    #[must_use]
     pub fn into_future(self) -> DeleteTrigger {
         Box::pin(async move {
             let mut request = self

@@ -47,27 +47,32 @@ impl QueueClient {
             .map_kind(ErrorKind::DataConversion)
     }
 
+    #[must_use]
     pub fn queue_name(&self) -> &str {
         &self.queue_name
     }
 
     /// Creates the queue.
+    #[must_use]
     pub fn create(&self) -> CreateQueueBuilder {
         CreateQueueBuilder::new(self)
     }
 
     /// Deletes the queue.
+    #[must_use]
     pub fn delete(&self) -> DeleteQueueBuilder {
         DeleteQueueBuilder::new(self)
     }
 
     /// Sets or clears the queue metadata. The metadata
     /// will be passed to the `execute` function of the returned struct.
+    #[must_use]
     pub fn set_metadata(&self) -> SetQueueMetadataBuilder {
         SetQueueMetadataBuilder::new(self)
     }
 
     /// Get the queue metadata.
+    #[must_use]
     pub fn get_metadata(&self) -> GetQueueMetadataBuilder {
         GetQueueMetadataBuilder::new(self)
     }
@@ -75,6 +80,7 @@ impl QueueClient {
     /// Get the queue ACL. This call returns
     /// all the stored access policies associated
     /// to the current queue.
+    #[must_use]
     pub fn get_acl(&self) -> GetQueueACLBuilder {
         GetQueueACLBuilder::new(self)
     }
@@ -83,27 +89,32 @@ impl QueueClient {
     /// to change or remove already existing stored
     /// access policies by modifying the list returned
     /// by `get_acl`.
+    #[must_use]
     pub fn set_acl(&self) -> SetQueueACLBuilder {
         SetQueueACLBuilder::new(self)
     }
 
     /// Puts a message in the queue. The body will be passed
     /// to the `execute` function of the returned struct.
+    #[must_use]
     pub fn put_message(&self) -> PutMessageBuilder {
         PutMessageBuilder::new(self)
     }
 
     /// Peeks, without removing, one or more messages.
+    #[must_use]
     pub fn peek_messages(&self) -> PeekMessagesBuilder {
         PeekMessagesBuilder::new(self)
     }
 
     /// Gets, shadowing them, one or more messages.
+    #[must_use]
     pub fn get_messages(&self) -> GetMessagesBuilder {
         GetMessagesBuilder::new(self)
     }
 
     /// Removes all messages from the queue.
+    #[must_use]
     pub fn clear_messages(&self) -> ClearMessagesBuilder {
         ClearMessagesBuilder::new(self)
     }

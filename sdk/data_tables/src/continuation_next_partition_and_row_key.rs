@@ -4,6 +4,7 @@ use azure_core::{headers::Headers, AppendToUrlQuery};
 pub struct ContinuationNextPartitionAndRowKey(String, Option<String>);
 
 impl ContinuationNextPartitionAndRowKey {
+    #[must_use]
     pub fn new(
         continuation_next_partition_key: String,
         continuation_next_row_key: Option<String>,
@@ -11,6 +12,7 @@ impl ContinuationNextPartitionAndRowKey {
         Self(continuation_next_partition_key, continuation_next_row_key)
     }
 
+    #[must_use]
     pub fn as_str(&self) -> &str {
         &self.0
     }

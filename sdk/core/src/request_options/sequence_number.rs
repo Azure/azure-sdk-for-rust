@@ -4,6 +4,7 @@ use crate::headers::{self, Header};
 pub struct SequenceNumber(u64);
 
 impl SequenceNumber {
+    #[must_use]
     pub fn new(max_results: u64) -> Self {
         Self(max_results)
     }

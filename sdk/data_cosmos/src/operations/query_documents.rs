@@ -67,6 +67,7 @@ impl QueryDocumentsBuilder {
         })
     }
 
+    #[must_use]
     pub fn into_stream<T>(self) -> QueryDocuments<T>
     where
         T: DeserializeOwned + Send + Sync,
@@ -202,6 +203,7 @@ pub struct QueryDocumentsResponse<T> {
 }
 
 impl<T> QueryDocumentsResponse<T> {
+    #[must_use]
     pub fn into_raw(self) -> QueryDocumentsResponseRaw<T> {
         self.into()
     }

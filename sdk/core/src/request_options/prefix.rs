@@ -4,6 +4,7 @@ use crate::AppendToUrlQuery;
 pub struct Prefix(String);
 
 impl Prefix {
+    #[must_use]
     pub fn new(prefix: String) -> Self {
         Self(prefix)
     }

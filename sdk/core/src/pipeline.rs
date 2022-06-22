@@ -42,6 +42,7 @@ impl Pipeline {
     ///
     /// Crates can simply pass `option_env!("CARGO_PKG_NAME")` and `option_env!("CARGO_PKG_VERSION")` for the
     /// `crate_name` and `crate_version` arguments respectively.
+    #[must_use]
     pub fn new(
         crate_name: Option<&'static str>,
         crate_version: Option<&'static str>,
@@ -91,6 +92,7 @@ impl Pipeline {
         std::mem::replace(&mut self.pipeline[position], policy)
     }
 
+    #[must_use]
     pub fn policies(&self) -> &[Arc<dyn Policy>] {
         &self.pipeline
     }

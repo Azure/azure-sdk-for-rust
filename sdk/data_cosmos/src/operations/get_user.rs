@@ -9,6 +9,7 @@ pub struct GetUserBuilder {
 }
 
 impl GetUserBuilder {
+    #[must_use]
     pub fn new(client: UserClient) -> Self {
         Self {
             client,
@@ -22,6 +23,7 @@ impl GetUserBuilder {
         context: Context => context,
     }
 
+    #[must_use]
     pub fn into_future(self) -> GetUser {
         Box::pin(async move {
             let mut request = self

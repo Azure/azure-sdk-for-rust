@@ -33,6 +33,7 @@ impl CreateOrReplaceUserDefinedFunctionBuilder {
         context: Context => context,
     }
 
+    #[must_use]
     pub fn into_future(self) -> CreateOrReplaceUserDefinedFunction {
         Box::pin(async move {
             let mut request = match self.is_create {

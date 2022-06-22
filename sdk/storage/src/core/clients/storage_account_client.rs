@@ -129,6 +129,7 @@ impl StorageAccountClient {
     }
 
     /// Create a new client for customized emulator endpoints.
+    #[must_use]
     pub fn new_emulator(
         http_client: Arc<dyn HttpClient>,
         blob_storage_url: &Url,
@@ -148,6 +149,7 @@ impl StorageAccountClient {
     }
 
     /// Create a new client using the default HttpClient and the default emulator endpoints.
+    #[must_use]
     pub fn new_emulator_default() -> Arc<Self> {
         let http_client = azure_core::new_http_client();
         let blob_storage_url = Url::parse("http://127.0.0.1:10000").unwrap();
@@ -388,34 +390,42 @@ impl StorageAccountClient {
         }
     }
 
+    #[must_use]
     pub fn http_client(&self) -> &dyn HttpClient {
         self.http_client.as_ref()
     }
 
+    #[must_use]
     pub fn blob_storage_url(&self) -> &Url {
         &self.blob_storage_url
     }
 
+    #[must_use]
     pub fn table_storage_url(&self) -> &Url {
         &self.table_storage_url
     }
 
+    #[must_use]
     pub fn queue_storage_url(&self) -> &Url {
         &self.queue_storage_url
     }
 
+    #[must_use]
     pub fn queue_storage_secondary_url(&self) -> &Url {
         &self.queue_storage_secondary_url
     }
 
+    #[must_use]
     pub fn filesystem_url(&self) -> &Url {
         &self.filesystem_url
     }
 
+    #[must_use]
     pub fn account(&self) -> &str {
         &self.account
     }
 
+    #[must_use]
     pub fn storage_credentials(&self) -> &StorageCredentials {
         &self.storage_credentials
     }

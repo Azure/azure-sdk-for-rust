@@ -111,6 +111,7 @@ pub fn request_id_from_headers(headers: &Headers) -> crate::Result<RequestId> {
     get_from_headers(headers, REQUEST_ID)
 }
 
+#[must_use]
 pub fn client_request_id_from_headers_optional(headers: &Headers) -> Option<String> {
     get_option_from_headers(headers, CLIENT_REQUEST_ID)
         .ok()

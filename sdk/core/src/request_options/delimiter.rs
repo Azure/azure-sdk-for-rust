@@ -4,6 +4,7 @@ use crate::AppendToUrlQuery;
 pub struct Delimiter<'a>(&'a str);
 
 impl<'a> Delimiter<'a> {
+    #[must_use]
     pub fn new(delimiter: &'a str) -> Self {
         Self(delimiter)
     }

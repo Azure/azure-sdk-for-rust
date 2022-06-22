@@ -4,6 +4,7 @@ use crate::headers::{self, Header};
 pub struct Version(String);
 
 impl Version {
+    #[must_use]
     pub fn new(s: String) -> Self {
         Self(s)
     }

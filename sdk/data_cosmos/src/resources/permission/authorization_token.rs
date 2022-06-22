@@ -25,6 +25,7 @@ impl AuthorizationToken {
     }
 
     /// Create a resource `AuthorizationToken` for the given resource.
+    #[must_use]
     pub fn new_resource(resource: String) -> AuthorizationToken {
         AuthorizationToken::Resource(resource)
     }

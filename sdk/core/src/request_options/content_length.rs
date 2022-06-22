@@ -4,6 +4,7 @@ use crate::headers::{self, Header};
 pub struct ContentLength(i32);
 
 impl ContentLength {
+    #[must_use]
     pub fn new(count: i32) -> Self {
         Self(count)
     }

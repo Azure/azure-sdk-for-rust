@@ -29,6 +29,7 @@ impl BlobLeaseClient {
         })
     }
 
+    #[must_use]
     pub fn lease_id(&self) -> &LeaseId {
         &self.lease_id
     }
@@ -59,14 +60,17 @@ impl BlobLeaseClient {
         self.blob_client.url_with_segments(segments)
     }
 
+    #[must_use]
     pub fn change<'a>(&'a self, proposed_lease_id: &'a ProposedLeaseId) -> ChangeLeaseBuilder<'a> {
         ChangeLeaseBuilder::new(self, proposed_lease_id)
     }
 
+    #[must_use]
     pub fn release(&self) -> ReleaseLeaseBuilder {
         ReleaseLeaseBuilder::new(self)
     }
 
+    #[must_use]
     pub fn renew(&self) -> RenewLeaseBuilder {
         RenewLeaseBuilder::new(self)
     }

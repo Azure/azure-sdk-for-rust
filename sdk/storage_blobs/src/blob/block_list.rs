@@ -16,6 +16,7 @@ impl From<BlockWithSizeList> for BlockList {
 }
 
 impl BlockList {
+    #[must_use]
     pub fn to_xml(&self) -> String {
         let mut s = String::new();
         s.push_str("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<BlockList>\n");

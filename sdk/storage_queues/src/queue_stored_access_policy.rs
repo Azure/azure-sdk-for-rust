@@ -31,6 +31,7 @@ impl QueueStoredAccessPolicy {
         }
     }
 
+    #[must_use]
     pub fn enable_read(self) -> Self {
         Self {
             is_read_enabled: true,
@@ -38,6 +39,7 @@ impl QueueStoredAccessPolicy {
         }
     }
 
+    #[must_use]
     pub fn enable_add(self) -> Self {
         Self {
             is_add_enabled: true,
@@ -45,6 +47,7 @@ impl QueueStoredAccessPolicy {
         }
     }
 
+    #[must_use]
     pub fn enable_update(self) -> Self {
         Self {
             is_update_enabled: true,
@@ -52,6 +55,7 @@ impl QueueStoredAccessPolicy {
         }
     }
 
+    #[must_use]
     pub fn enable_process(self) -> Self {
         Self {
             is_process_enabled: true,
@@ -59,6 +63,7 @@ impl QueueStoredAccessPolicy {
         }
     }
 
+    #[must_use]
     pub fn enable_all(self) -> Self {
         Self {
             is_add_enabled: true,
@@ -69,6 +74,7 @@ impl QueueStoredAccessPolicy {
         }
     }
 
+    #[must_use]
     pub fn to_permission_string(&self) -> String {
         let mut permission = String::with_capacity(4);
 

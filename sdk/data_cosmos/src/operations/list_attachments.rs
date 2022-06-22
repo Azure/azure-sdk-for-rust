@@ -41,6 +41,7 @@ impl ListAttachmentsBuilder {
         context: Context => context,
     }
 
+    #[must_use]
     pub fn into_stream(self) -> ListAttachments {
         let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();

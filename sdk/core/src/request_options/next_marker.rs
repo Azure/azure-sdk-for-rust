@@ -7,10 +7,12 @@ use serde::{Deserialize, Serialize};
 pub struct NextMarker(String);
 
 impl NextMarker {
+    #[must_use]
     pub fn new(next_marker: String) -> Self {
         Self(next_marker)
     }
 
+    #[must_use]
     pub fn from_possibly_empty_string(next_marker: Option<String>) -> Option<Self> {
         if let Some(nm) = next_marker {
             if nm.is_empty() {
@@ -23,6 +25,7 @@ impl NextMarker {
         }
     }
 
+    #[must_use]
     pub fn as_str(&self) -> &str {
         &self.0
     }

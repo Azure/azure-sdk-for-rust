@@ -6,6 +6,7 @@ pub struct MaxItemCount(i32);
 
 impl MaxItemCount {
     /// Create a new `MaxItemCount`
+    #[must_use]
     pub fn new(count: i32) -> Self {
         Self(count)
     }

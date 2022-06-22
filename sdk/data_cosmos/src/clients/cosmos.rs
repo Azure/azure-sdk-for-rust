@@ -23,6 +23,7 @@ pub struct CosmosClient {
 
 impl CosmosClient {
     /// Create a new `CosmosClient` which connects to the account's instance in the public Azure cloud.
+    #[must_use]
     pub fn new(account: String, auth_token: AuthorizationToken, options: CosmosOptions) -> Self {
         let cloud_location = CloudLocation::Public(account);
         let pipeline = new_pipeline_from_options(options, auth_token);
@@ -47,6 +48,7 @@ impl CosmosClient {
     }
 
     /// Create a new `CosmosClient` which connects to the account's instance in the Chinese Azure cloud.
+    #[must_use]
     pub fn new_china(
         account: String,
         auth_token: AuthorizationToken,
@@ -61,6 +63,7 @@ impl CosmosClient {
     }
 
     /// Create a new `CosmosClient` which connects to the account's instance in custom Azure cloud.
+    #[must_use]
     pub fn new_custom(
         account: String,
         auth_token: AuthorizationToken,
@@ -76,6 +79,7 @@ impl CosmosClient {
     }
 
     /// Create a new `CosmosClient` which connects to the account's instance in Azure emulator
+    #[must_use]
     pub fn new_emulator(address: &str, port: u16, options: CosmosOptions) -> Self {
         let auth_token = AuthorizationToken::primary_from_base64(EMULATOR_ACCOUNT_KEY).unwrap();
         let uri = format!("https://{}:{}", address, port);
@@ -107,6 +111,7 @@ impl CosmosClient {
     }
 
     /// List all databases
+    #[must_use]
     pub fn list_databases(&self) -> ListDatabasesBuilder {
         ListDatabasesBuilder::new(self.clone())
     }
@@ -176,6 +181,7 @@ pub struct CosmosOptions {
 
 impl CosmosOptions {
     /// Create new options
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }

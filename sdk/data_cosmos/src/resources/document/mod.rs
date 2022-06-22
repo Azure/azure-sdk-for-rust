@@ -204,6 +204,7 @@ pub struct PartitionRangeId(String);
 
 impl PartitionRangeId {
     /// A new partition range id from a string
+    #[must_use]
     pub fn new(id: String) -> Self {
         Self(id)
     }

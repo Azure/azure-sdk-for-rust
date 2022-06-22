@@ -55,11 +55,13 @@ impl FileClient {
             .into_file_client(path)
     }
 
+    #[must_use]
     pub fn create(&self) -> PutPathBuilder<Self> {
         PutPathBuilder::new(self.clone(), self.file_system_client.context.clone())
             .resource(ResourceType::File)
     }
 
+    #[must_use]
     pub fn create_if_not_exists(&self) -> PutPathBuilder<Self> {
         self.create()
             .if_match_condition(IfMatchCondition::NotMatch("*".to_string()))
@@ -75,12 +77,14 @@ impl FileClient {
             .bytes(bytes.into())
     }
 
+    #[must_use]
     pub fn flush(&self, position: i64) -> PatchPathBuilder<Self> {
         PatchPathBuilder::new(self.clone(), self.file_system_client.context.clone())
             .action(PathUpdateAction::Flush)
             .position(position)
     }
 
+    #[must_use]
     pub fn read(&self) -> GetFileBuilder {
         GetFileBuilder::new(self.clone(), self.file_system_client.context.clone())
     }
@@ -106,24 +110,29 @@ impl FileClient {
             .if_match_condition(IfMatchCondition::NotMatch("*".to_string()))
     }
 
+    #[must_use]
     pub fn delete(&self) -> DeletePathBuilder<Self> {
         DeletePathBuilder::new(self.clone(), None, self.file_system_client.context.clone())
     }
 
+    #[must_use]
     pub fn get_properties(&self) -> HeadPathBuilder<Self> {
         HeadPathBuilder::new(self.clone(), self.file_system_client.context.clone())
     }
 
+    #[must_use]
     pub fn get_status(&self) -> HeadPathBuilder<Self> {
         HeadPathBuilder::new(self.clone(), self.file_system_client.context.clone())
             .action(PathGetPropertiesAction::GetStatus)
     }
 
+    #[must_use]
     pub fn get_access_control_list(&self) -> HeadPathBuilder<Self> {
         HeadPathBuilder::new(self.clone(), self.file_system_client.context.clone())
             .action(PathGetPropertiesAction::GetAccessControl)
     }
 
+    #[must_use]
     pub fn set_properties(&self, properties: Properties) -> PatchPathBuilder<Self> {
         PatchPathBuilder::new(self.clone(), self.file_system_client.context.clone())
             .properties(properties)

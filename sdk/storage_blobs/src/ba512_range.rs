@@ -12,9 +12,11 @@ pub struct BA512Range {
 }
 
 impl BA512Range {
+    #[must_use]
     pub fn start(&self) -> u64 {
         self.start
     }
+    #[must_use]
     pub fn end(&self) -> u64 {
         self.end
     }
@@ -35,6 +37,7 @@ impl BA512Range {
     }
 
     #[inline]
+    #[must_use]
     pub fn size(&self) -> u64 {
         self.end - self.start + 1
     }

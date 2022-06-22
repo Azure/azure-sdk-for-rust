@@ -31,6 +31,7 @@ pub struct Database {
 
 impl Database {
     /// The name of the database
+    #[must_use]
     pub fn name(&self) -> &str {
         &self.id
     }

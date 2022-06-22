@@ -13,6 +13,7 @@ pub struct TelemetryPolicy {
 
 /// Sets the User-Agent header with useful information in a typical format for Azure SDKs.
 impl<'a> TelemetryPolicy {
+    #[must_use]
     pub fn new(
         crate_name: Option<&'a str>,
         crate_version: Option<&'a str>,

@@ -29,6 +29,7 @@ impl CreateStoredProcedureBuilder {
         context: Context => context,
     }
 
+    #[must_use]
     pub fn into_future(self) -> CreateStoredProcedure {
         Box::pin(async move {
             let mut req = self.client.prepare_request_pipeline(http::Method::POST);

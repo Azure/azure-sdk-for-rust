@@ -5,6 +5,7 @@ use http::header;
 pub struct UserAgent<'a>(&'a str);
 
 impl<'a> UserAgent<'a> {
+    #[must_use]
     pub fn new(agent: &'a str) -> Self {
         Self(agent)
     }

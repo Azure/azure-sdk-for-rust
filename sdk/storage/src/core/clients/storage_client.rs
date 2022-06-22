@@ -29,11 +29,13 @@ impl StorageClient {
     }
 
     #[allow(dead_code)]
+    #[must_use]
     pub fn storage_account_client(&self) -> &StorageAccountClient {
         self.storage_account_client.as_ref()
     }
 
     #[allow(dead_code)]
+    #[must_use]
     pub fn http_client(&self) -> &dyn azure_core::HttpClient {
         self.storage_account_client.http_client()
     }
@@ -77,10 +79,12 @@ impl StorageClient {
     }
 
     #[cfg(feature = "account")]
+    #[must_use]
     pub fn get_account_information(&self) -> GetAccountInformationBuilder {
         GetAccountInformationBuilder::new(self.clone())
     }
 
+    #[must_use]
     pub fn find_blobs_by_tags(&self) -> FindBlobsByTagsBuilder {
         FindBlobsByTagsBuilder::new(self.clone())
     }

@@ -47,6 +47,7 @@ impl ExecuteStoredProcedureBuilder {
         })
     }
 
+    #[must_use]
     pub fn into_future<T>(self) -> ExecuteStoredProcedure<T>
     where
         T: DeserializeOwned,

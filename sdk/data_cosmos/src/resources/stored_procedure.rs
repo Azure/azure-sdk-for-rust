@@ -28,6 +28,7 @@ pub struct StoredProcedure {
 
 impl StoredProcedure {
     /// The name of the stored procedure
+    #[must_use]
     pub fn name(&self) -> &str {
         &self.id
     }

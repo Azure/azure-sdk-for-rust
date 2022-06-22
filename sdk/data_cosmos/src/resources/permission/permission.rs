@@ -70,6 +70,7 @@ impl PermissionMode {
     }
 
     /// The kind of permission mode as a string. Either "All" or "Read".
+    #[must_use]
     pub fn kind(&self) -> &str {
         match self {
             Self::All(_) => "All",
@@ -78,6 +79,7 @@ impl PermissionMode {
     }
 
     /// The full addressable path of the resource associated with the permission
+    #[must_use]
     pub fn resource(&self) -> &str {
         match self {
             Self::All(s) => s.as_ref(),

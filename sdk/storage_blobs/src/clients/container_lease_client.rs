@@ -29,6 +29,7 @@ impl ContainerLeaseClient {
         })
     }
 
+    #[must_use]
     pub fn lease_id(&self) -> &LeaseId {
         &self.lease_id
     }
@@ -54,10 +55,12 @@ impl ContainerLeaseClient {
         self.container_client.url_with_segments(segments)
     }
 
+    #[must_use]
     pub fn release(&self) -> ReleaseLeaseBuilder {
         ReleaseLeaseBuilder::new(self)
     }
 
+    #[must_use]
     pub fn renew(&self) -> RenewLeaseBuilder {
         RenewLeaseBuilder::new(self)
     }

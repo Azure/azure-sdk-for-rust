@@ -8,6 +8,7 @@ pub enum BlockListType {
 }
 
 impl BlockListType {
+    #[must_use]
     pub fn to_str(&self) -> &str {
         match self {
             BlockListType::All => "all",

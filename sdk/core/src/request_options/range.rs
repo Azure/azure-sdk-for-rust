@@ -11,14 +11,17 @@ pub struct Range {
 }
 
 impl Range {
+    #[must_use]
     pub fn new(start: u64, end: u64) -> Range {
         Range { start, end }
     }
 
+    #[must_use]
     pub fn len(&self) -> u64 {
         self.end - self.start
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.end == self.start
     }

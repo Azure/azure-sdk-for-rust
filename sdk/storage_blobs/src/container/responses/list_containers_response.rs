@@ -9,6 +9,7 @@ pub struct ListContainersResponse {
 }
 
 impl ListContainersResponse {
+    #[must_use]
     pub fn is_complete(&self) -> bool {
         self.incomplete_vector.is_complete()
     }

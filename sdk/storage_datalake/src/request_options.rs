@@ -113,6 +113,7 @@ impl AppendToUrlQuery for PathUpdateAction {
 pub struct Position(i64);
 
 impl Position {
+    #[must_use]
     pub fn new(position: i64) -> Self {
         Self(position)
     }
@@ -135,6 +136,7 @@ impl AppendToUrlQuery for Position {
 pub struct Close(bool);
 
 impl Close {
+    #[must_use]
     pub fn new(close: bool) -> Self {
         Self(close)
     }
@@ -157,6 +159,7 @@ impl AppendToUrlQuery for Close {
 pub struct RetainUncommittedData(bool);
 
 impl RetainUncommittedData {
+    #[must_use]
     pub fn new(close: bool) -> Self {
         Self(close)
     }

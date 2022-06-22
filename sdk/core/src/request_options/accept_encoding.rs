@@ -15,6 +15,7 @@ use crate::headers::{self, Header};
 pub struct AcceptEncoding(String);
 
 impl AcceptEncoding {
+    #[must_use]
     pub fn new(s: String) -> Self {
         Self(s)
     }

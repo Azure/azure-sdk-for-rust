@@ -8,9 +8,11 @@ use std::fmt::Debug;
 pub struct AccessToken(String);
 
 impl AccessToken {
+    #[must_use]
     pub fn new(access_token: String) -> Self {
         Self(access_token)
     }
+    #[must_use]
     pub fn secret(&self) -> &str {
         self.0.as_str()
     }
@@ -27,6 +29,7 @@ pub struct TokenResponse {
 
 impl TokenResponse {
     /// Create a new `TokenResponse`.
+    #[must_use]
     pub fn new(token: AccessToken, expires_on: DateTime<Utc>) -> Self {
         Self { token, expires_on }
     }

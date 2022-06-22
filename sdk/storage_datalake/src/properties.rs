@@ -15,6 +15,7 @@ impl Default for Properties {
 }
 
 impl Properties {
+    #[must_use]
     pub fn new() -> Self {
         Self(BTreeMap::new())
     }
@@ -27,6 +28,7 @@ impl Properties {
         self.0.insert(k.into(), v.into())
     }
 
+    #[must_use]
     pub fn get(&self, key: &str) -> std::option::Option<&Cow<'_, str>> {
         self.0.get(key)
     }

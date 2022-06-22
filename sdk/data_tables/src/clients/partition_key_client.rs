@@ -33,10 +33,12 @@ impl PartitionKeyClient {
         })
     }
 
+    #[must_use]
     pub fn submit_transaction(&self) -> SubmitTransactionBuilder {
         SubmitTransactionBuilder::new(self)
     }
 
+    #[must_use]
     pub fn partition_key(&self) -> &str {
         &self.partition_key
     }

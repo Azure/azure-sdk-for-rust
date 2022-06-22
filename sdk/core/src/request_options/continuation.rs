@@ -4,10 +4,12 @@ use crate::{headers, Header};
 pub struct Continuation(String);
 
 impl Continuation {
+    #[must_use]
     pub fn new(c: String) -> Self {
         Self(c)
     }
 
+    #[must_use]
     pub fn into_raw(self) -> String {
         self.0
     }

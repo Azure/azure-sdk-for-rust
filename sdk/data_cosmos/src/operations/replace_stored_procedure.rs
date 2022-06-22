@@ -26,6 +26,7 @@ impl ReplaceStoredProcedureBuilder {
         consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 
+    #[must_use]
     pub fn into_future(self) -> ReplaceStoredProcedure {
         Box::pin(async move {
             let mut req = self

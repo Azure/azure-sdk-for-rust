@@ -15,6 +15,7 @@ pub struct TransportPolicy {
 
 impl TransportPolicy {
     #[cfg(not(target_arch = "wasm32"))]
+    #[must_use]
     pub fn new(transport_options: TransportOptions) -> Self {
         Self { transport_options }
     }

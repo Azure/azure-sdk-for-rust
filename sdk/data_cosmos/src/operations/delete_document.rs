@@ -36,6 +36,7 @@ impl DeleteDocumentBuilder {
         context: Context => context,
     }
 
+    #[must_use]
     pub fn into_future(self) -> DeleteDocument {
         Box::pin(async move {
             let mut request = self

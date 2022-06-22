@@ -116,6 +116,7 @@ impl AuthenticationMechanism {
     }
 
     /// Create a new AuthenticationMechanism using a certificate authority
+    #[must_use]
     pub fn new_using_certificate_authority() -> Self {
         Self {
             authentication_type: AuthenticationType::Authority,

@@ -41,6 +41,7 @@ impl BlobClient {
         })
     }
 
+    #[must_use]
     pub fn blob_name(&self) -> &str {
         &self.blob_name
     }
@@ -74,22 +75,27 @@ impl BlobClient {
             .map_kind(ErrorKind::DataConversion)
     }
 
+    #[must_use]
     pub fn get(&self) -> GetBlobBuilder {
         GetBlobBuilder::new(self)
     }
 
+    #[must_use]
     pub fn get_properties(&self) -> GetBlobPropertiesBuilder {
         GetBlobPropertiesBuilder::new(self)
     }
 
+    #[must_use]
     pub fn get_metadata(&self) -> GetBlobMetadataBuilder {
         GetBlobMetadataBuilder::new(self)
     }
 
+    #[must_use]
     pub fn set_metadata(&self) -> SetBlobMetadataBuilder {
         SetBlobMetadataBuilder::new(self)
     }
 
+    #[must_use]
     pub fn set_blobtier(&self) -> SetBlobTierBuilder {
         SetBlobTierBuilder::new(self)
     }
@@ -102,42 +108,52 @@ impl BlobClient {
         UpdatePageBuilder::new(self, ba512_range, content)
     }
 
+    #[must_use]
     pub fn get_page_ranges(&self) -> GetPageRangesBuilder {
         GetPageRangesBuilder::new(self)
     }
 
+    #[must_use]
     pub fn delete(&self) -> DeleteBlobBuilder {
         DeleteBlobBuilder::new(self)
     }
 
+    #[must_use]
     pub fn delete_snapshot(&self, snapshot: Snapshot) -> DeleteBlobSnapshotBuilder {
         DeleteBlobSnapshotBuilder::new(self, snapshot)
     }
 
+    #[must_use]
     pub fn delete_version_id(&self, version_id: VersionId) -> DeleteBlobVersionBuilder {
         DeleteBlobVersionBuilder::new(self, version_id)
     }
 
+    #[must_use]
     pub fn copy<'a>(&'a self, copy_source: &'a Url) -> CopyBlobBuilder<'a> {
         CopyBlobBuilder::new(self, copy_source)
     }
 
+    #[must_use]
     pub fn copy_from_url<'a>(&'a self, copy_source: &'a str) -> CopyBlobFromUrlBuilder<'a> {
         CopyBlobFromUrlBuilder::new(self, copy_source)
     }
 
+    #[must_use]
     pub fn put_page_blob(&self, length: u128) -> PutPageBlobBuilder {
         PutPageBlobBuilder::new(self, length)
     }
 
+    #[must_use]
     pub fn put_append_blob(&self) -> PutAppendBlobBuilder {
         PutAppendBlobBuilder::new(self)
     }
 
+    #[must_use]
     pub fn get_block_list(&self) -> GetBlockListBuilder {
         GetBlockListBuilder::new(self)
     }
 
+    #[must_use]
     pub fn put_block_list<'a>(&'a self, block_list: &'a BlockList) -> PutBlockListBuilder {
         PutBlockListBuilder::new(self, block_list)
     }
@@ -158,6 +174,7 @@ impl BlobClient {
         PutBlockBuilder::new(self, block_id, body)
     }
 
+    #[must_use]
     pub fn clear_page(&self, ba512_range: BA512Range) -> ClearPageBuilder {
         ClearPageBuilder::new(self, ba512_range)
     }
@@ -169,6 +186,7 @@ impl BlobClient {
         AcquireLeaseBuilder::new(self, lease_duration.into())
     }
 
+    #[must_use]
     pub fn break_lease(&self) -> BreakLeaseBuilder {
         BreakLeaseBuilder::new(self)
     }

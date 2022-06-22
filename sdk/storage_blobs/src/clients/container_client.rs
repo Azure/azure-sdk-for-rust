@@ -45,6 +45,7 @@ impl ContainerClient {
         })
     }
 
+    #[must_use]
     pub fn container_name(&self) -> &str {
         &self.container_name
     }
@@ -72,26 +73,32 @@ impl ContainerClient {
         )
     }
 
+    #[must_use]
     pub fn create(&self) -> CreateBuilder {
         CreateBuilder::new(self)
     }
 
+    #[must_use]
     pub fn delete(&self) -> DeleteBuilder {
         DeleteBuilder::new(self)
     }
 
+    #[must_use]
     pub fn get_acl(&self) -> GetACLBuilder {
         GetACLBuilder::new(self)
     }
 
+    #[must_use]
     pub fn set_acl(&self, public_access: PublicAccess) -> SetACLBuilder {
         SetACLBuilder::new(self, public_access)
     }
 
+    #[must_use]
     pub fn get_properties(&self) -> GetPropertiesBuilder {
         GetPropertiesBuilder::new(self)
     }
 
+    #[must_use]
     pub fn list_blobs(&self) -> ListBlobsBuilder {
         ListBlobsBuilder::new(self)
     }
@@ -103,6 +110,7 @@ impl ContainerClient {
         AcquireLeaseBuilder::new(self, lease_duration.into())
     }
 
+    #[must_use]
     pub fn break_lease(&self) -> BreakLeaseBuilder {
         BreakLeaseBuilder::new(self)
     }

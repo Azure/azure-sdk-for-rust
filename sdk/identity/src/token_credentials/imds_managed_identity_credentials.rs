@@ -38,6 +38,7 @@ impl Default for ImdsManagedIdentityCredential {
 
 impl ImdsManagedIdentityCredential {
     /// Creates a new `ImdsManagedIdentityCredential` using the given `HttpClient`.
+    #[must_use]
     pub fn new(http_client: Arc<dyn HttpClient>) -> Self {
         Self {
             http_client,

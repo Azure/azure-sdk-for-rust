@@ -9,6 +9,7 @@ use azure_core::AppendToUrlQuery;
 pub struct VersionId(String);
 
 impl VersionId {
+    #[must_use]
     pub fn new(version_id: String) -> Self {
         Self(version_id)
     }

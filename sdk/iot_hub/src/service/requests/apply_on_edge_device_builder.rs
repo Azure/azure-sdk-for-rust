@@ -36,6 +36,7 @@ impl<'a> ApplyOnEdgeDeviceBuilder<'a> {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let edge_configuration_builder = iot_hub.apply_on_edge_device("some-device").device_content(serde_json::json!({}));
     /// ```
+    #[must_use]
     pub fn device_content(mut self, device_content: serde_json::Value) -> Self {
         self.device_content = device_content;
         self
@@ -54,6 +55,7 @@ impl<'a> ApplyOnEdgeDeviceBuilder<'a> {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let edge_configuration_builder = iot_hub.apply_on_edge_device("some-device").module_content(serde_json::json!({}));
     /// ```
+    #[must_use]
     pub fn module_content(mut self, module_content: serde_json::Value) -> Self {
         self.module_content = module_content;
         self
@@ -72,6 +74,7 @@ impl<'a> ApplyOnEdgeDeviceBuilder<'a> {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let edge_configuration_builder = iot_hub.apply_on_edge_device("some-device").modules_content(serde_json::json!({}));
     /// ```
+    #[must_use]
     pub fn modules_content(mut self, modules_content: serde_json::Value) -> Self {
         self.modules_content = modules_content;
         self

@@ -6,6 +6,7 @@ use crate::Header;
 pub struct ClientVersion(String);
 
 impl ClientVersion {
+    #[must_use]
     pub fn new(client_request_id: String) -> Self {
         Self(client_request_id)
     }

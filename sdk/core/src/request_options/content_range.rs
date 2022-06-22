@@ -12,6 +12,7 @@ pub struct ContentRange {
 }
 
 impl ContentRange {
+    #[must_use]
     pub fn new(start: u64, end: u64, total_length: u64) -> ContentRange {
         ContentRange {
             start,
@@ -20,18 +21,22 @@ impl ContentRange {
         }
     }
 
+    #[must_use]
     pub fn start(&self) -> u64 {
         self.start
     }
 
+    #[must_use]
     pub fn end(&self) -> u64 {
         self.end
     }
 
+    #[must_use]
     pub fn total_length(&self) -> u64 {
         self.total_length
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.end == self.start
     }

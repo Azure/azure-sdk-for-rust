@@ -89,6 +89,7 @@ pub struct DeviceCodePhaseOneResponse<'a> {
 
 impl<'a> DeviceCodePhaseOneResponse<'a> {
     /// The message containing human readable instructions for the user.
+    #[must_use]
     pub fn message(&self) -> &str {
         &self.message
     }

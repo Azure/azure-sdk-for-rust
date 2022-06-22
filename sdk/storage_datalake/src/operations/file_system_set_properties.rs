@@ -40,6 +40,7 @@ impl SetFileSystemPropertiesBuilder {
         timeout: Timeout => Some(timeout),
     }
 
+    #[must_use]
     pub fn into_future(self) -> SetFileSystemProperties {
         let this = self.clone();
         let ctx = self.client.context.clone();

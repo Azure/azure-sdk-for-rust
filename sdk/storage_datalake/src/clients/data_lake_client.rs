@@ -21,6 +21,7 @@ pub struct DataLakeClient {
 }
 
 impl DataLakeClient {
+    #[must_use]
     pub fn new_with_shared_key(
         credential: StorageSharedKeyCredential,
         custom_dns_suffix: Option<String>,
@@ -87,10 +88,12 @@ impl DataLakeClient {
         }
     }
 
+    #[must_use]
     pub fn new(credential: StorageSharedKeyCredential, custom_dns_suffix: Option<String>) -> Self {
         Self::new_with_shared_key(credential, custom_dns_suffix, ClientOptions::default())
     }
 
+    #[must_use]
     pub fn custom_dns_suffix(&self) -> Option<&str> {
         self.custom_dns_suffix.as_deref()
     }
@@ -99,6 +102,7 @@ impl DataLakeClient {
         &self.url
     }
 
+    #[must_use]
     pub fn list_file_systems(&self) -> ListFileSystemsBuilder {
         ListFileSystemsBuilder::new(self.clone(), Some(self.context.clone()))
     }
@@ -124,6 +128,7 @@ impl DataLakeClient {
     //         .into()
     // }
 
+    #[must_use]
     pub fn pipeline(&self) -> &Pipeline {
         &self.pipeline
     }

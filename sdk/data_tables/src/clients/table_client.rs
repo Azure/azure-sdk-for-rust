@@ -32,22 +32,27 @@ impl TableClient {
         })
     }
 
+    #[must_use]
     pub fn table_name(&self) -> &str {
         &self.table_name
     }
 
+    #[must_use]
     pub fn create(&self) -> CreateTableBuilder {
         CreateTableBuilder::new(self)
     }
 
+    #[must_use]
     pub fn query(&self) -> QueryEntityBuilder {
         QueryEntityBuilder::new(self)
     }
 
+    #[must_use]
     pub fn delete(&self) -> DeleteTableBuilder {
         DeleteTableBuilder::new(self)
     }
 
+    #[must_use]
     pub fn insert(&self) -> InsertEntityBuilder {
         InsertEntityBuilder::new(self)
     }

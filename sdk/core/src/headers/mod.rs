@@ -190,6 +190,7 @@ impl From<&http::HeaderMap> for Headers {
 pub struct HeaderName(std::borrow::Cow<'static, str>);
 
 impl HeaderName {
+    #[must_use]
     pub fn as_str(&self) -> &str {
         self.0.as_ref()
     }
@@ -224,6 +225,7 @@ impl From<&HeaderName> for http::header::HeaderName {
 pub struct HeaderValue(std::borrow::Cow<'static, str>);
 
 impl HeaderValue {
+    #[must_use]
     pub fn as_str(&self) -> &str {
         self.0.as_ref()
     }

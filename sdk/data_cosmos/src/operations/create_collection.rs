@@ -40,6 +40,7 @@ impl CreateCollectionBuilder {
         context: Context => context,
     }
 
+    #[must_use]
     pub fn into_future(self) -> CreateCollection {
         Box::pin(async move {
             let mut request = self.client.prepare_collections_pipeline(http::Method::POST);

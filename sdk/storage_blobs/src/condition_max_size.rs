@@ -4,6 +4,7 @@ use azure_core::headers::{self, Header};
 pub struct ConditionMaxSize(u64);
 
 impl ConditionMaxSize {
+    #[must_use]
     pub fn new(max_size: u64) -> Self {
         Self(max_size)
     }

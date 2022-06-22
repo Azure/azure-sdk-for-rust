@@ -4,6 +4,7 @@ use std::task::{Context, Poll};
 use std::thread;
 use std::time::Duration;
 
+#[must_use]
 pub fn sleep(duration: Duration) -> Sleep {
     Sleep {
         thread: None,

@@ -22,21 +22,25 @@ impl UserDefinedFunctionClient {
     }
 
     /// Get a [`CosmosClient`]
+    #[must_use]
     pub fn cosmos_client(&self) -> &CosmosClient {
         self.collection.cosmos_client()
     }
 
     /// Get a [`DatabaseClient`]
+    #[must_use]
     pub fn database_client(&self) -> &DatabaseClient {
         self.collection.database_client()
     }
 
     /// Get a [`CollectionClient`]
+    #[must_use]
     pub fn collection_client(&self) -> &CollectionClient {
         &self.collection
     }
 
     /// Get the user defined function's name
+    #[must_use]
     pub fn user_defined_function_name(&self) -> &str {
         &self.user_defined_function_name
     }
@@ -64,6 +68,7 @@ impl UserDefinedFunctionClient {
     }
 
     /// Delete the user defined function
+    #[must_use]
     pub fn delete_user_defined_function(&self) -> DeleteUserDefinedFunctionBuilder {
         DeleteUserDefinedFunctionBuilder::new(self.clone())
     }

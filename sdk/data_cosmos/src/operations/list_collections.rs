@@ -32,6 +32,7 @@ impl ListCollectionsBuilder {
         context: Context => context,
     }
 
+    #[must_use]
     pub fn into_stream(self) -> ListCollections {
         let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();

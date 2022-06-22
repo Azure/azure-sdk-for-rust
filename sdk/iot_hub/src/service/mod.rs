@@ -497,6 +497,7 @@ impl ServiceClient {
     /// let device = iot_hub.create_device_identity()
     ///     .execute("some-existing-device", Status::Enabled, AuthenticationMechanism::new_using_symmetric_key("first-key", "second-key"));
     /// ```
+    #[must_use]
     pub fn create_device_identity(&self) -> CreateOrUpdateDeviceIdentityBuilder {
         CreateOrUpdateDeviceIdentityBuilder::new(self, IdentityOperation::Create, None)
     }
@@ -583,6 +584,7 @@ impl ServiceClient {
     /// let device = iot_hub.create_module_identity()
     ///     .execute("some-existing-device", "some-existing-module", "IoTEdge", AuthenticationMechanism::new_using_symmetric_key("first-key", "second-key"));
     /// ```
+    #[must_use]
     pub fn create_module_identity(&self) -> CreateOrUpdateModuleIdentityBuilder {
         CreateOrUpdateModuleIdentityBuilder::new(self, IdentityOperation::Create, None)
     }
@@ -651,6 +653,7 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let query_builder = iot_hub.query();
     /// ```
+    #[must_use]
     pub fn query(&self) -> QueryBuilder<'_> {
         QueryBuilder::new(self)
     }

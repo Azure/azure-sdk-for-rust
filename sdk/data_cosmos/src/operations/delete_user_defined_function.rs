@@ -28,6 +28,7 @@ impl DeleteUserDefinedFunctionBuilder {
         context: Context => context,
     }
 
+    #[must_use]
     pub fn into_future(self) -> DeleteUserDefinedFunction {
         Box::pin(async move {
             let mut request = self

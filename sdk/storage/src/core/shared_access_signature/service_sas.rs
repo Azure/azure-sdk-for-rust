@@ -186,6 +186,7 @@ pub struct BlobSharedAccessSignatureBuilder<T1, T2, T3> {
 }
 
 impl BlobSharedAccessSignatureBuilder<(), (), ()> {
+    #[must_use]
     pub fn new(
         key: String,
         canonicalized_resource: String,
@@ -206,6 +207,7 @@ impl BlobSharedAccessSignatureBuilder<(), (), ()> {
 }
 
 impl<T1, T2, T3> BlobSharedAccessSignatureBuilder<T1, T2, T3> {
+    #[must_use]
     pub fn with_start(
         self,
         signed_start: DateTime<Utc>,
@@ -223,6 +225,7 @@ impl<T1, T2, T3> BlobSharedAccessSignatureBuilder<T1, T2, T3> {
             signed_ip: self.signed_ip,
         }
     }
+    #[must_use]
     pub fn with_ip(self, signed_ip: String) -> BlobSharedAccessSignatureBuilder<T1, T2, T3> {
         BlobSharedAccessSignatureBuilder {
             _phantom: PhantomData,
@@ -237,6 +240,7 @@ impl<T1, T2, T3> BlobSharedAccessSignatureBuilder<T1, T2, T3> {
             signed_ip: Some(signed_ip),
         }
     }
+    #[must_use]
     pub fn with_identifier(
         self,
         signed_identifier: String,
@@ -254,6 +258,7 @@ impl<T1, T2, T3> BlobSharedAccessSignatureBuilder<T1, T2, T3> {
             signed_ip: self.signed_ip,
         }
     }
+    #[must_use]
     pub fn with_protocol(
         self,
         signed_protocol: SasProtocol,
@@ -274,6 +279,7 @@ impl<T1, T2, T3> BlobSharedAccessSignatureBuilder<T1, T2, T3> {
 }
 
 impl BlobSharedAccessSignatureBuilder<SetPerms, SetResources, SetExpiry> {
+    #[must_use]
     pub fn finalize(self) -> BlobSharedAccessSignature {
         BlobSharedAccessSignature {
             key: self.key.clone(),
@@ -290,6 +296,7 @@ impl BlobSharedAccessSignatureBuilder<SetPerms, SetResources, SetExpiry> {
 }
 
 impl<T1, T2> BlobSharedAccessSignatureBuilder<(), T1, T2> {
+    #[must_use]
     pub fn with_permissions(
         self,
         permissions: BlobSasPermissions,
@@ -310,6 +317,7 @@ impl<T1, T2> BlobSharedAccessSignatureBuilder<(), T1, T2> {
 }
 
 impl<T1, T2> BlobSharedAccessSignatureBuilder<T1, (), T2> {
+    #[must_use]
     pub fn with_resources(
         self,
         signed_resource: BlobSignedResource,
@@ -330,6 +338,7 @@ impl<T1, T2> BlobSharedAccessSignatureBuilder<T1, (), T2> {
 }
 
 impl<T1, T2> BlobSharedAccessSignatureBuilder<T1, T2, ()> {
+    #[must_use]
     pub fn with_expiry(
         self,
         signed_expiry: DateTime<Utc>,

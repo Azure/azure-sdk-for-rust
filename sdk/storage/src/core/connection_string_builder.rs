@@ -4,10 +4,12 @@ use crate::core::connection_string::*;
 pub struct ConnectionStringBuilder<'a>(ConnectionString<'a>);
 
 impl<'a> ConnectionStringBuilder<'a> {
+    #[must_use]
     pub fn new() -> Self {
         Self(ConnectionString::default())
     }
 
+    #[must_use]
     pub fn build(&self) -> String {
         let mut kv_pairs = Vec::new();
 

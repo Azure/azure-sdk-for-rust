@@ -13,6 +13,7 @@ use serde::Serialize;
 /// Construct a new `HttpClient` with the `reqwest` backend.
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 #[cfg(not(target_arch = "wasm32"))]
+#[must_use]
 pub fn new_http_client() -> std::sync::Arc<dyn HttpClient> {
     std::sync::Arc::new(reqwest::Client::new())
 }

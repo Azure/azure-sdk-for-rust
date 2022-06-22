@@ -5,6 +5,7 @@ use std::time::Duration;
 pub struct Timeout(Duration);
 
 impl Timeout {
+    #[must_use]
     pub fn new(duration: Duration) -> Self {
         Self(duration)
     }

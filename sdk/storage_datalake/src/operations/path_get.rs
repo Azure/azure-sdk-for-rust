@@ -50,6 +50,7 @@ impl GetFileBuilder {
         context: Context => context,
     }
 
+    #[must_use]
     pub fn into_future(self) -> GetFile {
         let this = self.clone();
         let ctx = self.context.clone();

@@ -4,10 +4,12 @@ use azure_core::{headers::Headers, AppendToUrlQuery};
 pub struct ContinuationNextTableName(String);
 
 impl ContinuationNextTableName {
+    #[must_use]
     pub fn new(continuation_next_table_name: String) -> Self {
         Self(continuation_next_table_name)
     }
 
+    #[must_use]
     pub fn as_str(&self) -> &str {
         &self.0
     }

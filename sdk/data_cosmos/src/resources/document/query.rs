@@ -11,6 +11,7 @@ pub struct Query {
 
 impl Query {
     /// A new SQL query with no parameters
+    #[must_use]
     pub fn new(query: String) -> Self {
         Self::with_params(query, vec![])
     }
@@ -24,11 +25,13 @@ impl Query {
     }
 
     /// The query as a `&str`
+    #[must_use]
     pub fn query(&self) -> &str {
         &self.query
     }
 
     /// The supplied params
+    #[must_use]
     pub fn params(&self) -> &[Param] {
         &self.parameters
     }
@@ -57,11 +60,13 @@ impl Param {
     }
 
     /// The param name
+    #[must_use]
     pub fn name(&self) -> &str {
         &self.name
     }
 
     /// The param value
+    #[must_use]
     pub fn value(&self) -> &Value {
         &self.value
     }

@@ -5,6 +5,7 @@ use crate::headers::{self, Header};
 pub struct User(String);
 
 impl User {
+    #[must_use]
     pub fn new(s: String) -> Self {
         Self(s)
     }

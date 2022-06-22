@@ -29,6 +29,7 @@ pub struct EnvironmentCredential {
 
 impl EnvironmentCredential {
     /// Creates a new `EnvironmentCredential` with the given `TokenCredentialOptions`.
+    #[must_use]
     pub fn new(options: TokenCredentialOptions) -> Self {
         Self { options }
     }

@@ -80,26 +80,32 @@ pub struct RefreshTokenResponse {
 
 impl RefreshTokenResponse {
     /// Returns the token_type. Always `Bearer` for Azure AD.
+    #[must_use]
     pub fn token_type(&self) -> &str {
         &self.token_type
     }
     /// The scopes that the `access_token` is valid for.
+    #[must_use]
     pub fn scopes(&self) -> &[String] {
         &self.scopes
     }
     /// Number of seconds the `access_token` is valid for.
+    #[must_use]
     pub fn expires_in(&self) -> u64 {
         self.expires_in
     }
     /// Issued for the scopes that were requested.
+    #[must_use]
     pub fn access_token(&self) -> &AccessToken {
         &self.access_token
     }
     /// The new refresh token and should replace old refresh token.
+    #[must_use]
     pub fn refresh_token(&self) -> &AccessToken {
         &self.refresh_token
     }
     /// Indicates the extended lifetime of an `access_token`.
+    #[must_use]
     pub fn ext_expires_in(&self) -> u64 {
         self.ext_expires_in
     }

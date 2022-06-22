@@ -68,22 +68,27 @@ impl FileSystemClient {
         FileClient::new(self, path.into())
     }
 
+    #[must_use]
     pub fn list_paths(&self) -> ListPathsBuilder {
         ListPathsBuilder::new(self.clone(), self.context.clone()).recursive(true)
     }
 
+    #[must_use]
     pub fn create(&self) -> CreateFileSystemBuilder {
         CreateFileSystemBuilder::new(self.clone())
     }
 
+    #[must_use]
     pub fn delete(&self) -> DeleteFileSystemBuilder {
         DeleteFileSystemBuilder::new(self.clone())
     }
 
+    #[must_use]
     pub fn get_properties(&self) -> GetFileSystemPropertiesBuilder {
         GetFileSystemPropertiesBuilder::new(self.clone())
     }
 
+    #[must_use]
     pub fn set_properties(&self, properties: Properties) -> SetFileSystemPropertiesBuilder {
         SetFileSystemPropertiesBuilder::new(self.clone(), Some(properties))
     }

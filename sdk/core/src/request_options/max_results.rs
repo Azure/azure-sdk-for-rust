@@ -11,6 +11,7 @@ use std::num::NonZeroU32;
 pub struct MaxResults(NonZeroU32);
 
 impl MaxResults {
+    #[must_use]
     pub fn new(max_results: NonZeroU32) -> Self {
         Self(max_results)
     }

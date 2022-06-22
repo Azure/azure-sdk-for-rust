@@ -56,22 +56,27 @@ impl EntityClient {
         }))
     }
 
+    #[must_use]
     pub fn row_key(&self) -> &str {
         &self.row_key
     }
 
+    #[must_use]
     pub fn get(&self) -> GetEntityBuilder {
         GetEntityBuilder::new(self)
     }
 
+    #[must_use]
     pub fn update(&self) -> UpdateOrMergeEntityBuilder {
         UpdateOrMergeEntityBuilder::new(self, update_or_merge_entity_builder::Operation::Update)
     }
 
+    #[must_use]
     pub fn merge(&self) -> UpdateOrMergeEntityBuilder {
         UpdateOrMergeEntityBuilder::new(self, update_or_merge_entity_builder::Operation::Merge)
     }
 
+    #[must_use]
     pub fn insert_or_replace(&self) -> InsertOrReplaceOrMergeEntityBuilder {
         InsertOrReplaceOrMergeEntityBuilder::new(
             self,
@@ -79,6 +84,7 @@ impl EntityClient {
         )
     }
 
+    #[must_use]
     pub fn insert_or_merge(&self) -> InsertOrReplaceOrMergeEntityBuilder {
         InsertOrReplaceOrMergeEntityBuilder::new(
             self,
@@ -86,6 +92,7 @@ impl EntityClient {
         )
     }
 
+    #[must_use]
     pub fn delete(&self) -> DeleteEntityBuilder {
         DeleteEntityBuilder::new(self)
     }

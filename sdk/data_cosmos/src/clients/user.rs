@@ -19,11 +19,13 @@ impl UserClient {
     }
 
     /// Get a [`CosmosClient`]
+    #[must_use]
     pub fn cosmos_client(&self) -> &CosmosClient {
         self.database_client().cosmos_client()
     }
 
     /// Get a [`DatabaseClient`]
+    #[must_use]
     pub fn database_client(&self) -> &DatabaseClient {
         &self.database
     }
@@ -37,16 +39,19 @@ impl UserClient {
     }
 
     /// Get the user name
+    #[must_use]
     pub fn user_name(&self) -> &str {
         &self.user_name
     }
 
     /// Create the user
+    #[must_use]
     pub fn create_user(&self) -> CreateUserBuilder {
         CreateUserBuilder::new(self.clone())
     }
 
     /// Get the user
+    #[must_use]
     pub fn get_user(&self) -> GetUserBuilder {
         GetUserBuilder::new(self.clone())
     }
@@ -57,11 +62,13 @@ impl UserClient {
     }
 
     /// Delete the user
+    #[must_use]
     pub fn delete_user(&self) -> DeleteUserBuilder {
         DeleteUserBuilder::new(self.clone())
     }
 
     /// List the user's permissions
+    #[must_use]
     pub fn list_permissions(&self) -> ListPermissionsBuilder {
         ListPermissionsBuilder::new(self.clone())
     }

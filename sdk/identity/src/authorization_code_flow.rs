@@ -12,6 +12,7 @@ use url::Url;
 ///
 /// The values for `client_id`, `client_secret`, `tenant_id`, and `redirect_url` can all be found
 /// inside of the Azure portal.
+#[must_use]
 pub fn start(
     client_id: ClientId,
     client_secret: Option<ClientSecret>,

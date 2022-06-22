@@ -41,6 +41,7 @@ impl GetDocumentBuilder {
     /// We do not implement `std::future::IntoFuture` because it requires the ability for the
     /// output of the future to be generic which is not possible in Rust (as of 1.59). Once
     /// generic associated types (GATs) stabilize, this will become possible.
+    #[must_use]
     pub fn into_future<T: DeserializeOwned>(self) -> GetDocument<T> {
         Box::pin(async move {
             let mut request = self

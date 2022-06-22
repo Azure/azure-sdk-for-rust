@@ -4,6 +4,7 @@ use azure_core::headers::{self, Header};
 pub struct ConditionAppendPosition(u64);
 
 impl ConditionAppendPosition {
+    #[must_use]
     pub fn new(max_size: u64) -> Self {
         Self(max_size)
     }

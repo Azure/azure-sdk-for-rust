@@ -12,6 +12,7 @@ pub struct DeleteCollectionBuilder {
 }
 
 impl DeleteCollectionBuilder {
+    #[must_use]
     pub fn new(client: CollectionClient) -> Self {
         Self {
             client,
@@ -25,6 +26,7 @@ impl DeleteCollectionBuilder {
         context: Context => context,
     }
 
+    #[must_use]
     pub fn into_future(self) -> DeleteCollection {
         Box::pin(async move {
             let mut request = self

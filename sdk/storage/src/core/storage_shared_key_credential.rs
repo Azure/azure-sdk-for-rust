@@ -9,6 +9,7 @@ pub struct StorageSharedKeyCredential {
 
 impl StorageSharedKeyCredential {
     /// Initializes a new instance of the StorageSharedKeyCredential class.
+    #[must_use]
     pub fn new(account_name: String, account_key: String) -> Self {
         Self {
             account_name,

@@ -45,14 +45,17 @@ pub struct DeviceCodeAuthorization {
 
 impl DeviceCodeAuthorization {
     /// Get the access token
+    #[must_use]
     pub fn access_token(&self) -> &AccessToken {
         &self.access_token
     }
     /// Get the refresh token
+    #[must_use]
     pub fn refresh_token(&self) -> Option<&AccessToken> {
         self.refresh_token.as_ref()
     }
     /// Get the id token
+    #[must_use]
     pub fn id_token(&self) -> Option<&AccessToken> {
         self.id_token.as_ref()
     }

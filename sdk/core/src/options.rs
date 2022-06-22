@@ -38,6 +38,7 @@ pub struct ClientOptions {
 }
 
 impl ClientOptions {
+    #[must_use]
     pub fn new(transport: TransportOptions) -> Self {
         Self {
             per_call_policies: Vec::new(),
@@ -190,6 +191,7 @@ pub struct TransportOptions {
 
 impl TransportOptions {
     /// Creates a new `TransportOptions` using the given `HttpClient`.
+    #[must_use]
     pub fn new(http_client: Arc<dyn HttpClient>) -> Self {
         #[allow(unreachable_code)]
         Self {

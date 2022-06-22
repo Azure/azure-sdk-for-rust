@@ -25,6 +25,7 @@ impl BytesStream {
     }
 
     /// Creates a stream that resolves immediately with no data.
+    #[must_use]
     pub fn new_empty() -> Self {
         Self::new(Bytes::new())
     }

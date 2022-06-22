@@ -25,6 +25,7 @@ impl std::fmt::Debug for AutoRefreshingTokenCredential {
 
 impl AutoRefreshingTokenCredential {
     /// Create a new `AutoRefreshingTokenCredential` around the provided base provider.
+    #[must_use]
     pub fn new(provider: Arc<dyn TokenCredential>) -> Self {
         Self {
             credential: provider,

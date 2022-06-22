@@ -59,6 +59,7 @@ impl DirectoryClient {
             .into_directory_client(path)
     }
 
+    #[must_use]
     pub fn list_paths(&self) -> ListPathsBuilder {
         let fs_url = self.file_system_client.url().unwrap();
         // the path will contain a leading '/' as we extract if from the path component of the url
@@ -68,11 +69,13 @@ impl DirectoryClient {
             .recursive(true)
     }
 
+    #[must_use]
     pub fn create(&self) -> PutPathBuilder<Self> {
         PutPathBuilder::new(self.clone(), self.file_system_client.context.clone())
             .resource(ResourceType::Directory)
     }
 
+    #[must_use]
     pub fn create_if_not_exists(&self) -> PutPathBuilder<Self> {
         self.create()
             .if_match_condition(IfMatchCondition::NotMatch("*".to_string()))
@@ -112,10 +115,12 @@ impl DirectoryClient {
         )
     }
 
+    #[must_use]
     pub fn get_properties(&self) -> HeadPathBuilder<Self> {
         HeadPathBuilder::new(self.clone(), self.file_system_client.context.clone())
     }
 
+    #[must_use]
     pub fn set_properties(&self, _properties: Properties) -> SetFileSystemPropertiesBuilder {
         todo!()
     }

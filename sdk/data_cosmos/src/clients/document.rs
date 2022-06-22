@@ -29,16 +29,19 @@ impl DocumentClient {
     }
 
     /// Get a [`CosmosClient`]
+    #[must_use]
     pub fn cosmos_client(&self) -> &CosmosClient {
         self.collection_client().cosmos_client()
     }
 
     /// Get a [`DatabaseClient`]
+    #[must_use]
     pub fn database_client(&self) -> &DatabaseClient {
         self.collection_client().database_client()
     }
 
     /// Get a [`CollectionClient`]
+    #[must_use]
     pub fn collection_client(&self) -> &CollectionClient {
         &self.collection
     }
@@ -52,16 +55,19 @@ impl DocumentClient {
     }
 
     /// Get the document's name
+    #[must_use]
     pub fn document_name(&self) -> &str {
         &self.document_name
     }
 
     /// Get the partition key
+    #[must_use]
     pub fn partition_key_serialized(&self) -> &str {
         &self.partition_key_serialized
     }
 
     /// Get a document
+    #[must_use]
     pub fn get_document(&self) -> GetDocumentBuilder {
         GetDocumentBuilder::new(self.clone())
     }
@@ -75,11 +81,13 @@ impl DocumentClient {
     }
 
     /// Delete a document
+    #[must_use]
     pub fn delete_document(&self) -> DeleteDocumentBuilder {
         DeleteDocumentBuilder::new(self.clone())
     }
 
     /// List all attachments for a document
+    #[must_use]
     pub fn list_attachments(&self) -> ListAttachmentsBuilder {
         ListAttachmentsBuilder::new(self.clone())
     }

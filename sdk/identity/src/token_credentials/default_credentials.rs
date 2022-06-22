@@ -22,6 +22,7 @@ impl Default for DefaultAzureCredentialBuilder {
 
 impl DefaultAzureCredentialBuilder {
     /// Create a new `DefaultAzureCredentialBuilder`
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
@@ -45,6 +46,7 @@ impl DefaultAzureCredentialBuilder {
     }
 
     /// Create a `DefaultAzureCredential` from this builder.
+    #[must_use]
     pub fn build(&self) -> DefaultAzureCredential {
         let source_count = self.include_azure_cli_credential as usize
             + self.include_azure_cli_credential as usize
@@ -118,6 +120,7 @@ impl DefaultAzureCredential {
     /// Creates a `DefaultAzureCredential` with specified sources.
     ///
     /// These sources will be tried in the order provided in the `TokenCredential` authentication flow.
+    #[must_use]
     pub fn with_sources(sources: Vec<DefaultAzureCredentialEnum>) -> Self {
         DefaultAzureCredential { sources }
     }

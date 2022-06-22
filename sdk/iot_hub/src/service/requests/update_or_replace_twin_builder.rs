@@ -87,6 +87,7 @@ where
     ///                  "ChildProperty": "ChildValue"
     ///                }
     ///              }));
+    #[must_use]
     pub fn properties(mut self, desired_properties: serde_json::Value) -> Self {
         self.desired_properties = Some(desired_properties);
         self

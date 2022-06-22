@@ -20,6 +20,7 @@ impl AsMut<HashMap<String, Bytes>> for Metadata {
 }
 
 impl Metadata {
+    #[must_use]
     pub fn new() -> Self {
         Self(HashMap::new())
     }
@@ -32,14 +33,17 @@ impl Metadata {
         self.0.insert(k.into(), v.into())
     }
 
+    #[must_use]
     pub fn len(&self) -> usize {
         self.0.len()
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
 
+    #[must_use]
     pub fn get(&self, k: &str) -> Option<Bytes> {
         self.0.get(k).cloned()
     }

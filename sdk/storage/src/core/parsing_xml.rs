@@ -87,6 +87,7 @@ pub fn traverse<'a>(
 }
 
 #[inline]
+#[must_use]
 pub fn find_subnodes<'a>(node: &'a Element, subnode: &str) -> Vec<&'a Element> {
     node.children
         .iter()

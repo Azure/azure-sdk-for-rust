@@ -4,6 +4,7 @@ use crate::headers::{self, Header};
 pub struct ActivityId(String);
 
 impl ActivityId {
+    #[must_use]
     pub fn new(id: String) -> Self {
         Self(id)
     }

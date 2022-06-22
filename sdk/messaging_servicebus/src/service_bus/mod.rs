@@ -214,11 +214,13 @@ pub struct PeekLockResponse {
 
 impl PeekLockResponse {
     /// Get the message in the lock
+    #[must_use]
     pub fn body(&self) -> String {
         self.body.clone()
     }
 
     /// Get the status of the peek
+    #[must_use]
     pub fn status(&self) -> http::StatusCode {
         self.status
     }

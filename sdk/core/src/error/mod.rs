@@ -32,16 +32,19 @@ pub enum ErrorKind {
 }
 
 impl ErrorKind {
+    #[must_use]
     pub fn into_error(self) -> Error {
         Error {
             context: Context::Simple(self),
         }
     }
 
+    #[must_use]
     pub fn http_response(status: u16, error_code: Option<String>) -> Self {
         Self::HttpResponse { status, error_code }
     }
 
+    #[must_use]
     pub fn http_response_from_body(status: u16, body: &[u8]) -> Self {
         let error_code = http_error::get_error_code_from_body(body);
         Self::HttpResponse { status, error_code }
@@ -136,6 +139,7 @@ impl Error {
     }
 
     /// Get the `ErrorKind` of this `Error`
+    #[must_use]
     pub fn kind(&self) -> &ErrorKind {
         match &self.context {
             Context::Simple(kind) => kind,
@@ -169,6 +173,7 @@ impl Error {
     }
 
     /// Returns a reference to the inner error wrapped by this error (if any).
+    #[must_use]
     pub fn get_ref(&self) -> Option<&(dyn std::error::Error + Send + Sync + 'static)> {
         match &self.context {
             Context::Custom(Custom { error, .. }) => Some(error.as_ref()),
@@ -178,6 +183,7 @@ impl Error {
     }
 
     /// Returns a reference to the inner error (if any) downcasted to the type provided
+    #[must_use]
     pub fn downcast_ref<T: std::error::Error + 'static>(&self) -> Option<&T> {
         self.get_ref()?.downcast_ref()
     }

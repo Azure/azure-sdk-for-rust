@@ -145,6 +145,7 @@ pub struct AccountSharedAccessSignature {
 
 impl AccountSharedAccessSignature {
     #[allow(clippy::new_ret_no_self)]
+    #[must_use]
     pub fn new<'a>(
         account: &'a str,
         key: &'a str,
@@ -249,6 +250,7 @@ pub struct AccountSharedAccessSignatureBuilder<
 }
 
 impl<'a> AccountSharedAccessSignatureBuilder<'a, No, No, No, No> {
+    #[must_use]
     pub fn new(account: &'a str, key: &'a str) -> Self {
         Self {
             account,
@@ -268,6 +270,7 @@ impl<'a> AccountSharedAccessSignatureBuilder<'a, No, No, No, No> {
         }
     }
 
+    #[must_use]
     pub fn finalize(&self) -> AccountSharedAccessSignature {
         AccountSharedAccessSignature {
             account: self.account.to_owned(),

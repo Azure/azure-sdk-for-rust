@@ -22,6 +22,7 @@ impl CreateUserBuilder {
         context: Context => context,
     }
 
+    #[must_use]
     pub fn into_future(self) -> CreateUser {
         Box::pin(async move {
             let mut request = self.client.cosmos_client().prepare_request_pipeline(

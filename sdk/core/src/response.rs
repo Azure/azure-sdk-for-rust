@@ -26,16 +26,19 @@ impl Response {
     }
 
     /// Get the status code from the response.
+    #[must_use]
     pub fn status(&self) -> StatusCode {
         self.status
     }
 
     /// Get the headers from the response.
+    #[must_use]
     pub fn headers(&self) -> &Headers {
         &self.headers
     }
 
     /// Deconstruct the HTTP response into its components.
+    #[must_use]
     pub fn deconstruct(self) -> (StatusCode, Headers, PinnedStream) {
         (self.status, self.headers, self.body)
     }

@@ -17,6 +17,7 @@ pub struct ListQueuesResponse {
 }
 
 impl ListQueuesResponse {
+    #[must_use]
     pub fn next_marker(&self) -> &Option<NextMarker> {
         &self.next_marker
     }

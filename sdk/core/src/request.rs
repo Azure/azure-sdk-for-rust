@@ -43,6 +43,7 @@ pub struct Request {
 
 impl Request {
     /// Create a new request with an empty body and no headers
+    #[must_use]
     pub fn new(url: Url, method: Method) -> Self {
         Self {
             url,

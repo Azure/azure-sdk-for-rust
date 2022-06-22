@@ -22,6 +22,7 @@ impl Default for TokenCredentialOptions {
 
 impl TokenCredentialOptions {
     /// Create a new TokenCredentialsOptions. `default()` may also be used.
+    #[must_use]
     pub fn new(authority_host: String) -> Self {
         Self { authority_host }
     }
@@ -32,6 +33,7 @@ impl TokenCredentialOptions {
 
     /// The authority host to use for authentication requests.  The default is
     /// `https://login.microsoftonline.com`.
+    #[must_use]
     pub fn authority_host(&self) -> &str {
         &self.authority_host
     }
@@ -72,6 +74,7 @@ pub struct ClientSecretCredential {
 
 impl ClientSecretCredential {
     /// Create a new ClientSecretCredential
+    #[must_use]
     pub fn new(
         tenant_id: String,
         client_id: String,
