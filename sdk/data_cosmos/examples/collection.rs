@@ -5,7 +5,7 @@ use futures::stream::StreamExt;
 async fn main() -> azure_core::Result<()> {
     // First we retrieve the account name and master key from environment variables.
     // We expect master keys (ie, not resource constrained)
-    let master_key =
+    let primary_key =
         std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
@@ -17,7 +17,7 @@ async fn main() -> azure_core::Result<()> {
     // errors, plus Azure specific ones. For example if a REST call returns the
     // unexpected result (ie NotFound instead of Ok) we return an Err telling
     // you that.
-    let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
+    let authorization_token = AuthorizationToken::primary_from_base64(&primary_key)?;
 
     // Once we have an authorization token you can create a client instance. You can change the
     // authorization token at later time if you need, for example, to escalate the privileges for a

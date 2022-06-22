@@ -34,7 +34,7 @@ impl azure_data_cosmos::CosmosEntity for MySampleStruct {
 async fn main() -> azure_core::Result<()> {
     // Let's get Cosmos account and master key from env variables.
     // This helps automated testing.
-    let master_key =
+    let primary_key =
         std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
@@ -49,7 +49,7 @@ async fn main() -> azure_core::Result<()> {
     // constrained. This SDK supports both.
     // Please check the Azure documentation for details or the examples folder
     // on how to create and use token-based permissions.
-    let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
+    let authorization_token = AuthorizationToken::primary_from_base64(&primary_key)?;
 
     // Next we will create a Cosmos client.
     let client = CosmosClient::new(

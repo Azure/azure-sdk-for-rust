@@ -8,7 +8,7 @@ use azure_data_cosmos::prelude::*;
 async fn main() -> azure_core::Result<()> {
     // First we retrieve the account name and master key from environment variables.
     // We expect master keys (ie, not resource constrained)
-    let master_key =
+    let primary_key =
         std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
@@ -16,7 +16,7 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("Please provide the database name as first parameter");
 
-    let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
+    let authorization_token = AuthorizationToken::primary_from_base64(&primary_key)?;
 
     let client = CosmosClient::new(
         account.clone(),
