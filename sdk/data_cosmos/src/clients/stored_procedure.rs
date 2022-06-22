@@ -1,4 +1,4 @@
-use super::*;
+use crate::clients::*;
 use crate::prelude::*;
 use crate::ReadonlyString;
 use azure_core::{Pipeline, Request};
@@ -21,27 +21,7 @@ impl StoredProcedureClient {
         }
     }
 
-    /// Get a [`CosmosClient`]
-    pub fn cosmos_client(&self) -> &CosmosClient {
-        self.collection.cosmos_client()
-    }
-
-    /// Get a [`DatabaseClient`]
-    pub fn database_client(&self) -> &DatabaseClient {
-        self.collection.database_client()
-    }
-
-    /// Get the [`CollectionClient`]
-    pub fn collection_client(&self) -> &CollectionClient {
-        &self.collection
-    }
-
-    /// Get the stored procedure's name
-    pub fn stored_procedure_name(&self) -> &str {
-        &self.stored_procedure_name
-    }
-
-    /// Create the stored procedure
+    /// Create the stored procedure.
     pub fn create_stored_procedure<S: Into<String>>(
         &self,
         function_body: S,
@@ -49,7 +29,7 @@ impl StoredProcedureClient {
         CreateStoredProcedureBuilder::new(self.clone(), function_body.into())
     }
 
-    /// Replace the stored procedure
+    /// Replace the stored procedure.
     pub fn replace_stored_procedure<S: Into<String>>(
         &self,
         function_body: S,
@@ -57,14 +37,34 @@ impl StoredProcedureClient {
         ReplaceStoredProcedureBuilder::new(self.clone(), function_body.into())
     }
 
-    /// Execute the stored procedure
+    /// Execute the stored procedure.
     pub fn execute_stored_procedure(&self) -> ExecuteStoredProcedureBuilder {
         ExecuteStoredProcedureBuilder::new(self.clone())
     }
 
-    /// Delete the stored procedure
+    /// Delete the stored procedure.
     pub fn delete_stored_procedure(&self) -> DeleteStoredProcedureBuilder {
         DeleteStoredProcedureBuilder::new(self.clone())
+    }
+
+    /// Get a [`CosmosClient`].
+    pub fn cosmos_client(&self) -> &CosmosClient {
+        self.collection.cosmos_client()
+    }
+
+    /// Get a [`DatabaseClient`].
+    pub fn database_client(&self) -> &DatabaseClient {
+        self.collection.database_client()
+    }
+
+    /// Get the [`CollectionClient`].
+    pub fn collection_client(&self) -> &CollectionClient {
+        &self.collection
+    }
+
+    /// Get the stored procedure's name.
+    pub fn stored_procedure_name(&self) -> &str {
+        &self.stored_procedure_name
     }
 
     pub(crate) fn prepare_pipeline_with_stored_procedure_name(

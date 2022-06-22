@@ -11,6 +11,7 @@ use azure_storage_blobs::{
 };
 use bytes::Bytes;
 use chrono::{FixedOffset, Utc};
+use futures::StreamExt;
 use std::{
     ops::{Add, Deref},
     sync::Arc,
@@ -30,12 +31,12 @@ async fn create_and_delete_container() {
     container
         .create()
         .public_access(PublicAccess::None)
-        .execute()
+        .into_future()
         .await
         .unwrap();
 
     // get acl without stored access policy list
-    let _result = container.get_acl().execute().await.unwrap();
+    let _result = container.get_acl().into_future().await.unwrap();
 
     // set stored acess policy list
     let dt_start = Utc::now().with_timezone(&FixedOffset::east(0));
@@ -47,13 +48,13 @@ async fn create_and_delete_container() {
 
     let _result = container
         .set_acl(PublicAccess::None)
-        .stored_access_policy_list(&sapl)
-        .execute()
+        .stored_access_policy_list(sapl.clone())
+        .into_future()
         .await
         .unwrap();
 
     // now we get back the acess policy list and compare to the one created
-    let result = container.get_acl().execute().await.unwrap();
+    let result = container.get_acl().into_future().await.unwrap();
 
     assert!(result.public_access == PublicAccess::None);
     // we cannot compare the returned result because Azure will
@@ -69,14 +70,13 @@ async fn create_and_delete_container() {
         assert!(i1.permission == i2.permission);
     }
 
-    let res = container.get_properties().execute().await.unwrap();
+    let res = container.get_properties().into_future().await.unwrap();
     assert!(res.container.public_access == PublicAccess::None);
 
-    let list = blob_service
-        .list_containers()
-        .prefix(name)
-        .execute()
+    let list = Box::pin(blob_service.list_containers().prefix(name).stream())
+        .next()
         .await
+        .unwrap()
         .unwrap();
     let cont_list: Vec<&Container> = list
         .incomplete_vector
@@ -91,18 +91,18 @@ async fn create_and_delete_container() {
 
     let res = container
         .acquire_lease(Duration::from_secs(30))
-        .execute()
+        .into_future()
         .await
         .unwrap();
     let lease_id = res.lease_id;
     let lease = container.as_container_lease_client(res.lease_id);
 
-    let _res = lease.renew().execute().await.unwrap();
+    let _res = lease.renew().into_future().await.unwrap();
 
     container
         .delete()
-        .lease_id(&lease_id) // must pass the lease here too
-        .execute()
+        .lease_id(lease_id) // must pass the lease here too
+        .into_future()
         .await
         .unwrap();
 }
@@ -120,7 +120,7 @@ async fn put_and_get_block_list() {
     container
         .create()
         .public_access(PublicAccess::None)
-        .execute()
+        .into_future()
         .await
         .expect("container already present");
 
@@ -128,25 +128,25 @@ async fn put_and_get_block_list() {
     let contents2 = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
     let contents3 = "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC";
 
-    let digest3 = md5::compute(contents3).into();
+    let digest3 = md5::compute(contents3);
 
     let put_block_response = blob
         .put_block("block1", Bytes::from(contents1))
-        .execute()
+        .into_future()
         .await
         .unwrap();
 
     assert!(put_block_response.content_crc64.is_some());
 
     blob.put_block("block2", Bytes::from(contents2))
-        .execute()
+        .into_future()
         .await
         .unwrap();
 
     let put_block_response = blob
         .put_block("block3", Bytes::from(contents3))
-        .hash(&digest3)
-        .execute()
+        .hash(digest3)
+        .into_future()
         .await
         .unwrap();
 
@@ -155,18 +155,18 @@ async fn put_and_get_block_list() {
     let received_block_list = blob
         .get_block_list()
         .block_list_type(BlockListType::All)
-        .execute()
+        .into_future()
         .await
         .unwrap();
 
-    blob.put_block_list(&received_block_list.block_with_size_list.into())
-        .execute()
+    blob.put_block_list(received_block_list.block_with_size_list.into())
+        .into_future()
         .await
         .unwrap();
 
     let res = blob
         .acquire_lease(Duration::from_secs(60))
-        .execute()
+        .into_future()
         .await
         .unwrap();
     println!("Acquire lease == {:?}", res);
@@ -174,29 +174,29 @@ async fn put_and_get_block_list() {
     let lease_id = res.lease_id;
     let lease = blob.as_blob_lease_client(lease_id);
 
-    let res = lease.renew().execute().await.unwrap();
+    let res = lease.renew().into_future().await.unwrap();
     println!("Renew lease == {:?}", res);
 
     let res = blob
         .break_lease()
         .lease_break_period(Duration::from_secs(15))
-        .execute()
+        .into_future()
         .await
         .unwrap();
     println!("Break lease == {:?}", res);
 
-    let res = lease.release().execute().await.unwrap();
+    let res = lease.release().into_future().await.unwrap();
     println!("Release lease == {:?}", res);
 
     let res = blob
         .delete()
         .delete_snapshots_method(DeleteSnapshotsMethod::Include)
-        .execute()
+        .into_future()
         .await
         .unwrap();
     println!("Delete blob == {:?}", res);
 
-    container.delete().execute().await.unwrap();
+    container.delete().into_future().await.unwrap();
 
     println!("container {} deleted!", container_name);
 }
@@ -207,26 +207,16 @@ async fn list_containers() {
     let blob_service = storage.as_blob_service_client();
     trace!("running list_containers");
 
-    let mut next_marker = None;
+    let mut stream = Box::pin(
+        blob_service
+            .list_containers()
+            .max_results(std::num::NonZeroU32::new(2u32).unwrap())
+            .stream(),
+    );
 
-    loop {
-        let ret = {
-            let builder = blob_service
-                .list_containers()
-                .max_results(std::num::NonZeroU32::new(2u32).unwrap());
-            if let Some(nm) = next_marker {
-                builder.next_marker(nm).execute().await.unwrap()
-            } else {
-                builder.execute().await.unwrap()
-            }
-        };
-
+    while let Some(result) = stream.next().await {
+        let ret = result.unwrap();
         trace!("ret {:?}\n\n", ret);
-        if !ret.is_complete() {
-            next_marker = Some(ret.incomplete_vector.next_marker().unwrap().to_owned());
-        } else {
-            break;
-        }
     }
 }
 
@@ -241,10 +231,10 @@ async fn put_block_blob() {
     let container = storage.as_container_client(container_name);
     let blob = container.as_blob_client(blob_name);
 
-    if blob_service
-        .list_containers()
-        .execute()
+    if Box::pin(blob_service.list_containers().stream())
+        .next()
         .await
+        .unwrap()
         .unwrap()
         .incomplete_vector
         .iter()
@@ -254,18 +244,18 @@ async fn put_block_blob() {
         container
             .create()
             .public_access(PublicAccess::None)
-            .execute()
+            .into_future()
             .await
             .unwrap();
     }
 
     // calculate md5 too!
-    let digest = md5::compute(&data[..]).into();
+    let digest = md5::compute(&data[..]);
 
     blob.put_block_blob(data)
         .content_type("text/plain")
-        .hash(&digest)
-        .execute()
+        .hash(digest)
+        .into_future()
         .await
         .unwrap();
 
@@ -283,10 +273,10 @@ async fn copy_blob() {
     let container = storage.as_container_client(container_name);
     let blob = container.as_blob_client(blob_name);
 
-    if blob_service
-        .list_containers()
-        .execute()
+    if Box::pin(blob_service.list_containers().stream())
+        .next()
         .await
+        .unwrap()
         .unwrap()
         .incomplete_vector
         .iter()
@@ -296,18 +286,18 @@ async fn copy_blob() {
         container
             .create()
             .public_access(PublicAccess::None)
-            .execute()
+            .into_future()
             .await
             .unwrap();
     }
 
     // calculate md5 too!
-    let digest = md5::compute(&data[..]).into();
+    let digest = md5::compute(&data[..]);
 
     blob.put_block_blob(data)
         .content_type("text/plain")
-        .hash(&digest)
-        .execute()
+        .hash(digest)
+        .into_future()
         .await
         .unwrap();
 
@@ -323,7 +313,7 @@ async fn copy_blob() {
     ))
     .unwrap();
 
-    cloned_blob.copy(&url).execute().await.unwrap();
+    cloned_blob.copy(url).into_future().await.unwrap();
 }
 
 async fn requires_send_future<F, O>(fut: F) -> O
@@ -344,10 +334,10 @@ async fn put_block_blob_and_get_properties() {
     let container = storage.as_container_client(container_name);
     let blob = container.as_blob_client(blob_name);
 
-    if blob_service
-        .list_containers()
-        .execute()
+    if Box::pin(blob_service.list_containers().stream())
+        .next()
         .await
+        .unwrap()
         .unwrap()
         .incomplete_vector
         .iter()
@@ -357,28 +347,28 @@ async fn put_block_blob_and_get_properties() {
         container
             .create()
             .public_access(PublicAccess::None)
-            .execute()
+            .into_future()
             .await
             .unwrap();
     }
 
     // calculate md5 too!
-    let digest = md5::compute(&data[..]).into();
+    let digest = md5::compute(&data[..]);
 
     blob.put_block_blob(data)
         .content_type("text/plain")
-        .hash(&digest)
-        .execute()
+        .hash(digest)
+        .into_future()
         .await
         .unwrap();
 
     trace!("created {:?}", blob_name);
 
-    let blob_properties = blob.get_properties().execute().await.unwrap();
+    let blob_properties = blob.get_properties().into_future().await.unwrap();
 
     assert_eq!(blob_properties.blob.properties.content_length, 6);
 
-    let _ = requires_send_future(blob.get_properties().execute());
+    let _ = requires_send_future(blob.get_properties().into_future());
 }
 
 #[tokio::test]
@@ -392,10 +382,10 @@ async fn set_blobtier() {
     let container = storage.as_container_client(container_name);
     let blob = container.as_blob_client(blob_name);
 
-    if blob_service
-        .list_containers()
-        .execute()
+    if Box::pin(blob_service.list_containers().stream())
+        .next()
         .await
+        .unwrap()
         .unwrap()
         .incomplete_vector
         .iter()
@@ -405,18 +395,18 @@ async fn set_blobtier() {
         container
             .create()
             .public_access(PublicAccess::None)
-            .execute()
+            .into_future()
             .await
             .unwrap();
     }
 
     // calculate md5 too!
-    let digest = md5::compute(&data[..]).into();
+    let digest = md5::compute(&data[..]);
 
     blob.put_block_blob(data)
         .content_type("text/plain")
-        .hash(&digest)
-        .execute()
+        .hash(digest)
+        .into_future()
         .await
         .unwrap();
 
@@ -425,9 +415,9 @@ async fn set_blobtier() {
     //
     // Hot -> Cool
     //
-    blob.set_blobtier()
+    blob.set_blob_tier()
         .access_tier(AccessTier::Cool)
-        .execute()
+        .into_future()
         .await
         .unwrap();
 
@@ -436,9 +426,9 @@ async fn set_blobtier() {
     //
     // Cool -> Hot
     //
-    blob.set_blobtier()
+    blob.set_blob_tier()
         .access_tier(AccessTier::Hot)
-        .execute()
+        .into_future()
         .await
         .unwrap();
 
@@ -447,9 +437,9 @@ async fn set_blobtier() {
     //
     // Hot -> Archive
     //
-    blob.set_blobtier()
+    blob.set_blob_tier()
         .access_tier(AccessTier::Archive)
-        .execute()
+        .into_future()
         .await
         .unwrap();
 
@@ -458,9 +448,9 @@ async fn set_blobtier() {
     //
     // Archive -> Cool
     //
-    blob.set_blobtier()
+    blob.set_blob_tier()
         .access_tier(AccessTier::Cool)
-        .execute()
+        .into_future()
         .await
         .unwrap();
 
@@ -469,16 +459,16 @@ async fn set_blobtier() {
     //
     // Archive -> Cool (rehydrating)
     //
-    blob.set_blobtier()
+    blob.set_blob_tier()
         .access_tier(AccessTier::Cool)
-        .execute()
+        .into_future()
         .await
         .unwrap();
 
     trace!("blob access tier set to {:?}", AccessTier::Cool);
 
     // Clean-up test
-    container.delete().execute().await.unwrap();
+    container.delete().into_future().await.unwrap();
     println!("container {} deleted!", container_name);
 }
 
@@ -490,8 +480,11 @@ fn send_check() {
         .as_container_client("a")
         .as_blob_client("b");
 
-    let _ = requires_send_future(blob.acquire_lease(Duration::from_secs(10)).execute());
-    let _ = requires_send_future(blob.clear_page(BA512Range::new(0, 1024).unwrap()).execute());
+    let _ = requires_send_future(blob.acquire_lease(Duration::from_secs(10)).into_future());
+    let _ = requires_send_future(
+        blob.clear_page(BA512Range::new(0, 1024).unwrap())
+            .into_future(),
+    );
 }
 
 fn initialize() -> Arc<StorageAccountClient> {

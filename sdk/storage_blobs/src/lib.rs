@@ -1,5 +1,5 @@
-#[macro_use]
-extern crate log;
+#![cfg_attr(feature = "into_future", feature(into_future))]
+
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
@@ -54,6 +54,15 @@ impl From<Snapshot> for BlobVersioning {
 impl From<VersionId> for BlobVersioning {
     fn from(version_id: VersionId) -> Self {
         BlobVersioning::VersionId(version_id)
+    }
+}
+
+impl AppendToUrlQuery for BlobVersioning {
+    fn append_to_url_query(&self, url: &mut url::Url) {
+        match self {
+            BlobVersioning::Snapshot(snapshot) => snapshot.append_to_url_query(url),
+            BlobVersioning::VersionId(version_id) => version_id.append_to_url_query(url),
+        }
     }
 }
 

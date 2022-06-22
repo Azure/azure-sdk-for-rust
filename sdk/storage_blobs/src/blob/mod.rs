@@ -1,3 +1,7 @@
+pub mod operations;
+mod source_content_md5;
+pub use source_content_md5::*;
+
 mod lease_blob_options;
 pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
 mod blob_block_type;
@@ -12,14 +16,11 @@ mod block_list;
 pub use self::block_list::BlockList;
 mod page_range_list;
 pub use self::page_range_list::PageRangeList;
-pub mod requests;
-pub mod responses;
 use crate::AccessTier;
-use azure_core::content_type;
-use azure_core::headers::Headers;
 use azure_core::{
+    content_type,
     error::{Error, ErrorKind, ResultExt},
-    headers,
+    headers::{self, Headers},
     parsing::from_azure_time,
     Etag, LeaseDuration, LeaseState, LeaseStatus,
 };
@@ -194,16 +195,12 @@ impl Blob {
         blob_name: BN,
         h: &Headers,
     ) -> azure_core::Result<Blob> {
-        trace!("\n{:?}", h);
-
         #[cfg(not(feature = "azurite_workaround"))]
         let creation_time = {
             let creation_time = h.get_as_str_or_err(&headers::CREATION_TIME)?;
             let creation_time =
                 DateTime::parse_from_rfc2822(creation_time).map_kind(ErrorKind::DataConversion)?;
-            let creation_time = DateTime::from_utc(creation_time.naive_utc(), Utc);
-            trace!("creation_time == {:?}", creation_time);
-            creation_time
+            DateTime::from_utc(creation_time.naive_utc(), Utc)
         };
         #[cfg(feature = "azurite_workaround")]
         let creation_time = get_creation_time(h)?;

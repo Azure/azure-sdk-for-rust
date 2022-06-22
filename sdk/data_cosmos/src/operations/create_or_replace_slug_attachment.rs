@@ -1,4 +1,3 @@
-use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::resources::Attachment;
 use crate::ResourceQuota;
@@ -59,7 +58,7 @@ impl CreateOrReplaceSlugAttachmentBuilder {
                 request.insert_headers(cl);
             }
 
-            crate::cosmos_entity::add_as_partition_key_header_serialized2(
+            crate::cosmos_entity::add_as_partition_key_header_serialized(
                 self.client.document_client().partition_key_serialized(),
                 &mut request,
             );
@@ -72,7 +71,7 @@ impl CreateOrReplaceSlugAttachmentBuilder {
                 },
             );
 
-            request.headers_mut().insert(
+            request.insert_header(
                 "Slug",
                 HeaderValue::from(self.client.attachment_name().to_string()),
             );

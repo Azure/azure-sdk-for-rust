@@ -1,4 +1,4 @@
-use crate::cosmos_entity::{add_as_partition_key_header_serialized2, serialize_partition_key};
+use crate::cosmos_entity::{add_as_partition_key_header_serialized, serialize_partition_key};
 use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::resources::document::DocumentAttributes;
@@ -67,7 +67,7 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
             };
             let mut request = self.client.prepare_doc_request_pipeline(http::Method::POST);
 
-            add_as_partition_key_header_serialized2(&partition_key, &mut request);
+            add_as_partition_key_header_serialized(&partition_key, &mut request);
             request.insert_headers(&self.if_match_condition);
             request.insert_headers(&self.if_modified_since);
             if let Some(cl) = &self.consistency_level {

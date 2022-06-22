@@ -14,7 +14,7 @@ mod tests {
     #[macro_export]
     macro_rules! mock_key_client {
         ($keyvault_name:expr, $creds:expr, ) => {{
-            crate::client::KeyClient {
+            $crate::client::KeyClient {
                 vault_url: url::Url::parse(&mockito::server_url()).unwrap(),
                 endpoint: "".to_string(),
                 token_credential: $creds,
@@ -25,7 +25,7 @@ mod tests {
     #[macro_export]
     macro_rules! mock_cert_client {
         ($keyvault_name:expr, $creds:expr, ) => {{
-            crate::client::CertificateClient {
+            $crate::client::CertificateClient {
                 vault_url: url::Url::parse(&mockito::server_url()).unwrap(),
                 endpoint: "".to_string(),
                 token_credential: $creds,

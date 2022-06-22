@@ -1,4 +1,4 @@
-use super::*;
+use crate::clients::*;
 use crate::operations::*;
 use crate::resources::trigger::{TriggerOperation, TriggerType};
 use crate::ReadonlyString;
@@ -23,27 +23,7 @@ impl TriggerClient {
         }
     }
 
-    /// Get a [`CosmosClient`]
-    pub fn cosmos_client(&self) -> &CosmosClient {
-        self.collection.cosmos_client()
-    }
-
-    /// Get a [`DatabaseClient`]
-    pub fn database_client(&self) -> &DatabaseClient {
-        self.collection.database_client()
-    }
-
-    /// Get a [`CollectionClient`]
-    pub fn collection_client(&self) -> &CollectionClient {
-        &self.collection
-    }
-
-    /// Get the trigger name
-    pub fn trigger_name(&self) -> &str {
-        &self.trigger_name
-    }
-
-    /// Create a trigger
+    /// Create a trigger.
     pub fn create_trigger<B, T, O>(
         &self,
         body: B,
@@ -64,7 +44,7 @@ impl TriggerClient {
         )
     }
 
-    /// Replace a trigger
+    /// Replace a trigger.
     pub fn replace_trigger<B, T, O>(
         &self,
         body: B,
@@ -85,9 +65,29 @@ impl TriggerClient {
         )
     }
 
-    /// Delete a trigger
+    /// Delete a trigger.
     pub fn delete_trigger(&self) -> DeleteTriggerBuilder {
         DeleteTriggerBuilder::new(self.clone())
+    }
+
+    /// Get a [`CosmosClient`].
+    pub fn cosmos_client(&self) -> &CosmosClient {
+        self.collection.cosmos_client()
+    }
+
+    /// Get a [`DatabaseClient`].
+    pub fn database_client(&self) -> &DatabaseClient {
+        self.collection.database_client()
+    }
+
+    /// Get a [`CollectionClient`].
+    pub fn collection_client(&self) -> &CollectionClient {
+        &self.collection
+    }
+
+    /// Get the trigger name.
+    pub fn trigger_name(&self) -> &str {
+        &self.trigger_name
     }
 
     pub(crate) fn prepare_pipeline_with_trigger_name(&self, method: http::Method) -> Request {

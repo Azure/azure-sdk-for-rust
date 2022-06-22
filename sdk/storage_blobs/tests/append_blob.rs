@@ -6,6 +6,7 @@ use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::{container::PublicAccess, prelude::*};
 use bytes::Bytes;
+use futures::StreamExt;
 
 #[tokio::test]
 async fn put_append_blob() {
@@ -26,10 +27,10 @@ async fn put_append_blob() {
     let container = storage.as_container_client(container_name);
     let blob = container.as_blob_client(blob_name);
 
-    if blob_service
-        .list_containers()
-        .execute()
+    if Box::pin(blob_service.list_containers().stream())
+        .next()
         .await
+        .unwrap()
         .unwrap()
         .incomplete_vector
         .iter()
@@ -39,7 +40,7 @@ async fn put_append_blob() {
         container
             .create()
             .public_access(PublicAccess::None)
-            .execute()
+            .into_future()
             .await
             .unwrap();
     }
@@ -50,14 +51,14 @@ async fn put_append_blob() {
 
     blob.put_append_blob()
         .content_type("text/plain")
-        .metadata(&metadata)
-        .execute()
+        .metadata(metadata)
+        .into_future()
         .await
         .unwrap();
 
     trace!("created {:?}", blob_name);
 
-    let resp = blob.get_metadata().execute().await.unwrap();
+    let resp = blob.get_metadata().into_future().await.unwrap();
 
     assert_eq!(resp.metadata.len(), 2);
 

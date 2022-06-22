@@ -1,5 +1,6 @@
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
+use futures::StreamExt;
 use std::num::NonZeroU32;
 
 #[tokio::main]
@@ -22,33 +23,45 @@ async fn main() -> azure_core::Result<()> {
     let container_client = storage_client.as_container_client(container_name);
 
     let max_results = NonZeroU32::new(3).unwrap();
-    let iv = blob_service_client
-        .list_containers()
-        .max_results(max_results)
-        .execute()
-        .await?;
-    println!(
-        "List containers returned {} containers.",
-        iv.incomplete_vector.len()
+    let mut iv = Box::pin(
+        blob_service_client
+            .list_containers()
+            .max_results(max_results)
+            .stream(),
     );
-    for cont in iv.incomplete_vector.iter() {
-        println!("\t{}", cont.name);
+
+    let mut count = 0;
+    while let Some(result) = iv.next().await {
+        let container = result?;
+        count += container.incomplete_vector.len();
+        for container in container.incomplete_vector.iter() {
+            println!("\t{}", container.name);
+        }
     }
 
-    let iv = container_client
-        .list_blobs()
-        .max_results(max_results)
-        .execute()
-        .await?;
+    println!("List containers returned {} containers.", count);
 
-    println!("List blob returned {} blobs.", iv.blobs.blobs.len());
-    for cont in iv.blobs.blobs.iter() {
-        println!(
-            "\t{}\t{} MB",
-            cont.name,
-            cont.properties.content_length / (1024 * 1024)
-        );
+    let mut stream = Box::pin(
+        container_client
+            .list_blobs()
+            .max_results(max_results)
+            .stream(),
+    );
+
+    let mut count = 0;
+    while let Some(result) = stream.next().await {
+        let result = result?;
+        count += result.blobs.blobs.len();
+        for blob in result.blobs.blobs.iter() {
+            println!(
+                "\t{}\t{} MB",
+                blob.name,
+                blob.properties.content_length / (1024 * 1024)
+            );
+        }
     }
+
+    println!("List blob returned {} blobs.", count);
 
     Ok(())
 }

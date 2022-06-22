@@ -74,18 +74,11 @@ impl Policy for AuthorizationPolicy {
             &auth
         );
 
-        request
-            .headers_mut()
-            .insert(HEADER_DATE, HeaderValue::from(time_nonce.to_string()));
-        request
-            .headers_mut()
-            .insert(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION));
-        request
-            .headers_mut()
-            .insert(AUTHORIZATION, HeaderValue::from(auth));
+        request.insert_header(HEADER_DATE, HeaderValue::from(time_nonce.to_string()));
+        request.insert_header(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION));
+        request.insert_header(AUTHORIZATION, HeaderValue::from(auth));
 
-        // now next[0] is safe (will not panic) because we checked
-        // at the beginning of the function.
+        // next[0] will not panic, because we checked at the beginning of the function
         next[0].send(ctx, request, &next[1..]).await
     }
 }

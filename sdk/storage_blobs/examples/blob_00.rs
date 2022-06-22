@@ -1,12 +1,9 @@
 #[macro_use]
 extern crate log;
-use azure_core::{
-    error::{ErrorKind, ResultExt},
-    prelude::*,
-};
+use azure_core::error::{ErrorKind, ResultExt};
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
-use futures::stream::StreamExt;
+use futures::StreamExt;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -40,23 +37,21 @@ async fn main() -> azure_core::Result<()> {
 
     // this is a single call that retrieves the first 1KB of the blob (or less if the blob is
     // smaller). The range(...) call is optional.
-    let response = blob_client
-        .get()
-        .range(Range::new(0, 1024))
-        .execute()
-        .await?;
+    let response = Box::pin(blob_client.get().range(0u64..1024).stream(1024))
+        .next()
+        .await
+        .expect("stream failed")?;
 
     println!("{:#?}", response);
 
-    let mut complete_response = Vec::new();
-
+    let mut complete_response = vec![];
     // this is how you stream a blob. You can specify the range(...) value as above if necessary.
     // In this case we are retrieving the whole blob in 8KB chunks.
     let mut stream = Box::pin(blob_client.get().stream(1024 * 8));
     while let Some(value) = stream.next().await {
         let data = value?.data;
         println!("received {:?} bytes", data.len());
-        complete_response.extend(&data as &[u8]);
+        complete_response.extend(&data);
     }
 
     let s_content = String::from_utf8(complete_response).map_kind(ErrorKind::DataConversion)?;

@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::stream::StreamExt;
@@ -33,40 +32,44 @@ async fn main() -> azure_core::Result<()> {
     let content = std::str::from_utf8(&buf)?.to_owned();
     println!("content == {}", content);
 
-    let _response = blob_client.put_block_blob(buf.clone()).execute().await?;
-
-    let whole = blob_client.get().execute().await?;
-
-    assert_eq!(whole.data.len(), buf.len());
-
-    let chunk0 = blob_client
-        .get()
-        .range(Range::new(0, 1024))
-        .execute()
+    let _response = blob_client
+        .put_block_blob(buf.clone())
+        .into_future()
         .await?;
+
+    let blob = blob_client.get_content().await?;
+
+    assert_eq!(blob.len(), buf.len());
+
+    let chunk0 = Box::pin(blob_client.get().range(0u64..1024).stream(1024))
+        .next()
+        .await
+        .expect("stream failed")?;
     assert_eq!(chunk0.data.len(), 1024);
     for i in 0..1024 {
         assert_eq!(chunk0.data[i], 71);
     }
 
-    let chunk1 = blob_client
-        .get()
-        .range(Range::new(1024, 1536))
-        .execute()
-        .await?;
+    let chunk1 = Box::pin(blob_client.get().range(1024u64..1536).stream(1024))
+        .next()
+        .await
+        .expect("stream failed")?;
+
     assert_eq!(chunk1.data.len(), 512);
     for i in 0..512 {
         assert_eq!(chunk1.data[i], 72);
     }
 
-    let chunk2 = blob_client
-        .get()
-        .range(Range::new(1536, 3584))
-        .execute()
-        .await?;
-    assert_eq!(chunk2.data.len(), 2048);
+    // this time, only download them in chunks of 10 bytes
+    let mut chunk2 = vec![];
+
+    let mut stream = Box::pin(blob_client.get().range(1536u64..3584).stream(10));
+    while let Some(result) = stream.next().await {
+        chunk2.extend(result?.data);
+    }
+    assert_eq!(chunk2.len(), 2048);
     for i in 0..2048 {
-        assert_eq!(chunk2.data[i], 73);
+        assert_eq!(chunk2[i], 73);
     }
 
     let mut stream = Box::pin(blob_client.get().stream(512));

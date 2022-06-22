@@ -144,13 +144,7 @@ async fn peek_lock_message(
 ) -> azure_core::Result<CollectedResponse> {
     let url = craft_peek_lock_url(namespace, queue, lock_expiry)?;
 
-    let req = prepare_request(
-        &url.to_string(),
-        Method::POST,
-        None,
-        policy_name,
-        signing_key,
-    )?;
+    let req = prepare_request(url.as_ref(), Method::POST, None, policy_name, signing_key)?;
 
     http_client
         .as_ref()
@@ -172,13 +166,7 @@ async fn peek_lock_message2(
 ) -> azure_core::Result<PeekLockResponse> {
     let url = craft_peek_lock_url(namespace, queue, lock_expiry)?;
 
-    let req = prepare_request(
-        &url.to_string(),
-        Method::POST,
-        None,
-        policy_name,
-        signing_key,
-    )?;
+    let req = prepare_request(url.as_ref(), Method::POST, None, policy_name, signing_key)?;
 
     let res = http_client.execute_request(&req).await?;
 

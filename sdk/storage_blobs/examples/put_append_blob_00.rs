@@ -49,14 +49,14 @@ async fn main() -> azure_core::Result<()> {
         .put_append_blob()
         .content_type("text/plain")
         .content_language("en/us")
-        .metadata(&metadata)
-        .execute()
+        .metadata(metadata)
+        .into_future()
         .await?;
 
     println!("{:?}", res);
 
     // let get back the metadata
-    let res = blob_client.get_metadata().execute().await?;
+    let res = blob_client.get_metadata().into_future().await?;
     println!("{:?}", res);
 
     Ok(())

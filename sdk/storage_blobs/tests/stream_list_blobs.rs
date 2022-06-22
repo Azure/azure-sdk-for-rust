@@ -1,7 +1,7 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
-use futures::stream::StreamExt;
+use futures::StreamExt;
 use std::time::Duration;
 
 #[tokio::test]
@@ -21,7 +21,11 @@ async fn stream_list_blobs() {
     let blob_service = storage.as_blob_service_client();
     let container = storage.as_container_client(container_name);
 
-    let iv = blob_service.list_containers().execute().await.unwrap();
+    let iv = Box::pin(blob_service.list_containers().stream())
+        .next()
+        .await
+        .unwrap()
+        .unwrap();
 
     if iv
         .incomplete_vector
@@ -37,7 +41,7 @@ async fn stream_list_blobs() {
         .create()
         .public_access(PublicAccess::None)
         .timeout(Duration::from_secs(100))
-        .execute()
+        .into_future()
         .await
         .unwrap();
 
@@ -47,7 +51,7 @@ async fn stream_list_blobs() {
             .as_blob_client(format!("blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .execute()
+            .into_future()
             .await
             .unwrap();
     }
@@ -71,5 +75,5 @@ async fn stream_list_blobs() {
         cnt += 1;
     }
 
-    container.delete().execute().await.unwrap();
+    container.delete().into_future().await.unwrap();
 }

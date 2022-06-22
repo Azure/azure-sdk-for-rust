@@ -5,8 +5,8 @@ use futures::StreamExt;
 async fn main() -> azure_core::Result<()> {
     // First we retrieve the account name and master key from environment variables.
     // We expect master keys (ie, not resource constrained)
-    let master_key =
-        std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
+    let primary_key =
+        std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
     let database_name = std::env::args()
@@ -22,7 +22,7 @@ async fn main() -> azure_core::Result<()> {
         .nth(4)
         .expect("please specify the user name as fourth command line parameter");
 
-    let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
+    let authorization_token = AuthorizationToken::primary_from_base64(&primary_key)?;
 
     let client = CosmosClient::new(
         account.clone(),

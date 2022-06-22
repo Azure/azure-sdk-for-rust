@@ -1,33 +1,44 @@
 use crate::headers::{self, Header};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ContentType<'a>(&'a str);
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ContentType(std::borrow::Cow<'static, str>);
 
-impl<'a> ContentType<'a> {
-    pub fn new(s: &'a str) -> Self {
-        Self(s)
-    }
-
+impl ContentType {
     pub fn as_str(&self) -> &str {
-        self.0
+        self.0.as_ref()
     }
 }
 
-impl<'a, S> From<S> for ContentType<'a>
-where
-    S: Into<&'a str>,
-{
-    fn from(s: S) -> Self {
-        Self(s.into())
+impl From<&'static str> for ContentType {
+    fn from(s: &'static str) -> Self {
+        Self(std::borrow::Cow::Borrowed(s))
     }
 }
 
-impl<'a> Header for ContentType<'a> {
+impl From<String> for ContentType {
+    fn from(s: String) -> Self {
+        Self(std::borrow::Cow::Owned(s))
+    }
+}
+
+impl From<&String> for ContentType {
+    fn from(s: &String) -> Self {
+        Self(std::borrow::Cow::Owned(s.clone()))
+    }
+}
+
+impl ContentType {
+    pub fn new(s: impl Into<ContentType>) -> Self {
+        s.into()
+    }
+}
+
+impl<'a> Header for ContentType {
     fn name(&self) -> headers::HeaderName {
         headers::CONTENT_TYPE
     }
 
     fn value(&self) -> headers::HeaderValue {
-        self.0.to_owned().into()
+        self.0.to_string().into()
     }
 }

@@ -88,7 +88,7 @@ impl QueryDocumentsBuilder {
                 );
 
                 // signal that this is a query
-                request.headers_mut().insert(
+                request.insert_header(
                     crate::headers::HEADER_DOCUMENTDB_ISQUERY,
                     HeaderValue::from_static("true"),
                 );
@@ -107,7 +107,7 @@ impl QueryDocumentsBuilder {
 
                 request.set_body(serde_json::to_vec(&this.query)?);
                 if let Some(partition_key_serialized) = this.partition_key_serialized.as_ref() {
-                    crate::cosmos_entity::add_as_partition_key_header_serialized2(
+                    crate::cosmos_entity::add_as_partition_key_header_serialized(
                         partition_key_serialized,
                         &mut request,
                     );

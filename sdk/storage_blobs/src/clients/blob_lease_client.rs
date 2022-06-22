@@ -1,4 +1,4 @@
-use crate::{blob::requests::*, prelude::*};
+use crate::{blob::operations::*, prelude::*};
 use azure_core::{prelude::*, HttpClient, Request};
 use azure_storage::core::prelude::*;
 use bytes::Bytes;
@@ -59,16 +59,16 @@ impl BlobLeaseClient {
         self.blob_client.url_with_segments(segments)
     }
 
-    pub fn change<'a>(&'a self, proposed_lease_id: &'a ProposedLeaseId) -> ChangeLeaseBuilder<'a> {
-        ChangeLeaseBuilder::new(self, proposed_lease_id)
+    pub fn change(&self, proposed_lease_id: ProposedLeaseId) -> ChangeLeaseBuilder {
+        ChangeLeaseBuilder::new(self.clone(), proposed_lease_id)
     }
 
     pub fn release(&self) -> ReleaseLeaseBuilder {
-        ReleaseLeaseBuilder::new(self)
+        ReleaseLeaseBuilder::new(self.clone())
     }
 
     pub fn renew(&self) -> RenewLeaseBuilder {
-        RenewLeaseBuilder::new(self)
+        RenewLeaseBuilder::new(self.clone())
     }
 
     pub(crate) fn prepare_request(
