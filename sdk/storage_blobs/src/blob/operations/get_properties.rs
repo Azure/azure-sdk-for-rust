@@ -26,7 +26,6 @@ impl GetPropertiesBuilder {
         blob_versioning: BlobVersioning => Some(blob_versioning),
         timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
-
     }
 
     pub fn into_future(mut self) -> Response {

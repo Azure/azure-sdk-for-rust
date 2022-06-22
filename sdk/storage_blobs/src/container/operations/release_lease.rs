@@ -24,7 +24,6 @@ impl ReleaseLeaseBuilder {
     }
 
     setters! {
-
         timeout: Timeout => Some(timeout),
     }
 
@@ -41,7 +40,6 @@ impl ReleaseLeaseBuilder {
                 self.container_lease_client
                     .prepare_request(url.as_str(), Method::PUT, None)?;
             request.insert_header(LEASE_ACTION, "release");
-
             request.add_mandatory_header(self.container_lease_client.lease_id());
 
             let response = self

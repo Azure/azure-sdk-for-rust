@@ -28,7 +28,6 @@ impl SetACLBuilder {
 
     setters! {
         lease_id: LeaseId => Some(lease_id),
-
         timeout: Timeout => Some(timeout),
         stored_access_policy_list: StoredAccessPolicyList => Some(stored_access_policy_list),
     }
@@ -52,7 +51,6 @@ impl SetACLBuilder {
             for (name, value) in self.public_access.as_headers() {
                 request.insert_header(name, value);
             }
-
             request.add_optional_header(&self.lease_id);
 
             let response = self

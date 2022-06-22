@@ -62,7 +62,7 @@ impl ListAttachmentsBuilder {
                 }
                 request.insert_headers(&this.max_item_count);
                 request.insert_headers(&this.a_im);
-                crate::cosmos_entity::add_as_partition_key_header_serialized2(
+                crate::cosmos_entity::add_as_partition_key_header_serialized(
                     this.client.partition_key_serialized(),
                     &mut request,
                 );

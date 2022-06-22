@@ -52,7 +52,7 @@ impl GetDocumentBuilder {
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);
             }
-            crate::cosmos_entity::add_as_partition_key_header_serialized2(
+            crate::cosmos_entity::add_as_partition_key_header_serialized(
                 self.client.partition_key_serialized(),
                 &mut request,
             );

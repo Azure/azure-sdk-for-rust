@@ -1,9 +1,8 @@
+use crate::clients::*;
 use crate::operations::*;
 use crate::ReadonlyString;
 use azure_core::{Pipeline, Request};
 use bytes::Bytes;
-
-use super::*;
 
 /// A client for Cosmos attachment resources.
 #[derive(Debug, Clone)]
@@ -22,6 +21,57 @@ impl AttachmentClient {
             document,
             attachment_name: attachment_name.into(),
         }
+    }
+
+    /// Get the attachment.
+    pub fn get(&self) -> GetAttachmentBuilder {
+        GetAttachmentBuilder::new(self.clone())
+    }
+
+    /// Delete the attachment.
+    pub fn delete(&self) -> DeleteAttachmentBuilder {
+        DeleteAttachmentBuilder::new(self.clone())
+    }
+
+    /// Create an attachment with a slug.
+    pub fn create_slug(&self, body: Bytes) -> CreateOrReplaceSlugAttachmentBuilder {
+        CreateOrReplaceSlugAttachmentBuilder::new(self.clone(), true, body)
+    }
+
+    /// Replace an attachment with a slug.
+    pub fn replace_slug(&self, body: Bytes) -> CreateOrReplaceSlugAttachmentBuilder {
+        CreateOrReplaceSlugAttachmentBuilder::new(self.clone(), false, body)
+    }
+
+    /// Create a reference attachment.
+    pub fn create_attachment<M, C>(
+        &self,
+        media: M,
+        content_type: C,
+    ) -> CreateOrReplaceAttachmentBuilder
+    where
+        M: Into<String>,
+        C: Into<String>,
+    {
+        CreateOrReplaceAttachmentBuilder::new(self.clone(), true, media.into(), content_type.into())
+    }
+
+    /// Replace an attachment.
+    pub fn replace_attachment<M, C>(
+        &self,
+        media: M,
+        content_type: C,
+    ) -> CreateOrReplaceAttachmentBuilder
+    where
+        M: Into<String>,
+        C: Into<String>,
+    {
+        CreateOrReplaceAttachmentBuilder::new(
+            self.clone(),
+            false,
+            media.into(),
+            content_type.into(),
+        )
     }
 
     /// Get a [`CosmosClient`].
@@ -47,57 +97,6 @@ impl AttachmentClient {
     /// Get the attachment name.
     pub fn attachment_name(&self) -> &str {
         &self.attachment_name
-    }
-
-    /// Initiate a request to get an attachment.
-    pub fn get(&self) -> GetAttachmentBuilder {
-        GetAttachmentBuilder::new(self.clone())
-    }
-
-    /// Initiate a request to delete an attachment.
-    pub fn delete(&self) -> DeleteAttachmentBuilder {
-        DeleteAttachmentBuilder::new(self.clone())
-    }
-
-    /// Initiate a request to create an attachment with a slug.
-    pub fn create_slug(&self, body: Bytes) -> CreateOrReplaceSlugAttachmentBuilder {
-        CreateOrReplaceSlugAttachmentBuilder::new(self.clone(), true, body)
-    }
-
-    /// Initiate a request to replace an attachment.
-    pub fn replace_slug(&self, body: Bytes) -> CreateOrReplaceSlugAttachmentBuilder {
-        CreateOrReplaceSlugAttachmentBuilder::new(self.clone(), false, body)
-    }
-
-    /// Initiate a request to create a reference attachment.
-    pub fn create_attachment<M, C>(
-        &self,
-        media: M,
-        content_type: C,
-    ) -> CreateOrReplaceAttachmentBuilder
-    where
-        M: Into<String>,
-        C: Into<String>,
-    {
-        CreateOrReplaceAttachmentBuilder::new(self.clone(), true, media.into(), content_type.into())
-    }
-
-    /// Initiate a request to replace an attachment.
-    pub fn replace_attachment<M, C>(
-        &self,
-        media: M,
-        content_type: C,
-    ) -> CreateOrReplaceAttachmentBuilder
-    where
-        M: Into<String>,
-        C: Into<String>,
-    {
-        CreateOrReplaceAttachmentBuilder::new(
-            self.clone(),
-            false,
-            media.into(),
-            content_type.into(),
-        )
     }
 
     pub(crate) fn prepare_pipeline(&self, method: http::Method) -> Request {

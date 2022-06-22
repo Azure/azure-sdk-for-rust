@@ -26,7 +26,6 @@ impl DeleteBlobBuilder {
         delete_snapshots_method: DeleteSnapshotsMethod => delete_snapshots_method,
         timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
-
     }
 
     pub fn into_future(mut self) -> Response {
@@ -39,7 +38,6 @@ impl DeleteBlobBuilder {
                 self.blob_client
                     .prepare_request(url.as_str(), http::Method::DELETE, None)?;
             request.add_optional_header(&self.lease_id);
-
             request.add_mandatory_header(&self.delete_snapshots_method);
 
             let response = self

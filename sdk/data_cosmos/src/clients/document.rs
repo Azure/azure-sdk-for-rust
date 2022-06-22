@@ -1,4 +1,4 @@
-use super::{AttachmentClient, CollectionClient, CosmosClient, DatabaseClient};
+use crate::clients::*;
 use crate::operations::*;
 use crate::ReadonlyString;
 use azure_core::Request;
@@ -28,17 +28,40 @@ impl DocumentClient {
         })
     }
 
-    /// Get a [`CosmosClient`]
+    /// Get the document.
+    pub fn get_document(&self) -> GetDocumentBuilder {
+        GetDocumentBuilder::new(self.clone())
+    }
+
+    /// Replace the document.
+    pub fn replace_document<D: Serialize + Send + 'static>(
+        &self,
+        document: D,
+    ) -> ReplaceDocumentBuilder<D> {
+        ReplaceDocumentBuilder::new(self.clone(), document)
+    }
+
+    /// Delete the document.
+    pub fn delete_document(&self) -> DeleteDocumentBuilder {
+        DeleteDocumentBuilder::new(self.clone())
+    }
+
+    /// List all attachments for the document.
+    pub fn list_attachments(&self) -> ListAttachmentsBuilder {
+        ListAttachmentsBuilder::new(self.clone())
+    }
+
+    /// Get a [`CosmosClient`].
     pub fn cosmos_client(&self) -> &CosmosClient {
         self.collection_client().cosmos_client()
     }
 
-    /// Get a [`DatabaseClient`]
+    /// Get a [`DatabaseClient`].
     pub fn database_client(&self) -> &DatabaseClient {
         self.collection_client().database_client()
     }
 
-    /// Get a [`CollectionClient`]
+    /// Get a [`CollectionClient`].
     pub fn collection_client(&self) -> &CollectionClient {
         &self.collection
     }
@@ -59,29 +82,6 @@ impl DocumentClient {
     /// Get the partition key
     pub fn partition_key_serialized(&self) -> &str {
         &self.partition_key_serialized
-    }
-
-    /// Get a document
-    pub fn get_document(&self) -> GetDocumentBuilder {
-        GetDocumentBuilder::new(self.clone())
-    }
-
-    /// Replace a document in a collection
-    pub fn replace_document<D: Serialize + Send + 'static>(
-        &self,
-        document: D,
-    ) -> ReplaceDocumentBuilder<D> {
-        ReplaceDocumentBuilder::new(self.clone(), document)
-    }
-
-    /// Delete a document
-    pub fn delete_document(&self) -> DeleteDocumentBuilder {
-        DeleteDocumentBuilder::new(self.clone())
-    }
-
-    /// List all attachments for a document
-    pub fn list_attachments(&self) -> ListAttachmentsBuilder {
-        ListAttachmentsBuilder::new(self.clone())
     }
 
     pub(crate) fn prepare_request_pipeline_with_document_name(

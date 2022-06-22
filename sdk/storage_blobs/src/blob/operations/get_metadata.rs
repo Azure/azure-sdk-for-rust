@@ -27,7 +27,6 @@ impl GetMetadataBuilder {
         blob_versioning: BlobVersioning => Some(blob_versioning),
         lease_id: LeaseId => Some(lease_id),
         timeout: Timeout => Some(timeout),
-
     }
 
     pub fn into_future(mut self) -> Response {
@@ -41,7 +40,6 @@ impl GetMetadataBuilder {
             let mut request =
                 self.blob_client
                     .prepare_request(url.as_str(), http::Method::GET, None)?;
-
             request.add_optional_header(&self.lease_id);
 
             let response = self

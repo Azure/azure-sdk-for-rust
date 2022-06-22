@@ -46,7 +46,6 @@ impl AcquireLeaseBuilder {
                     .prepare_request(url.as_str(), Method::PUT, None)?;
             request.insert_header(LEASE_ACTION, "acquire");
             request.add_mandatory_header(&self.lease_duration);
-
             request.add_optional_header(&self.lease_id);
             request.add_optional_header(&self.proposed_lease_id);
 

@@ -53,7 +53,6 @@ impl PutBlockListBuilder {
         metadata: Metadata => Some(metadata),
         access_tier: AccessTier => Some(access_tier),
         lease_id: LeaseId => Some(lease_id),
-
         timeout: Timeout => Some(timeout),
     }
 

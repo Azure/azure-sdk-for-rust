@@ -35,14 +35,14 @@ const COLLECTION: &str = "azuresdktc";
 async fn main() -> azure_core::Result<()> {
     // Let's get Cosmos account and master key from env variables.
     // This helps automated testing.
-    let master_key =
-        std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
+    let primary_key =
+        std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
     // First, we create an authorization token. There are two types of tokens, master and resource
     // constrained. Please check the Azure documentation for details. You can change tokens
     // at will and it's a good practice to raise your privileges only when needed.
-    let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
+    let authorization_token = AuthorizationToken::primary_from_base64(&primary_key)?;
 
     // Next we will create a Cosmos client. You need an authorization_token but you can later
     // change it if needed.

@@ -57,7 +57,7 @@ impl ExecuteStoredProcedureBuilder {
                 .prepare_pipeline_with_stored_procedure_name(http::Method::POST);
 
             if let Some(pk) = self.partition_key.as_ref() {
-                crate::cosmos_entity::add_as_partition_key_header_serialized2(pk, &mut request)
+                crate::cosmos_entity::add_as_partition_key_header_serialized(pk, &mut request)
             }
 
             if let Some(cl) = &self.consistency_level {

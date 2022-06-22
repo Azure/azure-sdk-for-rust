@@ -3,13 +3,17 @@
 //! Each resource has its own client, meaning if you want to interact with Attachments, for example,
 //! you need to use the [`AttachmentClient`].
 //!
+//! The clients form a tree with the `CosmosClient` at the top. The `CosmosClient` can create
+//! `DatabaseClients` which can in turn create `CollectionClients`.
+//!
 //! # Example
 //!
 //! ```no_run
 //! use azure_data_cosmos::prelude::*;
 //!
 //! let account = todo!("Get Cosmos account name from the Azure Portal");
-//! let authorization_token = todo!("Get Cosmos authorization token from the Azure Portal");
+//! let primary_key: String = todo!("Get Cosmos primary key from the Azure Portal");
+//! let authorization_token = AuthorizationToken::primary_from_base64(&primary_key).unwrap();
 //! let database_name: String = todo!("Think of some database name");
 //!
 //! // Create an http client, then a `CosmosClient`, and then a `DatabaseClient`

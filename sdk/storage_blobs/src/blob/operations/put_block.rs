@@ -35,7 +35,6 @@ impl<'a> PutBlockBuilder {
 
     setters! {
         hash: Hash => Some(hash),
-
         timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
     }
@@ -53,7 +52,6 @@ impl<'a> PutBlockBuilder {
                 http::Method::PUT,
                 Some(self.body.clone()),
             )?;
-
             request.add_optional_header(&self.lease_id);
 
             let response = self

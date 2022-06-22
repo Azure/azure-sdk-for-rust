@@ -1,4 +1,4 @@
-use super::*;
+use crate::clients::*;
 use crate::prelude::*;
 use crate::resources::permission::PermissionMode;
 use crate::ReadonlyString;
@@ -19,44 +19,44 @@ impl PermissionClient {
         }
     }
 
-    /// Get a [`CosmosClient`
-    pub fn cosmos_client(&self) -> &CosmosClient {
-        self.user.cosmos_client()
+    /// Get the permission.
+    pub fn get_permission(&self) -> GetPermissionBuilder {
+        GetPermissionBuilder::new(self.clone())
     }
 
-    /// Get a [`DatabaseClient`]
-    pub fn database_client(&self) -> &DatabaseClient {
-        self.user.database_client()
-    }
-
-    /// Get the [`UserClient`]
-    pub fn user_client(&self) -> &UserClient {
-        &self.user
-    }
-
-    /// Get the permission's name
-    pub fn permission_name(&self) -> &str {
-        &self.permission_name
-    }
-
-    /// Create the permission
+    /// Create the permission.
     pub fn create_permission(&self, permission_mode: PermissionMode) -> CreatePermissionBuilder {
         CreatePermissionBuilder::new(self.clone(), permission_mode)
     }
 
-    /// Replace the permission
+    /// Replace the permission.
     pub fn replace_permission(&self, permission_mode: PermissionMode) -> ReplacePermissionBuilder {
         ReplacePermissionBuilder::new(self.clone(), permission_mode)
-    }
-
-    /// Get the permission
-    pub fn get_permission(&self) -> GetPermissionBuilder {
-        GetPermissionBuilder::new(self.clone())
     }
 
     /// Delete the permission
     pub fn delete_permission(&self) -> DeletePermissionBuilder {
         DeletePermissionBuilder::new(self.clone())
+    }
+
+    /// Get a [`CosmosClient`].
+    pub fn cosmos_client(&self) -> &CosmosClient {
+        self.user.cosmos_client()
+    }
+
+    /// Get a [`DatabaseClient`].
+    pub fn database_client(&self) -> &DatabaseClient {
+        self.user.database_client()
+    }
+
+    /// Get the [`UserClient`].
+    pub fn user_client(&self) -> &UserClient {
+        &self.user
+    }
+
+    /// Get the permission's name.
+    pub fn permission_name(&self) -> &str {
+        &self.permission_name
     }
 
     pub(crate) fn prepare_request_with_permission_name(&self, method: http::Method) -> Request {

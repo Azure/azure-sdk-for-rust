@@ -58,22 +58,22 @@ impl CreateOrReplaceSlugAttachmentBuilder {
                 request.insert_headers(cl);
             }
 
-            crate::cosmos_entity::add_as_partition_key_header_serialized2(
+            crate::cosmos_entity::add_as_partition_key_header_serialized(
                 self.client.document_client().partition_key_serialized(),
                 &mut request,
             );
             let body = self.body;
-            request.headers_mut().insert(
+            request.insert_header(
                 http::header::CONTENT_TYPE,
                 http::HeaderValue::from_str(self.content_type.as_deref().unwrap_or("text/plain"))
                     .unwrap(),
             );
 
-            request.headers_mut().insert(
+            request.insert_header(
                 "Slug",
                 http::HeaderValue::from_str(self.client.attachment_name()).unwrap(),
             );
-            request.headers_mut().insert(
+            request.insert_header(
                 http::header::CONTENT_LENGTH,
                 http::HeaderValue::from_str(&format!("{}", body.len())).unwrap(),
             );

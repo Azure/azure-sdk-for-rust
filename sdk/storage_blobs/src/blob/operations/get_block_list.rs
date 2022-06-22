@@ -31,7 +31,6 @@ impl GetBlockListBuilder {
         block_list_type: BlockListType => block_list_type,
         blob_versioning: BlobVersioning => Some(blob_versioning),
         lease_id: LeaseId => Some(lease_id),
-
         timeout: Timeout => Some(timeout),
     }
 

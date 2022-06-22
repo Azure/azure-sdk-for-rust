@@ -1,4 +1,4 @@
-use super::*;
+use crate::clients::*;
 use crate::operations::*;
 use crate::ReadonlyString;
 use azure_core::{Pipeline, Request};
@@ -21,27 +21,7 @@ impl UserDefinedFunctionClient {
         }
     }
 
-    /// Get a [`CosmosClient`]
-    pub fn cosmos_client(&self) -> &CosmosClient {
-        self.collection.cosmos_client()
-    }
-
-    /// Get a [`DatabaseClient`]
-    pub fn database_client(&self) -> &DatabaseClient {
-        self.collection.database_client()
-    }
-
-    /// Get a [`CollectionClient`]
-    pub fn collection_client(&self) -> &CollectionClient {
-        &self.collection
-    }
-
-    /// Get the user defined function's name
-    pub fn user_defined_function_name(&self) -> &str {
-        &self.user_defined_function_name
-    }
-
-    /// Create the user defined function
+    /// Create the user defined function.
     pub fn create_user_defined_function<B>(
         &self,
         body: B,
@@ -52,7 +32,7 @@ impl UserDefinedFunctionClient {
         CreateOrReplaceUserDefinedFunctionBuilder::new(self.clone(), true, body.into())
     }
 
-    /// Replace the user defined function
+    /// Replace the user defined function.
     pub fn replace_user_defined_function<B>(
         &self,
         body: B,
@@ -63,9 +43,29 @@ impl UserDefinedFunctionClient {
         CreateOrReplaceUserDefinedFunctionBuilder::new(self.clone(), false, body.into())
     }
 
-    /// Delete the user defined function
+    /// Delete the user defined function.
     pub fn delete_user_defined_function(&self) -> DeleteUserDefinedFunctionBuilder {
         DeleteUserDefinedFunctionBuilder::new(self.clone())
+    }
+
+    /// Get a [`CosmosClient`].
+    pub fn cosmos_client(&self) -> &CosmosClient {
+        self.collection.cosmos_client()
+    }
+
+    /// Get a [`DatabaseClient`].
+    pub fn database_client(&self) -> &DatabaseClient {
+        self.collection.database_client()
+    }
+
+    /// Get a [`CollectionClient`].
+    pub fn collection_client(&self) -> &CollectionClient {
+        &self.collection
+    }
+
+    /// Get the user defined function's name.
+    pub fn user_defined_function_name(&self) -> &str {
+        &self.user_defined_function_name
     }
 
     pub(crate) fn prepare_pipeline(&self, method: http::Method) -> Request {

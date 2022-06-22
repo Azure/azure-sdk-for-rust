@@ -25,7 +25,6 @@ impl<'a> GetPageRangesBuilder {
     setters! {
         blob_versioning: BlobVersioning => Some(blob_versioning),
         lease_id: LeaseId => Some(lease_id),
-
         timeout: Timeout => Some(timeout),
     }
 

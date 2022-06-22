@@ -24,43 +24,38 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug)]
 struct MySampleStruct {
     id: String,
-    a_string: String,
-    a_number: u64,
-    a_timestamp: i64,
+    string: String,
+    number: u64,
 }
 
 impl azure_data_cosmos::CosmosEntity for MySampleStruct {
     type Entity = u64;
 
     fn partition_key(&self) -> Self::Entity {
-        self.a_number
+        self.number
     }
 }
 
-// This code will perform these tasks:
-// 1. Create 10 documents in the collection.
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    // Let's get Cosmos account and master key from env variables.
-    let master_key =
-        std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
+    // Let's get Cosmos primary key and account name from env variables.
+    let primary_key =
+        std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
 
     let database_name = std::env::args()
         .nth(1)
-        .expect("please specify the database name as first command line parameter");
+        .expect("please specify the database name as the first command line parameter");
     let collection_name = std::env::args()
         .nth(2)
-        .expect("please specify the collection name as first command line parameter");
+        .expect("please specify the collection name as the second command line parameter");
 
-    // First, we create an authorization token. There are two types of tokens, master and resource
-    // constrained. This SDK supports both.
-    // Please check the Azure documentation for details or the examples folder
-    // on how to create and use token-based permissions.
-    let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
+    // First, create an authorization token. There are two types of tokens: primary and resource constrained.
+    // Please check the Azure documentation or the examples folder on how to create and use token-based permissions.
+    let authorization_token = AuthorizationToken::primary_from_base64(&primary_key)?;
 
     // Next we will create a Cosmos client.
-    let client = CosmosClient::new(account.clone(), authorization_token, CosmosOptions::default());
+    let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
 
     // We know the database so we can obtain a database client.
     let database = client.database_client(database_name);
@@ -73,9 +68,8 @@ async fn main() -> azure_core::Result<()> {
         // define the document.
         let document_to_insert = MySampleStruct {
             id: format!("unique_id{}", i),
-            a_string: "Something here".to_owned(),
-            a_number: i * 100, // this is the partition key
-            a_timestamp: chrono::Utc::now().timestamp(),
+            string: "Something here".to_owned(),
+            number: i * 100, // this is the partition key
         };
 
         // insert it
@@ -85,8 +79,6 @@ async fn main() -> azure_core::Result<()> {
             .into_future()
             .await?;
     }
-    // wow that was easy and fast, wasn't it? :)
-    println!("Done!");
 
     Ok(())
 }
@@ -104,7 +96,7 @@ extern crate serde;
 extern crate azure_core;
 
 pub mod clients;
-pub mod operations;
+mod operations;
 pub mod prelude;
 pub mod resources;
 
@@ -117,9 +109,10 @@ mod time_nonce;
 mod to_json_vector;
 
 pub(crate) use authorization_policy::AuthorizationPolicy;
+pub(crate) use time_nonce::TimeNonce;
+
 pub use consistency_level::ConsistencyLevel;
 pub use cosmos_entity::CosmosEntity;
 pub use resource_quota::ResourceQuota;
-pub(crate) use time_nonce::TimeNonce;
 
 type ReadonlyString = std::borrow::Cow<'static, str>;

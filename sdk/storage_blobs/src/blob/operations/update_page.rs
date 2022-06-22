@@ -44,7 +44,6 @@ impl UpdatePageBuilder {
         sequence_number_condition: SequenceNumberCondition => Some(sequence_number_condition),
         if_modified_since_condition: IfModifiedSinceCondition => Some(if_modified_since_condition),
         if_match_condition: IfMatchCondition => Some(if_match_condition),
-
         timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
     }
@@ -68,7 +67,6 @@ impl UpdatePageBuilder {
             request.add_optional_header(&self.hash);
             request.add_optional_header(&self.if_modified_since_condition);
             request.add_optional_header(&self.if_match_condition);
-
             request.add_optional_header(&self.lease_id);
 
             let response = self

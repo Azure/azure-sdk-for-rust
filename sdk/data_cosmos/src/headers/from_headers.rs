@@ -144,7 +144,7 @@ pub(crate) fn schema_version_from_headers(headers: &Headers) -> azure_core::Resu
 }
 
 pub(crate) fn server_from_headers(headers: &Headers) -> azure_core::Result<&str> {
-    headers::get_str_from_headers(headers, &http::header::SERVER.to_string())
+    headers::get_str_from_headers(headers, http::header::SERVER.as_ref())
 }
 
 pub(crate) fn service_version_from_headers(headers: &Headers) -> azure_core::Result<&str> {
@@ -152,7 +152,7 @@ pub(crate) fn service_version_from_headers(headers: &Headers) -> azure_core::Res
 }
 
 pub(crate) fn content_location_from_headers(headers: &Headers) -> azure_core::Result<&str> {
-    headers::get_str_from_headers(headers, &http::header::CONTENT_LOCATION.to_string())
+    headers::get_str_from_headers(headers, http::header::CONTENT_LOCATION.as_ref())
 }
 
 pub(crate) fn gateway_version_from_headers(headers: &Headers) -> azure_core::Result<&str> {

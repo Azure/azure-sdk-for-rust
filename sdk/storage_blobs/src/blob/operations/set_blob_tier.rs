@@ -29,7 +29,6 @@ impl SetBlobTierBuilder {
 
     setters! {
         access_tier: AccessTier => access_tier,
-
         rehydrate_priority: RehydratePriority => Some(rehydrate_priority),
         blob_versioning: BlobVersioning => Some(blob_versioning),
         timeout: Timeout => Some(timeout),
@@ -46,7 +45,6 @@ impl SetBlobTierBuilder {
                 self.blob_client
                     .prepare_request(url.as_str(), http::Method::PUT, None)?;
             request.add_mandatory_header(&self.access_tier);
-
             request.add_optional_header(&self.rehydrate_priority);
 
             let response = self
