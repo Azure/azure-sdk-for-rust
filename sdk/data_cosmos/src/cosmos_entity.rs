@@ -3,6 +3,29 @@ use azure_core::Request as HttpRequest;
 use serde::Serialize;
 
 /// CosmosDB partition key. Every CosmosDB entity must implement it.
+///
+/// If you want to treat a Rust type as a document to be added to a Cosmos collection,
+/// you just need to implement this trait for your type. This specifies what you use as
+/// a partitioning key. You can read more about how partitioning works in Cosmos
+/// [here](https://docs.microsoft.com/en-us/azure/cosmos-db/partitioning-overview).
+///
+/// # Example
+///
+/// ```no_run
+/// struct MySampleStruct {
+///     id: String,
+///     string: String,
+///     number: u64,
+/// }
+///
+/// impl azure_data_cosmos::CosmosEntity for MySampleStruct {
+///     type Entity = u64;
+///
+///     fn partition_key(&self) -> Self::Entity {
+///         self.number
+///     }
+/// }
+/// ```
 pub trait CosmosEntity {
     /// Returned type.
     type Entity: Serialize;
@@ -28,11 +51,11 @@ pub(crate) fn serialize_partition_key<PK: Serialize>(pk: &PK) -> azure_core::Res
     )
 }
 
-pub(crate) fn add_as_partition_key_header_serialized2(
+pub(crate) fn add_as_partition_key_header_serialized(
     partition_key_serialized: &str,
     request: &mut HttpRequest,
 ) {
-    request.headers_mut().insert(
+    request.insert_header(
         headers::HEADER_DOCUMENTDB_PARTITIONKEY,
         http::header::HeaderValue::from_str(partition_key_serialized).unwrap(),
     );

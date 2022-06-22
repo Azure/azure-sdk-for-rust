@@ -44,7 +44,7 @@ impl DeleteAttachmentBuilder {
                 request.insert_headers(cl);
             }
 
-            crate::cosmos_entity::add_as_partition_key_header_serialized2(
+            crate::cosmos_entity::add_as_partition_key_header_serialized(
                 self.client.document_client().partition_key_serialized(),
                 &mut request,
             );

@@ -1,4 +1,4 @@
-use super::DatabaseClient;
+use crate::clients::DatabaseClient;
 use crate::operations::*;
 use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
@@ -130,6 +130,7 @@ impl CosmosClient {
         Request::new(uri.parse().unwrap(), http_method)
     }
 
+    /// Sends a request through the pipeline
     pub(crate) async fn send(
         &self,
         mut request: Request,
@@ -141,6 +142,7 @@ impl CosmosClient {
             .await
     }
 
+    /// Access this client's pipeline
     pub(crate) fn pipeline(&self) -> &Pipeline {
         &self.pipeline
     }
