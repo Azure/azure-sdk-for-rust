@@ -204,7 +204,6 @@ impl Blob {
         blob_name: BN,
         h: &Headers,
     ) -> azure_core::Result<Blob> {
-
         #[cfg(not(feature = "azurite_workaround"))]
         let creation_time = {
             let creation_time = h.get_as_str_or_err(CREATION_TIME)?;
