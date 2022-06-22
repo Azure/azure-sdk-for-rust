@@ -148,7 +148,7 @@ async fn peek_lock_message(
     let url = craft_peek_lock_url(namespace, queue, lock_expiry)?;
 
     let req = prepare_request(
-        &url.to_string(),
+        url.as_ref(),
         Method::POST,
         None,
         policy_name,
@@ -176,7 +176,7 @@ async fn peek_lock_message2(
     let url = craft_peek_lock_url(namespace, queue, lock_expiry)?;
 
     let req = prepare_request(
-        &url.to_string(),
+        url.as_ref(),
         Method::POST,
         None,
         policy_name,

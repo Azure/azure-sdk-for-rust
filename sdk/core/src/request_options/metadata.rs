@@ -48,7 +48,7 @@ impl Metadata {
         self.0.iter().map(|(key, value)| {
             Metadatum(
                 key.clone(),
-                std::str::from_utf8(&*value)
+                std::str::from_utf8(value)
                     .expect("non-utf8 header value")
                     .into(),
             )
