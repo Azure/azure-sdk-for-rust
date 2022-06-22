@@ -18,7 +18,7 @@ impl AppendBlockBuilder {
     pub(crate) fn new(blob_client: BlobClient, body: Bytes) -> Self {
         Self {
             blob_client,
-            body: body.into(),
+            body,
             hash: None,
             condition_max_size: None,
             condition_append_position: None,
