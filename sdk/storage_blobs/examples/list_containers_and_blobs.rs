@@ -1,13 +1,6 @@
-use azure_core::{
-    auth::TokenCredential,
-    error::{ErrorKind, ResultExt},
-    prelude::MaxResults,
-};
-use azure_identity::DefaultAzureCredentialBuilder;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::StreamExt;
-use std::num::NonZeroU32;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
