@@ -65,8 +65,7 @@ impl Policy for MockTransportPlayerPolicy {
         // check if the passed request matches the one read from disk
         // We will ignore some headers that are bound to change every time
         // We'll probabily want to make the exclusion list dynamic at some point.
-        const SKIPPED_HEADERS: &[&'static str] =
-            &["Date", "x-ms-date", "authorization", "user-agent"];
+        const SKIPPED_HEADERS: &[&str] = &["Date", "x-ms-date", "authorization", "user-agent"];
         let actual_headers = request
             .headers()
             .iter()
@@ -124,12 +123,12 @@ impl Policy for MockTransportPlayerPolicy {
         }
 
         let actual_body = match request.body() {
-            crate::Body::Bytes(bytes) => &bytes as &[u8],
+            crate::Body::Bytes(bytes) => bytes as &[u8],
             crate::Body::SeekableStream(_) => unimplemented!(),
         };
 
         let expected_body = match expected_request.body() {
-            crate::Body::Bytes(bytes) => &bytes as &[u8],
+            crate::Body::Bytes(bytes) => bytes as &[u8],
             crate::Body::SeekableStream(_) => unimplemented!(),
         };
 

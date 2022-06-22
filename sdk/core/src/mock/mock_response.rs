@@ -1,9 +1,13 @@
 use bytes::Bytes;
-use http::{header, StatusCode};
+use http::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-use crate::{collect_pinned_stream, error, headers::Headers, BytesStream, Response};
+use crate::{
+    collect_pinned_stream, error,
+    headers::{HeaderName, HeaderValue, Headers},
+    BytesStream, Response,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct MockResponse {
@@ -63,8 +67,8 @@ impl<'de> Deserialize<'de> for MockResponse {
         let r = SerializedMockResponse::deserialize(deserializer)?;
         let mut headers = Headers::new();
         for (n, v) in r.headers.iter() {
-            let name = header::HeaderName::from_lowercase(n.as_bytes()).map_err(Error::custom)?;
-            let value = header::HeaderValue::from_str(&v).map_err(Error::custom)?;
+            let name = HeaderName::from(n.to_owned());
+            let value = HeaderValue::from(v.to_owned());
             headers.insert(name, value);
         }
         let body = Bytes::from(base64::decode(r.body).map_err(Error::custom)?);

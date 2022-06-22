@@ -57,8 +57,7 @@ impl MockTransaction {
                         "the transaction location '{}' does not exist",
                         path.canonicalize().unwrap_or(path).display()
                     )
-                })
-                .into());
+                }));
             }
         }
 
@@ -81,7 +80,7 @@ fn workspace_root() -> crate::Result<String> {
         )
     })?;
     let value = &output[index + key.len()..];
-    let end = value.find("\"").ok_or_else(|| {
+    let end = value.find('\"').ok_or_else(|| {
         Error::message(
             ErrorKind::MockFramework,
             "workspace_root value was malformed",
