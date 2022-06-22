@@ -77,8 +77,7 @@ async fn file_upload() -> azure_core::Result<()> {
     Ok(())
 }
 
-// #[tokio::test]
-#[allow(dead_code)]
+#[tokio::test]
 async fn file_read() -> azure_core::Result<()> {
     let data_lake_client = setup::create_data_lake_client("datalake_file_upload")
         .await

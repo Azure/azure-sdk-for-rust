@@ -96,14 +96,14 @@ impl Policy for MockTransportPlayerPolicy {
                 .iter()
                 .find(|(h, _)| actual_header_key.as_str() == h.as_str())
                 .ok_or_else(|| Error::with_message(ErrorKind::MockFramework, ||
-                    format!("received request have header {0} but it was not present in the read request",
+                    format!("received request have header '{0}' but it was not present in the read request",
                     actual_header_key.as_str(),
                 )))?;
 
             if actual_header_value != expected_header_value {
                 return Err(Error::with_message(ErrorKind::MockFramework, || {
                     format!(
-                        "request header {0} value is different. Actual: {1}, Expected: {2}",
+                        "request header '{0}' value is different. Actual: {1}, Expected: {2}",
                         actual_header_key.as_str().to_owned(),
                         actual_header_value.as_str().to_owned(),
                         expected_header_value.as_str().to_owned(),
