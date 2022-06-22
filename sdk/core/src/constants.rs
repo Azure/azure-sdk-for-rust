@@ -1,6 +1,5 @@
 /// Endpoints for Azure Resource Manager in different Azure clouds
 pub mod resource_manager_endpoint {
-
     /// Azure Resource Manager China cloud endpoint
     pub const AZURE_CHINA_CLOUD: &str = "https://management.chinacloudapi.cn";
 
@@ -14,9 +13,10 @@ pub mod resource_manager_endpoint {
     pub const AZURE_US_GOVERNMENT_CLOUD: &str = "https://management.usgovcloudapi.net";
 }
 
-/// https://developer.mozilla.org/docs/Web/HTTP/Headers/Content-Type
+/// Constants related to the Content-Type header
+///
+/// <https://developer.mozilla.org/docs/Web/HTTP/Headers/Content-Type>
 pub mod content_type {
-
     // Form content types
     // https://www.w3.org/TR/html401/interact/forms.html#h-17.13.4
 
@@ -28,6 +28,9 @@ pub mod content_type {
     pub const APPLICATION_OCTET_STREAM: &str = "application/octet-stream";
 }
 
+/// Constants related to the Content-Type header
+///
+/// <https://developer.mozilla.org/docs/Web/HTTP/Headers/Content-Type>
 pub mod query_param {
     pub const API_VERSION: &str = "api-version";
 }
