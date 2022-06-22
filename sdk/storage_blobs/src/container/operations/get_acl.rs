@@ -5,11 +5,13 @@ use crate::{
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     headers::{self, Headers, REQUEST_ID},
+    prelude::*,
     RequestId,
 };
 use azure_storage::core::StoredAccessPolicyList;
 use bytes::Bytes;
 use chrono::{DateTime, FixedOffset};
+use http::Method;
 use std::convert::TryFrom;
 use uuid::Uuid;
 
