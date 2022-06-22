@@ -1,6 +1,6 @@
 use crate::clients::{FileClient, PathClient};
 use azure_core::error::ResultExt;
-use azure_core::headers::{etag_from_headers, last_modified_from_headers};
+use azure_core::headers::{self, etag_from_headers, last_modified_from_headers};
 use azure_core::{
     collect_pinned_stream, error::ErrorKind, AppendToUrlQuery, Response as HttpResponse,
 };
@@ -94,7 +94,7 @@ impl GetFileResponse {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
 
         let data = collect_pinned_stream(pinned_stream).await?;
-        let content_range_header = headers.get(headers::CONTENT_RANGE);
+        let content_range_header = headers.get(&headers::CONTENT_RANGE);
         let content_range = match content_range_header {
             Some(hv) => {
                 Some(ContentRange::from_str(hv.as_str()).map_kind(ErrorKind::DataConversion)?)

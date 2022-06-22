@@ -30,10 +30,8 @@ impl AsHeaders for PublicAccess {
 
     fn as_headers(&self) -> Self::Iter {
         match self {
-            PublicAccess::Blob => Some((BLOB_PUBLIC_ACCESS.into(), "blob".into())).into_iter(),
-            PublicAccess::Container => {
-                Some((BLOB_PUBLIC_ACCESS.into(), "container".into())).into_iter()
-            }
+            PublicAccess::Blob => Some((BLOB_PUBLIC_ACCESS, "blob".into())).into_iter(),
+            PublicAccess::Container => Some((BLOB_PUBLIC_ACCESS, "container".into())).into_iter(),
             PublicAccess::None => None.into_iter(),
         }
     }

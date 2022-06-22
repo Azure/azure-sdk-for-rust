@@ -34,7 +34,7 @@ impl Properties {
 
 impl Header for Properties {
     fn name(&self) -> headers::HeaderName {
-        PROPERTIES.into()
+        PROPERTIES
     }
 
     fn value(&self) -> headers::HeaderValue {
@@ -53,7 +53,7 @@ impl TryFrom<&Headers> for Properties {
     type Error = crate::Error;
 
     fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
-        let header_value = headers.get_as_str_or_err(PROPERTIES)?;
+        let header_value = headers.get_as_str_or_err(&PROPERTIES)?;
         Properties::try_from(header_value)
     }
 }

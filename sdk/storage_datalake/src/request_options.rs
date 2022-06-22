@@ -190,7 +190,7 @@ where
 
 impl Header for RenameSource {
     fn name(&self) -> azure_core::headers::HeaderName {
-        headers::RENAME_SOURCE.into()
+        headers::RENAME_SOURCE
     }
 
     fn value(&self) -> azure_core::headers::HeaderValue {

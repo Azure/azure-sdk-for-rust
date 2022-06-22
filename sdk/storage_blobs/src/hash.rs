@@ -13,7 +13,6 @@ impl Header for Hash {
             Hash::MD5(_) => CONTENT_MD5,
             Hash::CRC64(_) => CONTENT_CRC64,
         }
-        .into()
     }
 
     fn value(&self) -> headers::HeaderValue {

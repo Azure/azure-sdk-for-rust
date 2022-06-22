@@ -25,7 +25,7 @@ impl<'a> From<&'a str> for ClientRequestId<'a> {
 
 impl<'a> Header for ClientRequestId<'a> {
     fn name(&self) -> azure_core::headers::HeaderName {
-        CLIENT_REQUEST_ID.into()
+        CLIENT_REQUEST_ID
     }
 
     fn value(&self) -> azure_core::headers::HeaderValue {

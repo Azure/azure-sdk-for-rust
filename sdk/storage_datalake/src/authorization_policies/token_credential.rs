@@ -1,6 +1,8 @@
-use azure_core::{auth::TokenCredential, Context, Policy, PolicyResult, Request};
-use headers::AUTHORIZATION;
-use http::HeaderValue;
+use azure_core::{
+    auth::TokenCredential,
+    headers::{self, HeaderValue},
+    Context, Policy, PolicyResult, Request,
+};
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -48,7 +50,7 @@ impl Policy for TokenCredentialAuthorizationPolicy {
 
         request
             .headers_mut()
-            .insert(AUTHORIZATION, HeaderValue::from_str(&auth_header_value)?);
+            .insert(headers::AUTHORIZATION, HeaderValue::from(auth_header_value));
 
         next[0].send(ctx, request, &next[1..]).await
     }

@@ -108,17 +108,14 @@ impl AsHeaders for ConsistencyLevel {
     type Iter = std::vec::IntoIter<(headers::HeaderName, headers::HeaderValue)>;
     fn as_headers(&self) -> Self::Iter {
         let mut headers = vec![(
-            crate::headers::HEADER_CONSISTENCY_LEVEL.into(),
+            crate::headers::HEADER_CONSISTENCY_LEVEL,
             HeaderValue::from_static(self.to_consistency_level_header()),
         )];
 
         // if we have a Session consistency level we make sure to pass
         // the x-ms-session-token header too.
         if let ConsistencyLevel::Session(session_token) = self {
-            headers.push((
-                crate::headers::HEADER_SESSION_TOKEN.into(),
-                session_token.into(),
-            ))
+            headers.push((crate::headers::HEADER_SESSION_TOKEN, session_token.into()))
         }
 
         headers.into_iter()

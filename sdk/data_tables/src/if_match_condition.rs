@@ -18,7 +18,7 @@ impl From<Etag> for IfMatchCondition {
 
 impl Header for IfMatchCondition {
     fn name(&self) -> headers::HeaderName {
-        IF_MATCH.into()
+        IF_MATCH
     }
 
     fn value(&self) -> headers::HeaderValue {

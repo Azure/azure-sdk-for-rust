@@ -9,7 +9,7 @@ create_enum!(
 
 impl Header for AccessTier {
     fn name(&self) -> headers::HeaderName {
-        azure_core::headers::BLOB_ACCESS_TIER.into()
+        azure_core::headers::BLOB_ACCESS_TIER
     }
 
     fn value(&self) -> headers::HeaderValue {

@@ -59,7 +59,7 @@ impl AsHeaders for IndexingDirective {
             )]
             .into_iter(),
             IndexingDirective::Include => vec![(
-                crate::headers::HEADER_INDEXING_DIRECTIVE.into(),
+                crate::headers::HEADER_INDEXING_DIRECTIVE,
                 HeaderValue::from_static("Include"),
             )]
             .into_iter(),
