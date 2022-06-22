@@ -22,7 +22,6 @@ impl Header for Offer {
             Offer::Throughput(_) => headers::HEADER_OFFER_THROUGHPUT,
             _ => headers::HEADER_OFFER_TYPE,
         }
-        .into()
     }
 
     fn value(&self) -> azure_core::headers::HeaderValue {

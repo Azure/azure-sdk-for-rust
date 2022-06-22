@@ -2,6 +2,7 @@ use crate::service::resources::{identity::IdentityOperation, AuthenticationMecha
 use crate::service::responses::ModuleIdentityResponse;
 use crate::service::{ServiceClient, API_VERSION};
 use azure_core::error::{Error, ErrorKind};
+use azure_core::headers;
 use http::Method;
 use serde::Serialize;
 use std::convert::TryInto;
@@ -53,7 +54,7 @@ impl<'a> CreateOrUpdateModuleIdentityBuilder<'a> {
         if self.operation == IdentityOperation::Update {
             match &self.etag {
                 Some(etag) => {
-                    request.insert_header(http::header::IF_MATCH, format!("\"{}\"", etag));
+                    request.insert_header(headers::IF_MATCH, format!("\"{}\"", etag));
                 }
                 None => return Err(Error::message(ErrorKind::Other, "etag is not set")),
             }

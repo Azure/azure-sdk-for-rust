@@ -1,4 +1,7 @@
-use azure_core::{headers::Headers, AppendToUrlQuery};
+use azure_core::{
+    headers::{HeaderName, Headers},
+    AppendToUrlQuery,
+};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ContinuationNextTableName(String);
@@ -13,7 +16,8 @@ impl ContinuationNextTableName {
     }
 
     pub fn from_header_optional(headers: &Headers) -> azure_core::Result<Option<Self>> {
-        let header_as_str = headers.get_as_str("x-ms-continuation-NextTableName");
+        let header_as_str =
+            headers.get_as_str(&HeaderName::from_static("x-ms-continuation-NextTableName"));
 
         Ok(header_as_str
             .filter(|h| !h.is_empty())

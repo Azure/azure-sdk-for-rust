@@ -21,7 +21,7 @@ where
 
 impl Header for User {
     fn name(&self) -> headers::HeaderName {
-        headers::USER.into()
+        headers::USER
     }
 
     fn value(&self) -> headers::HeaderValue {

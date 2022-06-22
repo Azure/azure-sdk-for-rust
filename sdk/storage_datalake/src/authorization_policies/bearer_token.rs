@@ -1,6 +1,7 @@
-use azure_core::{Context, Policy, PolicyResult, Request};
-use http::header::AUTHORIZATION;
-use http::HeaderValue;
+use azure_core::{
+    headers::{self, HeaderValue},
+    Context, Policy, PolicyResult, Request,
+};
 use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -30,9 +31,7 @@ impl Policy for BearerTokenAuthorizationPolicy {
 
         let auth_header_value = format!("Bearer {}", &self.bearer_token);
 
-        request
-            .headers_mut()
-            .insert(AUTHORIZATION, HeaderValue::from_str(&auth_header_value)?);
+        request.insert_header(headers::AUTHORIZATION, HeaderValue::from(auth_header_value));
 
         // now next[0] is safe (will not panic) because we checked
         // at the beginning of the function.

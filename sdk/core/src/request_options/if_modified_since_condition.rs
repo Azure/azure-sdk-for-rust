@@ -1,6 +1,6 @@
 use crate::headers::{self, Header};
 use chrono::{DateTime, Utc};
-use http::header::{IF_MODIFIED_SINCE, IF_UNMODIFIED_SINCE};
+use headers::{IF_MODIFIED_SINCE, IF_UNMODIFIED_SINCE};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum IfModifiedSinceCondition {
@@ -11,8 +11,8 @@ pub enum IfModifiedSinceCondition {
 impl Header for IfModifiedSinceCondition {
     fn name(&self) -> headers::HeaderName {
         match self {
-            IfModifiedSinceCondition::Modified(_) => IF_MODIFIED_SINCE.into(),
-            IfModifiedSinceCondition::Unmodified(_) => IF_UNMODIFIED_SINCE.into(),
+            IfModifiedSinceCondition::Modified(_) => IF_MODIFIED_SINCE,
+            IfModifiedSinceCondition::Unmodified(_) => IF_UNMODIFIED_SINCE,
         }
     }
 

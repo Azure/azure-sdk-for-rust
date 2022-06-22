@@ -33,7 +33,7 @@ impl From<&String> for ContentEncoding {
 
 impl Header for ContentEncoding {
     fn name(&self) -> headers::HeaderName {
-        http::header::CONTENT_TYPE.into()
+        headers::CONTENT_ENCODING
     }
 
     fn value(&self) -> headers::HeaderValue {

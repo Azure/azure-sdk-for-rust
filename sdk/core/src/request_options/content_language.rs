@@ -33,7 +33,7 @@ impl From<&String> for ContentLanguage {
 
 impl Header for ContentLanguage {
     fn name(&self) -> headers::HeaderName {
-        http::header::CONTENT_TYPE.into()
+        headers::CONTENT_LANGUAGE
     }
 
     fn value(&self) -> headers::HeaderValue {

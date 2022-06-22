@@ -1,4 +1,7 @@
-use azure_core::{headers::Headers, AppendToUrlQuery};
+use azure_core::{
+    headers::{HeaderName, Headers},
+    AppendToUrlQuery,
+};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ContinuationNextPartitionAndRowKey(String, Option<String>);
@@ -16,9 +19,12 @@ impl ContinuationNextPartitionAndRowKey {
     }
 
     pub fn from_header_optional(headers: &Headers) -> azure_core::Result<Option<Self>> {
-        let partition_header_as_str = headers.get_as_str("x-ms-continuation-NextPartitionKey");
+        let partition_header_as_str = headers.get_as_str(&HeaderName::from_static(
+            "x-ms-continuation-NextPartitionKey",
+        ));
 
-        let row_header_as_str = headers.get_as_str("x-ms-continuation-NextRowKey");
+        let row_header_as_str =
+            headers.get_as_str(&HeaderName::from_static("x-ms-continuation-NextRowKey"));
 
         Ok(partition_header_as_str.filter(|h| !h.is_empty()).map(|h| {
             ContinuationNextPartitionAndRowKey::new(

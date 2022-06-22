@@ -12,7 +12,7 @@ impl From<LeaseId> for ProposedLeaseId {
 
 impl Header for ProposedLeaseId {
     fn name(&self) -> headers::HeaderName {
-        headers::PROPOSED_LEASE_ID.into()
+        headers::PROPOSED_LEASE_ID
     }
 
     fn value(&self) -> headers::HeaderValue {

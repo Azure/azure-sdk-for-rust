@@ -1,3 +1,4 @@
+use azure_core::headers;
 use http::Method;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -108,7 +109,7 @@ impl<'a> CreateOrUpdateConfigurationBuilder<'a> {
 
         match &self.etag {
             Some(etag) => {
-                request.insert_header(http::header::IF_MATCH, format!("\"{}\"", etag));
+                request.insert_header(headers::IF_MATCH, format!("\"{}\"", etag));
             }
             None => (),
         }

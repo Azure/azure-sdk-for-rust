@@ -21,7 +21,7 @@ where
 
 impl Header for App {
     fn name(&self) -> headers::HeaderName {
-        headers::APP.into()
+        headers::APP
     }
 
     fn value(&self) -> headers::HeaderValue {

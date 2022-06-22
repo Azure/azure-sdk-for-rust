@@ -1,8 +1,8 @@
 use azure_core::error::{Error, ErrorKind, ResultExt};
-use azure_core::{CollectedResponse, HttpClient, Request, Url};
+use azure_core::{content_type, headers, CollectedResponse, HttpClient, Request, Url};
 use base64::{decode, encode_config};
 use hmac::{Hmac, Mac};
-use http::{header, Method};
+use http::Method;
 use sha2::Sha256;
 use std::sync::Arc;
 
@@ -804,9 +804,8 @@ impl ServiceClient {
     /// Prepares a request that can be used by any request builders.
     pub(crate) fn prepare_request(&self, uri: &str, method: Method) -> azure_core::Result<Request> {
         let mut request = Request::new(Url::parse(uri)?, method);
-        let headers = request.headers_mut();
-        headers.insert(header::AUTHORIZATION, &self.sas_token);
-        headers.insert(header::CONTENT_TYPE, "application/json");
+        request.insert_header(headers::AUTHORIZATION, &self.sas_token);
+        request.insert_header(headers::CONTENT_TYPE, content_type::APPLICATION_JSON);
         Ok(request)
     }
 }

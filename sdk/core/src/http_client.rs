@@ -53,7 +53,7 @@ impl HttpClient for reqwest::Client {
         let url = request.url().clone();
         let mut reqwest_request = self.request(request.method().clone(), url);
         for (name, value) in request.headers().iter() {
-            reqwest_request = reqwest_request.header(name, value);
+            reqwest_request = reqwest_request.header(name.as_str(), value.as_str());
         }
 
         let body = request.body().clone();

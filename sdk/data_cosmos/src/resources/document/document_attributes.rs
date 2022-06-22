@@ -1,5 +1,4 @@
-use azure_core::prelude::IfMatchCondition;
-use http::response::Response;
+use azure_core::{prelude::IfMatchCondition, CollectedResponse};
 
 /// A document's attributes
 #[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -43,10 +42,10 @@ impl DocumentAttributes {
     }
 }
 
-impl std::convert::TryFrom<Response<bytes::Bytes>> for DocumentAttributes {
+impl std::convert::TryFrom<CollectedResponse> for DocumentAttributes {
     type Error = azure_core::error::Error;
 
-    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
+    fn try_from(response: CollectedResponse) -> Result<Self, Self::Error> {
         let body = response.body();
         body.try_into()
     }

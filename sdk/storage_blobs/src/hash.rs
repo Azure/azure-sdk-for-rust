@@ -1,6 +1,5 @@
-use azure_core::headers::{self, Header};
-
-use azure_storage::core::headers::{CONTENT_CRC64, CONTENT_MD5};
+use azure_core::headers::{self, Header, CONTENT_MD5};
+use azure_storage::core::headers::CONTENT_CRC64;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub enum Hash {
@@ -14,7 +13,6 @@ impl Header for Hash {
             Hash::MD5(_) => CONTENT_MD5,
             Hash::CRC64(_) => CONTENT_CRC64,
         }
-        .into()
     }
 
     fn value(&self) -> headers::HeaderValue {

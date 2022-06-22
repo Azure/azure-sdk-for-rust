@@ -11,7 +11,7 @@ impl ContentLength {
 
 impl Header for ContentLength {
     fn name(&self) -> headers::HeaderName {
-        http::header::CONTENT_LENGTH.into()
+        headers::CONTENT_LENGTH
     }
 
     fn value(&self) -> headers::HeaderValue {

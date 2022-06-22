@@ -60,13 +60,12 @@ impl Headers {
     }
 
     /// Get a header value given a specific header name
-    pub fn get<T: Into<HeaderName>>(&self, key: T) -> Option<&HeaderValue> {
-        self.0.get(&key.into())
+    pub fn get(&self, key: &HeaderName) -> Option<&HeaderValue> {
+        self.0.get(key)
     }
 
     /// Get a header value or error if it is not found
-    pub fn get_or_err<T: Into<HeaderName>>(&self, key: T) -> crate::Result<&HeaderValue> {
-        let key: &HeaderName = &key.into();
+    pub fn get_or_err(&self, key: &HeaderName) -> crate::Result<&HeaderValue> {
         let value = self.0.get(key);
         value.ok_or_else(|| {
             Error::with_message(ErrorKind::Other, || {
@@ -76,29 +75,28 @@ impl Headers {
     }
 
     /// Get a header value as a str
-    pub fn get_as_str<T: Into<HeaderName>>(&self, key: T) -> Option<&str> {
+    pub fn get_as_str(&self, key: &HeaderName) -> Option<&str> {
         self.get(key).map(|v| v.as_str())
     }
 
     /// Get a header value as a str or error if it is not found
-    pub fn get_as_str_or_err<T: Into<HeaderName>>(&self, key: T) -> crate::Result<&str> {
+    pub fn get_as_str_or_err(&self, key: &HeaderName) -> crate::Result<&str> {
         self.get_or_err(key).map(|v| v.as_str())
     }
 
     /// Get a header value as a String
-    pub fn get_as_string<T: Into<HeaderName>>(&self, key: T) -> Option<String> {
+    pub fn get_as_string(&self, key: &HeaderName) -> Option<String> {
         self.get(key).map(|v| v.as_str().to_string())
     }
 
     /// Get a header value as a String or error if it is not found
-    pub fn get_as_string_or_err<T: Into<HeaderName>>(&self, key: T) -> crate::Result<String> {
+    pub fn get_as_string_or_err(&self, key: &HeaderName) -> crate::Result<String> {
         self.get_or_err(key).map(|v| v.as_str().to_string())
     }
 
     /// Get a header value as a u64
-    pub fn get_as_u64<T: Into<HeaderName>>(&self, key: T) -> crate::Result<Option<u64>> {
-        let key = key.into();
-        self.get(key.clone())
+    pub fn get_as_u64(&self, key: &HeaderName) -> crate::Result<Option<u64>> {
+        self.get(key)
             .map(|v: &HeaderValue| {
                 let v = v.as_str();
                 v.parse::<u64>()
@@ -110,9 +108,8 @@ impl Headers {
     }
 
     /// Get a header value as a u64 or error if it is not found
-    pub fn get_as_u64_or_err<T: Into<HeaderName>>(&self, key: T) -> crate::Result<u64> {
-        let key = key.into();
-        let v = self.get_or_err(key.clone())?;
+    pub fn get_as_u64_or_err(&self, key: &HeaderName) -> crate::Result<u64> {
+        let v = self.get_or_err(key)?;
         let v = v.as_str();
         v.parse::<u64>()
             .with_context(ErrorKind::DataConversion, || {
@@ -120,15 +117,11 @@ impl Headers {
             })
     }
 
-    pub fn get_as_enum<T: Into<HeaderName>, V: FromStr<Err = E>, E>(
-        &self,
-        key: T,
-    ) -> crate::Result<Option<V>>
+    pub fn get_as_enum<V: FromStr<Err = E>, E>(&self, key: &HeaderName) -> crate::Result<Option<V>>
     where
         E: std::error::Error + Send + Sync + 'static,
     {
-        let key = key.into();
-        self.get(key.clone())
+        self.get(key)
             .map(|v: &HeaderValue| {
                 let v = v.as_str();
                 v.parse::<V>().with_context(ErrorKind::DataConversion, || {
@@ -190,20 +183,18 @@ impl From<&http::HeaderMap> for Headers {
 pub struct HeaderName(std::borrow::Cow<'static, str>);
 
 impl HeaderName {
+    pub const fn from_static(s: &'static str) -> Self {
+        Self(std::borrow::Cow::Borrowed(s))
+    }
+
     pub fn as_str(&self) -> &str {
         self.0.as_ref()
     }
 }
 
-impl From<http::header::HeaderName> for HeaderName {
-    fn from(n: http::header::HeaderName) -> Self {
-        Self(std::borrow::Cow::Owned(n.as_str().into()))
-    }
-}
-
 impl From<&'static str> for HeaderName {
     fn from(s: &'static str) -> Self {
-        Self(std::borrow::Cow::Borrowed(s))
+        Self::from_static(s)
     }
 }
 
@@ -213,33 +204,23 @@ impl From<String> for HeaderName {
     }
 }
 
-impl From<&HeaderName> for http::header::HeaderName {
-    fn from(n: &HeaderName) -> Self {
-        http::header::HeaderName::from_bytes(n.as_str().as_bytes()).unwrap()
-    }
-}
-
 /// A header value
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HeaderValue(std::borrow::Cow<'static, str>);
 
 impl HeaderValue {
+    pub const fn from_static(s: &'static str) -> Self {
+        Self(std::borrow::Cow::Borrowed(s))
+    }
+
     pub fn as_str(&self) -> &str {
         self.0.as_ref()
     }
 }
 
-impl From<http::header::HeaderValue> for HeaderValue {
-    fn from(n: http::header::HeaderValue) -> Self {
-        Self(std::borrow::Cow::Owned(
-            n.to_str().expect("non-UTF8 header value").to_owned(),
-        ))
-    }
-}
-
 impl From<&'static str> for HeaderValue {
     fn from(s: &'static str) -> Self {
-        Self(std::borrow::Cow::Borrowed(s))
+        Self::from_static(s)
     }
 }
 
@@ -255,96 +236,103 @@ impl From<&String> for HeaderValue {
     }
 }
 
-impl From<&HeaderValue> for http::header::HeaderValue {
-    fn from(n: &HeaderValue) -> Self {
-        http::header::HeaderValue::from_bytes(n.as_str().as_bytes()).unwrap()
-    }
-}
-
 // headers are case insensitive
 // we are using all lowercase values
 // same as https://github.com/hyperium/http/blob/master/util/src/main.rs
 
-pub const ACL: &str = "x-ms-acl";
-pub const ACCOUNT_KIND: &str = "x-ms-account-kind";
-pub const ACTIVITY_ID: &str = "x-ms-activity-id";
-pub const APP: &str = "x-ms-app";
-pub const AUTHORIZATION: &str = "authorization";
-pub const APPEND_POSITION: &str = "x-ms-blob-condition-appendpos";
-pub const BLOB_ACCESS_TIER: &str = "x-ms-access-tier";
-pub const BLOB_CONTENT_LENGTH: &str = "x-ms-blob-content-length";
-pub const BLOB_PUBLIC_ACCESS: &str = "x-ms-blob-public-access";
-pub const BLOB_SEQUENCE_NUMBER: &str = "x-ms-blob-sequence-number";
-pub const BLOB_TYPE: &str = "x-ms-blob-type";
-pub const BLOB_CACHE_CONTROL: &str = "x-ms-blob-cache-control";
-pub const CACHE_CONTROL: &str = "cache-control";
-pub const CLIENT_REQUEST_ID: &str = "x-ms-client-request-id";
-pub const CLIENT_VERSION: &str = "x-ms-client-version";
-pub const CONTENT_DISPOSITION: &str = "x-ms-blob-content-disposition";
-pub const CONTENT_ENCODING: &str = "content-encoding";
-pub const CONTENT_LANGUAGE: &str = "content-language";
-pub const CONTENT_LENGTH: &str = "content-length";
-pub const CONTENT_LOCATION: &str = "content-location";
-pub const CONTENT_MD5: &str = "content-md5";
-pub const CONTENT_RANGE: &str = "content-range";
-pub const CONTENT_SECURITY_POLICY: &str = "content-security-policy";
-pub const CONTENT_TYPE: &str = "content-type";
-pub const CONTINUATION: &str = "x-ms-continuation";
-pub const COPY_COMPLETION_TIME: &str = "x-ms-copy-completion-time";
-pub const COPY_PROGRESS: &str = "x-ms-copy-progress";
-pub const COPY_SOURCE: &str = "x-ms-copy-source";
-pub const COPY_STATUS: &str = "x-ms-copy-status";
-pub const COPY_STATUS_DESCRIPTION: &str = "x-ms-copy-status-description";
-pub const CREATION_TIME: &str = "x-ms-creation-time";
-pub const DATE: &str = "date";
-pub const DELETE_SNAPSHOTS: &str = "x-ms-delete-snapshots";
-pub const DELETE_TYPE_PERMANENT: &str = "x-ms-delete-type-permanent";
-pub const ETAG: &str = "etag";
-pub const HAS_IMMUTABILITY_POLICY: &str = "x-ms-has-immutability-policy";
-pub const HAS_LEGAL_HOLD: &str = "x-ms-has-legal-hold";
-pub const IF_MATCH: &str = "if-match";
-pub const IF_MODIFIED_SINCE: &str = "if-modified-since";
-pub const IF_NONE_MATCH: &str = "if-none-match";
-pub const IF_RANGE: &str = "if-range";
-pub const IF_UNMODIFIED_SINCE: &str = "if-unmodified-since";
-pub const IF_SEQUENCE_NUMBER_EQ: &str = "x-ms-if-sequence-number-eq";
-pub const IF_SEQUENCE_NUMBER_LE: &str = "x-ms-if-sequence-number-le";
-pub const IF_SEQUENCE_NUMBER_LT: &str = "x-ms-if-sequence-number-lt";
-pub const ITEM_COUNT: &str = "x-ms-item-count";
-pub const ITEM_TYPE: &str = "x-ms-item-type";
-pub const KEEP_ALIVE: &str = "keep-alive";
-pub const LAST_MODIFIED: &str = "last-modified";
-pub const LEASE_ACTION: &str = "x-ms-lease-action";
-pub const LEASE_BREAK_PERIOD: &str = "x-ms-lease-break-period";
-pub const LEASE_DURATION: &str = "x-ms-lease-duration";
-pub const LEASE_ID: &str = "x-ms-lease-id";
-pub const LEASE_STATE: &str = "x-ms-lease-state";
-pub const LEASE_STATUS: &str = "x-ms-lease-status";
-pub const LEASE_TIME: &str = "x-ms-lease-time";
-pub const LINK: &str = "link";
-pub const LOCATION: &str = "location";
-pub const MAX_ITEM_COUNT: &str = "x-ms-max-item-count";
-pub const META_PREFIX: &str = "x-ms-meta-";
-pub const MS_DATE: &str = "x-ms-date";
-pub const NAMESPACE_ENABLED: &str = "x-ms-namespace-enabled";
-pub const PAGE_WRITE: &str = "x-ms-page-write";
-pub const PROPERTIES: &str = "x-ms-properties";
-pub const PROPOSED_LEASE_ID: &str = "x-ms-proposed-lease-id";
-pub const RANGE: &str = "range";
-pub const RANGE_GET_CONTENT_MD5: &str = "x-ms-range-get-content-md5";
-pub const REQUEST_ID: &str = "x-ms-request-id";
-pub const REQUEST_SERVER_ENCRYPTED: &str = "x-ms-request-server-encrypted";
-pub const REQUIRES_SYNC: &str = "x-ms-requires-sync";
-pub const RETRY_AFTER: &str = "retry-after";
-pub const SERVER_ENCRYPTED: &str = "x-ms-server-encrypted";
-pub const SESSION_TOKEN: &str = "x-ms-session-token";
-pub const SKU_NAME: &str = "x-ms-sku-name";
-pub const SOURCE_IF_MATCH: &str = "x-ms-source-if-match";
-pub const SOURCE_IF_MODIFIED_SINCE: &str = "x-ms-source-if-modified-since";
-pub const SOURCE_IF_NONE_MATCH: &str = "x-ms-source-if-none-match";
-pub const SOURCE_IF_UNMODIFIED_SINCE: &str = "x-ms-source-if-unmodified-since";
-pub const SOURCE_LEASE_ID: &str = "x-ms-source-lease-id";
-pub const USER: &str = "x-ms-user";
-pub const USER_AGENT: &str = "user-agent";
-pub const VERSION: &str = "x-ms-version";
-pub const WWW_AUTHENTICATE: &str = "www-authenticate";
+pub const ACCEPT: HeaderName = HeaderName::from_static("accept");
+pub const ACCEPT_ENCODING: HeaderName = HeaderName::from_static("accept-encoding");
+pub const ACL: HeaderName = HeaderName::from_static("x-ms-acl");
+pub const ACCOUNT_KIND: HeaderName = HeaderName::from_static("x-ms-account-kind");
+pub const ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
+pub const APP: HeaderName = HeaderName::from_static("x-ms-app");
+pub const AUTHORIZATION: HeaderName = HeaderName::from_static("authorization");
+pub const APPEND_POSITION: HeaderName = HeaderName::from_static("x-ms-blob-condition-appendpos");
+pub const BLOB_ACCESS_TIER: HeaderName = HeaderName::from_static("x-ms-access-tier");
+pub const BLOB_CONTENT_LENGTH: HeaderName = HeaderName::from_static("x-ms-blob-content-length");
+pub const BLOB_PUBLIC_ACCESS: HeaderName = HeaderName::from_static("x-ms-blob-public-access");
+pub const BLOB_SEQUENCE_NUMBER: HeaderName = HeaderName::from_static("x-ms-blob-sequence-number");
+pub const BLOB_TYPE: HeaderName = HeaderName::from_static("x-ms-blob-type");
+pub const BLOB_CACHE_CONTROL: HeaderName = HeaderName::from_static("x-ms-blob-cache-control");
+pub const CACHE_CONTROL: HeaderName = HeaderName::from_static("cache-control");
+pub const CLIENT_REQUEST_ID: HeaderName = HeaderName::from_static("x-ms-client-request-id");
+pub const CLIENT_VERSION: HeaderName = HeaderName::from_static("x-ms-client-version");
+pub const CONTENT_DISPOSITION: HeaderName =
+    HeaderName::from_static("x-ms-blob-content-disposition");
+pub const CONTENT_ENCODING: HeaderName = HeaderName::from_static("content-encoding");
+pub const CONTENT_LANGUAGE: HeaderName = HeaderName::from_static("content-language");
+pub const CONTENT_LENGTH: HeaderName = HeaderName::from_static("content-length");
+pub const CONTENT_LOCATION: HeaderName = HeaderName::from_static("content-location");
+pub const CONTENT_MD5: HeaderName = HeaderName::from_static("content-md5");
+pub const CONTENT_RANGE: HeaderName = HeaderName::from_static("content-range");
+pub const CONTENT_SECURITY_POLICY: HeaderName = HeaderName::from_static("content-security-policy");
+pub const CONTENT_TYPE: HeaderName = HeaderName::from_static("content-type");
+pub const CONTINUATION: HeaderName = HeaderName::from_static("x-ms-continuation");
+pub const COPY_COMPLETION_TIME: HeaderName = HeaderName::from_static("x-ms-copy-completion-time");
+pub const COPY_PROGRESS: HeaderName = HeaderName::from_static("x-ms-copy-progress");
+pub const COPY_SOURCE: HeaderName = HeaderName::from_static("x-ms-copy-source");
+pub const COPY_STATUS: HeaderName = HeaderName::from_static("x-ms-copy-status");
+pub const COPY_STATUS_DESCRIPTION: HeaderName =
+    HeaderName::from_static("x-ms-copy-status-description");
+pub const CREATION_TIME: HeaderName = HeaderName::from_static("x-ms-creation-time");
+pub const DATE: HeaderName = HeaderName::from_static("date");
+pub const DELETE_SNAPSHOTS: HeaderName = HeaderName::from_static("x-ms-delete-snapshots");
+pub const DELETE_TYPE_PERMANENT: HeaderName = HeaderName::from_static("x-ms-delete-type-permanent");
+pub const ETAG: HeaderName = HeaderName::from_static("etag");
+pub const ERROR_CODE: HeaderName = HeaderName::from_static("x-ms-error-code");
+pub const HAS_IMMUTABILITY_POLICY: HeaderName =
+    HeaderName::from_static("x-ms-has-immutability-policy");
+pub const HAS_LEGAL_HOLD: HeaderName = HeaderName::from_static("x-ms-has-legal-hold");
+pub const IF_MATCH: HeaderName = HeaderName::from_static("if-match");
+pub const IF_MODIFIED_SINCE: HeaderName = HeaderName::from_static("if-modified-since");
+pub const IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
+pub const IF_RANGE: HeaderName = HeaderName::from_static("if-range");
+pub const IF_UNMODIFIED_SINCE: HeaderName = HeaderName::from_static("if-unmodified-since");
+pub const IF_SEQUENCE_NUMBER_EQ: HeaderName = HeaderName::from_static("x-ms-if-sequence-number-eq");
+pub const IF_SEQUENCE_NUMBER_LE: HeaderName = HeaderName::from_static("x-ms-if-sequence-number-le");
+pub const IF_SEQUENCE_NUMBER_LT: HeaderName = HeaderName::from_static("x-ms-if-sequence-number-lt");
+pub const ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-item-count");
+pub const ITEM_TYPE: HeaderName = HeaderName::from_static("x-ms-item-type");
+pub const KEEP_ALIVE: HeaderName = HeaderName::from_static("keep-alive");
+pub const LAST_MODIFIED: HeaderName = HeaderName::from_static("last-modified");
+pub const LEASE_ACTION: HeaderName = HeaderName::from_static("x-ms-lease-action");
+pub const LEASE_BREAK_PERIOD: HeaderName = HeaderName::from_static("x-ms-lease-break-period");
+pub const LEASE_DURATION: HeaderName = HeaderName::from_static("x-ms-lease-duration");
+pub const LEASE_ID: HeaderName = HeaderName::from_static("x-ms-lease-id");
+pub const LEASE_STATE: HeaderName = HeaderName::from_static("x-ms-lease-state");
+pub const LEASE_STATUS: HeaderName = HeaderName::from_static("x-ms-lease-status");
+pub const LEASE_TIME: HeaderName = HeaderName::from_static("x-ms-lease-time");
+pub const LINK: HeaderName = HeaderName::from_static("link");
+pub const LOCATION: HeaderName = HeaderName::from_static("location");
+pub const MAX_ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-max-item-count");
+pub const META_PREFIX: HeaderName = HeaderName::from_static("x-ms-meta-");
+pub const MS_DATE: HeaderName = HeaderName::from_static("x-ms-date");
+pub const MS_RANGE: HeaderName = HeaderName::from_static("x-ms-range");
+pub const NAMESPACE_ENABLED: HeaderName = HeaderName::from_static("x-ms-namespace-enabled");
+pub const PAGE_WRITE: HeaderName = HeaderName::from_static("x-ms-page-write");
+pub const PROPERTIES: HeaderName = HeaderName::from_static("x-ms-properties");
+pub const PROPOSED_LEASE_ID: HeaderName = HeaderName::from_static("x-ms-proposed-lease-id");
+pub const RANGE: HeaderName = HeaderName::from_static("range");
+pub const RANGE_GET_CONTENT_CRC64: HeaderName =
+    HeaderName::from_static("x-ms-range-get-content-crc64");
+pub const RANGE_GET_CONTENT_MD5: HeaderName = HeaderName::from_static("x-ms-range-get-content-md5");
+pub const REQUEST_ID: HeaderName = HeaderName::from_static("x-ms-request-id");
+pub const REQUEST_SERVER_ENCRYPTED: HeaderName =
+    HeaderName::from_static("x-ms-request-server-encrypted");
+pub const REQUIRES_SYNC: HeaderName = HeaderName::from_static("x-ms-requires-sync");
+pub const RETRY_AFTER: HeaderName = HeaderName::from_static("retry-after");
+pub const SERVER: HeaderName = HeaderName::from_static("server");
+pub const SERVER_ENCRYPTED: HeaderName = HeaderName::from_static("x-ms-server-encrypted");
+pub const SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
+pub const SKU_NAME: HeaderName = HeaderName::from_static("x-ms-sku-name");
+pub const SOURCE_IF_MATCH: HeaderName = HeaderName::from_static("x-ms-source-if-match");
+pub const SOURCE_IF_MODIFIED_SINCE: HeaderName =
+    HeaderName::from_static("x-ms-source-if-modified-since");
+pub const SOURCE_IF_NONE_MATCH: HeaderName = HeaderName::from_static("x-ms-source-if-none-match");
+pub const SOURCE_IF_UNMODIFIED_SINCE: HeaderName =
+    HeaderName::from_static("x-ms-source-if-unmodified-since");
+pub const SOURCE_LEASE_ID: HeaderName = HeaderName::from_static("x-ms-source-lease-id");
+pub const USER: HeaderName = HeaderName::from_static("x-ms-user");
+pub const USER_AGENT: HeaderName = HeaderName::from_static("user-agent");
+pub const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
+pub const WWW_AUTHENTICATE: HeaderName = HeaderName::from_static("www-authenticate");

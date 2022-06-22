@@ -9,7 +9,7 @@ pub enum LeaseDuration {
 
 impl Header for LeaseDuration {
     fn name(&self) -> headers::HeaderName {
-        headers::LEASE_DURATION.into()
+        headers::LEASE_DURATION
     }
 
     fn value(&self) -> headers::HeaderValue {

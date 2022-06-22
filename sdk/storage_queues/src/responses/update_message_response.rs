@@ -1,5 +1,5 @@
 use azure_core::error::Error;
-use azure_core::headers::{get_str_from_headers, rfc2822_from_headers_mandatory};
+use azure_core::headers::{get_str_from_headers, rfc2822_from_headers_mandatory, HeaderName};
 use azure_core::CollectedResponse;
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use chrono::{DateTime, Utc};
@@ -20,9 +20,13 @@ impl std::convert::TryFrom<CollectedResponse> for UpdateMessageResponse {
             common_storage_response_headers: response.headers().try_into()?,
             time_next_visible: rfc2822_from_headers_mandatory(
                 response.headers(),
-                "x-ms-time-next-visible",
+                &HeaderName::from_static("x-ms-time-next-visible"),
             )?,
-            pop_receipt: get_str_from_headers(response.headers(), "x-ms-popreceipt")?.to_owned(),
+            pop_receipt: get_str_from_headers(
+                response.headers(),
+                &HeaderName::from_static("x-ms-popreceipt"),
+            )?
+            .to_owned(),
         })
     }
 }

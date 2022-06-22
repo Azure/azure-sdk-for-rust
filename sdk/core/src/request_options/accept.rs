@@ -30,7 +30,7 @@ where
 
 impl Header for Accept {
     fn name(&self) -> headers::HeaderName {
-        http::header::ACCEPT.into()
+        headers::ACCEPT
     }
 
     fn value(&self) -> headers::HeaderValue {

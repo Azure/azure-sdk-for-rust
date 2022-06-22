@@ -10,7 +10,7 @@ pub struct CopyId(uuid::Uuid);
 
 pub fn copy_id_from_headers(headers: &Headers) -> azure_core::Result<CopyId> {
     let copy_id = headers
-        .get(COPY_ID)
+        .get(&COPY_ID)
         .ok_or_else(|| Error::message(ErrorKind::Other, "failed to get copy id from headers"))?;
     Ok(CopyId(uuid::Uuid::parse_str(copy_id.as_str()).context(
         ErrorKind::DataConversion,

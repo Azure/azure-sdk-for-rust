@@ -1,5 +1,4 @@
 use crate::headers::{self, Header};
-use http::header;
 
 #[derive(Debug, Clone, Copy)]
 pub struct UserAgent<'a>(&'a str);
@@ -12,7 +11,7 @@ impl<'a> UserAgent<'a> {
 
 impl<'a> Header for UserAgent<'a> {
     fn name(&self) -> headers::HeaderName {
-        header::USER_AGENT.into()
+        headers::USER_AGENT
     }
 
     fn value(&self) -> headers::HeaderValue {

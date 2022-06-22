@@ -28,7 +28,7 @@ impl ExpirySeconds {
 
 impl Header for ExpirySeconds {
     fn name(&self) -> azure_core::headers::HeaderName {
-        headers::HEADER_DOCUMENTDB_EXPIRY_SECONDS.into()
+        headers::HEADER_DOCUMENTDB_EXPIRY_SECONDS
     }
 
     fn value(&self) -> azure_core::headers::HeaderValue {

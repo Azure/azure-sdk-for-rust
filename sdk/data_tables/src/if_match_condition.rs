@@ -2,7 +2,7 @@ use azure_core::{
     headers::{self, Header},
     Etag,
 };
-use http::header::IF_MATCH;
+use headers::IF_MATCH;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum IfMatchCondition {
@@ -18,7 +18,7 @@ impl From<Etag> for IfMatchCondition {
 
 impl Header for IfMatchCondition {
     fn name(&self) -> headers::HeaderName {
-        IF_MATCH.into()
+        IF_MATCH
     }
 
     fn value(&self) -> headers::HeaderValue {
