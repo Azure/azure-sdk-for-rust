@@ -64,11 +64,11 @@ impl AcquireLeaseBuilder {
 }
 
 azure_storage::response_from_headers!(AcquireLeaseResponse ,
-               etag_from_headers => etag: String,
-               last_modified_from_headers => last_modified: DateTime<Utc>,
-               lease_id_from_headers => lease_id: LeaseId,
-               request_id_from_headers => request_id: RequestId,
-               date_from_headers => date: DateTime<Utc>
+    etag_from_headers => etag: String,
+    last_modified_from_headers => last_modified: DateTime<Utc>,
+    lease_id_from_headers => lease_id: LeaseId,
+    request_id_from_headers => request_id: RequestId,
+    date_from_headers => date: DateTime<Utc>
 );
 
 pub type Response = futures::future::BoxFuture<'static, azure_core::Result<AcquireLeaseResponse>>;
