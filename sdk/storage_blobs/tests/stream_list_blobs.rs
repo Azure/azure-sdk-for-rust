@@ -30,7 +30,7 @@ async fn stream_list_blobs() {
         .unwrap();
 
     if iv
-        .incomplete_vector
+        .containers
         .iter()
         .find(|item| item.name == container_name)
         .is_some()

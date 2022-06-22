@@ -36,7 +36,7 @@ async fn code() -> azure_core::Result<()> {
         .next()
         .await
         .unwrap()?
-        .incomplete_vector
+        .containers
         .iter()
         .find(|x| x.name == container_name)
         .is_none()

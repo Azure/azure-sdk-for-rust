@@ -82,7 +82,7 @@ async fn create_and_delete_container() {
         .unwrap()
         .unwrap();
     let cont_list: Vec<&Container> = list
-        .incomplete_vector
+        .containers
         .deref()
         .into_iter()
         .filter(|e| e.name == name)
@@ -239,7 +239,7 @@ async fn put_block_blob() {
         .await
         .unwrap()
         .unwrap()
-        .incomplete_vector
+        .containers
         .iter()
         .find(|x| x.name == container_name)
         .is_none()
@@ -283,7 +283,7 @@ async fn copy_blob() {
         .await
         .unwrap()
         .unwrap()
-        .incomplete_vector
+        .containers
         .iter()
         .find(|x| x.name == container_name)
         .is_none()
@@ -346,7 +346,7 @@ async fn put_block_blob_and_get_properties() {
         .await
         .unwrap()
         .unwrap()
-        .incomplete_vector
+        .containers
         .iter()
         .find(|x| x.name == container_name)
         .is_none()
@@ -396,7 +396,7 @@ async fn set_blobtier() {
         .await
         .unwrap()
         .unwrap()
-        .incomplete_vector
+        .containers
         .iter()
         .find(|x| x.name == container_name)
         .is_none()

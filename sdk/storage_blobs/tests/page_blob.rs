@@ -24,7 +24,7 @@ async fn put_page_blob() {
         .await
         .unwrap()
         .unwrap()
-        .incomplete_vector
+        .containers
         .iter()
         .find(|x| x.name == container_name)
         .is_none()
