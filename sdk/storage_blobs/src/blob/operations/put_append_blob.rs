@@ -12,8 +12,8 @@ pub struct PutAppendBlobBuilder {
     metadata: Option<Metadata>,
     // TODO: Support tags
     lease_id: Option<LeaseId>,
-    context: Context,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl PutAppendBlobBuilder {

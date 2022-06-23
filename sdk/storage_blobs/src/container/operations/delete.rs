@@ -6,9 +6,9 @@ use http::method::Method;
 pub struct DeleteBuilder {
     container_client: ContainerClient,
     lease_id: Option<LeaseId>,
-    context: Context,
     #[allow(unused)]
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl DeleteBuilder {

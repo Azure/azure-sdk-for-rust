@@ -7,12 +7,11 @@ pub struct SetBlobTierBuilder {
     blob_client: BlobClient,
     // Request Headers
     access_tier: AccessTier,
-    context: Context,
     rehydrate_priority: Option<RehydratePriority>,
-
     // URI Parameters
     blob_versioning: Option<BlobVersioning>,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl SetBlobTierBuilder {

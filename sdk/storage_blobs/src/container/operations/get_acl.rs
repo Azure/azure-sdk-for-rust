@@ -19,9 +19,9 @@ use uuid::Uuid;
 #[derive(Debug, Clone)]
 pub struct GetACLBuilder {
     container_client: ContainerClient,
-    context: Context,
     timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
+    context: Context,
 }
 
 impl GetACLBuilder {

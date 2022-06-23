@@ -7,8 +7,8 @@ pub struct CreateBuilder {
     container_client: ContainerClient,
     public_access: PublicAccess,
     metadata: Option<Metadata>,
-    context: Context,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl CreateBuilder {

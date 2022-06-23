@@ -10,10 +10,10 @@ use http::method::Method;
 #[derive(Debug, Clone)]
 pub struct BreakLeaseBuilder {
     container_client: ContainerClient,
-    context: Context,
     timeout: Option<Timeout>,
     lease_break_period: Option<LeaseBreakPeriod>,
     lease_id: Option<LeaseId>,
+    context: Context,
 }
 
 impl BreakLeaseBuilder {

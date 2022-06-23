@@ -23,8 +23,8 @@ pub struct ListBlobsBuilder {
     include_deleted: bool,
     include_tags: bool,
     include_versions: bool,
-    context: Context,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl ListBlobsBuilder {

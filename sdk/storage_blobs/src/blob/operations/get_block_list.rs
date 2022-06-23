@@ -11,8 +11,8 @@ pub struct GetBlockListBuilder {
     block_list_type: BlockListType,
     blob_versioning: Option<BlobVersioning>,
     lease_id: Option<LeaseId>,
-    context: Context,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl GetBlockListBuilder {

@@ -9,9 +9,9 @@ pub struct SetACLBuilder {
     container_client: ContainerClient,
     public_access: PublicAccess,
     stored_access_policy_list: Option<StoredAccessPolicyList>,
-    context: Context,
     timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
+    context: Context,
 }
 
 impl SetACLBuilder {

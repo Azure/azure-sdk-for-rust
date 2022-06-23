@@ -22,8 +22,8 @@ pub struct PutBlockBlobBuilder {
     access_tier: Option<AccessTier>,
     // TODO: Support tags
     lease_id: Option<LeaseId>,
-    context: Context,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl PutBlockBlobBuilder {

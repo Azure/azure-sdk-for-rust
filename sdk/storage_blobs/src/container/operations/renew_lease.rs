@@ -7,8 +7,8 @@ pub type RenewLeaseResponse = AcquireLeaseResponse;
 #[derive(Debug, Clone)]
 pub struct RenewLeaseBuilder {
     container_lease_client: ContainerLeaseClient,
-    context: Context,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl RenewLeaseBuilder {

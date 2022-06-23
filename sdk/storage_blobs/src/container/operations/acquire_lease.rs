@@ -7,10 +7,10 @@ use http::method::Method;
 pub struct AcquireLeaseBuilder {
     container_client: ContainerClient,
     lease_duration: LeaseDuration,
-    context: Context,
     timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
     proposed_lease_id: Option<ProposedLeaseId>,
+    context: Context,
 }
 
 impl AcquireLeaseBuilder {

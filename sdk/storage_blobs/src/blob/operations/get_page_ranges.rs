@@ -7,8 +7,8 @@ pub struct GetPageRangesBuilder {
     blob_client: BlobClient,
     blob_versioning: Option<BlobVersioning>,
     lease_id: Option<LeaseId>,
-    context: Context,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl<'a> GetPageRangesBuilder {

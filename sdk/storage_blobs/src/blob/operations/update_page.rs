@@ -18,9 +18,9 @@ pub struct UpdatePageBuilder {
     sequence_number_condition: Option<SequenceNumberCondition>,
     if_modified_since_condition: Option<IfModifiedSinceCondition>,
     if_match_condition: Option<IfMatchCondition>,
-    context: Context,
     timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
+    context: Context,
 }
 
 impl UpdatePageBuilder {

@@ -16,8 +16,8 @@ pub struct PutPageBlobBuilder {
     // TODO: Support tags
     lease_id: Option<LeaseId>,
     sequence_number: Option<SequenceNumber>,
-    context: Context,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl PutPageBlobBuilder {

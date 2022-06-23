@@ -7,9 +7,9 @@ use std::convert::{TryFrom, TryInto};
 pub struct SetMetadataBuilder {
     blob_client: BlobClient,
     lease_id: Option<LeaseId>,
-    context: Context,
     timeout: Option<Timeout>,
     metadata: Option<Metadata>,
+    context: Context,
 }
 
 impl SetMetadataBuilder {

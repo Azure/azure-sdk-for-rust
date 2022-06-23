@@ -15,9 +15,9 @@ pub struct PutBlockBuilder {
     body: Bytes,
     #[allow(unused)]
     hash: Option<Hash>,
-    context: Context,
     timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
+    context: Context,
 }
 
 impl<'a> PutBlockBuilder {

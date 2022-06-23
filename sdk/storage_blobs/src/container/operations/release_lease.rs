@@ -10,8 +10,8 @@ use http::method::Method;
 #[derive(Debug, Clone)]
 pub struct ReleaseLeaseBuilder {
     container_lease_client: ContainerLeaseClient,
-    context: Context,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl ReleaseLeaseBuilder {

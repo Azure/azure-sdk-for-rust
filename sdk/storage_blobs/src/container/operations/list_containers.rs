@@ -16,8 +16,8 @@ pub struct ListContainersBuilder {
     include_metadata: bool,
     include_deleted: bool,
     max_results: Option<MaxResults>,
-    context: Context,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl ListContainersBuilder {

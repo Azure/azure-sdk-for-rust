@@ -9,8 +9,8 @@ use chrono::{DateTime, Utc};
 #[derive(Debug, Clone)]
 pub struct ReleaseLeaseBuilder {
     blob_lease_client: BlobLeaseClient,
-    context: Context,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl ReleaseLeaseBuilder {
