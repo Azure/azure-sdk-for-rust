@@ -60,17 +60,17 @@ async fn main() -> azure_core::Result<()> {
 
     let get_document_response = client
         .document_client(doc.id.clone(), &doc.id)?
-        .get_document()
+        .get_document::<serde_json::Value>()
         .consistency_level(&create_document_response)
-        .into_future::<serde_json::Value>()
+        .into_future()
         .await?;
     println!("get_document_response == {:#?}", get_document_response);
 
     let get_document_response = client
         .document_client("ciccia", &doc.id)?
-        .get_document()
+        .get_document::<serde_json::Value>()
         .consistency_level(&create_document_response)
-        .into_future::<serde_json::Value>()
+        .into_future()
         .await?;
     println!(
         "get_document_response == {:#?}\n\n\n",

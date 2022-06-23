@@ -65,9 +65,9 @@ async fn main() -> azure_core::Result<()> {
     );
 
     let execute_stored_procedure_response = stored_procedure
-        .execute_stored_procedure()
+        .execute_stored_procedure::<serde_json::Value>()
         .parameters(["Robert"])
-        .into_future::<serde_json::Value>()
+        .into_future()
         .await?;
 
     println!(

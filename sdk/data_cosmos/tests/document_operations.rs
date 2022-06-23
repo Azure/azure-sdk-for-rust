@@ -109,8 +109,8 @@ async fn document_operations() {
         .unwrap();
 
     let document_after_get = document
-        .get_document()
-        .into_future::<MyDocument>()
+        .get_document::<MyDocument>()
+        .into_future()
         .await
         .unwrap();
 
@@ -142,8 +142,8 @@ async fn document_operations() {
         .document_client(DOCUMENT_NAME, &DOCUMENT_NAME)
         .unwrap();
     let document_after_get = document
-        .get_document()
-        .into_future::<MyDocument>()
+        .get_document::<MyDocument>()
+        .into_future()
         .await
         .unwrap();
 

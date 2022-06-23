@@ -32,9 +32,9 @@ async fn main() -> azure_core::Result<()> {
         .database_client(database)
         .collection_client(collection)
         .stored_procedure_client("test_proc")
-        .execute_stored_procedure()
+        .execute_stored_procedure::<serde_json::Value>()
         .parameters(["Robert"])
-        .into_future::<serde_json::Value>()
+        .into_future()
         .await?;
 
     println!("Response object:\n{:#?}", ret);
