@@ -10,8 +10,8 @@ pub struct AppendBlockBuilder {
     condition_max_size: Option<ConditionMaxSize>,
     condition_append_position: Option<ConditionAppendPosition>,
     lease_id: Option<LeaseId>,
-    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl AppendBlockBuilder {
@@ -23,8 +23,8 @@ impl AppendBlockBuilder {
             condition_max_size: None,
             condition_append_position: None,
             lease_id: None,
-            client_request_id: None,
             timeout: None,
+            context: Context::new(),
         }
     }
 
@@ -33,11 +33,10 @@ impl AppendBlockBuilder {
         condition_max_size: ConditionMaxSize => Some(condition_max_size),
         condition_append_position: ConditionAppendPosition => Some(condition_append_position),
         lease_id: LeaseId => Some(lease_id),
-        client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
     }
 
-    pub fn into_future(self) -> Response {
+    pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.blob_client.url_with_segments(None)?;
 
@@ -53,12 +52,10 @@ impl AppendBlockBuilder {
             request.add_optional_header(&self.condition_max_size);
             request.add_optional_header(&self.condition_append_position);
             request.add_optional_header(&self.lease_id);
-            request.add_optional_header(&self.client_request_id);
 
             let response = self
                 .blob_client
-                .http_client()
-                .execute_request_check_status(&request)
+                .send(&mut self.context, &mut request)
                 .await?;
 
             PutBlockResponse::from_headers(response.headers())

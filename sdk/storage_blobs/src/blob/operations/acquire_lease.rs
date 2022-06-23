@@ -15,8 +15,8 @@ pub struct AcquireLeaseBuilder {
     lease_duration: LeaseDuration,
     lease_id: Option<LeaseId>,
     proposed_lease_id: Option<ProposedLeaseId>,
-    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl AcquireLeaseBuilder {
@@ -27,7 +27,7 @@ impl AcquireLeaseBuilder {
             lease_id: None,
             proposed_lease_id: None,
             timeout: None,
-            client_request_id: None,
+            context: Context::new(),
         }
     }
 
@@ -35,10 +35,9 @@ impl AcquireLeaseBuilder {
         lease_id: LeaseId => Some(lease_id),
         proposed_lease_id: ProposedLeaseId => Some(proposed_lease_id),
         timeout: Timeout => Some(timeout),
-        client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub fn into_future(self) -> Response {
+    pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.blob_client.url_with_segments(None)?;
 
@@ -51,13 +50,11 @@ impl AcquireLeaseBuilder {
             request.insert_header(LEASE_ACTION, "acquire");
             request.add_mandatory_header(&self.lease_duration);
             request.add_optional_header(&self.proposed_lease_id);
-            request.add_optional_header(&self.client_request_id);
             request.add_optional_header(&self.lease_id);
 
             let response = self
                 .blob_client
-                .http_client()
-                .execute_request_check_status(&request)
+                .send(&mut self.context, &mut request)
                 .await?;
 
             AcquireLeaseResponse::from_headers(response.headers())

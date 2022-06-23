@@ -6,9 +6,9 @@ use http::method::Method;
 pub struct DeleteBuilder {
     container_client: ContainerClient,
     lease_id: Option<LeaseId>,
-    client_request_id: Option<ClientRequestId>,
     #[allow(unused)]
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl DeleteBuilder {
@@ -16,18 +16,18 @@ impl DeleteBuilder {
         DeleteBuilder {
             container_client,
             lease_id: None,
-            client_request_id: None,
+            context: Context::new(),
             timeout: None,
         }
     }
 
     setters! {
         lease_id: LeaseId => Some(lease_id),
-        client_request_id: ClientRequestId => Some(client_request_id),
+
         timeout: Timeout => Some(timeout),
     }
 
-    pub fn into_future(self) -> Response {
+    pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.container_client.url_with_segments(None)?;
 
@@ -36,15 +36,11 @@ impl DeleteBuilder {
             let mut request =
                 self.container_client
                     .prepare_request(url.as_str(), Method::DELETE, None)?;
-            request.add_optional_header(&self.client_request_id);
             request.add_optional_header(&self.lease_id);
 
             let _response = self
                 .container_client
-                .storage_client()
-                .storage_account_client()
-                .http_client()
-                .execute_request_check_status(&request)
+                .send(&mut self.context, &mut request)
                 .await?;
 
             // TODO: Capture and return the response headers

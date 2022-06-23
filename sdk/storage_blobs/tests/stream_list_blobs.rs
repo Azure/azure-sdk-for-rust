@@ -21,14 +21,16 @@ async fn stream_list_blobs() {
     let blob_service = storage.as_blob_service_client();
     let container = storage.as_container_client(container_name);
 
-    let iv = Box::pin(blob_service.list_containers().stream())
+    let page = blob_service
+        .list_containers()
+        .into_stream()
         .next()
         .await
         .unwrap()
         .unwrap();
 
-    if iv
-        .incomplete_vector
+    if page
+        .containers
         .iter()
         .find(|item| item.name == container_name)
         .is_some()
@@ -56,12 +58,10 @@ async fn stream_list_blobs() {
             .unwrap();
     }
 
-    let mut stream = Box::pin(
-        container
-            .list_blobs()
-            .max_results(std::num::NonZeroU32::new(3u32).unwrap())
-            .stream(),
-    );
+    let mut stream = container
+        .list_blobs()
+        .max_results(std::num::NonZeroU32::new(3u32).unwrap())
+        .into_stream();
 
     let mut cnt = 0u32;
     while let Some(value) = stream.next().await {

@@ -9,25 +9,25 @@ use chrono::{DateTime, Utc};
 #[derive(Debug, Clone)]
 pub struct RenewLeaseBuilder {
     blob_lease_client: BlobLeaseClient,
-    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl RenewLeaseBuilder {
     pub(crate) fn new(blob_lease_client: BlobLeaseClient) -> Self {
         Self {
             blob_lease_client,
-            client_request_id: None,
+            context: Context::new(),
             timeout: None,
         }
     }
 
     setters! {
-        client_request_id: ClientRequestId => Some(client_request_id),
+
         timeout: Timeout => Some(timeout),
     }
 
-    pub fn into_future(self) -> Response {
+    pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.blob_lease_client.url_with_segments(None)?;
 
@@ -39,12 +39,10 @@ impl RenewLeaseBuilder {
                     .prepare_request(url.as_str(), http::Method::PUT, None)?;
             request.insert_header(LEASE_ACTION, "renew");
             request.add_mandatory_header(self.blob_lease_client.lease_id());
-            request.add_optional_header(&self.client_request_id);
 
             let response = self
                 .blob_lease_client
-                .http_client()
-                .execute_request_check_status(&request)
+                .send(&mut self.context, &mut request)
                 .await?;
 
             RenewLeaseResponse::from_headers(response.headers())

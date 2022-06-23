@@ -1,6 +1,6 @@
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
-use futures::stream::StreamExt;
+use futures::StreamExt;
 use std::{num::NonZeroU32, time::Duration};
 
 #[tokio::main]
@@ -20,10 +20,10 @@ async fn main() -> azure_core::Result<()> {
     let container_client = storage_client.as_container_client(&container_name);
     let blob_service = storage_client.as_blob_service_client();
 
-    let mut stream = Box::pin(blob_service.list_containers().stream());
+    let mut stream = blob_service.list_containers().into_stream();
     while let Some(result) = stream.next().await {
-        let container = result?;
-        for container in container.incomplete_vector.as_ref() {
+        let result = result?;
+        for container in result.containers {
             if container.name == container_name {
                 panic!("The specified container must not exists!");
             }
@@ -52,12 +52,10 @@ async fn main() -> azure_core::Result<()> {
 
     let max_results = NonZeroU32::new(3).unwrap();
 
-    let mut stream = Box::pin(
-        container_client
-            .list_blobs()
-            .max_results(max_results)
-            .stream(),
-    );
+    let mut stream = container_client
+        .list_blobs()
+        .max_results(max_results)
+        .into_stream();
 
     let mut cnt: i32 = 0;
     while let Some(value) = stream.next().await {

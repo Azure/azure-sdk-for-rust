@@ -7,11 +7,12 @@ use crate::{
         AccountSharedAccessSignatureBuilder, ClientAccountSharedAccessSignature,
     },
 };
-use azure_core::auth::TokenCredential;
-use azure_core::error::{Error, ErrorKind, ResultExt};
-use azure_core::{headers, Request};
-use azure_core::{headers::*, Pipeline};
-use azure_core::{ClientOptions, HttpClient};
+use azure_core::{
+    auth::TokenCredential,
+    error::{Error, ErrorKind, ResultExt},
+    headers::*,
+    ClientOptions, Context, HttpClient, Pipeline, Request, Response,
+};
 use bytes::Bytes;
 use http::method::Method;
 use std::sync::Arc;
@@ -446,8 +447,8 @@ impl StorageAccountClient {
             None => request.insert_header(CONTENT_LENGTH, "0"),
         };
 
-        request.insert_header(headers::MS_DATE, time);
-        request.insert_header(headers::VERSION, AZURE_VERSION);
+        request.insert_header(MS_DATE, time);
+        request.insert_header(VERSION, AZURE_VERSION);
 
         // We sign the request only if it is not already signed (with the signature of an
         // SAS token for example)
@@ -494,6 +495,17 @@ impl StorageAccountClient {
 
     pub(crate) fn pipeline(&self) -> &Pipeline {
         &self.pipeline
+    }
+
+    pub async fn send(
+        &self,
+        context: &mut Context,
+        request: &mut Request,
+        service_type: ServiceType,
+    ) -> azure_core::Result<Response> {
+        self.pipeline
+            .send(context.insert(service_type), request)
+            .await
     }
 
     /// Prepares' an `azure_core::Request`.

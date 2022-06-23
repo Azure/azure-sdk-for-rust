@@ -7,8 +7,8 @@ pub struct CreateBuilder {
     container_client: ContainerClient,
     public_access: PublicAccess,
     metadata: Option<Metadata>,
-    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl CreateBuilder {
@@ -17,7 +17,7 @@ impl CreateBuilder {
             container_client,
             public_access: PublicAccess::None,
             metadata: None,
-            client_request_id: None,
+            context: Context::new(),
             timeout: None,
         }
     }
@@ -25,11 +25,11 @@ impl CreateBuilder {
     setters! {
         public_access: PublicAccess => public_access,
         metadata: Metadata => Some(metadata),
-        client_request_id: ClientRequestId => Some(client_request_id),
+
         timeout: Timeout => Some(timeout),
     }
 
-    pub fn into_future(self) -> Response {
+    pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.container_client.url_with_segments(None)?;
 
@@ -48,14 +48,10 @@ impl CreateBuilder {
                     request.add_mandatory_header(&m);
                 }
             }
-            request.add_optional_header(&self.client_request_id);
 
             let _response = self
                 .container_client
-                .storage_client()
-                .storage_account_client()
-                .http_client()
-                .execute_request_check_status(&request)
+                .send(&mut self.context, &mut request)
                 .await?;
 
             // TODO: Capture and return the response headers

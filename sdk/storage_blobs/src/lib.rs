@@ -20,7 +20,6 @@ pub mod container;
 mod delete_snapshot_method;
 mod hash;
 mod headers;
-mod incomplete_vector;
 pub mod prelude;
 mod snapshot;
 mod version_id;
@@ -36,8 +35,6 @@ pub use delete_snapshot_method::DeleteSnapshotsMethod;
 pub use hash::Hash;
 pub use snapshot::Snapshot;
 pub use version_id::VersionId;
-
-use incomplete_vector::IncompleteVector;
 
 #[derive(Debug, Clone)]
 pub enum BlobVersioning {

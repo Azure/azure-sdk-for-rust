@@ -22,8 +22,8 @@ pub struct PutBlockListBuilder {
     access_tier: Option<AccessTier>,
     // TODO: Support tags
     lease_id: Option<LeaseId>,
-    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl PutBlockListBuilder {
@@ -39,7 +39,7 @@ impl PutBlockListBuilder {
             metadata: None,
             access_tier: None,
             lease_id: None,
-            client_request_id: None,
+            context: Context::new(),
             timeout: None,
         }
     }
@@ -53,11 +53,10 @@ impl PutBlockListBuilder {
         metadata: Metadata => Some(metadata),
         access_tier: AccessTier => Some(access_tier),
         lease_id: LeaseId => Some(lease_id),
-        client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
     }
 
-    pub fn into_future(self) -> Response {
+    pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.blob_client.url_with_segments(None)?;
 
@@ -92,14 +91,11 @@ impl PutBlockListBuilder {
             }
             request.add_optional_header(&self.access_tier);
             request.add_optional_header(&self.lease_id);
-            request.add_optional_header(&self.client_request_id);
 
             let response = self
                 .blob_client
-                .http_client()
-                .execute_request_check_status(&request)
+                .send(&mut self.context, &mut request)
                 .await?;
-
             PutBlockListResponse::from_headers(response.headers())
         })
     }

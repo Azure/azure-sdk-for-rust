@@ -73,13 +73,16 @@ async fn create_and_delete_container() {
     let res = container.get_properties().into_future().await.unwrap();
     assert!(res.container.public_access == PublicAccess::None);
 
-    let list = Box::pin(blob_service.list_containers().prefix(name).stream())
+    let list = blob_service
+        .list_containers()
+        .prefix(name)
+        .into_stream()
         .next()
         .await
         .unwrap()
         .unwrap();
     let cont_list: Vec<&Container> = list
-        .incomplete_vector
+        .containers
         .deref()
         .into_iter()
         .filter(|e| e.name == name)
@@ -207,12 +210,10 @@ async fn list_containers() {
     let blob_service = storage.as_blob_service_client();
     trace!("running list_containers");
 
-    let mut stream = Box::pin(
-        blob_service
-            .list_containers()
-            .max_results(std::num::NonZeroU32::new(2u32).unwrap())
-            .stream(),
-    );
+    let mut stream = blob_service
+        .list_containers()
+        .max_results(std::num::NonZeroU32::new(2u32).unwrap())
+        .into_stream();
 
     while let Some(result) = stream.next().await {
         let ret = result.unwrap();
@@ -231,12 +232,14 @@ async fn put_block_blob() {
     let container = storage.as_container_client(container_name);
     let blob = container.as_blob_client(blob_name);
 
-    if Box::pin(blob_service.list_containers().stream())
+    if blob_service
+        .list_containers()
+        .into_stream()
         .next()
         .await
         .unwrap()
         .unwrap()
-        .incomplete_vector
+        .containers
         .iter()
         .find(|x| x.name == container_name)
         .is_none()
@@ -273,12 +276,14 @@ async fn copy_blob() {
     let container = storage.as_container_client(container_name);
     let blob = container.as_blob_client(blob_name);
 
-    if Box::pin(blob_service.list_containers().stream())
+    if blob_service
+        .list_containers()
+        .into_stream()
         .next()
         .await
         .unwrap()
         .unwrap()
-        .incomplete_vector
+        .containers
         .iter()
         .find(|x| x.name == container_name)
         .is_none()
@@ -334,12 +339,14 @@ async fn put_block_blob_and_get_properties() {
     let container = storage.as_container_client(container_name);
     let blob = container.as_blob_client(blob_name);
 
-    if Box::pin(blob_service.list_containers().stream())
+    if blob_service
+        .list_containers()
+        .into_stream()
         .next()
         .await
         .unwrap()
         .unwrap()
-        .incomplete_vector
+        .containers
         .iter()
         .find(|x| x.name == container_name)
         .is_none()
@@ -382,12 +389,14 @@ async fn set_blobtier() {
     let container = storage.as_container_client(container_name);
     let blob = container.as_blob_client(blob_name);
 
-    if Box::pin(blob_service.list_containers().stream())
+    if blob_service
+        .list_containers()
+        .into_stream()
         .next()
         .await
         .unwrap()
         .unwrap()
-        .incomplete_vector
+        .containers
         .iter()
         .find(|x| x.name == container_name)
         .is_none()

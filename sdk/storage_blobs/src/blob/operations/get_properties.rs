@@ -8,7 +8,7 @@ pub struct GetPropertiesBuilder {
     blob_versioning: Option<BlobVersioning>,
     timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
-    client_request_id: Option<ClientRequestId>,
+    context: Context,
 }
 
 impl GetPropertiesBuilder {
@@ -18,7 +18,7 @@ impl GetPropertiesBuilder {
             blob_versioning: None,
             timeout: None,
             lease_id: None,
-            client_request_id: None,
+            context: Context::new(),
         }
     }
 
@@ -26,10 +26,9 @@ impl GetPropertiesBuilder {
         blob_versioning: BlobVersioning => Some(blob_versioning),
         timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
-        client_request_id: ClientRequestId => Some(client_request_id),
     }
 
-    pub fn into_future(self) -> Response {
+    pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.blob_client.url_with_segments(None)?;
 
@@ -40,14 +39,11 @@ impl GetPropertiesBuilder {
                 self.blob_client
                     .prepare_request(url.as_str(), http::Method::HEAD, None)?;
             request.add_optional_header(&self.lease_id);
-            request.add_optional_header(&self.client_request_id);
 
             let response = self
                 .blob_client
-                .http_client()
-                .execute_request_check_status(&request)
+                .send(&mut self.context, &mut request)
                 .await?;
-
             // TODO: Fix this
             //let blob = Blob::from_headers(&blob_name, &container_name, snapshot_time, &headers)?;
             let blob = Blob::from_headers(self.blob_client.blob_name(), response.headers())?;

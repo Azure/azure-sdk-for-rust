@@ -2,7 +2,7 @@ use crate::{
     blob::{BlockListType, BlockWithSizeList},
     prelude::*,
 };
-use azure_core::{headers::*, prelude::*, RequestId};
+use azure_core::{collect_pinned_stream, headers::*, prelude::*, RequestId};
 use chrono::{DateTime, Utc};
 use std::str::from_utf8;
 
@@ -11,8 +11,8 @@ pub struct GetBlockListBuilder {
     block_list_type: BlockListType,
     blob_versioning: Option<BlobVersioning>,
     lease_id: Option<LeaseId>,
-    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
+    context: Context,
 }
 
 impl GetBlockListBuilder {
@@ -22,7 +22,7 @@ impl GetBlockListBuilder {
             block_list_type: BlockListType::Committed,
             blob_versioning: None,
             lease_id: None,
-            client_request_id: None,
+            context: Context::new(),
             timeout: None,
         }
     }
@@ -31,11 +31,10 @@ impl GetBlockListBuilder {
         block_list_type: BlockListType => block_list_type,
         blob_versioning: BlobVersioning => Some(blob_versioning),
         lease_id: LeaseId => Some(lease_id),
-        client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
     }
 
-    pub fn into_future(self) -> Response {
+    pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.blob_client.url_with_segments(None)?;
 
@@ -48,15 +47,16 @@ impl GetBlockListBuilder {
                 self.blob_client
                     .prepare_request(url.as_str(), http::Method::GET, None)?;
             request.add_optional_header(&self.lease_id);
-            request.add_optional_header(&self.client_request_id);
 
             let response = self
                 .blob_client
-                .http_client()
-                .execute_request_check_status(&request)
+                .send(&mut self.context, &mut request)
                 .await?;
 
-            GetBlockListResponse::from_response(response.headers(), response.body())
+            let (_, headers, body) = response.deconstruct();
+            let body = collect_pinned_stream(body).await?;
+
+            GetBlockListResponse::from_response(&headers, &body)
         })
     }
 }

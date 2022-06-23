@@ -64,15 +64,13 @@ async fn main() -> azure_core::Result<()> {
     println!("{:?}", res);
 
     // only get the first set of blobs in the list
-    let res = Box::pin(
-        container_client
-            .list_blobs()
-            .include_metadata(true)
-            .stream(),
-    )
-    .next()
-    .await
-    .expect("stream failed")?;
+    let res = container_client
+        .list_blobs()
+        .include_metadata(true)
+        .into_stream()
+        .next()
+        .await
+        .expect("stream failed")?;
     println!("{:?}", res);
 
     Ok(())

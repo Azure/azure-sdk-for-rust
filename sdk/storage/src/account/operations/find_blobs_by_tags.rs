@@ -1,5 +1,4 @@
-use crate::core::prelude::*;
-use crate::xml::read_xml;
+use crate::{core::clients::ServiceType, core::prelude::*, xml::read_xml};
 use azure_core::headers::{date_from_headers, request_id_from_headers};
 use azure_core::prelude::*;
 use azure_core::{collect_pinned_stream, RequestId, Response as HttpResponse};
@@ -57,8 +56,7 @@ impl FindBlobsByTagsBuilder {
             let response = self
                 .client
                 .storage_account_client()
-                .pipeline()
-                .send(&mut self.context, &mut request)
+                .send(&mut self.context, &mut request, ServiceType::Blob)
                 .await?;
 
             ListBlobsByTagsResponse::try_from(response).await
