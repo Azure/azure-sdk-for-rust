@@ -3,10 +3,9 @@ use crate::container::Container;
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     prelude::*,
-    Pageable, Response,
+    Method, Pageable, Response,
 };
 use azure_storage::parsing_xml::{cast_optional, traverse};
-use http::method::Method;
 use xml::Element;
 
 #[derive(Debug, Clone)]

@@ -2,7 +2,7 @@
 mod utilities;
 
 use crate::error::{Error, ErrorKind, ResultExt};
-use std::{collections::HashMap, fmt::Debug, str::FromStr};
+use std::{fmt::Debug, str::FromStr};
 pub use utilities::*;
 
 /// A trait for converting a type into request headers
@@ -159,22 +159,6 @@ impl IntoIterator for Headers {
 impl From<std::collections::HashMap<HeaderName, HeaderValue>> for Headers {
     fn from(c: std::collections::HashMap<HeaderName, HeaderValue>) -> Self {
         Self(c)
-    }
-}
-
-impl From<&http::HeaderMap> for Headers {
-    fn from(map: &http::HeaderMap) -> Self {
-        let map = map
-            .into_iter()
-            .map(|(k, v)| {
-                let key = k.as_str().to_owned();
-                let value = std::str::from_utf8(v.as_bytes())
-                    .expect("non-UTF8 header value")
-                    .to_owned();
-                (key.into(), value.into())
-            })
-            .collect::<HashMap<HeaderName, HeaderValue>>();
-        Self(map)
     }
 }
 

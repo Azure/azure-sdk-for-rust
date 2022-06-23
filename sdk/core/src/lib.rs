@@ -16,6 +16,7 @@ mod constants;
 mod context;
 pub mod error;
 mod http_client;
+mod method;
 mod models;
 mod options;
 mod pageable;
@@ -25,6 +26,7 @@ mod request;
 mod request_options;
 mod response;
 mod seekable_stream;
+mod status_code;
 
 pub mod auth;
 pub mod headers;
@@ -47,6 +49,7 @@ pub use headers::Header;
 #[cfg(not(target_arch = "wasm32"))]
 pub use http_client::new_http_client;
 pub use http_client::{to_json, HttpClient};
+pub use method::Method;
 pub use models::*;
 pub use options::*;
 pub use pageable::*;
@@ -56,7 +59,12 @@ pub use request::*;
 pub use response::*;
 pub use seekable_stream::*;
 pub use sleep::sleep;
+pub use status_code::StatusCode;
 
+// re-export packages
+pub use url;
+
+// re-export important types at crate level
 pub use url::Url;
 
 /// A unique identifier for a request.

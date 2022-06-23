@@ -91,7 +91,7 @@ impl FileSystemClient {
     // pub(crate) fn prepare_request(
     //     &self,
     //     uri: &str,
-    //     http_method: http::Method,
+    //     http_method: azure_core::Method,
     // ) -> azure_core::Request {
     //     self.data_lake_client.prepare_request(uri, http_method)
     // }

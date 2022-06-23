@@ -1,7 +1,7 @@
 use crate::responses::*;
 use azure_core::prelude::*;
+use azure_core::Method;
 use azure_storage::core::prelude::*;
-use http::method::Method;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]

@@ -66,7 +66,7 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
             self.upn.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = Request::new(url, http::Method::HEAD);
+            let mut request = Request::new(url, azure_core::Method::HEAD);
 
             request.insert_headers(&this.client_request_id);
             request.insert_headers(&this.if_match_condition);

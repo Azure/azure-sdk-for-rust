@@ -43,7 +43,7 @@ impl<'a> SetQueueMetadataBuilder<'a> {
 
         let mut request = self.queue_client.storage_client().prepare_request(
             url.as_str(),
-            http::method::Method::PUT,
+            azure_core::Method::PUT,
             None,
         )?;
         for m in metadata.iter() {

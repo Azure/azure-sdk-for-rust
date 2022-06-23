@@ -6,6 +6,7 @@
 mod device_code_responses;
 
 use async_timer::timer::new_timer;
+use azure_core::Method;
 use azure_core::{
     content_type,
     error::{Error, ErrorKind},
@@ -13,7 +14,6 @@ use azure_core::{
 };
 pub use device_code_responses::*;
 use futures::stream::unfold;
-use http::Method;
 use oauth2::ClientId;
 use serde::Deserialize;
 use std::{borrow::Cow, sync::Arc, time::Duration};
@@ -42,7 +42,7 @@ where
     let encoded = encoded.finish();
 
     let rsp = post_form(http_client.clone(), url, encoded).await?;
-    let rsp_status = rsp.status();
+    let rsp_status = rsp.status().clone();
     let rsp_body = rsp.into_body().await;
     if !rsp_status.is_success() {
         return Err(
@@ -128,7 +128,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
 
                     match post_form(http_client.clone(), url, encoded).await {
                         Ok(rsp) => {
-                            let rsp_status = rsp.status();
+                            let rsp_status = rsp.status().clone();
                             let rsp_body = rsp.into_body().await;
                             if rsp_status.is_success() {
                                 match serde_json::from_slice::<DeviceCodeAuthorization>(&rsp_body) {

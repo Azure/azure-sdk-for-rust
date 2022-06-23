@@ -5,10 +5,9 @@ use crate::prelude::*;
 use crate::resources::Document;
 use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers, Headers};
-use azure_core::prelude::*;
 use azure_core::{collect_pinned_stream, Response as HttpResponse, SessionToken};
+use azure_core::{prelude::*, StatusCode};
 use chrono::{DateTime, Utc};
-use http::StatusCode;
 use serde::de::DeserializeOwned;
 
 #[derive(Debug, Clone)]
@@ -47,7 +46,7 @@ impl<T: DeserializeOwned + Send> GetDocumentBuilder<T> {
     /// generic associated types (GATs) stabilize, this will become possible.
     pub fn into_future(self) -> GetDocument<T> {
         Box::pin(async move {
-            let mut request = self.client.document_request(http::Method::GET);
+            let mut request = self.client.document_request(azure_core::Method::GET);
 
             request.insert_headers(&self.if_match_condition);
             request.insert_headers(&self.if_modified_since);

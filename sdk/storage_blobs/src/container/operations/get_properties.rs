@@ -1,4 +1,5 @@
 use crate::{container::Container, prelude::*};
+use azure_core::Method;
 use azure_core::{
     error::{ErrorKind, ResultExt},
     headers::{self, Headers},
@@ -6,7 +7,6 @@ use azure_core::{
     RequestId,
 };
 use chrono::{DateTime, FixedOffset};
-use http::method::Method;
 use std::convert::{TryFrom, TryInto};
 use uuid::Uuid;
 

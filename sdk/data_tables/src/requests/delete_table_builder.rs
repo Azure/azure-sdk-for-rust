@@ -1,9 +1,9 @@
 use crate::{prelude::*, responses::*};
+use azure_core::Method;
 use azure_core::{
     error::{Error, ErrorKind},
     prelude::*,
 };
-use http::method::Method;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]

@@ -1,6 +1,6 @@
 use crate::service::{ServiceClient, API_VERSION};
 use azure_core::error::Error;
-use http::Method;
+use azure_core::Method;
 use std::convert::TryFrom;
 use std::convert::TryInto;
 

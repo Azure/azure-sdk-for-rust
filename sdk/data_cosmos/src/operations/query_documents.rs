@@ -12,11 +12,11 @@ use azure_core::headers::{
 };
 use azure_core::prelude::*;
 use azure_core::CollectedResponse;
+use azure_core::Method;
 use azure_core::Pageable;
 use azure_core::Response as HttpResponse;
 use azure_core::SessionToken;
 use chrono::{DateTime, Utc};
-use http::Method;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::convert::TryInto;

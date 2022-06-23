@@ -1,6 +1,6 @@
 use crate::service::{ServiceClient, API_VERSION};
 use azure_core::error::Error;
-use http::Method;
+use azure_core::Method;
 use std::convert::{TryFrom, TryInto};
 
 /// Execute the request to get the identity of a device or module.

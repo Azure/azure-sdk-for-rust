@@ -1,8 +1,8 @@
 use azure_core::error::{Error, ErrorKind, ResultExt};
+use azure_core::Method;
 use azure_core::{content_type, headers, CollectedResponse, HttpClient, Request, Url};
 use base64::{decode, encode_config};
 use hmac::{Hmac, Mac};
-use http::Method;
 use sha2::Sha256;
 use std::sync::Arc;
 
@@ -871,7 +871,7 @@ mod tests {
         let builder = service_client.update_module_twin("deviceid", "moduleid");
         assert_eq!(builder.device_id, "deviceid".to_string());
         assert_eq!(builder.module_id, Some("moduleid".to_string()));
-        assert_eq!(builder.method, http::Method::PATCH);
+        assert_eq!(builder.method, azure_core::Method::PATCH);
 
         Ok(())
     }
@@ -888,7 +888,7 @@ mod tests {
         let builder = service_client.replace_module_twin("deviceid", "moduleid");
         assert_eq!(builder.device_id, "deviceid".to_string());
         assert_eq!(builder.module_id, Some("moduleid".to_string()));
-        assert_eq!(builder.method, http::Method::PUT);
+        assert_eq!(builder.method, azure_core::Method::PUT);
 
         Ok(())
     }
@@ -905,7 +905,7 @@ mod tests {
         let builder = service_client.update_device_twin("deviceid");
         assert_eq!(builder.device_id, "deviceid".to_string());
         assert_eq!(builder.module_id, None);
-        assert_eq!(builder.method, http::Method::PATCH);
+        assert_eq!(builder.method, azure_core::Method::PATCH);
 
         Ok(())
     }
@@ -922,7 +922,7 @@ mod tests {
         let builder = service_client.replace_device_twin("deviceid");
         assert_eq!(builder.device_id, "deviceid".to_string());
         assert_eq!(builder.module_id, None);
-        assert_eq!(builder.method, http::Method::PUT);
+        assert_eq!(builder.method, azure_core::Method::PUT);
 
         Ok(())
     }

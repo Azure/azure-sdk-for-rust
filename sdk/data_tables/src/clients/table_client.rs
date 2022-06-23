@@ -1,8 +1,8 @@
 use crate::{clients::TableServiceClient, requests::*};
+use azure_core::Method;
 use azure_core::Request;
 use azure_storage::core::clients::StorageAccountClient;
 use bytes::Bytes;
-use http::method::Method;
 use std::sync::Arc;
 
 pub trait AsTableClient<S: Into<String>> {

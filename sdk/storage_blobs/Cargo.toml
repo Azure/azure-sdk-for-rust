@@ -21,7 +21,6 @@ base64 = "0.13"
 bytes = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 futures = "0.3"
-http = "0.2"
 log = "0.4"
 md5 = "0.7"
 RustyXML = "0.3"

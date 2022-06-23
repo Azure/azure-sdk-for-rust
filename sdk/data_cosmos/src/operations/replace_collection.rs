@@ -35,7 +35,7 @@ impl ReplaceCollectionBuilder {
 
     pub fn into_future(self) -> ReplaceCollection {
         Box::pin(async move {
-            let mut request = self.client.collection_request(http::Method::PUT);
+            let mut request = self.client.collection_request(azure_core::Method::PUT);
 
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);

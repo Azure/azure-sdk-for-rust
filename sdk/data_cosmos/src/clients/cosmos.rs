@@ -121,7 +121,7 @@ impl CosmosClient {
     /// This function will add the cloud location to the URI suffix and generate
     /// a Request with the specified HTTP Method. It will also set the body
     /// to an empty `Bytes` instance.
-    pub(crate) fn request(&self, uri_path: &str, http_method: http::Method) -> Request {
+    pub(crate) fn request(&self, uri_path: &str, http_method: azure_core::Method) -> Request {
         let uri = format!("{}/{}", self.cloud_location.url(), uri_path);
         Request::new(uri.parse().unwrap(), http_method)
     }

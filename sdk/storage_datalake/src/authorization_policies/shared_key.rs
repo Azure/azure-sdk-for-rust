@@ -1,7 +1,7 @@
 use azure_core::headers::{self, HeaderName, HeaderValue, Headers};
+use azure_core::Method;
 use azure_core::{Context, Policy, PolicyResult, Request};
 use azure_storage::{core::storage_shared_key_credential::StorageSharedKeyCredential, hmac::sign};
-use http::Method;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -1,7 +1,7 @@
 use crate::{prelude::*, responses::*, ContinuationNextTableName};
+use azure_core::Method;
 use azure_core::{prelude::*, AppendToUrlQuery};
 use futures::stream::{unfold, Stream};
-use http::method::Method;
 use std::convert::TryInto;
 
 #[cfg(test)]

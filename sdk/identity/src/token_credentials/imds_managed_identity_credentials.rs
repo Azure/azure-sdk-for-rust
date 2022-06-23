@@ -1,8 +1,8 @@
 use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
 use azure_core::error::{Error, ErrorKind, ResultExt};
+use azure_core::Method;
 use azure_core::{HttpClient, Request};
 use chrono::{DateTime, TimeZone, Utc};
-use http::Method;
 use serde::{
     de::{self, Deserializer},
     Deserialize,
@@ -121,7 +121,7 @@ impl TokenCredential for ImdsManagedIdentityCredential {
         };
 
         let rsp = self.http_client.execute_request(&req).await?;
-        let rsp_status = rsp.status();
+        let rsp_status = rsp.status().clone();
         let rsp_body = rsp.into_body().await;
 
         if !rsp_status.is_success() {

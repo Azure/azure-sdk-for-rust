@@ -1,10 +1,8 @@
 use crate::error::{Error, ErrorKind, HttpError};
 use crate::policies::{Policy, PolicyResult, Request};
 use crate::sleep::sleep;
-use crate::Context;
-
+use crate::{Context, StatusCode};
 use chrono::{DateTime, Local};
-use http::StatusCode;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -78,14 +76,14 @@ where
 
                     if !RETRY_STATUSES.contains(&status) {
                         log::error!(
-                            "server returned error status which will not be retried: {}",
+                            "server returned error status which will not be retried: {:?}",
                             status
                         );
                         // Server didn't return a status we retry on so return early
                         return Err(error);
                     }
                     log::debug!(
-                        "server returned error status which requires retry: {}",
+                        "server returned error status which requires retry: {:?}",
                         status
                     );
                     error

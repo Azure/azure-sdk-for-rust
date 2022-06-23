@@ -68,7 +68,7 @@ impl UserDefinedFunctionClient {
         &self.user_defined_function_name
     }
 
-    pub(crate) fn udfs_request(&self, method: http::Method) -> Request {
+    pub(crate) fn udfs_request(&self, method: azure_core::Method) -> Request {
         self.cosmos_client().request(
             &format!(
                 "dbs/{}/colls/{}/udfs",
@@ -79,7 +79,7 @@ impl UserDefinedFunctionClient {
         )
     }
 
-    pub(crate) fn udf_request(&self, method: http::Method) -> Request {
+    pub(crate) fn udf_request(&self, method: azure_core::Method) -> Request {
         self.cosmos_client().request(
             &format!(
                 "dbs/{}/colls/{}/udfs/{}",

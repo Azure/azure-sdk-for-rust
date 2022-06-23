@@ -36,7 +36,7 @@ impl CreateDatabaseBuilder {
 
     pub fn into_future(self) -> CreateDatabase {
         Box::pin(async move {
-            let mut request = self.client.request("dbs", http::Method::POST);
+            let mut request = self.client.request("dbs", azure_core::Method::POST);
 
             let body = CreateDatabaseBody {
                 id: self.database_name.as_str(),

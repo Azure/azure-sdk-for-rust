@@ -1,4 +1,5 @@
 use crate::{blob::operations::*, prelude::*, BA512Range};
+use azure_core::Method;
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     prelude::*,
@@ -14,7 +15,6 @@ use azure_storage::core::{
 };
 use bytes::Bytes;
 use futures::StreamExt;
-use http::method::Method;
 use std::sync::Arc;
 use url::Url;
 

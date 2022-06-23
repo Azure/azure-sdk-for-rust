@@ -85,7 +85,7 @@ impl DocumentClient {
         &self.partition_key_serialized
     }
 
-    pub(crate) fn document_request(&self, method: http::Method) -> Request {
+    pub(crate) fn document_request(&self, method: azure_core::Method) -> Request {
         self.cosmos_client().request(
             &format!(
                 "dbs/{}/colls/{}/docs/{}",

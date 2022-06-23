@@ -41,7 +41,7 @@ impl DeleteBlobSnapshotBuilder {
 
             let mut request =
                 self.blob_client
-                    .prepare_request(url.as_str(), http::Method::DELETE, None)?;
+                    .prepare_request(url.as_str(), azure_core::Method::DELETE, None)?;
             request.add_optional_header(&self.lease_id);
 
             let response = self

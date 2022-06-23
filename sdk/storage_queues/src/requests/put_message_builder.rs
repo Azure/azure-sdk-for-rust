@@ -48,7 +48,7 @@ impl<'a> PutMessageBuilder<'a> {
 
         let mut request = self.queue_client.storage_client().prepare_request(
             url.as_str(),
-            http::method::Method::POST,
+            azure_core::Method::POST,
             Some(message.into()),
         )?;
         request.add_optional_header(&self.client_request_id);

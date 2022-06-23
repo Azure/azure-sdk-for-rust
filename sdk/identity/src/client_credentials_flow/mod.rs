@@ -39,12 +39,12 @@
 
 mod login_response;
 
+use azure_core::Method;
 use azure_core::{
     content_type,
     error::{ErrorKind, ResultExt},
     headers, HttpClient, Request,
 };
-use http::Method;
 use login_response::LoginResponse;
 use std::sync::Arc;
 use url::{form_urlencoded, Url};
@@ -81,7 +81,7 @@ pub async fn perform(
     );
     req.set_body(encoded);
     let rsp = http_client.execute_request(&req).await?;
-    let rsp_status = rsp.status();
+    let rsp_status = rsp.status().clone();
     let rsp_body = rsp.into_body().await;
     if !rsp_status.is_success() {
         return Err(
