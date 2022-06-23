@@ -90,8 +90,9 @@ impl TriggerClient {
         &self.trigger_name
     }
 
-    pub(crate) fn prepare_pipeline_with_trigger_name(&self, method: http::Method) -> Request {
-        self.cosmos_client().prepare_request_pipeline(
+    /// Create a request for a specific collection trigger
+    pub(crate) fn trigger_request(&self, method: http::Method) -> Request {
+        self.cosmos_client().request(
             &format!(
                 "dbs/{}/colls/{}/triggers/{}",
                 self.database_client().database_name(),
@@ -102,8 +103,9 @@ impl TriggerClient {
         )
     }
 
-    pub(crate) fn prepare_pipeline(&self, method: http::Method) -> Request {
-        self.cosmos_client().prepare_request_pipeline(
+    /// Create a request for collection triggers
+    pub(crate) fn triggers_request(&self, method: http::Method) -> Request {
+        self.cosmos_client().request(
             &format!(
                 "dbs/{}/colls/{}/triggers",
                 self.database_client().database_name(),

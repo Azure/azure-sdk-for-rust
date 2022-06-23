@@ -24,9 +24,7 @@ impl GetUserBuilder {
 
     pub fn into_future(self) -> GetUser {
         Box::pin(async move {
-            let mut request = self
-                .client
-                .prepare_request_with_user_name(http::Method::GET);
+            let mut request = self.client.user_request(http::Method::GET);
 
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);

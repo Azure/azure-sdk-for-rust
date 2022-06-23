@@ -25,9 +25,7 @@ impl GetPermissionBuilder {
 
     pub fn into_future(self) -> GetPermission {
         Box::pin(async move {
-            let mut request = self
-                .client
-                .prepare_request_with_permission_name(http::Method::GET);
+            let mut request = self.client.permission_request(http::Method::GET);
 
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);

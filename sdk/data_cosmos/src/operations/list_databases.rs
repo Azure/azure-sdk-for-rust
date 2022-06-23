@@ -36,9 +36,7 @@ impl ListDatabasesBuilder {
             let this = self.clone();
             let ctx = self.context.clone();
             async move {
-                let mut request = this
-                    .client
-                    .prepare_request_pipeline("dbs", http::Method::GET);
+                let mut request = this.client.request("dbs", http::Method::GET);
                 if let Some(cl) = &this.consistency_level {
                     request.insert_headers(cl);
                 }

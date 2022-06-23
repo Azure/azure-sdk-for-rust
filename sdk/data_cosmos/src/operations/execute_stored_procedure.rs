@@ -52,9 +52,7 @@ impl ExecuteStoredProcedureBuilder {
         T: DeserializeOwned,
     {
         Box::pin(async move {
-            let mut request = self
-                .client
-                .prepare_pipeline_with_stored_procedure_name(http::Method::POST);
+            let mut request = self.client.stored_procedure_request(http::Method::POST);
 
             if let Some(pk) = self.partition_key.as_ref() {
                 crate::cosmos_entity::add_as_partition_key_header_serialized(pk, &mut request)

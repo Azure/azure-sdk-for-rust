@@ -30,9 +30,7 @@ impl DeleteTriggerBuilder {
 
     pub fn into_future(self) -> DeleteTrigger {
         Box::pin(async move {
-            let mut request = self
-                .client
-                .prepare_pipeline_with_trigger_name(http::Method::DELETE);
+            let mut request = self.client.trigger_request(http::Method::DELETE);
 
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);

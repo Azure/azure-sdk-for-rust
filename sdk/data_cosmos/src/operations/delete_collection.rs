@@ -27,9 +27,7 @@ impl DeleteCollectionBuilder {
 
     pub fn into_future(self) -> DeleteCollection {
         Box::pin(async move {
-            let mut request = self
-                .client
-                .prepare_request_with_collection_name(http::Method::DELETE);
+            let mut request = self.client.collection_request(http::Method::DELETE);
 
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);

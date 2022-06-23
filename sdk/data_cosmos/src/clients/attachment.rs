@@ -99,8 +99,8 @@ impl AttachmentClient {
         &self.attachment_name
     }
 
-    pub(crate) fn prepare_pipeline(&self, method: http::Method) -> Request {
-        self.cosmos_client().prepare_request_pipeline(
+    pub(crate) fn attachments_request(&self, method: http::Method) -> Request {
+        self.cosmos_client().request(
             &format!(
                 "dbs/{}/colls/{}/docs/{}/attachments",
                 self.database_client().database_name(),
@@ -111,8 +111,8 @@ impl AttachmentClient {
         )
     }
 
-    pub(crate) fn prepare_pipeline_with_attachment_name(&self, method: http::Method) -> Request {
-        self.cosmos_client().prepare_request_pipeline(
+    pub(crate) fn attachment_request(&self, method: http::Method) -> Request {
+        self.cosmos_client().request(
             &format!(
                 "dbs/{}/colls/{}/docs/{}/attachments/{}",
                 self.database_client().database_name(),

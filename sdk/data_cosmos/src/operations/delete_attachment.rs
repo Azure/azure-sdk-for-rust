@@ -34,11 +34,8 @@ impl DeleteAttachmentBuilder {
 
     pub fn into_future(self) -> DeleteAttachment {
         Box::pin(async move {
-            let mut request = self
-                .client
-                .prepare_pipeline_with_attachment_name(http::Method::DELETE);
+            let mut request = self.client.attachment_request(http::Method::DELETE);
 
-            // add trait headers
             request.insert_headers(&self.if_match_condition);
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);

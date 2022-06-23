@@ -28,9 +28,7 @@ impl ReplaceStoredProcedureBuilder {
 
     pub fn into_future(self) -> ReplaceStoredProcedure {
         Box::pin(async move {
-            let mut req = self
-                .client
-                .prepare_pipeline_with_stored_procedure_name(http::Method::PUT);
+            let mut req = self.client.stored_procedure_request(http::Method::PUT);
 
             if let Some(cl) = &self.consistency_level {
                 req.insert_headers(cl);

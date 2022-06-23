@@ -65,7 +65,7 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
                 Some(s) => s,
                 None => serialize_partition_key(&document.partition_key())?,
             };
-            let mut request = self.client.prepare_doc_request_pipeline(http::Method::POST);
+            let mut request = self.client.docs_request(http::Method::POST);
 
             add_as_partition_key_header_serialized(&partition_key, &mut request);
             request.insert_headers(&self.if_match_condition);
