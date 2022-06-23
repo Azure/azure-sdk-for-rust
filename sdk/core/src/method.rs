@@ -1,4 +1,5 @@
-use std::ops::Deref;
+use crate::error::{Error, ErrorKind};
+use std::{ops::Deref, str::FromStr};
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Method(pub(crate) http_types::Method);
@@ -32,5 +33,14 @@ impl Method {
 impl Default for Method {
     fn default() -> Method {
         Method::GET
+    }
+}
+
+impl FromStr for Method {
+    type Err = Error;
+    fn from_str(s: &str) -> crate::Result<Self> {
+        Ok(Method(http_types::Method::from_str(s).map_err(
+            |error| Error::full(ErrorKind::DataConversion, error, "Method::from_str failed"),
+        )?))
     }
 }

@@ -25,16 +25,16 @@ impl StatusCode {
         ))
     }
 
-    pub const REQUEST_TIMEOUT: StatusCode = StatusCode(http_types::StatusCode::RequestTimeout);
-    pub const TOO_MANY_REQUESTS: StatusCode = StatusCode(http_types::StatusCode::TooManyRequests);
+    pub const BAD_GATEWAY: StatusCode = StatusCode(http_types::StatusCode::BadGateway);
+    pub const GATEWAY_TIMEOUT: StatusCode = StatusCode(http_types::StatusCode::GatewayTimeout);
     pub const INTERNAL_SERVER_ERROR: StatusCode =
         StatusCode(http_types::StatusCode::InternalServerError);
-    pub const BAD_GATEWAY: StatusCode = StatusCode(http_types::StatusCode::BadGateway);
+    pub const NOT_MODIFIED: StatusCode = StatusCode(http_types::StatusCode::NotModified);
+    pub const OK: StatusCode = StatusCode(http_types::StatusCode::Ok);
+    pub const REQUEST_TIMEOUT: StatusCode = StatusCode(http_types::StatusCode::RequestTimeout);
     pub const SERVICE_UNAVAILABLE: StatusCode =
         StatusCode(http_types::StatusCode::ServiceUnavailable);
-    pub const GATEWAY_TIMEOUT: StatusCode = StatusCode(http_types::StatusCode::GatewayTimeout);
-    pub const OK: StatusCode = StatusCode(http_types::StatusCode::Ok);
-    pub const NOT_MODIFIED: StatusCode = StatusCode(http_types::StatusCode::NotModified);
+    pub const TOO_MANY_REQUESTS: StatusCode = StatusCode(http_types::StatusCode::TooManyRequests);
 }
 
 impl Default for StatusCode {
