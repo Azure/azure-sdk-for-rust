@@ -7,11 +7,11 @@ use http::method::Method;
 use std::sync::Arc;
 
 pub trait AsPartitionKeyClient<PK: Into<String>> {
-    fn as_partition_key_client(&self, partition_key: PK) -> Arc<PartitionKeyClient>;
+    fn partition_key_client(&self, partition_key: PK) -> Arc<PartitionKeyClient>;
 }
 
 impl<PK: Into<String>> AsPartitionKeyClient<PK> for Arc<TableClient> {
-    fn as_partition_key_client(&self, partition_key: PK) -> Arc<PartitionKeyClient> {
+    fn partition_key_client(&self, partition_key: PK) -> Arc<PartitionKeyClient> {
         PartitionKeyClient::new(self.clone(), partition_key)
     }
 }
@@ -83,9 +83,9 @@ mod integration_tests {
     }
 
     fn get_emulator_client() -> Arc<TableServiceClient> {
-        let storage_account = StorageAccountClient::new_emulator_default().as_storage_client();
+        let storage_account = StorageAccountClient::new_emulator_default().storage_client();
         storage_account
-            .as_table_service_client()
+            .table_service_client()
             .expect("a table service client")
     }
 
@@ -93,7 +93,7 @@ mod integration_tests {
     #[tokio::test]
     async fn test_transaction() {
         let table_service = get_emulator_client();
-        let table = table_service.as_table_client("PartitionKeyClientTransaction");
+        let table = table_service.table_client("PartitionKeyClientTransaction");
 
         println!("Delete the table (if it exists)");
         match table.delete().execute().await {
@@ -107,7 +107,7 @@ mod integration_tests {
             .await
             .expect("the table should be created");
 
-        let partition_client = table.as_partition_key_client("Milan");
+        let partition_client = table.partition_key_client("Milan");
 
         println!("Create the transaction");
         let mut transaction = Transaction::default();

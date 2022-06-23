@@ -36,16 +36,16 @@ async fn main() -> azure_core::Result<()> {
         &source_access_key,
     );
     let source_blob = source_storage_account_client
-        .as_container_client(&source_container_name)
-        .as_blob_client(&source_blob_name);
+        .container_client(&source_container_name)
+        .blob_client(&source_blob_name);
 
     let destination_blob = StorageAccountClient::new_access_key(
         http_client.clone(),
         &destination_account,
         &destination_access_key,
     )
-    .as_container_client(&destination_container_name)
-    .as_blob_client(&destination_blob_name);
+    .container_client(&destination_container_name)
+    .blob_client(&destination_blob_name);
 
     // let's get a SAS key for the source
     let sas_url = {

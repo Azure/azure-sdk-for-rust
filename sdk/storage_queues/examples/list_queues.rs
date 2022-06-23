@@ -16,7 +16,7 @@ async fn main() -> azure_core::Result<()> {
     let storage_account =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key);
 
-    let queue_service = storage_account.as_queue_service_client();
+    let queue_service = storage_account.queue_service_client();
 
     println!("getting service stats");
     let response = queue_service.get_queue_service_stats().execute().await?;

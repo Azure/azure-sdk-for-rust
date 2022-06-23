@@ -12,7 +12,7 @@ async fn main() -> azure_core::Result<()> {
 
     let storage_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key)
-            .as_storage_client();
+            .storage_client();
 
     let response = storage_client
         .get_account_information()

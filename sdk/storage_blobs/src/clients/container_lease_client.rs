@@ -6,11 +6,11 @@ use http::method::Method;
 use std::sync::Arc;
 
 pub trait AsContainerLeaseClient {
-    fn as_container_lease_client(&self, lease_id: LeaseId) -> Arc<ContainerLeaseClient>;
+    fn container_lease_client(&self, lease_id: LeaseId) -> Arc<ContainerLeaseClient>;
 }
 
 impl AsContainerLeaseClient for Arc<ContainerClient> {
-    fn as_container_lease_client(&self, lease_id: LeaseId) -> Arc<ContainerLeaseClient> {
+    fn container_lease_client(&self, lease_id: LeaseId) -> Arc<ContainerLeaseClient> {
         ContainerLeaseClient::new(self.clone(), lease_id)
     }
 }

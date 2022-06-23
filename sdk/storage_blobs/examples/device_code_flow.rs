@@ -76,7 +76,7 @@ async fn main() -> azure_core::Result<()> {
         &storage_account_name,
         authorization.access_token().secret(),
     );
-    let blob_service_client = storage_account_client.as_blob_service_client();
+    let blob_service_client = storage_account_client.blob_service_client();
 
     // now we enumerate the containers in the
     // specified storage account.
