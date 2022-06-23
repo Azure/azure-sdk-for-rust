@@ -1,5 +1,5 @@
 use crate::error::{Error, ErrorKind, ResultExt};
-use crate::headers::{AsHeaders, HeaderName, HeaderValue};
+use crate::headers::{self, AsHeaders, HeaderName, HeaderValue};
 use std::convert::From;
 use std::fmt;
 use std::str::FromStr;
@@ -28,9 +28,12 @@ impl AsHeaders for Range {
     type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
 
     fn as_headers(&self) -> Self::Iter {
-        let mut headers = vec![("x-ms-range".into(), format!("{}", self).into())];
+        let mut headers = vec![(headers::MS_RANGE, format!("{}", self).into())];
         if self.len() < 1024 * 1024 * 4 {
-            headers.push(("x-ms-range-get-content-crc64".into(), "true".into()));
+            headers.push((
+                headers::RANGE_GET_CONTENT_CRC64,
+                HeaderValue::from_static("true"),
+            ));
         }
         headers.into_iter()
     }

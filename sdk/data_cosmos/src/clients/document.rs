@@ -2,6 +2,7 @@ use crate::clients::*;
 use crate::operations::*;
 use crate::ReadonlyString;
 use azure_core::Request;
+use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 /// A client for Cosmos document resources.
@@ -29,7 +30,7 @@ impl DocumentClient {
     }
 
     /// Get the document.
-    pub fn get_document(&self) -> GetDocumentBuilder {
+    pub fn get_document<T: DeserializeOwned + Send>(&self) -> GetDocumentBuilder<T> {
         GetDocumentBuilder::new(self.clone())
     }
 
@@ -84,11 +85,8 @@ impl DocumentClient {
         &self.partition_key_serialized
     }
 
-    pub(crate) fn prepare_request_pipeline_with_document_name(
-        &self,
-        method: http::Method,
-    ) -> Request {
-        self.cosmos_client().prepare_request_pipeline(
+    pub(crate) fn document_request(&self, method: http::Method) -> Request {
+        self.cosmos_client().request(
             &format!(
                 "dbs/{}/colls/{}/docs/{}",
                 self.database_client().database_name(),

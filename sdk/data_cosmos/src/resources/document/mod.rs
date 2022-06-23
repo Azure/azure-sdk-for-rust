@@ -89,7 +89,7 @@ impl QueryCrossPartition {
 
 impl Header for QueryCrossPartition {
     fn name(&self) -> HeaderName {
-        headers::HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION.into()
+        headers::HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION
     }
 
     fn value(&self) -> HeaderValue {
@@ -116,7 +116,7 @@ impl ParallelizeCrossPartition {
 
 impl Header for ParallelizeCrossPartition {
     fn name(&self) -> HeaderName {
-        headers::HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY.into()
+        headers::HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY
     }
 
     fn value(&self) -> HeaderValue {
@@ -143,7 +143,7 @@ impl IsUpsert {
 
 impl Header for IsUpsert {
     fn name(&self) -> HeaderName {
-        headers::HEADER_DOCUMENTDB_IS_UPSERT.into()
+        headers::HEADER_DOCUMENTDB_IS_UPSERT
     }
 
     fn value(&self) -> HeaderValue {
@@ -164,7 +164,7 @@ impl AsHeaders for ChangeFeed {
     fn as_headers(&self) -> Self::Iter {
         match self {
             Self::Incremental => {
-                Some((headers::HEADER_A_IM.into(), "Incremental feed".into())).into_iter()
+                Some((headers::HEADER_A_IM, "Incremental feed".into())).into_iter()
             }
             Self::None => None.into_iter(),
         }
@@ -190,7 +190,7 @@ impl TentativeWritesAllowance {
 
 impl Header for TentativeWritesAllowance {
     fn name(&self) -> HeaderName {
-        headers::HEADER_ALLOW_MULTIPLE_WRITES.into()
+        headers::HEADER_ALLOW_MULTIPLE_WRITES
     }
 
     fn value(&self) -> HeaderValue {
@@ -211,7 +211,7 @@ impl PartitionRangeId {
 
 impl Header for PartitionRangeId {
     fn name(&self) -> HeaderName {
-        headers::HEADER_DOCUMENTDB_PARTITIONRANGEID.into()
+        headers::HEADER_DOCUMENTDB_PARTITIONRANGEID
     }
 
     fn value(&self) -> HeaderValue {

@@ -41,7 +41,7 @@ impl CreateBuilder {
                 self.container_client
                     .prepare_request(url.as_str(), Method::PUT, None)?;
             for (name, value) in self.public_access.as_headers() {
-                request.headers_mut().insert(name, value);
+                request.insert_header(name, value);
             }
             if let Some(metadata) = &self.metadata {
                 for m in metadata.iter() {

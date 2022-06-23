@@ -75,16 +75,12 @@ impl Request {
 
     pub fn insert_headers<T: AsHeaders>(&mut self, headers: &T) {
         for (name, value) in headers.as_headers() {
-            self.headers_mut().insert(name, value)
+            self.insert_header(name, value)
         }
     }
 
     pub fn headers(&self) -> &Headers {
         &self.headers
-    }
-
-    pub fn headers_mut(&mut self) -> &mut Headers {
-        &mut self.headers
     }
 
     pub fn body(&self) -> &Body {

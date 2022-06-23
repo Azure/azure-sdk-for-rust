@@ -22,7 +22,7 @@ where
 
 impl Header for ClientVersion {
     fn name(&self) -> headers::HeaderName {
-        headers::CLIENT_VERSION.into()
+        headers::CLIENT_VERSION
     }
 
     fn value(&self) -> headers::HeaderValue {

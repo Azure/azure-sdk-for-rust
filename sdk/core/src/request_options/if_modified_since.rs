@@ -12,7 +12,7 @@ impl IfModifiedSince {
 
 impl Header for IfModifiedSince {
     fn name(&self) -> headers::HeaderName {
-        http::header::IF_MODIFIED_SINCE.into()
+        headers::IF_MODIFIED_SINCE
     }
 
     fn value(&self) -> headers::HeaderValue {

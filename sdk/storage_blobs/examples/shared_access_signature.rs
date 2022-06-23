@@ -8,11 +8,11 @@ fn main() {
 }
 
 fn code() -> azure_core::Result<()> {
-    // First we retrieve the account name and master key from environment variables.
+    // First we retrieve the account name and access key from environment variables.
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
-    let master_key =
-        std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
+    let access_key =
+        std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
     let container_name = std::env::args()
         .nth(1)
@@ -28,7 +28,7 @@ fn code() -> azure_core::Result<()> {
     let http_client = azure_core::new_http_client();
 
     let storage_account_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key);
     let container_client = storage_account_client.as_container_client(&container_name);
     let blob_client = container_client.as_blob_client(&blob_name);
 

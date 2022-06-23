@@ -1,7 +1,7 @@
 use crate::EntityWithMetadata;
 use azure_core::{
     error::{Error, ErrorKind},
-    headers::{etag_from_headers, get_str_from_headers},
+    headers::{self, etag_from_headers, get_str_from_headers, HeaderName},
     CollectedResponse, Etag,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
@@ -28,22 +28,23 @@ where
 
     fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         let headers = response.headers();
-        let entity_with_metadata = match get_str_from_headers(headers, "preference-applied")? {
-            "return-no-content" => None,
-            "return-content" => Some(response.clone().try_into()?),
-            _ => {
-                return Err(Error::message(
-                    ErrorKind::Other,
-                    "Unexpected value for preference-applied header",
-                ))
-            }
-        };
+        let entity_with_metadata =
+            match get_str_from_headers(headers, &HeaderName::from_static("preference-applied"))? {
+                "return-no-content" => None,
+                "return-content" => Some(response.clone().try_into()?),
+                _ => {
+                    return Err(Error::message(
+                        ErrorKind::Other,
+                        "Unexpected value for preference-applied header",
+                    ))
+                }
+            };
 
         Ok(InsertEntityResponse {
             common_storage_response_headers: headers.try_into()?,
             etag: etag_from_headers(headers)?.into(),
             location: headers
-                .get("location")
+                .get(&headers::LOCATION)
                 .map(|location| Url::parse(location.as_str()))
                 .transpose()?,
             entity_with_metadata,

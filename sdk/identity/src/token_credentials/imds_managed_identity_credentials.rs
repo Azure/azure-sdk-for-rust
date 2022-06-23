@@ -113,11 +113,11 @@ impl TokenCredential for ImdsManagedIdentityCredential {
 
         let mut req = Request::new(url, Method::GET);
 
-        req.headers_mut().insert("Metadata", "true");
+        req.insert_header("Metadata", "true");
 
         let msi_secret = std::env::var(MSI_SECRET_ENV_KEY);
         if let Ok(val) = msi_secret {
-            req.headers_mut().insert("X-IDENTITY-HEADER", val);
+            req.insert_header("X-IDENTITY-HEADER", val);
         };
 
         let rsp = self.http_client.execute_request(&req).await?;

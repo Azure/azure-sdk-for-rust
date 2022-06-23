@@ -1,5 +1,5 @@
 use super::Continuation;
-use crate::headers::Headers;
+use crate::headers::{self, Headers};
 use crate::AppendToUrlQuery;
 use serde::{Deserialize, Serialize};
 
@@ -32,7 +32,7 @@ impl NextMarker {
     }
 
     pub fn from_header_optional(headers: &Headers) -> crate::Result<Option<Self>> {
-        let header_as_str = headers.get_as_str("x-ms-continuation");
+        let header_as_str = headers.get_as_str(&headers::CONTINUATION);
 
         Ok(header_as_str
             .filter(|h| !h.is_empty())

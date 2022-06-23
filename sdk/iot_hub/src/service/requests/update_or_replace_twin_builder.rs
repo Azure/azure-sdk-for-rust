@@ -1,4 +1,5 @@
 use azure_core::error::Error;
+use azure_core::headers;
 use http::Method;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -148,7 +149,7 @@ where
 
         let mut request = self.service_client.prepare_request(&uri, self.method)?;
         if let Some(if_match) = self.if_match {
-            request.insert_header(http::header::IF_MATCH, format!("\"{}\"", if_match));
+            request.insert_header(headers::IF_MATCH, format!("\"{}\"", if_match));
         }
         let body = azure_core::to_json(&body)?;
 

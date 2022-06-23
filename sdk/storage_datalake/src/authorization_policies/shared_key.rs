@@ -1,7 +1,7 @@
-use azure_core::headers::{HeaderName, Headers};
+use azure_core::headers::{self, HeaderName, HeaderValue, Headers};
 use azure_core::{Context, Policy, PolicyResult, Request};
 use azure_storage::{core::storage_shared_key_credential::StorageSharedKeyCredential, hmac::sign};
-use http::{HeaderValue, Method};
+use http::Method;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -28,16 +28,16 @@ impl Policy for SharedKeyAuthorizationPolicy {
             "Authorization policies cannot be the last policy of a pipeline"
         );
 
-        let headers_mut = request.headers_mut();
-        headers_mut.insert(
+        request.insert_header(
             azure_core::headers::MS_DATE,
-            HeaderValue::from_str(
-                format!("{}", chrono::Utc::now().format("%a, %d %h %Y %T GMT")).as_str(),
-            )?,
+            HeaderValue::from(format!(
+                "{}",
+                chrono::Utc::now().format("%a, %d %h %Y %T GMT")
+            )),
         );
-        headers_mut.insert(
+        request.insert_header(
             azure_core::headers::VERSION,
-            HeaderValue::from_str("2019-12-12")?,
+            HeaderValue::from_static("2019-12-12"),
         ); // TODO: Remove duplication with storage_account_client.rs
 
         let auth = generate_authorization(
@@ -48,9 +48,7 @@ impl Policy for SharedKeyAuthorizationPolicy {
             &self.credential.account_key,
         );
 
-        request
-            .headers_mut()
-            .insert(http::header::AUTHORIZATION, HeaderValue::from_str(&auth)?);
+        request.insert_header(headers::AUTHORIZATION, HeaderValue::from(auth));
 
         // now next[0] is safe (will not panic) because we checked
         // at the beginning of the function.
@@ -86,23 +84,23 @@ fn string_to_sign(
     // content length must only be specified if != 0
     // this is valid from 2015-02-21
     let cl = http_headers
-        .get(http::header::CONTENT_LENGTH)
+        .get(&headers::CONTENT_LENGTH)
         .map(|s| if s.as_str() == "0" { "" } else { s.as_str() })
         .unwrap_or("");
     format!(
         "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}{}",
         http_method.as_str(),
-        add_if_exists(http_headers, &http::header::CONTENT_ENCODING.into()),
-        add_if_exists(http_headers, &http::header::CONTENT_LANGUAGE.into()),
+        add_if_exists(http_headers, &headers::CONTENT_ENCODING),
+        add_if_exists(http_headers, &headers::CONTENT_LANGUAGE),
         cl,
-        add_if_exists(http_headers, &azure_storage::headers::CONTENT_MD5.into()),
-        add_if_exists(http_headers, &http::header::CONTENT_TYPE.into()),
-        add_if_exists(http_headers, &http::header::DATE.into()),
-        add_if_exists(http_headers, &http::header::IF_MODIFIED_SINCE.into()),
-        add_if_exists(http_headers, &http::header::IF_MATCH.into()),
-        add_if_exists(http_headers, &http::header::IF_NONE_MATCH.into()),
-        add_if_exists(http_headers, &http::header::IF_UNMODIFIED_SINCE.into()),
-        add_if_exists(http_headers, &http::header::RANGE.into()),
+        add_if_exists(http_headers, &headers::CONTENT_MD5),
+        add_if_exists(http_headers, &headers::CONTENT_TYPE),
+        add_if_exists(http_headers, &headers::DATE),
+        add_if_exists(http_headers, &headers::IF_MODIFIED_SINCE),
+        add_if_exists(http_headers, &headers::IF_MATCH),
+        add_if_exists(http_headers, &headers::IF_NONE_MATCH),
+        add_if_exists(http_headers, &headers::IF_UNMODIFIED_SINCE),
+        add_if_exists(http_headers, &headers::RANGE),
         canonicalize_header(http_headers),
         canonicalized_resource(storage_account_name, url)
     )
@@ -129,7 +127,7 @@ fn string_to_sign(
 }
 
 fn add_if_exists<'a>(h: &'a Headers, key: &HeaderName) -> &'a str {
-    match h.get(key.clone()) {
+    match h.get(key) {
         Some(ce) => ce.as_str(),
         None => "",
     }
@@ -146,7 +144,7 @@ fn canonicalize_header(h: &Headers) -> String {
     let mut can = String::new();
 
     for header_name in v_headers {
-        let s = h.get(header_name.clone()).unwrap().as_str();
+        let s = h.get(header_name).unwrap().as_str();
         can = can + header_name.as_str() + ":" + s + "\n";
     }
     can

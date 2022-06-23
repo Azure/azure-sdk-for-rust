@@ -65,8 +65,7 @@ impl Policy for MockTransportPlayerPolicy {
         // check if the passed request matches the one read from disk
         // We will ignore some headers that are bound to change every time
         // We'll probabily want to make the exclusion list dynamic at some point.
-        const SKIPPED_HEADERS: &[&'static str] =
-            &["Date", "x-ms-date", "authorization", "user-agent"];
+        const SKIPPED_HEADERS: &[&str] = &["Date", "x-ms-date", "authorization", "user-agent"];
         let actual_headers = request
             .headers()
             .iter()
@@ -97,14 +96,14 @@ impl Policy for MockTransportPlayerPolicy {
                 .iter()
                 .find(|(h, _)| actual_header_key.as_str() == h.as_str())
                 .ok_or_else(|| Error::with_message(ErrorKind::MockFramework, ||
-                    format!("received request have header {0} but it was not present in the read request",
+                    format!("received request have header '{0}' but it was not present in the read request",
                     actual_header_key.as_str(),
                 )))?;
 
             if actual_header_value != expected_header_value {
                 return Err(Error::with_message(ErrorKind::MockFramework, || {
                     format!(
-                        "request header {0} value is different. Actual: {1}, Expected: {2}",
+                        "request header '{0}' value is different. Actual: {1}, Expected: {2}",
                         actual_header_key.as_str().to_owned(),
                         actual_header_value.as_str().to_owned(),
                         expected_header_value.as_str().to_owned(),
@@ -124,12 +123,12 @@ impl Policy for MockTransportPlayerPolicy {
         }
 
         let actual_body = match request.body() {
-            crate::Body::Bytes(bytes) => &bytes as &[u8],
+            crate::Body::Bytes(bytes) => bytes as &[u8],
             crate::Body::SeekableStream(_) => unimplemented!(),
         };
 
         let expected_body = match expected_request.body() {
-            crate::Body::Bytes(bytes) => &bytes as &[u8],
+            crate::Body::Bytes(bytes) => bytes as &[u8],
             crate::Body::SeekableStream(_) => unimplemented!(),
         };
 

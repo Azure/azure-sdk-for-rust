@@ -37,7 +37,7 @@ impl ListCollectionsBuilder {
             let this = self.clone();
             let ctx = self.context.clone();
             async move {
-                let mut request = this.client.prepare_collections_pipeline(http::Method::GET);
+                let mut request = this.client.collections_request(http::Method::GET);
                 if let Some(cl) = &this.consistency_level {
                     request.insert_headers(cl);
                 }

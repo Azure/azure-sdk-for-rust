@@ -6,7 +6,7 @@ use tokio::time::{Duration, Instant};
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
     env_logger::init();
-    // First we retrieve the account name and master key from environment variables, and
+    // First we retrieve the account name and access key from environment variables, and
     // create an authorization token.
     let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
     let primary_key =

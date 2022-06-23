@@ -68,10 +68,10 @@ async fn break_lease() {
 fn initialize() -> Arc<StorageAccountClient> {
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
-    let master_key =
-        std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
+    let access_key =
+        std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
     let http_client = azure_core::new_http_client();
 
-    StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
+    StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key)
 }

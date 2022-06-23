@@ -2,6 +2,7 @@ use crate::clients::*;
 use crate::prelude::*;
 use crate::ReadonlyString;
 use azure_core::{Pipeline, Request};
+use serde::de::DeserializeOwned;
 
 /// A client for Cosmos stored procedure resources.
 #[derive(Debug, Clone)]
@@ -38,7 +39,9 @@ impl StoredProcedureClient {
     }
 
     /// Execute the stored procedure.
-    pub fn execute_stored_procedure(&self) -> ExecuteStoredProcedureBuilder {
+    pub fn execute_stored_procedure<T: DeserializeOwned + Send>(
+        &self,
+    ) -> ExecuteStoredProcedureBuilder<T> {
         ExecuteStoredProcedureBuilder::new(self.clone())
     }
 
@@ -67,11 +70,8 @@ impl StoredProcedureClient {
         &self.stored_procedure_name
     }
 
-    pub(crate) fn prepare_pipeline_with_stored_procedure_name(
-        &self,
-        method: http::Method,
-    ) -> Request {
-        self.cosmos_client().prepare_request_pipeline(
+    pub(crate) fn stored_procedure_request(&self, method: http::Method) -> Request {
+        self.cosmos_client().request(
             &format!(
                 "dbs/{}/colls/{}/sprocs/{}",
                 self.database_client().database_name(),
@@ -82,8 +82,8 @@ impl StoredProcedureClient {
         )
     }
 
-    pub(crate) fn prepare_request_pipeline(&self, method: http::Method) -> Request {
-        self.cosmos_client().prepare_request_pipeline(
+    pub(crate) fn stored_procedures_request(&self, method: http::Method) -> Request {
+        self.cosmos_client().request(
             &format!(
                 "dbs/{}/colls/{}/sprocs",
                 self.database_client().database_name(),

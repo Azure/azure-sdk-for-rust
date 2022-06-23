@@ -43,10 +43,9 @@ impl CreateOrReplaceAttachmentBuilder {
     pub fn into_future(self) -> CreateOrReplaceAttachment {
         Box::pin(async move {
             let mut req = if self.is_create {
-                self.client.prepare_pipeline(http::Method::POST)
+                self.client.attachments_request(http::Method::POST)
             } else {
-                self.client
-                    .prepare_pipeline_with_attachment_name(http::Method::PUT)
+                self.client.attachment_request(http::Method::PUT)
             };
 
             if let Some(cl) = &self.consistency_level {

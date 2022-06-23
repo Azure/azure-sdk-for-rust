@@ -75,7 +75,7 @@ pub async fn perform(
     })?;
 
     let mut req = Request::new(url, Method::POST);
-    req.headers_mut().insert(
+    req.insert_header(
         headers::CONTENT_TYPE,
         content_type::APPLICATION_X_WWW_FORM_URLENCODED,
     );

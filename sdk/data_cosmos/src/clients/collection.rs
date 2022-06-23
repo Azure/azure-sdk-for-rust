@@ -127,27 +127,22 @@ impl CollectionClient {
         &self.collection_name
     }
 
-    pub(crate) fn prepare_request_with_collection_name(
-        &self,
-        http_method: http::Method,
-    ) -> Request {
+    pub(crate) fn collection_request(&self, http_method: http::Method) -> Request {
         let path = &format!(
             "dbs/{}/colls/{}",
             self.database_client().database_name(),
             self.collection_name()
         );
-        self.cosmos_client()
-            .prepare_request_pipeline(path, http_method)
+        self.cosmos_client().request(path, http_method)
     }
 
-    pub(crate) fn prepare_doc_request_pipeline(&self, http_method: http::Method) -> Request {
+    pub(crate) fn docs_request(&self, http_method: http::Method) -> Request {
         let path = &format!(
             "dbs/{}/colls/{}/docs",
             self.database_client().database_name(),
             self.collection_name()
         );
-        self.cosmos_client()
-            .prepare_request_pipeline(path, http_method)
+        self.cosmos_client().request(path, http_method)
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {

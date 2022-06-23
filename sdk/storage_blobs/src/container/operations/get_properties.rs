@@ -1,12 +1,12 @@
 use crate::{container::Container, prelude::*};
 use azure_core::{
-    error::{Error, ErrorKind, ResultExt},
-    headers::{Headers, REQUEST_ID},
+    error::{ErrorKind, ResultExt},
+    headers::{self, Headers},
     prelude::*,
     RequestId,
 };
 use chrono::{DateTime, FixedOffset};
-use http::{header, method::Method};
+use http::method::Method;
 use std::convert::{TryFrom, TryInto};
 use uuid::Uuid;
 
@@ -73,22 +73,11 @@ impl GetPropertiesResponse {
         container_name: &str,
         headers: &Headers,
     ) -> azure_core::Result<GetPropertiesResponse> {
-        let request_id = match headers.get(REQUEST_ID) {
-            Some(request_id) => {
-                Uuid::parse_str(request_id.as_str()).map_kind(ErrorKind::DataConversion)?
-            }
-            None => return Err(Error::message(ErrorKind::DataConversion, REQUEST_ID)),
-        };
+        let request_id = Uuid::parse_str(headers.get_as_str_or_err(&headers::REQUEST_ID)?)
+            .map_kind(ErrorKind::DataConversion)?;
 
-        let date = match headers.get(header::DATE) {
-            Some(date) => {
-                DateTime::parse_from_rfc2822(date.as_str()).map_kind(ErrorKind::DataConversion)?
-            }
-            None => {
-                static D: header::HeaderName = header::DATE;
-                return Err(Error::message(ErrorKind::DataConversion, D.as_str()));
-            }
-        };
+        let date = DateTime::parse_from_rfc2822(headers.get_as_str_or_err(&headers::DATE)?)
+            .map_kind(ErrorKind::DataConversion)?;
 
         let container = Container::from_response(container_name, headers)?;
 

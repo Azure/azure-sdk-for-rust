@@ -31,9 +31,7 @@ impl ReplacePermissionBuilder {
 
     pub fn into_future(self) -> ReplacePermission {
         Box::pin(async move {
-            let mut request = self
-                .client
-                .prepare_request_with_permission_name(http::Method::PUT);
+            let mut request = self.client.permission_request(http::Method::PUT);
 
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);

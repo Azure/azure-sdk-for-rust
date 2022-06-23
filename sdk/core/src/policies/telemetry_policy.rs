@@ -1,8 +1,7 @@
+use crate::headers::{HeaderValue, USER_AGENT};
 use crate::options::TelemetryOptions;
 use crate::policies::{Policy, PolicyResult};
 use crate::{Context, Request};
-
-use http::{header::USER_AGENT, HeaderValue};
 use std::env::consts::{ARCH, OS};
 use std::sync::Arc;
 
@@ -65,19 +64,7 @@ impl Policy for TelemetryPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        use crate::error::ResultExt;
-        request.headers_mut().insert(
-            USER_AGENT,
-            HeaderValue::from_str(&self.header).with_context(
-                crate::error::ErrorKind::DataConversion,
-                || {
-                    format!(
-                        "user agent '{}' cannot be serialized as an ascii-only HTTP header",
-                        self.header
-                    )
-                },
-            )?,
-        );
+        request.insert_header(USER_AGENT, HeaderValue::from(self.header.to_string()));
 
         next[0].send(ctx, request, &next[1..]).await
     }

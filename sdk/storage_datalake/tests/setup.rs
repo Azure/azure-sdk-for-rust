@@ -29,6 +29,6 @@ fn get_account() -> String {
 }
 
 fn get_key() -> String {
-    std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
-        .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!")
+    std::env::var("ADLSGEN2_STORAGE_ACCESS_KEY")
+        .expect("Set env variable ADLSGEN2_STORAGE_ACCESS_KEY first!")
 }

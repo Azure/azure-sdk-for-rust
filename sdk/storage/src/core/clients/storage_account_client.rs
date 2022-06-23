@@ -1,5 +1,4 @@
 use crate::authorization_policy::AuthorizationPolicy;
-use crate::headers::CONTENT_MD5;
 use crate::ConnectionString;
 use crate::{
     core::No,
@@ -30,9 +29,7 @@ pub const EMULATOR_ACCOUNT_KEY: &str =
 
 pub const STORAGE_TOKEN_SCOPE: &str = "https://storage.azure.com/";
 
-const HEADER_VERSION: &str = "x-ms-version";
-
-const AZURE_VERSION: &str = "2019-12-12";
+const AZURE_VERSION: HeaderValue = HeaderValue::from_static("2019-12-12");
 
 #[derive(Clone)]
 pub enum StorageCredentials {
@@ -451,7 +448,7 @@ impl StorageAccountClient {
         };
 
         request.insert_header(MS_DATE, time);
-        request.insert_header(HEADER_VERSION, AZURE_VERSION);
+        request.insert_header(VERSION, AZURE_VERSION);
 
         // We sign the request only if it is not already signed (with the signature of an
         // SAS token for example)
@@ -543,8 +540,8 @@ fn generate_authorization(
     format!("SharedKey {}:{}", account, auth)
 }
 
-fn add_if_exists<K: Into<HeaderName>>(headers: &Headers, key: K) -> &str {
-    match headers.get(key.into()) {
+fn add_if_exists<'a>(headers: &'a Headers, key: &HeaderName) -> &'a str {
+    match headers.get(key) {
         Some(value) => value.as_str(),
         None => "",
     }
@@ -563,33 +560,39 @@ fn string_to_sign(
             format!(
                 "{}\n{}\n{}\n{}\n{}",
                 method.as_str(),
-                add_if_exists(headers, CONTENT_MD5),
-                add_if_exists(headers, CONTENT_TYPE),
-                add_if_exists(headers, MS_DATE),
+                add_if_exists(headers, &CONTENT_MD5),
+                add_if_exists(headers, &CONTENT_TYPE),
+                add_if_exists(headers, &MS_DATE),
                 canonicalized_resource_table(account, url)
             )
         }
         _ => {
-            // content lenght must only be specified if != 0
+            // content length must only be specified if != 0
             // this is valid from 2015-02-21
             let cl = headers
-                .get(CONTENT_LENGTH)
-                .map(|s| if s.as_str() == "0" { "" } else { s.as_str() })
+                .get(&CONTENT_LENGTH)
+                .map(|s| {
+                    if s == &HeaderValue::from_static("0") {
+                        ""
+                    } else {
+                        s.as_str()
+                    }
+                })
                 .unwrap_or("");
             format!(
                 "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}{}",
                 method.as_str(),
-                add_if_exists(headers, CONTENT_ENCODING),
-                add_if_exists(headers, CONTENT_LANGUAGE),
+                add_if_exists(headers, &CONTENT_ENCODING),
+                add_if_exists(headers, &CONTENT_LANGUAGE),
                 cl,
-                add_if_exists(headers, CONTENT_MD5),
-                add_if_exists(headers, CONTENT_TYPE),
-                add_if_exists(headers, DATE),
-                add_if_exists(headers, IF_MODIFIED_SINCE),
-                add_if_exists(headers, IF_MATCH),
-                add_if_exists(headers, IF_NONE_MATCH),
-                add_if_exists(headers, IF_UNMODIFIED_SINCE),
-                add_if_exists(headers, RANGE),
+                add_if_exists(headers, &CONTENT_MD5),
+                add_if_exists(headers, &CONTENT_TYPE),
+                add_if_exists(headers, &DATE),
+                add_if_exists(headers, &IF_MODIFIED_SINCE),
+                add_if_exists(headers, &IF_MATCH),
+                add_if_exists(headers, &IF_NONE_MATCH),
+                add_if_exists(headers, &IF_UNMODIFIED_SINCE),
+                add_if_exists(headers, &RANGE),
                 canonicalize_header(headers),
                 canonicalized_resource(account, url)
             )

@@ -4,7 +4,7 @@ create_enum!(DeleteSnapshotsMethod, (Include, "include"), (Only, "only"));
 
 impl Header for DeleteSnapshotsMethod {
     fn name(&self) -> headers::HeaderName {
-        azure_core::headers::DELETE_SNAPSHOTS.into()
+        azure_core::headers::DELETE_SNAPSHOTS
     }
 
     fn value(&self) -> headers::HeaderValue {

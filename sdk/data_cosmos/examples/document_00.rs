@@ -1,7 +1,6 @@
 use futures::stream::StreamExt;
 use serde::{Deserialize, Serialize};
-// Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos
-// DB.
+// Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos DB.
 use azure_core::prelude::*;
 
 use azure_data_cosmos::prelude::*;
@@ -33,7 +32,7 @@ const COLLECTION: &str = "azuresdktc";
 // 4. Delete everything.
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    // Let's get Cosmos account and master key from env variables.
+    // Let's get Cosmos account and access key from env variables.
     // This helps automated testing.
     let primary_key =
         std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
@@ -159,8 +158,8 @@ async fn main() -> azure_core::Result<()> {
     let get_document_response = collection
         .clone()
         .document_client(doc.id.clone(), &doc.id)?
-        .get_document()
-        .into_future::<MySampleStruct>()
+        .get_document::<MySampleStruct>()
+        .into_future()
         .await?;
     println!("get_document_response == {:#?}", get_document_response);
 

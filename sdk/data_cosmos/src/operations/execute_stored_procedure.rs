@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::resources::stored_procedure::Parameters;
@@ -10,18 +12,19 @@ use chrono::{DateTime, Utc};
 use serde::de::DeserializeOwned;
 
 #[derive(Debug, Clone)]
-pub struct ExecuteStoredProcedureBuilder {
+pub struct ExecuteStoredProcedureBuilder<T> {
     client: StoredProcedureClient,
     parameters: Option<Parameters>,
     consistency_level: Option<ConsistencyLevel>,
     allow_tentative_writes: TentativeWritesAllowance,
     partition_key: Option<String>,
     context: Context,
+    _stored_proc: PhantomData<T>,
 }
 
 static EMPTY_LIST: &[u8; 2] = b"[]";
 
-impl ExecuteStoredProcedureBuilder {
+impl<T: DeserializeOwned + Send> ExecuteStoredProcedureBuilder<T> {
     pub(crate) fn new(client: StoredProcedureClient) -> Self {
         Self {
             client,
@@ -30,6 +33,7 @@ impl ExecuteStoredProcedureBuilder {
             allow_tentative_writes: TentativeWritesAllowance::Deny,
             partition_key: None,
             context: Context::new(),
+            _stored_proc: PhantomData,
         }
     }
 
@@ -47,14 +51,9 @@ impl ExecuteStoredProcedureBuilder {
         })
     }
 
-    pub fn into_future<T>(self) -> ExecuteStoredProcedure<T>
-    where
-        T: DeserializeOwned,
-    {
+    pub fn into_future(self) -> ExecuteStoredProcedure<T> {
         Box::pin(async move {
-            let mut request = self
-                .client
-                .prepare_pipeline_with_stored_procedure_name(http::Method::POST);
+            let mut request = self.client.stored_procedure_request(http::Method::POST);
 
             if let Some(pk) = self.partition_key.as_ref() {
                 crate::cosmos_entity::add_as_partition_key_header_serialized(pk, &mut request)
@@ -92,6 +91,14 @@ impl ExecuteStoredProcedureBuilder {
 pub type ExecuteStoredProcedure<T> =
     futures::future::BoxFuture<'static, azure_core::Result<ExecuteStoredProcedureResponse<T>>>;
 
+#[cfg(feature = "into_future")]
+impl<T: DeserializeOwned + Send> std::future::IntoFuture for ExecuteStoredProcedureBuilder<T> {
+    type IntoFuture = ExecuteStoredProcedure<T>;
+    type Output = <ExecuteStoredProcedure<T> as std::future::Future>::Output;
+    fn into_future(self) -> Self::IntoFuture {
+        Self::into_future(self)
+    }
+}
 #[derive(Debug, Clone)]
 pub struct ExecuteStoredProcedureResponse<T>
 where

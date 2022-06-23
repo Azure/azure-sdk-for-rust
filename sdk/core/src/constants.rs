@@ -17,15 +17,20 @@ pub mod resource_manager_endpoint {
 ///
 /// <https://developer.mozilla.org/docs/Web/HTTP/Headers/Content-Type>
 pub mod content_type {
+    use crate::headers::HeaderValue;
+
     // Form content types
     // https://www.w3.org/TR/html401/interact/forms.html#h-17.13.4
 
-    pub const MULTIPART_FORM_DATA: &str = "multipart/form-data";
-    pub const APPLICATION_X_WWW_FORM_URLENCODED: &str = "application/x-www-form-urlencoded";
+    pub const MULTIPART_FORM_DATA: HeaderValue = HeaderValue::from_static("multipart/form-data");
+    pub const APPLICATION_X_WWW_FORM_URLENCODED: HeaderValue =
+        HeaderValue::from_static("application/x-www-form-urlencoded");
 
-    pub const APPLICATION_XML: &str = "application/xml";
-    pub const APPLICATION_JSON: &str = "application/json";
-    pub const APPLICATION_OCTET_STREAM: &str = "application/octet-stream";
+    pub const APPLICATION_XML: HeaderValue = HeaderValue::from_static("application/xml");
+    pub const APPLICATION_JSON: HeaderValue = HeaderValue::from_static("application/json");
+    pub const APPLICATION_OCTET_STREAM: HeaderValue =
+        HeaderValue::from_static("application/octet-stream");
+    pub const TEXT_PLAIN: HeaderValue = HeaderValue::from_static("text/plain");
 }
 
 /// Constants related to the Content-Type header

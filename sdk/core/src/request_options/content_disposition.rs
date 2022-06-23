@@ -33,7 +33,7 @@ impl From<&String> for ContentDisposition {
 
 impl Header for ContentDisposition {
     fn name(&self) -> headers::HeaderName {
-        http::header::CONTENT_TYPE.into()
+        headers::CONTENT_DISPOSITION
     }
 
     fn value(&self) -> headers::HeaderValue {

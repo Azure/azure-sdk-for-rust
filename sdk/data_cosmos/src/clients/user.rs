@@ -66,8 +66,8 @@ impl UserClient {
         &self.user_name
     }
 
-    pub(crate) fn prepare_request_with_user_name(&self, method: http::Method) -> Request {
-        self.cosmos_client().prepare_request_pipeline(
+    pub(crate) fn user_request(&self, method: http::Method) -> Request {
+        self.cosmos_client().request(
             &format!(
                 "dbs/{}/users/{}",
                 self.database_client().database_name(),

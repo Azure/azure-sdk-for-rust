@@ -12,7 +12,7 @@ impl From<Duration> for LeaseBreakPeriod {
 
 impl Header for LeaseBreakPeriod {
     fn name(&self) -> headers::HeaderName {
-        headers::LEASE_BREAK_PERIOD.into()
+        headers::LEASE_BREAK_PERIOD
     }
 
     fn value(&self) -> headers::HeaderValue {

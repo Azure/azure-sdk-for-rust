@@ -72,13 +72,13 @@ impl DatabaseClient {
         &self.database_name
     }
 
-    pub(crate) fn prepare_pipeline(&self, method: Method) -> Request {
+    pub(crate) fn database_request(&self, method: Method) -> Request {
         self.cosmos_client()
-            .prepare_request_pipeline(&format!("dbs/{}", self.database_name()), method)
+            .request(&format!("dbs/{}", self.database_name()), method)
     }
 
-    pub(crate) fn prepare_collections_pipeline(&self, method: Method) -> Request {
+    pub(crate) fn collections_request(&self, method: Method) -> Request {
         self.cosmos_client()
-            .prepare_request_pipeline(&format!("dbs/{}/colls", self.database_name()), method)
+            .request(&format!("dbs/{}/colls", self.database_name()), method)
     }
 }

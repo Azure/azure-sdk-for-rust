@@ -2,31 +2,29 @@ use super::*;
 use crate::error::{Error, ErrorKind};
 use crate::request_options::LeaseId;
 use crate::{RequestId, SessionToken};
-
 use chrono::{DateTime, FixedOffset, Utc};
-use http::header::{DATE, ETAG, LAST_MODIFIED, SERVER};
 use std::str::FromStr;
 
 pub fn get_option_str_from_headers<'a>(
     headers: &'a Headers,
-    key: &str,
+    key: &HeaderName,
 ) -> crate::Result<Option<&'a str>> {
-    let h = match headers.get(key.to_owned()) {
+    let h = match headers.get(key) {
         Some(h) => h,
         None => return Ok(None),
     };
     Ok(Some(h.as_str()))
 }
 
-pub fn get_str_from_headers<'a>(headers: &'a Headers, key: &str) -> crate::Result<&'a str> {
+pub fn get_str_from_headers<'a>(headers: &'a Headers, key: &HeaderName) -> crate::Result<&'a str> {
     get_option_str_from_headers(headers, key)?.ok_or_else(|| {
         Error::with_message(ErrorKind::DataConversion, || {
-            format!("could not find '{key}' in headers")
+            format!("could not find '{key:?}' in headers")
         })
     })
 }
 
-pub fn get_option_from_headers<T>(headers: &Headers, key: &str) -> crate::Result<Option<T>>
+pub fn get_option_from_headers<T>(headers: &Headers, key: &HeaderName) -> crate::Result<Option<T>>
 where
     T: std::str::FromStr + 'static,
     T::Err: std::error::Error + Send + Sync,
@@ -41,7 +39,7 @@ where
             ErrorKind::DataConversion,
             e,
             format!(
-                "failed to parse header '{}' as {:?}",
+                "failed to parse header '{:?}' as {:?}",
                 key,
                 std::any::TypeId::of::<T>()
             ),
@@ -49,7 +47,7 @@ where
     })?))
 }
 
-pub fn get_from_headers<T>(headers: &Headers, key: &str) -> crate::Result<T>
+pub fn get_from_headers<T>(headers: &Headers, key: &HeaderName) -> crate::Result<T>
 where
     T: std::str::FromStr + 'static,
     T::Err: std::error::Error + Send + Sync,
@@ -59,7 +57,7 @@ where
             ErrorKind::DataConversion,
             e,
             format!(
-                "failed to parse header '{}' as {:?}",
+                "failed to parse header '{:?}' as {:?}",
                 key,
                 std::any::TypeId::of::<T>()
             ),
@@ -104,15 +102,15 @@ where
 }
 
 pub fn lease_id_from_headers(headers: &Headers) -> crate::Result<LeaseId> {
-    get_from_headers(headers, LEASE_ID)
+    get_from_headers(headers, &LEASE_ID)
 }
 
 pub fn request_id_from_headers(headers: &Headers) -> crate::Result<RequestId> {
-    get_from_headers(headers, REQUEST_ID)
+    get_from_headers(headers, &REQUEST_ID)
 }
 
 pub fn client_request_id_from_headers_optional(headers: &Headers) -> Option<String> {
-    get_option_from_headers(headers, CLIENT_REQUEST_ID)
+    get_option_from_headers(headers, &CLIENT_REQUEST_ID)
         .ok()
         .flatten()
 }
@@ -120,20 +118,20 @@ pub fn client_request_id_from_headers_optional(headers: &Headers) -> Option<Stri
 pub fn last_modified_from_headers_optional(
     headers: &Headers,
 ) -> crate::Result<Option<DateTime<Utc>>> {
-    get_option_from_headers(headers, LAST_MODIFIED.as_str())
+    get_option_from_headers(headers, &LAST_MODIFIED)
 }
 
 pub fn date_from_headers(headers: &Headers) -> crate::Result<DateTime<Utc>> {
-    rfc2822_from_headers_mandatory(headers, DATE.as_str())
+    rfc2822_from_headers_mandatory(headers, &DATE)
 }
 
 pub fn last_modified_from_headers(headers: &Headers) -> crate::Result<DateTime<Utc>> {
-    rfc2822_from_headers_mandatory(headers, LAST_MODIFIED.as_str())
+    rfc2822_from_headers_mandatory(headers, &LAST_MODIFIED)
 }
 
 pub fn rfc2822_from_headers_mandatory(
     headers: &Headers,
-    header_name: &str,
+    header_name: &HeaderName,
 ) -> crate::Result<DateTime<Utc>> {
     let date = get_str_from_headers(headers, header_name)?;
     utc_date_from_rfc2822(date)
@@ -147,63 +145,63 @@ pub fn utc_date_from_rfc2822(date: &str) -> crate::Result<DateTime<Utc>> {
 pub fn continuation_token_from_headers_optional(
     headers: &Headers,
 ) -> crate::Result<Option<String>> {
-    Ok(get_option_str_from_headers(headers, CONTINUATION)?.map(String::from))
+    Ok(get_option_str_from_headers(headers, &CONTINUATION)?.map(String::from))
 }
 
 pub fn sku_name_from_headers(headers: &Headers) -> crate::Result<String> {
-    Ok(get_str_from_headers(headers, SKU_NAME)?.to_owned())
+    Ok(get_str_from_headers(headers, &SKU_NAME)?.to_owned())
 }
 
 pub fn account_kind_from_headers(headers: &Headers) -> crate::Result<String> {
-    Ok(get_str_from_headers(headers, ACCOUNT_KIND)?.to_owned())
+    Ok(get_str_from_headers(headers, &ACCOUNT_KIND)?.to_owned())
 }
 
 pub fn etag_from_headers_optional(headers: &Headers) -> crate::Result<Option<String>> {
-    Ok(get_option_str_from_headers(headers, ETAG.as_str())?.map(String::from))
+    Ok(get_option_str_from_headers(headers, &ETAG)?.map(String::from))
 }
 
 pub fn etag_from_headers(headers: &Headers) -> crate::Result<String> {
-    Ok(get_str_from_headers(headers, ETAG.as_str())?.to_owned())
+    Ok(get_str_from_headers(headers, &ETAG)?.to_owned())
 }
 
 pub fn lease_time_from_headers(headers: &Headers) -> crate::Result<u8> {
-    get_from_headers(headers, LEASE_TIME)
+    get_from_headers(headers, &LEASE_TIME)
 }
 
 #[cfg(not(feature = "azurite_workaround"))]
 pub fn delete_type_permanent_from_headers(headers: &Headers) -> crate::Result<bool> {
-    get_from_headers(headers, DELETE_TYPE_PERMANENT)
+    get_from_headers(headers, &DELETE_TYPE_PERMANENT)
 }
 
 #[cfg(feature = "azurite_workaround")]
 pub fn delete_type_permanent_from_headers(headers: &Headers) -> crate::Result<Option<bool>> {
-    get_option_from_headers(headers, DELETE_TYPE_PERMANENT)
+    get_option_from_headers(headers, &DELETE_TYPE_PERMANENT)
 }
 
 pub fn sequence_number_from_headers(headers: &Headers) -> crate::Result<u64> {
-    get_from_headers(headers, BLOB_SEQUENCE_NUMBER)
+    get_from_headers(headers, &BLOB_SEQUENCE_NUMBER)
 }
 
 pub fn session_token_from_headers(headers: &Headers) -> crate::Result<SessionToken> {
-    get_str_from_headers(headers, SESSION_TOKEN).map(ToOwned::to_owned)
+    get_str_from_headers(headers, &SESSION_TOKEN).map(ToOwned::to_owned)
 }
 
 pub fn server_from_headers(headers: &Headers) -> crate::Result<&str> {
-    get_str_from_headers(headers, SERVER.as_str())
+    get_str_from_headers(headers, &SERVER)
 }
 
 pub fn version_from_headers(headers: &Headers) -> crate::Result<&str> {
-    get_str_from_headers(headers, VERSION)
+    get_str_from_headers(headers, &VERSION)
 }
 
 pub fn request_server_encrypted_from_headers(headers: &Headers) -> crate::Result<bool> {
-    get_from_headers(headers, REQUEST_SERVER_ENCRYPTED)
+    get_from_headers(headers, &REQUEST_SERVER_ENCRYPTED)
 }
 
 pub fn content_type_from_headers(headers: &Headers) -> crate::Result<&str> {
-    get_str_from_headers(headers, http::header::CONTENT_TYPE.as_str())
+    get_str_from_headers(headers, &CONTENT_TYPE)
 }
 
 pub fn item_count_from_headers(headers: &Headers) -> crate::Result<u32> {
-    get_from_headers(headers, ITEM_COUNT)
+    get_from_headers(headers, &ITEM_COUNT)
 }
