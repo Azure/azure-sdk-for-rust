@@ -2,6 +2,7 @@ use crate::clients::*;
 use crate::prelude::*;
 use crate::ReadonlyString;
 use azure_core::{Pipeline, Request};
+use serde::de::DeserializeOwned;
 
 /// A client for Cosmos stored procedure resources.
 #[derive(Debug, Clone)]
@@ -38,7 +39,9 @@ impl StoredProcedureClient {
     }
 
     /// Execute the stored procedure.
-    pub fn execute_stored_procedure(&self) -> ExecuteStoredProcedureBuilder {
+    pub fn execute_stored_procedure<T: DeserializeOwned + Send>(
+        &self,
+    ) -> ExecuteStoredProcedureBuilder<T> {
         ExecuteStoredProcedureBuilder::new(self.clone())
     }
 
