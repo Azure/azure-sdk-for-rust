@@ -22,14 +22,18 @@ async fn main() -> azure_core::Result<()> {
     let blob_service_client = storage_client.as_blob_service_client();
     let container_client = storage_client.as_container_client(&container_name);
 
-    let iv = blob_service_client
+    let page = blob_service_client
         .list_containers()
         .into_stream()
         .next()
         .await
         .expect("stream failed")?;
 
-    if iv.containers.iter().any(|item| item.name == container_name) {
+    if page
+        .containers
+        .iter()
+        .any(|item| item.name == container_name)
+    {
         panic!("The specified container must not exists!");
     }
 
@@ -44,7 +48,7 @@ async fn main() -> azure_core::Result<()> {
 
     println!("Checking that container is empty");
 
-    let iv = container_client
+    let page = container_client
         .list_blobs()
         .max_results(NonZeroU32::new(100u32).unwrap())
         .delimiter("/")
@@ -53,7 +57,7 @@ async fn main() -> azure_core::Result<()> {
         .await
         .expect("stream failed")?;
 
-    assert!(iv.blobs.blobs.is_empty());
+    assert!(page.blobs.blobs.is_empty());
 
     println!("Adding blobs");
 
@@ -120,7 +124,7 @@ async fn main() -> azure_core::Result<()> {
             .await?;
     }
 
-    let iv = container_client
+    let page = container_client
         .list_blobs()
         .max_results(NonZeroU32::new(100u32).unwrap())
         .delimiter("/")
@@ -131,13 +135,16 @@ async fn main() -> azure_core::Result<()> {
 
     println!(
         "List blob / returned {} blobs with blob_prefix == {:?}",
-        iv.blobs.blobs.len(),
-        iv.blobs.blob_prefix
+        page.blobs.blobs.len(),
+        page.blobs.blob_prefix
     );
-    iv.blobs.blobs.iter().for_each(|b| println!("\t{}", b.name));
-    assert_eq!(iv.blobs.blobs.len(), 4);
+    page.blobs
+        .blobs
+        .iter()
+        .for_each(|b| println!("\t{}", b.name));
+    assert_eq!(page.blobs.blobs.len(), 4);
 
-    let iv = container_client
+    let page = container_client
         .list_blobs()
         .max_results(NonZeroU32::new(100u32).unwrap())
         .prefix("firstfolder/")
@@ -149,11 +156,14 @@ async fn main() -> azure_core::Result<()> {
 
     println!(
         "List blob firstfolder/ returned {} blobs with blob_prefix == {:?}",
-        iv.blobs.blobs.len(),
-        iv.blobs.blob_prefix
+        page.blobs.blobs.len(),
+        page.blobs.blob_prefix
     );
-    iv.blobs.blobs.iter().for_each(|b| println!("\t{}", b.name));
-    assert_eq!(iv.blobs.blobs.len(), 3);
+    page.blobs
+        .blobs
+        .iter()
+        .for_each(|b| println!("\t{}", b.name));
+    assert_eq!(page.blobs.blobs.len(), 3);
 
     let mut stream = container_client
         .list_blobs()

@@ -30,9 +30,9 @@ async fn main() -> azure_core::Result<()> {
 
     let mut count = 0;
     while let Some(result) = iv.next().await {
-        let container = result?;
-        count += container.containers.len();
-        for container in container.containers.iter() {
+        let page = result?;
+        count += page.containers.len();
+        for container in page.containers.iter() {
             println!("\t{}", container.name);
         }
     }

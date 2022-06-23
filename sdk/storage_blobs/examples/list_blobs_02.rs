@@ -36,13 +36,13 @@ async fn create_container_and_list(
     container_client.create().into_future().await?;
 
     // list empty container
-    let iv = container_client
+    let page = container_client
         .list_blobs()
         .into_stream()
         .next()
         .await
         .expect("stream failed")?;
-    println!("List blob returned {} blobs.", iv.blobs.blobs.len());
+    println!("List blob returned {} blobs.", page.blobs.blobs.len());
 
     for i in 0..3 {
         container_client
@@ -55,13 +55,13 @@ async fn create_container_and_list(
     }
 
     // list full container
-    let iv = container_client
+    let page = container_client
         .list_blobs()
         .into_stream()
         .next()
         .await
         .expect("stream failed")?;
-    println!("List blob returned {} blobs.", iv.blobs.blobs.len());
+    println!("List blob returned {} blobs.", page.blobs.blobs.len());
 
     container_client.delete().into_future().await?;
     println!("Container {} deleted", container_name);

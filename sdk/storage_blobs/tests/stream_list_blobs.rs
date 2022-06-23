@@ -21,7 +21,7 @@ async fn stream_list_blobs() {
     let blob_service = storage.as_blob_service_client();
     let container = storage.as_container_client(container_name);
 
-    let iv = blob_service
+    let page = blob_service
         .list_containers()
         .into_stream()
         .next()
@@ -29,7 +29,7 @@ async fn stream_list_blobs() {
         .unwrap()
         .unwrap();
 
-    if iv
+    if page
         .containers
         .iter()
         .find(|item| item.name == container_name)

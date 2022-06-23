@@ -22,14 +22,18 @@ async fn main() -> azure_core::Result<()> {
     let blob_service = storage_client.as_blob_service_client();
     let container_client = storage_client.as_container_client(&container_name);
 
-    let iv = blob_service
+    let page = blob_service
         .list_containers()
         .into_stream()
         .next()
         .await
         .expect("stream failed")?;
 
-    if iv.containers.iter().any(|item| item.name == container_name) {
+    if page
+        .containers
+        .iter()
+        .any(|item| item.name == container_name)
+    {
         panic!("The specified container must not exists!");
     }
 
@@ -53,7 +57,7 @@ async fn main() -> azure_core::Result<()> {
         println!("\tAdded blob {}", i);
     }
 
-    let iv = container_client
+    let page = container_client
         .list_blobs()
         .max_results(NonZeroU32::new(3u32).unwrap())
         .into_stream()
@@ -61,8 +65,8 @@ async fn main() -> azure_core::Result<()> {
         .await
         .expect("stream failed")?;
 
-    println!("List blob returned {} blobs.", iv.blobs.blobs.len());
-    for cont in iv.blobs.blobs.iter() {
+    println!("List blob returned {} blobs.", page.blobs.blobs.len());
+    for cont in page.blobs.blobs.iter() {
         println!("\t{}\t{} bytes", cont.name, cont.properties.content_length);
     }
 
