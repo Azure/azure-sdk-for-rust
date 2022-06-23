@@ -30,7 +30,7 @@ impl GetDatabaseBuilder {
 
     pub fn into_future(self) -> GetDatabase {
         Box::pin(async move {
-            let mut request = self.client.prepare_pipeline(http::Method::GET);
+            let mut request = self.client.database_request(http::Method::GET);
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);
             }

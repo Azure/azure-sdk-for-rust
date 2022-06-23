@@ -36,10 +36,8 @@ impl CreateOrReplaceUserDefinedFunctionBuilder {
     pub fn into_future(self) -> CreateOrReplaceUserDefinedFunction {
         Box::pin(async move {
             let mut request = match self.is_create {
-                true => self.client.prepare_pipeline(http::Method::POST),
-                false => self
-                    .client
-                    .prepare_pipeline_with_user_defined_function_name(http::Method::PUT),
+                true => self.client.udfs_request(http::Method::POST),
+                false => self.client.udf_request(http::Method::PUT),
             };
 
             if let Some(cl) = &self.consistency_level {

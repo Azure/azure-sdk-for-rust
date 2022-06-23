@@ -84,11 +84,8 @@ impl DocumentClient {
         &self.partition_key_serialized
     }
 
-    pub(crate) fn prepare_request_pipeline_with_document_name(
-        &self,
-        method: http::Method,
-    ) -> Request {
-        self.cosmos_client().prepare_request_pipeline(
+    pub(crate) fn document_request(&self, method: http::Method) -> Request {
+        self.cosmos_client().request(
             &format!(
                 "dbs/{}/colls/{}/docs/{}",
                 self.database_client().database_name(),

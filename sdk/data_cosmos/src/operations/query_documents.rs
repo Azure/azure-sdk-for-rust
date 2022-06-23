@@ -78,7 +78,7 @@ impl QueryDocumentsBuilder {
             let this = self.clone();
             let ctx = self.context.clone();
             async move {
-                let mut request = this.client.cosmos_client().prepare_request_pipeline(
+                let mut request = this.client.cosmos_client().request(
                     &format!(
                         "dbs/{}/colls/{}/docs",
                         this.client.database_client().database_name(),

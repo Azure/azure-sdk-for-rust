@@ -68,8 +68,8 @@ impl UserDefinedFunctionClient {
         &self.user_defined_function_name
     }
 
-    pub(crate) fn prepare_pipeline(&self, method: http::Method) -> Request {
-        self.cosmos_client().prepare_request_pipeline(
+    pub(crate) fn udfs_request(&self, method: http::Method) -> Request {
+        self.cosmos_client().request(
             &format!(
                 "dbs/{}/colls/{}/udfs",
                 self.database_client().database_name(),
@@ -79,11 +79,8 @@ impl UserDefinedFunctionClient {
         )
     }
 
-    pub(crate) fn prepare_pipeline_with_user_defined_function_name(
-        &self,
-        method: http::Method,
-    ) -> Request {
-        self.cosmos_client().prepare_request_pipeline(
+    pub(crate) fn udf_request(&self, method: http::Method) -> Request {
+        self.cosmos_client().request(
             &format!(
                 "dbs/{}/colls/{}/udfs/{}",
                 self.database_client().database_name(),

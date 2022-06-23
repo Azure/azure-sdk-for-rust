@@ -47,10 +47,9 @@ impl CreateOrReplaceTriggerBuilder {
     pub fn into_future(self) -> CreateOrReplaceTrigger {
         Box::pin(async move {
             let mut request = if self.is_create {
-                self.client.prepare_pipeline(http::Method::POST)
+                self.client.triggers_request(http::Method::POST)
             } else {
-                self.client
-                    .prepare_pipeline_with_trigger_name(http::Method::PUT)
+                self.client.trigger_request(http::Method::PUT)
             };
 
             if let Some(cl) = &self.consistency_level {
