@@ -14,8 +14,8 @@ async fn main() -> azure_core::Result<()> {
 
     let storage_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key)
-            .as_storage_client();
-    let blob_service_client = storage_client.as_blob_service_client();
+            .storage_client();
+    let blob_service_client = storage_client.blob_service_client();
 
     let mut stream = blob_service_client.list_containers().into_stream();
 
@@ -24,7 +24,7 @@ async fn main() -> azure_core::Result<()> {
         for container in entry.containers {
             println!("container: {}", container.name);
 
-            let container_client = storage_client.as_container_client(container.name);
+            let container_client = storage_client.container_client(container.name);
 
             let mut blob_stream = container_client.list_blobs().into_stream();
             while let Some(blob_entry) = blob_stream.next().await {

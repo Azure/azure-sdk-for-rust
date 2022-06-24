@@ -9,7 +9,7 @@ pub trait AsPopReceiptClient {
     /// returned client is wrapped in an `Arc` to avoid
     /// unnecessary copying while keeping the clients
     /// type signature simple (without lifetimes).
-    fn as_pop_receipt_client(&self, pop_receipt: impl Into<PopReceipt>) -> Arc<PopReceiptClient>;
+    fn pop_receipt_client(&self, pop_receipt: impl Into<PopReceipt>) -> Arc<PopReceiptClient>;
 }
 
 impl AsPopReceiptClient for Arc<QueueClient> {
@@ -17,7 +17,7 @@ impl AsPopReceiptClient for Arc<QueueClient> {
     /// to obtain a `PopReceiptClient` back. The `PopReceiptClient`
     /// can then delete or update the message
     /// referenced by the passed `PopReceipt`.
-    fn as_pop_receipt_client(&self, pop_receipt: impl Into<PopReceipt>) -> Arc<PopReceiptClient> {
+    fn pop_receipt_client(&self, pop_receipt: impl Into<PopReceipt>) -> Arc<PopReceiptClient> {
         PopReceiptClient::new(self.clone(), pop_receipt)
     }
 }

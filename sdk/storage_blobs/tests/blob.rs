@@ -24,9 +24,9 @@ use uuid::Uuid;
 async fn create_and_delete_container() -> azure_core::Result<()> {
     let container_name = format!("create-{}", Uuid::new_v4().to_string());
 
-    let storage_client = initialize().as_storage_client();
-    let blob_service = storage_client.as_blob_service_client();
-    let container = storage_client.as_container_client(&container_name);
+    let storage_client = initialize().storage_client();
+    let blob_service = storage_client.blob_service_client();
+    let container = storage_client.container_client(&container_name);
 
     container
         .create()
@@ -95,7 +95,7 @@ async fn create_and_delete_container() -> azure_core::Result<()> {
         .await
         .unwrap();
     let lease_id = res.lease_id;
-    let lease = container.as_container_lease_client(res.lease_id);
+    let lease = container.container_lease_client(res.lease_id);
 
     let _res = lease.renew().into_future().await.unwrap();
 
@@ -114,9 +114,9 @@ async fn put_and_get_block_list() {
     let container_name = format!("sdkrust{}", u);
     let name = "asd - ()krustputblock.txt";
 
-    let storage = initialize().as_storage_client();
-    let container = storage.as_container_client(&container_name);
-    let blob = container.as_blob_client(name);
+    let storage = initialize().storage_client();
+    let container = storage.container_client(&container_name);
+    let blob = container.blob_client(name);
 
     container
         .create()
@@ -173,7 +173,7 @@ async fn put_and_get_block_list() {
     println!("Acquire lease == {:?}", res);
 
     let lease_id = res.lease_id;
-    let lease = blob.as_blob_lease_client(lease_id);
+    let lease = blob.blob_lease_client(lease_id);
 
     let res = lease.renew().into_future().await.unwrap();
     println!("Renew lease == {:?}", res);
@@ -204,8 +204,8 @@ async fn put_and_get_block_list() {
 
 #[tokio::test]
 async fn list_containers() {
-    let storage = initialize().as_storage_client();
-    let blob_service = storage.as_blob_service_client();
+    let storage = initialize().storage_client();
+    let blob_service = storage.blob_service_client();
     trace!("running list_containers");
 
     let mut stream = blob_service
@@ -225,10 +225,10 @@ async fn put_block_blob() {
     let container_name: &'static str = "rust-upload-test";
     let data = Bytes::from_static(b"abcdef");
 
-    let storage = initialize().as_storage_client();
-    let blob_service = storage.as_blob_service_client();
-    let container = storage.as_container_client(container_name);
-    let blob = container.as_blob_client(blob_name);
+    let storage = initialize().storage_client();
+    let blob_service = storage.blob_service_client();
+    let container = storage.container_client(container_name);
+    let blob = container.blob_client(blob_name);
 
     if blob_service
         .list_containers()
@@ -269,10 +269,10 @@ async fn copy_blob() -> azure_core::Result<()> {
     let container_name = format!("copy-blob-{}", Uuid::new_v4().to_string());
     let data = Bytes::from_static(b"abcdef");
 
-    let storage = initialize().as_storage_client();
-    let blob_service = storage.as_blob_service_client();
-    let container = storage.as_container_client(&container_name);
-    let blob = container.as_blob_client(blob_name);
+    let storage = initialize().storage_client();
+    let blob_service = storage.blob_service_client();
+    let container = storage.container_client(&container_name);
+    let blob = container.blob_client(blob_name);
 
     if blob_service
         .list_containers()
@@ -304,7 +304,7 @@ async fn copy_blob() -> azure_core::Result<()> {
 
     trace!("created {:?}", blob_name);
 
-    let cloned_blob = container.as_blob_client("cloned_blob");
+    let cloned_blob = container.blob_client("cloned_blob");
 
     let url = Url::parse(&format!(
         "https://{}.blob.core.windows.net/{}/{}",
@@ -333,10 +333,10 @@ async fn put_block_blob_and_get_properties() -> azure_core::Result<()> {
     let container_name = format!("properties-{}", Uuid::new_v4().to_string());
     let data = Bytes::from_static(b"abcdef");
 
-    let storage = initialize().as_storage_client();
-    let blob_service = storage.as_blob_service_client();
-    let container = storage.as_container_client(&container_name);
-    let blob = container.as_blob_client(blob_name);
+    let storage = initialize().storage_client();
+    let blob_service = storage.blob_service_client();
+    let container = storage.container_client(&container_name);
+    let blob = container.blob_client(blob_name);
 
     if blob_service
         .list_containers()
@@ -385,10 +385,10 @@ async fn set_blobtier() {
     let container_name: &'static str = "rust-set-blobtier-test";
     let data = Bytes::from_static(b"abcdef");
 
-    let storage = initialize().as_storage_client();
-    let blob_service = storage.as_blob_service_client();
-    let container = storage.as_container_client(container_name);
-    let blob = container.as_blob_client(blob_name);
+    let storage = initialize().storage_client();
+    let blob_service = storage.blob_service_client();
+    let container = storage.container_client(container_name);
+    let blob = container.blob_client(blob_name);
 
     if blob_service
         .list_containers()
@@ -486,9 +486,9 @@ async fn set_blobtier() {
 fn send_check() {
     let client = initialize();
     let blob = client
-        .as_storage_client()
-        .as_container_client("a")
-        .as_blob_client("b");
+        .storage_client()
+        .container_client("a")
+        .blob_client("b");
 
     let _ = requires_send_future(blob.acquire_lease(Duration::from_secs(10)).into_future());
     let _ = requires_send_future(

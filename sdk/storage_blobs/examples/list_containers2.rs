@@ -21,8 +21,8 @@ async fn main() -> azure_core::Result<()> {
 
     let storage_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key)
-            .as_storage_client();
-    let blob_service_client = storage_client.as_blob_service_client();
+            .storage_client();
+    let blob_service_client = storage_client.blob_service_client();
 
     let response = blob_service_client
         .list_containers()
@@ -33,7 +33,7 @@ async fn main() -> azure_core::Result<()> {
     println!("response = {:#?}", response);
 
     let response = storage_client
-        .as_container_client("$logs")
+        .container_client("$logs")
         .list_blobs()
         .into_stream()
         .next()

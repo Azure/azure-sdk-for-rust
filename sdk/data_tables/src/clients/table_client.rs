@@ -6,11 +6,11 @@ use http::method::Method;
 use std::sync::Arc;
 
 pub trait AsTableClient<S: Into<String>> {
-    fn as_table_client(&self, s: S) -> Arc<TableClient>;
+    fn table_client(&self, s: S) -> Arc<TableClient>;
 }
 
 impl<S: Into<String>> AsTableClient<S> for Arc<TableServiceClient> {
-    fn as_table_client(&self, s: S) -> Arc<TableClient> {
+    fn table_client(&self, s: S) -> Arc<TableClient> {
         TableClient::new(self.clone(), s)
     }
 }
@@ -95,16 +95,16 @@ mod integration_tests {
     }
 
     fn get_emulator_client() -> Arc<TableServiceClient> {
-        let storage_account = StorageAccountClient::new_emulator_default().as_storage_client();
+        let storage_account = StorageAccountClient::new_emulator_default().storage_client();
         storage_account
-            .as_table_service_client()
+            .table_service_client()
             .expect("a table service client")
     }
 
     #[tokio::test]
     async fn test_create_delete() {
         let table_client = get_emulator_client();
-        let table = table_client.as_table_client("TableClientCreateDelete");
+        let table = table_client.table_client("TableClientCreateDelete");
 
         assert_eq!(
             table.table_name(),
@@ -155,7 +155,7 @@ mod integration_tests {
     async fn test_insert() {
         let table_client = get_emulator_client();
 
-        let table = table_client.as_table_client("TableClientInsert");
+        let table = table_client.table_client("TableClientInsert");
         assert_eq!(
             table.table_name(),
             "TableClientInsert",

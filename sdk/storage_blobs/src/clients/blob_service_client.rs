@@ -6,18 +6,18 @@ use azure_storage::core::clients::{
 use std::sync::Arc;
 
 pub trait AsBlobServiceClient {
-    fn as_blob_service_client(&self) -> Arc<BlobServiceClient>;
+    fn blob_service_client(&self) -> Arc<BlobServiceClient>;
 }
 
 impl AsBlobServiceClient for Arc<StorageClient> {
-    fn as_blob_service_client(&self) -> Arc<BlobServiceClient> {
+    fn blob_service_client(&self) -> Arc<BlobServiceClient> {
         BlobServiceClient::new(self.clone())
     }
 }
 
 impl AsBlobServiceClient for Arc<StorageAccountClient> {
-    fn as_blob_service_client(&self) -> Arc<BlobServiceClient> {
-        self.as_storage_client().as_blob_service_client()
+    fn blob_service_client(&self) -> Arc<BlobServiceClient> {
+        self.storage_client().blob_service_client()
     }
 }
 

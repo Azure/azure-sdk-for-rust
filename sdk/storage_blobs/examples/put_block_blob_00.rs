@@ -27,8 +27,8 @@ async fn main() -> azure_core::Result<()> {
 
     let blob_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key)
-            .as_container_client(&container)
-            .as_blob_client(&blob_name);
+            .container_client(&container)
+            .blob_client(&blob_name);
 
     let data = Bytes::from_static(b"something");
 
@@ -88,7 +88,7 @@ async fn main() -> azure_core::Result<()> {
         .await?;
     println!("Acquire lease == {:?}", res);
 
-    let lease = blob_client.as_blob_lease_client(res.lease_id);
+    let lease = blob_client.blob_lease_client(res.lease_id);
 
     let res = lease.renew().into_future().await?;
     println!("Renew lease == {:?}", res);

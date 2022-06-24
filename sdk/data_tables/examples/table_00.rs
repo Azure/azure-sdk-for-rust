@@ -30,10 +30,10 @@ async fn main() -> azure_core::Result<()> {
         StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key);
 
     let table_service = storage_account_client
-        .as_storage_client()
-        .as_table_service_client()?;
+        .storage_client()
+        .table_service_client()?;
 
-    let table_client = table_service.as_table_client(table_name);
+    let table_client = table_service.table_client(table_name);
     let response = table_client.create().execute().await?;
     println!("response = {:?}\n", response);
 
@@ -43,7 +43,7 @@ async fn main() -> azure_core::Result<()> {
         surname: "Cogno".to_owned(),
     };
 
-    let partition_key_client = table_client.as_partition_key_client(&entity.city);
+    let partition_key_client = table_client.partition_key_client(&entity.city);
 
     let mut transaction = Transaction::default();
 
@@ -56,7 +56,7 @@ async fn main() -> azure_core::Result<()> {
     transaction.add(table_client.insert().to_transaction_operation(&entity)?);
 
     entity.surname = "Potter".to_owned();
-    let entity_client = partition_key_client.as_entity_client(&entity.surname)?;
+    let entity_client = partition_key_client.entity_client(&entity.surname)?;
     transaction.add(
         entity_client
             .insert_or_replace()
@@ -94,8 +94,8 @@ async fn main() -> azure_core::Result<()> {
     println!("response = {:?}\n", response);
 
     let entity_client = table_client
-        .as_partition_key_client(&entity.city)
-        .as_entity_client(&entity.surname)?;
+        .partition_key_client(&entity.city)
+        .entity_client(&entity.surname)?;
     // update the name passing the Etag received from the previous call.
     entity.name = "Ryan".to_owned();
     let response = entity_client

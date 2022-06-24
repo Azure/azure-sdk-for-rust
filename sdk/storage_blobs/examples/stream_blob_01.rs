@@ -26,8 +26,8 @@ async fn main() -> azure_core::Result<()> {
 
     let blob_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key)
-            .as_container_client(&container_name)
-            .as_blob_client(file_name);
+            .container_client(&container_name)
+            .blob_client(file_name);
 
     let mut stream = blob_client.get().into_stream();
     while let Some(res) = stream.next().await {

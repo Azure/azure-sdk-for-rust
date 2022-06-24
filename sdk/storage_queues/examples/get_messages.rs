@@ -22,7 +22,7 @@ async fn main() -> azure_core::Result<()> {
     let storage_account =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key);
 
-    let queue = storage_account.as_queue_client(queue_name);
+    let queue = storage_account.queue_client(queue_name);
 
     trace!("getting messages");
 
@@ -47,7 +47,7 @@ async fn main() -> azure_core::Result<()> {
     // Note that we have to specify how long the message will stay
     // "hidden" before being visible again in the queue.
     for message_to_update in get_messages_response.messages.into_iter() {
-        let pop_receipt = queue.as_pop_receipt_client(message_to_update);
+        let pop_receipt = queue.pop_receipt_client(message_to_update);
 
         let response = pop_receipt
             .update(Duration::from_secs(4))

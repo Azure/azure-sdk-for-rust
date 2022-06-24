@@ -34,8 +34,8 @@ async fn main() -> azure_core::Result<()> {
         &account,
         bearer_token.token.secret(),
     )
-    .as_container_client(&container)
-    .as_blob_client(&blob);
+    .container_client(&container)
+    .blob_client(&blob);
 
     trace!("Requesting blob");
 

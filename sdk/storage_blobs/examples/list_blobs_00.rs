@@ -18,9 +18,9 @@ async fn main() -> azure_core::Result<()> {
     let http_client = azure_core::new_http_client();
     let storage_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key)
-            .as_storage_client();
-    let blob_service = storage_client.as_blob_service_client();
-    let container_client = storage_client.as_container_client(&container_name);
+            .storage_client();
+    let blob_service = storage_client.blob_service_client();
+    let container_client = storage_client.container_client(&container_name);
 
     let page = blob_service
         .list_containers()
@@ -49,7 +49,7 @@ async fn main() -> azure_core::Result<()> {
     // create 10 blobs
     for i in 0..10u8 {
         container_client
-            .as_blob_client(format!("blob{}.txt", i))
+            .blob_client(format!("blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
             .into_future()

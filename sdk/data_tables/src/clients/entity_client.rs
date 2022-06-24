@@ -9,11 +9,11 @@ use std::sync::Arc;
 use url::Url;
 
 pub trait AsEntityClient<RK: Into<String>> {
-    fn as_entity_client(&self, row_key: RK) -> azure_core::Result<Arc<EntityClient>>;
+    fn entity_client(&self, row_key: RK) -> azure_core::Result<Arc<EntityClient>>;
 }
 
 impl<RK: Into<String>> AsEntityClient<RK> for Arc<PartitionKeyClient> {
-    fn as_entity_client(&self, row_key: RK) -> azure_core::Result<Arc<EntityClient>> {
+    fn entity_client(&self, row_key: RK) -> azure_core::Result<Arc<EntityClient>> {
         EntityClient::new(self.clone(), row_key)
     }
 }
@@ -137,9 +137,9 @@ mod integration_tests {
     }
 
     fn get_emulator_client() -> Arc<TableServiceClient> {
-        let storage_account = StorageAccountClient::new_emulator_default().as_storage_client();
+        let storage_account = StorageAccountClient::new_emulator_default().storage_client();
         storage_account
-            .as_table_service_client()
+            .table_service_client()
             .expect("a table service client")
     }
 
@@ -147,7 +147,7 @@ mod integration_tests {
     async fn test_update() {
         let table_client = get_emulator_client();
 
-        let table = table_client.as_table_client("EntityClientUpdate");
+        let table = table_client.table_client("EntityClientUpdate");
 
         println!("Delete the table (if it exists)");
         match table.delete().execute().await {
@@ -168,8 +168,8 @@ mod integration_tests {
         };
 
         let entity_client = table
-            .as_partition_key_client(&entity.city)
-            .as_entity_client(&entity.surname)
+            .partition_key_client(&entity.city)
+            .entity_client(&entity.surname)
             .expect("an entity client");
 
         entity_client
@@ -199,7 +199,7 @@ mod integration_tests {
     async fn test_merge() {
         let table_client = get_emulator_client();
 
-        let table = table_client.as_table_client("EntityClientMerge");
+        let table = table_client.table_client("EntityClientMerge");
 
         println!("Delete the table (if it exists)");
         match table.delete().execute().await {
@@ -226,8 +226,8 @@ mod integration_tests {
         };
 
         let entity_client = table
-            .as_partition_key_client(&entity.city)
-            .as_entity_client(&entity.surname)
+            .partition_key_client(&entity.city)
+            .entity_client(&entity.surname)
             .expect("an entity client");
 
         entity_client
@@ -257,7 +257,7 @@ mod integration_tests {
     async fn test_insert_or_replace() {
         let table_client = get_emulator_client();
 
-        let table = table_client.as_table_client("EntityClientInsertOrReplace");
+        let table = table_client.table_client("EntityClientInsertOrReplace");
 
         println!("Delete the table (if it exists)");
         match table.delete().execute().await {
@@ -278,8 +278,8 @@ mod integration_tests {
         };
 
         let entity_client = table
-            .as_partition_key_client(&entity.city)
-            .as_entity_client(&entity.surname)
+            .partition_key_client(&entity.city)
+            .entity_client(&entity.surname)
             .expect("an entity client");
         entity_client
             .insert_or_replace()
@@ -303,7 +303,7 @@ mod integration_tests {
     async fn test_insert_or_merge() {
         let table_client = get_emulator_client();
 
-        let table = table_client.as_table_client("EntityClientInsertOrMerge");
+        let table = table_client.table_client("EntityClientInsertOrMerge");
 
         println!("Delete the table (if it exists)");
         match table.delete().execute().await {
@@ -324,8 +324,8 @@ mod integration_tests {
         };
 
         let entity_client = table
-            .as_partition_key_client(&entity.city)
-            .as_entity_client(&entity.surname)
+            .partition_key_client(&entity.city)
+            .entity_client(&entity.surname)
             .expect("an entity client");
         entity_client
             .insert_or_merge()

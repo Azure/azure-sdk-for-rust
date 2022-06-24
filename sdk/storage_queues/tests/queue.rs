@@ -18,8 +18,8 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
     let storage_account_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key);
     let queue = storage_account_client
-        .as_storage_client()
-        .as_queue_client(queue_name);
+        .storage_client()
+        .queue_client(queue_name);
 
     println!("creating queue {}", queue_name);
 
@@ -100,7 +100,7 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
     println!("get_messages_response == {:#?}", get_messages_response);
 
     for message_to_update in get_messages_response.messages.into_iter() {
-        let pop_receipt = queue.as_pop_receipt_client(message_to_update);
+        let pop_receipt = queue.pop_receipt_client(message_to_update);
 
         let response = pop_receipt
             .update(Duration::from_secs(4))
@@ -122,7 +122,7 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
         println!("deleting message {:?}", message_to_delete);
 
         let delete_response = queue
-            .as_pop_receipt_client(message_to_delete)
+            .pop_receipt_client(message_to_delete)
             .delete()
             .execute()
             .await?;

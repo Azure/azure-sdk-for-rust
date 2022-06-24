@@ -9,11 +9,11 @@ use http::method::Method;
 use std::sync::Arc;
 
 pub trait AsStorageClient {
-    fn as_storage_client(&self) -> Arc<StorageClient>;
+    fn storage_client(&self) -> Arc<StorageClient>;
 }
 
 impl AsStorageClient for Arc<StorageAccountClient> {
-    fn as_storage_client(&self) -> Arc<StorageClient> {
+    fn storage_client(&self) -> Arc<StorageClient> {
         StorageClient::new(self.clone())
     }
 }

@@ -22,7 +22,7 @@ async fn main() -> azure_core::Result<()> {
     let storage_account =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key);
 
-    let queue = storage_account.as_queue_client(queue_name);
+    let queue = storage_account.queue_client(queue_name);
 
     trace!("getting messages");
 
@@ -42,7 +42,7 @@ async fn main() -> azure_core::Result<()> {
             println!("deleting message {:?}", message_to_delete);
 
             let delete_response = queue
-                .as_pop_receipt_client(message_to_delete)
+                .pop_receipt_client(message_to_delete)
                 .delete()
                 .execute()
                 .await?;

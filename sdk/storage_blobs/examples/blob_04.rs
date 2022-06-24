@@ -20,8 +20,8 @@ async fn main() -> azure_core::Result<()> {
     let http_client = azure_core::new_http_client();
     let blob_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key)
-            .as_container_client(&container_name)
-            .as_blob_client("test1");
+            .container_client(&container_name)
+            .blob_client("test1");
 
     // this example fills a 1 KB file with ASCII text and
     // sends it in chunks of 256 bytes (4 chunks).

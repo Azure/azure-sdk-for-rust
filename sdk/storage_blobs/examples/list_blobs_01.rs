@@ -18,9 +18,9 @@ async fn main() -> azure_core::Result<()> {
     let http_client = azure_core::new_http_client();
     let storage_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key)
-            .as_storage_client();
-    let blob_service_client = storage_client.as_blob_service_client();
-    let container_client = storage_client.as_container_client(&container_name);
+            .storage_client();
+    let blob_service_client = storage_client.blob_service_client();
+    let container_client = storage_client.container_client(&container_name);
 
     let page = blob_service_client
         .list_containers()
@@ -64,7 +64,7 @@ async fn main() -> azure_core::Result<()> {
     // create 4 root blobs
     for i in 0..4u8 {
         container_client
-            .as_blob_client(format!("blob_at_root{}.txt", i))
+            .blob_client(format!("blob_at_root{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
             .into_future()
@@ -74,7 +74,7 @@ async fn main() -> azure_core::Result<()> {
     // create 3 firstfolder/ blobs
     for i in 0..3u8 {
         container_client
-            .as_blob_client(format!("firstfolder/blob_at_1stfolder{}.txt", i))
+            .blob_client(format!("firstfolder/blob_at_1stfolder{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
             .into_future()
@@ -84,7 +84,7 @@ async fn main() -> azure_core::Result<()> {
     // create 3 secondroot/ blobs
     for i in 0..3u8 {
         container_client
-            .as_blob_client(format!("secondroot/blobsd{}.txt", i))
+            .blob_client(format!("secondroot/blobsd{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
             .into_future()
@@ -94,7 +94,7 @@ async fn main() -> azure_core::Result<()> {
     // create 2 firstfolder/secondfolder blobs
     for i in 0..2u8 {
         container_client
-            .as_blob_client(format!("firstfolder/secondfolder/blob{}.txt", i))
+            .blob_client(format!("firstfolder/secondfolder/blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
             .into_future()
@@ -104,7 +104,7 @@ async fn main() -> azure_core::Result<()> {
     // create 4 firstfolder/thirdfolder blobs
     for i in 0..4u8 {
         container_client
-            .as_blob_client(format!("firstfolder/thirdfolder/blob{}.txt", i))
+            .blob_client(format!("firstfolder/thirdfolder/blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
             .into_future()
@@ -114,7 +114,7 @@ async fn main() -> azure_core::Result<()> {
     // create 4 firstfolder/fourthfolder blobs
     for i in 0..5u8 {
         container_client
-            .as_blob_client(format!(
+            .blob_client(format!(
                 "firstfolder/thirdfolder/fourthfolder/blob{}.txt",
                 i
             ))

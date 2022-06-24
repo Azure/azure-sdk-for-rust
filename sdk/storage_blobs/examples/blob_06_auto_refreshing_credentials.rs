@@ -28,8 +28,8 @@ async fn main() -> azure_core::Result<()> {
     let http_client = azure_core::new_http_client();
     let blob_client =
         StorageAccountClient::new_token_credential(http_client.clone(), &account, auto_creds)
-            .as_container_client(&container)
-            .as_blob_client(&blob);
+            .container_client(&container)
+            .blob_client(&blob);
 
     trace!("Requesting blob");
     let content = blob_client.get_content().await?;
