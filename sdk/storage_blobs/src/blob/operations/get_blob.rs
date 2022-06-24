@@ -48,7 +48,7 @@ fn remaining_range(
     }
 
     // if the user didn't specify a range, assume the entire size
-    let base_range = base_range.unwrap_or(Range::new(0, std::u64::MAX));
+    let base_range = base_range.unwrap_or_else(|| Range::new(0, std::u64::MAX));
 
     // if the response said the end of the blob was downloaded, we're done
     if content_range.end() >= base_range.end {
@@ -169,9 +169,7 @@ impl GetBlobResponse {
 
 impl Continuable for GetBlobResponse {
     fn continuation(&self) -> Option<Continuation> {
-        self.remaining_range
-            .clone()
-            .map(|x| (x.start..x.end).into())
+        self.remaining_range.map(|x| (x.start..x.end).into())
     }
 }
 
