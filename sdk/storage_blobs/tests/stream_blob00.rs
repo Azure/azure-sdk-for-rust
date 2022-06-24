@@ -1,8 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_core::{
-    error::{ErrorKind, ResultExt},
-    prelude::*,
-};
+use azure_core::error::{ErrorKind, ResultExt};
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::StreamExt;
@@ -79,7 +76,6 @@ async fn code() -> azure_core::Result<()> {
     assert_eq!(result, string);
 
     assert!(stream.next().await.is_none(), "second chunk should be None");
-    //while let Some(_value) = stream.next().await {}
 
     blob.delete()
         .delete_snapshots_method(DeleteSnapshotsMethod::Include)
