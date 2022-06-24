@@ -68,6 +68,10 @@ impl BlobClient {
             .map_kind(ErrorKind::DataConversion)
     }
 
+    // stream blob downloads
+    //
+    // By default, blobs are downloaded in 1MB chunks to reduce the impact of
+    // intermittent network issues while downloading large blobs.
     pub fn get(&self) -> GetBlobBuilder {
         GetBlobBuilder::new(self.clone())
     }
@@ -75,7 +79,7 @@ impl BlobClient {
     // helper function that returns the entire blob stream
     pub async fn get_content(&self) -> azure_core::Result<Vec<u8>> {
         let mut blob = Vec::new();
-        // NOTE: this downloads the blob in 1MB chunks, which enables the
+        // NOTE: this uses the default chunk size of 1MB, which enables the
         // pipeline to handle intermitent connection failures with retry, rather
         // than restarting the whole blob on a failure.
         let mut stream = self.get().into_stream();

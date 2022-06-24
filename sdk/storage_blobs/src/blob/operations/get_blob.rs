@@ -10,6 +10,8 @@ use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use std::str::FromStr;
 
+// by default, limit each request to 1MB chunks, which reduces the impact of
+// intermittent network issues while downloading larger blobs.
 const DEFAULT_CHUNK_SIZE: u64 = 0x1000 * 0x1000;
 
 #[derive(Clone)]
@@ -21,52 +23,6 @@ pub struct GetBlobBuilder {
     lease_id: Option<LeaseId>,
     chunk_size: u64,
     context: Context,
-}
-
-fn initial_range(chunk_size: u64, request_range: Option<Range>) -> Range {
-    match request_range {
-        Some(range) => {
-            let len = std::cmp::min(range.len(), chunk_size);
-            Range::new(range.start, range.start + len)
-        }
-        None => Range::new(0, chunk_size),
-    }
-}
-
-fn remaining_range(
-    chunk_size: u64,
-    content_range: Option<ContentRange>,
-    base_range: Option<Range>,
-) -> Option<Range> {
-    // if there was no content range in the response, assume the entire blob was
-    // returned.
-    let content_range = content_range?;
-
-    // if the next byte is at or past the total length, then we're done.
-    if content_range.end() + 1 >= content_range.total_length() {
-        return None;
-    }
-
-    // if the user didn't specify a range, assume the entire size
-    let base_range = base_range.unwrap_or_else(|| Range::new(0, std::u64::MAX));
-
-    // if the response said the end of the blob was downloaded, we're done
-    if content_range.end() >= base_range.end {
-        return None;
-    }
-    // if the user specified range is smaller than the blob, truncate the
-    // requested range.  Note, we add + 1, as we don't need to re-fetch the last
-    // byte of the previous request.
-    let left = Range::new(
-        content_range.end() + 1,
-        std::cmp::min(base_range.end, content_range.total_length()),
-    );
-
-    if left.len() > chunk_size {
-        Some(Range::new(left.start, left.start + chunk_size))
-    } else {
-        Some(left)
-    }
 }
 
 impl GetBlobBuilder {
@@ -155,7 +111,7 @@ impl GetBlobResponse {
             None => None,
         };
 
-        let remaining_range = remaining_range(request.chunk_size, content_range, request.range);
+        let remaining_range = remaining_range(request.chunk_size, request.range, content_range);
 
         Ok(Self {
             request_id,
@@ -171,6 +127,62 @@ impl Continuable for GetBlobResponse {
     fn continuation(&self) -> Option<Continuation> {
         self.remaining_range.map(Continuation::from)
     }
+}
+
+// caclculate the first Range for use at the beginning of the Pageable.
+fn initial_range(chunk_size: u64, request_range: Option<Range>) -> Range {
+    match request_range {
+        Some(range) => {
+            let len = std::cmp::min(range.len(), chunk_size);
+            Range::new(range.start, range.start + len)
+        }
+        None => Range::new(0, chunk_size),
+    }
+}
+
+// After each request, calculate how much data is left to be read based on the
+// requested chunk size, requested range, and Content-Range header from the response.
+//
+// The Content-Range response is authoritative for the current size of the blob,
+// which we use that to determine the next chunk size.  If the Content-Range is
+// missing from the response, we assume the response had the entire blob.
+//
+// If the Content-Range indicates the response was at the end of the blob or
+// user's requested slice, we return None to indicate the response is complete.
+//
+// The remaining range is calculated from immediately after the response until
+// the end of the requested range or chunk size, which ever is smaller.
+fn remaining_range(
+    chunk_size: u64,
+    base_range: Option<Range>,
+    content_range: Option<ContentRange>,
+) -> Option<Range> {
+    // if there was no content range in the response, assume the entire blob was
+    // returned.
+    let content_range = content_range?;
+
+    // if the next byte is at or past the total length, then we're done.
+    if content_range.end() + 1 >= content_range.total_length() {
+        return None;
+    }
+
+    // if the user didn't specify a range, assume the entire size
+    let requested_range = base_range.unwrap_or_else(|| Range::new(0, content_range.total_length()));
+
+    // if the response said the end of the blob was downloaded, we're done
+    if content_range.end() >= requested_range.end {
+        return None;
+    }
+
+    // if the user specified range is smaller than the blob, truncate the
+    // requested range.  Note, we add + 1, as we don't need to re-fetch the last
+    // byte of the previous request.
+    let start = content_range.end() + 1;
+    let remaining_size = requested_range.end - start;
+
+    let size = std::cmp::min(remaining_size, chunk_size);
+
+    Some(Range::new(start, start + size))
 }
 
 #[cfg(test)]
@@ -202,22 +214,22 @@ mod tests {
 
         let result = remaining_range(
             3,
-            Some(ContentRange::new(0, 3, 10)),
             Some(Range::new(0, 10)),
+            Some(ContentRange::new(0, 3, 10)),
         );
         assert_eq!(result, Some(Range::new(4, 7)));
 
         let result = remaining_range(
             3,
-            Some(ContentRange::new(0, 10, 10)),
             Some(Range::new(0, 10)),
+            Some(ContentRange::new(0, 10, 10)),
         );
         assert!(result.is_none());
 
-        let result = remaining_range(3, Some(ContentRange::new(0, 10, 10)), None);
+        let result = remaining_range(3, None, Some(ContentRange::new(0, 10, 10)));
         assert!(result.is_none());
 
-        let result = remaining_range(3, Some(ContentRange::new(0, 10, 20)), None);
+        let result = remaining_range(3, None, Some(ContentRange::new(0, 10, 20)));
         assert_eq!(result, Some(Range::new(11, 14)));
 
         Ok(())
