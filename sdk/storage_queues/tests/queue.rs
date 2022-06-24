@@ -3,9 +3,9 @@ use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage_queues::prelude::*;
 use chrono::Utc;
+use futures::StreamExt;
 use std::time::Duration;
 use uuid::Uuid;
-use futures::StreamExt;
 
 #[tokio::test]
 async fn queue_create_put_and_get() -> azure_core::Result<()> {
