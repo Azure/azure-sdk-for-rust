@@ -29,7 +29,7 @@ async fn main() -> azure_core::Result<()> {
     let response = queue
         .peek_messages()
         .number_of_messages(2)
-        .execute()
+        .into_future()
         .await?;
 
     println!("response == {:#?}", response);

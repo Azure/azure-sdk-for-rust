@@ -37,7 +37,11 @@ async fn main() -> azure_core::Result<()> {
         .as_mut()
         .insert("created".into(), format!("{:?}", Utc::now()).into());
 
-    let response = queue.create().metadata(&metadata).execute().await?;
+    let response = queue
+        .create()
+        .metadata(metadata.clone())
+        .into_future()
+        .await?;
     println!("response == {:#?}", response);
 
     // let's add some more metadata
@@ -46,15 +50,15 @@ async fn main() -> azure_core::Result<()> {
 
     println!("metadata == {:#?}", metadata);
 
-    let response = queue.set_metadata().execute(&metadata).await?;
+    let response = queue.set_metadata(metadata).into_future().await?;
     println!("response == {:#?}", response);
 
     // let's get back the metadata
-    let response = queue.get_metadata().execute().await?;
+    let response = queue.get_metadata().into_future().await?;
     println!("response == {:#?}", response);
 
     // use two queue stored access policies
-    let queue_stored_acess_policies = vec![
+    let policies = vec![
         QueueStoredAccessPolicy::new(
             "first_sap_read_process",
             Utc::now() - Duration::hours(1),
@@ -70,22 +74,15 @@ async fn main() -> azure_core::Result<()> {
         .enable_all(),
     ];
 
-    let response = queue
-        .set_acl()
-        .execute(&queue_stored_acess_policies)
-        .await?;
+    let response = queue.set_acl(policies).into_future().await?;
     println!("response == {:#?}", response);
 
     // get the queue ACL
-    let response = queue.get_acl().execute().await?;
+    let response = queue.get_acl().into_future().await?;
     println!("response == {:#?}", response);
 
     // now let's delete it
-    let response = queue
-        .delete()
-        .client_request_id("myclientid")
-        .execute()
-        .await?;
+    let response = queue.delete().into_future().await?;
     println!("response == {:#?}", response);
 
     Ok(())

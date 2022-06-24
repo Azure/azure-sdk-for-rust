@@ -1,5 +1,5 @@
-use crate::prelude::*;
-use crate::requests::*;
+use crate::{operations::*, prelude::*};
+use azure_core::{Context, Request, Response};
 use azure_storage::core::clients::StorageClient;
 use std::sync::Arc;
 
@@ -39,6 +39,14 @@ impl PopReceiptClient {
         })
     }
 
+    pub(crate) async fn send(
+        &self,
+        context: &mut Context,
+        request: &mut Request,
+    ) -> azure_core::Result<Response> {
+        self.queue_client.send(context, request).await
+    }
+
     pub(crate) fn storage_client(&self) -> &StorageClient {
         self.queue_client.storage_client()
     }
@@ -56,16 +64,19 @@ impl PopReceiptClient {
         Ok(url)
     }
 
-    /// Deletes the message. The message must not have been
-    /// made visible again or this call would fail.
+    /// Deletes the message. The message must not have been made visible again
+    /// or this call would fail.
     pub fn delete(&self) -> DeleteMessageBuilder {
-        DeleteMessageBuilder::new(self)
+        DeleteMessageBuilder::new(self.clone())
     }
 
-    /// Updates the message.
-    /// The message must not have been
-    /// made visible again or this call would fail.
-    pub fn update(&self, visibility_timeout: impl Into<VisibilityTimeout>) -> UpdateMessageBuilder {
-        UpdateMessageBuilder::new(self, visibility_timeout)
+    /// Updates the message.  The message must not have been made visible again
+    /// or this call would fail.
+    pub fn update(
+        &self,
+        body: impl Into<String>,
+        visibility_timeout: impl Into<VisibilityTimeout>,
+    ) -> UpdateMessageBuilder {
+        UpdateMessageBuilder::new(self.clone(), body.into(), visibility_timeout.into())
     }
 }
