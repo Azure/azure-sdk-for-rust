@@ -126,6 +126,6 @@ impl ListContainersResponse {
 
 impl Continuable for ListContainersResponse {
     fn continuation(&self) -> Option<Continuation> {
-        self.next_marker.clone().map(|x| x.into())
+        self.next_marker.clone().map(Continuation::from)
     }
 }

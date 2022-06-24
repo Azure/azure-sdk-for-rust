@@ -169,7 +169,7 @@ impl GetBlobResponse {
 
 impl Continuable for GetBlobResponse {
     fn continuation(&self) -> Option<Continuation> {
-        self.remaining_range.map(|x| (x.start..x.end).into())
+        self.remaining_range.map(Continuation::from)
     }
 }
 

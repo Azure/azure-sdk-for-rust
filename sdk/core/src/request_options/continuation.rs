@@ -1,10 +1,10 @@
-use crate::{headers, request_options::NextMarker, Header};
-use std::ops::Range;
+use crate::{headers, request_options::NextMarker, request_options::Range, Header};
+use std::ops::Range as StdRange;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Continuation {
     String(String),
-    Range(Range<u64>),
+    Range(StdRange<u64>),
 }
 
 impl From<NextMarker> for Continuation {
@@ -25,9 +25,15 @@ impl From<String> for Continuation {
     }
 }
 
-impl From<Range<u64>> for Continuation {
-    fn from(value: Range<u64>) -> Self {
+impl From<StdRange<u64>> for Continuation {
+    fn from(value: StdRange<u64>) -> Self {
         Continuation::Range(value)
+    }
+}
+
+impl From<Range> for Continuation {
+    fn from(value: Range) -> Self {
+        Continuation::Range(value.start..value.end)
     }
 }
 

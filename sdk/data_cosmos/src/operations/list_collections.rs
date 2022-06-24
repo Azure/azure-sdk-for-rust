@@ -117,6 +117,6 @@ impl ListCollectionsResponse {
 
 impl Continuable for ListCollectionsResponse {
     fn continuation(&self) -> Option<Continuation> {
-        self.continuation_token.clone().map(|x| x.into())
+        self.continuation_token.clone().map(Continuation::from)
     }
 }

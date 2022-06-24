@@ -107,7 +107,7 @@ impl ListFileSystemsResponse {
 
 impl Continuable for ListFileSystemsResponse {
     fn continuation(&self) -> Option<Continuation> {
-        self.next_marker.clone().map(|m| m.into())
+        self.next_marker.clone().map(Continuation::from)
     }
 }
 
