@@ -316,8 +316,8 @@ pub struct EndpointHealthDataListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for EndpointHealthDataListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl EndpointHealthDataListResult {
@@ -362,7 +362,7 @@ pub struct ErrorDetails {
     pub details: Option<String>,
 }
 impl azure_core::Continuable for ErrorDetails {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -430,8 +430,8 @@ pub struct EventHubConsumerGroupsListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for EventHubConsumerGroupsListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl EventHubConsumerGroupsListResult {
@@ -812,8 +812,8 @@ pub struct IotHubDescriptionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for IotHubDescriptionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl IotHubDescriptionListResult {
@@ -1092,8 +1092,8 @@ pub struct IotHubQuotaMetricInfoListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for IotHubQuotaMetricInfoListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl IotHubQuotaMetricInfoListResult {
@@ -1132,8 +1132,8 @@ pub struct IotHubSkuDescriptionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for IotHubSkuDescriptionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl IotHubSkuDescriptionListResult {
@@ -1375,8 +1375,8 @@ pub struct JobResponseListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for JobResponseListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl JobResponseListResult {
@@ -1649,8 +1649,8 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationListResult {
@@ -2521,8 +2521,8 @@ pub struct SharedAccessSignatureAuthorizationRuleListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SharedAccessSignatureAuthorizationRuleListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SharedAccessSignatureAuthorizationRuleListResult {

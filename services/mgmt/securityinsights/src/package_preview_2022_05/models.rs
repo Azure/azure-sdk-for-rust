@@ -307,8 +307,8 @@ pub struct ActionsList {
     pub value: Vec<ActionResponse>,
 }
 impl azure_core::Continuable for ActionsList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ActionsList {
@@ -736,8 +736,8 @@ pub struct AlertRuleTemplatesList {
     pub value: Vec<AlertRuleTemplate>,
 }
 impl azure_core::Continuable for AlertRuleTemplatesList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AlertRuleTemplatesList {
@@ -763,8 +763,8 @@ pub struct AlertRulesList {
     pub value: Vec<AlertRule>,
 }
 impl azure_core::Continuable for AlertRulesList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AlertRulesList {
@@ -1797,8 +1797,8 @@ pub struct AutomationRulesList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AutomationRulesList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AutomationRulesList {
@@ -2058,8 +2058,8 @@ pub struct BookmarkList {
     pub value: Vec<Bookmark>,
 }
 impl azure_core::Continuable for BookmarkList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl BookmarkList {
@@ -2214,7 +2214,7 @@ pub struct CloudError {
     pub error: Option<CloudErrorBody>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -3182,8 +3182,8 @@ pub struct DataConnectorList {
     pub value: Vec<DataConnector>,
 }
 impl azure_core::Continuable for DataConnectorList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DataConnectorList {
@@ -4070,8 +4070,8 @@ pub struct EntityList {
     pub value: Vec<Entity>,
 }
 impl azure_core::Continuable for EntityList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl EntityList {
@@ -4316,8 +4316,8 @@ pub struct EntityQueryList {
     pub value: Vec<EntityQuery>,
 }
 impl azure_core::Continuable for EntityQueryList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl EntityQueryList {
@@ -4386,8 +4386,8 @@ pub struct EntityQueryTemplateList {
     pub value: Vec<EntityQueryTemplate>,
 }
 impl azure_core::Continuable for EntityQueryTemplateList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl EntityQueryTemplateList {
@@ -5384,8 +5384,8 @@ pub struct IncidentCommentList {
     pub value: Vec<IncidentComment>,
 }
 impl azure_core::Continuable for IncidentCommentList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl IncidentCommentList {
@@ -5551,8 +5551,8 @@ pub struct IncidentList {
     pub value: Vec<Incident>,
 }
 impl azure_core::Continuable for IncidentList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl IncidentList {
@@ -6475,8 +6475,8 @@ pub struct MetadataList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MetadataList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl MetadataList {
@@ -6972,8 +6972,8 @@ pub struct OfficeConsentList {
     pub value: Vec<OfficeConsent>,
 }
 impl azure_core::Continuable for OfficeConsentList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OfficeConsentList {
@@ -7239,8 +7239,8 @@ pub struct OperationsList {
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationsList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationsList {
@@ -7376,8 +7376,8 @@ pub struct RelationList {
     pub value: Vec<Relation>,
 }
 impl azure_core::Continuable for RelationList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RelationList {
@@ -7439,8 +7439,8 @@ pub struct RepoList {
     pub value: Vec<Repo>,
 }
 impl azure_core::Continuable for RepoList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RepoList {
@@ -8345,8 +8345,8 @@ pub struct SecurityMlAnalyticsSettingsList {
     pub value: Vec<SecurityMlAnalyticsSetting>,
 }
 impl azure_core::Continuable for SecurityMlAnalyticsSettingsList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SecurityMlAnalyticsSettingsList {
@@ -8486,8 +8486,8 @@ pub struct SourceControlList {
     pub value: Vec<SourceControl>,
 }
 impl azure_core::Continuable for SourceControlList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SourceControlList {
@@ -9001,8 +9001,8 @@ pub struct ThreatIntelligenceInformationList {
     pub value: Vec<ThreatIntelligenceInformation>,
 }
 impl azure_core::Continuable for ThreatIntelligenceInformationList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ThreatIntelligenceInformationList {
@@ -9577,8 +9577,8 @@ pub struct WatchlistItemList {
     pub value: Vec<WatchlistItem>,
 }
 impl azure_core::Continuable for WatchlistItemList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl WatchlistItemList {
@@ -9646,8 +9646,8 @@ pub struct WatchlistList {
     pub value: Vec<Watchlist>,
 }
 impl azure_core::Continuable for WatchlistList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl WatchlistList {

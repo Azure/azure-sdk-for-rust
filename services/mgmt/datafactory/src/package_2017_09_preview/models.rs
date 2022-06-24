@@ -104,8 +104,8 @@ pub struct ActivityRunsListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ActivityRunsListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ActivityRunsListResponse {
@@ -193,8 +193,8 @@ pub struct DatasetListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DatasetListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DatasetListResponse {
@@ -263,7 +263,7 @@ pub struct ErrorResponse {
     pub details: Vec<ErrorResponse>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -356,8 +356,8 @@ pub struct FactoryListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for FactoryListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl FactoryListResponse {
@@ -553,8 +553,8 @@ pub struct IntegrationRuntimeListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for IntegrationRuntimeListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl IntegrationRuntimeListResponse {
@@ -908,8 +908,8 @@ pub struct LinkedServiceListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for LinkedServiceListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl LinkedServiceListResponse {
@@ -1237,8 +1237,8 @@ pub struct PipelineListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PipelineListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PipelineListResponse {
@@ -1838,8 +1838,8 @@ pub struct TriggerListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for TriggerListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl TriggerListResponse {
@@ -1963,8 +1963,8 @@ pub struct TriggerRunListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for TriggerRunListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl TriggerRunListResponse {

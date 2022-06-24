@@ -173,8 +173,8 @@ pub struct JobDetailsList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for JobDetailsList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl JobDetailsList {
@@ -251,8 +251,8 @@ pub struct ProviderStatusList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ProviderStatusList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ProviderStatusList {
@@ -377,8 +377,8 @@ pub struct QuotaList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for QuotaList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl QuotaList {
@@ -469,7 +469,7 @@ pub struct RestError {
     pub error: Option<ErrorData>,
 }
 impl azure_core::Continuable for RestError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }

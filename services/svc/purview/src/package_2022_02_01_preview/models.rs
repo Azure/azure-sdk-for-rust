@@ -1055,8 +1055,8 @@ pub struct AzureKeyVaultList {
     pub count: Option<i64>,
 }
 impl azure_core::Continuable for AzureKeyVaultList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AzureKeyVaultList {
@@ -2287,8 +2287,8 @@ pub struct ClassificationRuleList {
     pub count: Option<i64>,
 }
 impl azure_core::Continuable for ClassificationRuleList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ClassificationRuleList {
@@ -2472,8 +2472,8 @@ pub struct CredentialList {
     pub count: Option<i64>,
 }
 impl azure_core::Continuable for CredentialList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CredentialList {
@@ -2938,8 +2938,8 @@ pub struct DataSourceList {
     pub count: Option<i64>,
 }
 impl azure_core::Continuable for DataSourceList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DataSourceList {
@@ -3027,7 +3027,7 @@ pub struct ErrorResponseModel {
     pub error: Option<serde_json::Value>,
 }
 impl azure_core::Continuable for ErrorResponseModel {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -4249,8 +4249,8 @@ pub struct ScanHistoryList {
     pub count: Option<i64>,
 }
 impl azure_core::Continuable for ScanHistoryList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ScanHistoryList {
@@ -4268,8 +4268,8 @@ pub struct ScanList {
     pub count: Option<i64>,
 }
 impl azure_core::Continuable for ScanList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ScanList {
@@ -4658,8 +4658,8 @@ pub struct ScanRulesetList {
     pub count: Option<i64>,
 }
 impl azure_core::Continuable for ScanRulesetList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ScanRulesetList {
@@ -5042,8 +5042,8 @@ pub struct SystemScanRulesetList {
     pub count: Option<i64>,
 }
 impl azure_core::Continuable for SystemScanRulesetList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SystemScanRulesetList {

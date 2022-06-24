@@ -78,8 +78,8 @@ pub struct AgentPoolListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AgentPoolListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AgentPoolListResult {
@@ -299,7 +299,7 @@ pub struct CloudError {
     pub error: Option<CloudErrorBody>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1514,8 +1514,8 @@ pub struct MaintenanceConfigurationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MaintenanceConfigurationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl MaintenanceConfigurationListResult {
@@ -1978,8 +1978,8 @@ pub struct ManagedClusterListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ManagedClusterListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ManagedClusterListResult {
@@ -2768,8 +2768,8 @@ pub struct ManagedClusterSnapshotListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ManagedClusterSnapshotListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ManagedClusterSnapshotListResult {
@@ -3375,7 +3375,7 @@ pub struct OperationListResult {
     pub value: Vec<OperationValue>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -3448,8 +3448,8 @@ pub struct OutboundEnvironmentEndpointCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OutboundEnvironmentEndpointCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OutboundEnvironmentEndpointCollection {
@@ -3937,8 +3937,8 @@ pub struct SnapshotListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SnapshotListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SnapshotListResult {
@@ -4240,8 +4240,8 @@ pub struct TrustedAccessRoleBindingListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for TrustedAccessRoleBindingListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl TrustedAccessRoleBindingListResult {
@@ -4325,8 +4325,8 @@ pub struct TrustedAccessRoleListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for TrustedAccessRoleListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl TrustedAccessRoleListResult {

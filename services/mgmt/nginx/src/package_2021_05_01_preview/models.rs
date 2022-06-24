@@ -108,8 +108,8 @@ pub struct NginxCertificateListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for NginxCertificateListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl NginxCertificateListResponse {
@@ -179,8 +179,8 @@ pub struct NginxConfigurationListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for NginxConfigurationListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl NginxConfigurationListResponse {
@@ -249,8 +249,8 @@ pub struct NginxDeploymentListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for NginxDeploymentListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl NginxDeploymentListResponse {
@@ -434,8 +434,8 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationListResult {
@@ -517,7 +517,7 @@ pub struct ResourceProviderDefaultErrorResponse {
     pub error: Option<ErrorResponseBody>,
 }
 impl azure_core::Continuable for ResourceProviderDefaultErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }

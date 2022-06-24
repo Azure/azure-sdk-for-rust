@@ -322,7 +322,7 @@ pub struct ErrorResponse {
     pub error: Option<error_response::Error>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -454,8 +454,8 @@ pub struct OfferListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OfferListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OfferListResponse {
@@ -654,8 +654,8 @@ pub struct PrivateStoreList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PrivateStoreList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PrivateStoreList {

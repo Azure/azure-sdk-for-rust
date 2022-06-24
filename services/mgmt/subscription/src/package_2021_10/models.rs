@@ -197,7 +197,7 @@ pub struct ErrorResponseBody {
     pub message: Option<String>,
 }
 impl azure_core::Continuable for ErrorResponseBody {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -217,8 +217,8 @@ pub struct GetTenantPolicyListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for GetTenantPolicyListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl GetTenantPolicyListResponse {
@@ -285,7 +285,7 @@ pub struct LocationListResult {
     pub value: Vec<Location>,
 }
 impl azure_core::Continuable for LocationListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -347,8 +347,8 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationListResult {
@@ -637,8 +637,8 @@ pub struct SubscriptionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SubscriptionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SubscriptionListResult {
@@ -712,11 +712,11 @@ pub struct TenantListResult {
     pub next_link: String,
 }
 impl azure_core::Continuable for TenantListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         if self.next_link.is_empty() {
             None
         } else {
-            Some(self.next_link.clone())
+            Some(azure_core::prelude::Continuation::from(self.next_link.clone()))
         }
     }
 }

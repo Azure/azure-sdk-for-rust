@@ -66,7 +66,7 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -167,8 +167,8 @@ pub struct SaasAppOperationsResponseWithContinuation {
     pub value: Vec<SaasAppOperation>,
 }
 impl azure_core::Continuable for SaasAppOperationsResponseWithContinuation {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SaasAppOperationsResponseWithContinuation {
@@ -266,8 +266,8 @@ pub struct SaasAppResponseWithContinuation {
     pub value: Vec<SaasApp>,
 }
 impl azure_core::Continuable for SaasAppResponseWithContinuation {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SaasAppResponseWithContinuation {
@@ -510,8 +510,8 @@ pub struct SaasResourceResponseWithContinuation {
     pub value: Vec<SaasResource>,
 }
 impl azure_core::Continuable for SaasResourceResponseWithContinuation {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SaasResourceResponseWithContinuation {

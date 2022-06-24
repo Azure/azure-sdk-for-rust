@@ -51,7 +51,7 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -282,8 +282,8 @@ pub struct ApplianceListResult {
     pub value: Vec<Appliance>,
 }
 impl azure_core::Continuable for ApplianceListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ApplianceListResult {
@@ -343,8 +343,8 @@ pub struct ApplianceOperationsList {
     pub value: Vec<ApplianceOperation>,
 }
 impl azure_core::Continuable for ApplianceOperationsList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ApplianceOperationsList {

@@ -12,7 +12,7 @@ pub struct CloudError {
     pub error: Option<CloudErrorBody>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -64,7 +64,7 @@ pub struct ConfigurationListResult {
     pub value: Vec<Configuration>,
 }
 impl azure_core::Continuable for ConfigurationListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -122,7 +122,7 @@ pub struct DatabaseListResult {
     pub value: Vec<Database>,
 }
 impl azure_core::Continuable for DatabaseListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -170,7 +170,7 @@ pub struct FirewallRuleListResult {
     pub value: Vec<FirewallRule>,
 }
 impl azure_core::Continuable for FirewallRuleListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -222,7 +222,7 @@ pub struct LogFileListResult {
     pub value: Vec<LogFile>,
 }
 impl azure_core::Continuable for LogFileListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -438,7 +438,7 @@ pub struct PerformanceTierListResult {
     pub value: Vec<PerformanceTierProperties>,
 }
 impl azure_core::Continuable for PerformanceTierListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -742,7 +742,7 @@ pub struct ServerListResult {
     pub value: Vec<Server>,
 }
 impl azure_core::Continuable for ServerListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1014,8 +1014,8 @@ pub struct ServerSecurityAlertPolicyListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ServerSecurityAlertPolicyListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ServerSecurityAlertPolicyListResult {
@@ -1330,8 +1330,8 @@ pub struct VirtualNetworkRuleListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VirtualNetworkRuleListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VirtualNetworkRuleListResult {

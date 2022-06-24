@@ -97,7 +97,7 @@ pub struct ApiError {
     pub error: ErrorDetail,
 }
 impl azure_core::Continuable for ApiError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -183,8 +183,8 @@ pub struct AvailableSkusResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AvailableSkusResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AvailableSkusResult {
@@ -2263,8 +2263,8 @@ pub struct JobResourceList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for JobResourceList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl JobResourceList {
@@ -2709,8 +2709,8 @@ pub struct OperationList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationList {
@@ -3614,7 +3614,7 @@ pub struct UnencryptedCredentialsList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for UnencryptedCredentialsList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }

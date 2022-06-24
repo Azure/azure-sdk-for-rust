@@ -12,7 +12,7 @@ pub struct CloudError {
     pub error: Option<CloudErrorBody>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -78,8 +78,8 @@ pub struct DnsForwardingRulesetListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DnsForwardingRulesetListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DnsForwardingRulesetListResult {
@@ -153,8 +153,8 @@ pub struct DnsResolverListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DnsResolverListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DnsResolverListResult {
@@ -271,8 +271,8 @@ pub struct ForwardingRuleListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ForwardingRuleListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ForwardingRuleListResult {
@@ -461,8 +461,8 @@ pub struct InboundEndpointListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for InboundEndpointListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl InboundEndpointListResult {
@@ -599,8 +599,8 @@ pub struct OutboundEndpointListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OutboundEndpointListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OutboundEndpointListResult {
@@ -736,8 +736,8 @@ pub struct SubResourceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SubResourceListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SubResourceListResult {
@@ -806,8 +806,8 @@ pub struct VirtualNetworkDnsForwardingRulesetListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VirtualNetworkDnsForwardingRulesetListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VirtualNetworkDnsForwardingRulesetListResult {
@@ -846,8 +846,8 @@ pub struct VirtualNetworkLinkListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VirtualNetworkLinkListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VirtualNetworkLinkListResult {

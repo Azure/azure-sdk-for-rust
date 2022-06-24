@@ -102,7 +102,7 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDefinition>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -212,8 +212,8 @@ pub struct MarketplaceRegistrationDefinitionList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MarketplaceRegistrationDefinitionList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl MarketplaceRegistrationDefinitionList {
@@ -359,8 +359,8 @@ pub struct RegistrationAssignmentList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RegistrationAssignmentList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RegistrationAssignmentList {
@@ -608,8 +608,8 @@ pub struct RegistrationDefinitionList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RegistrationDefinitionList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RegistrationDefinitionList {

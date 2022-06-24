@@ -108,8 +108,8 @@ pub struct CapabilitiesListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CapabilitiesListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CapabilitiesListResult {
@@ -153,7 +153,7 @@ pub struct CloudError {
     pub error: Option<ErrorResponse>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -190,8 +190,8 @@ pub struct ConfigurationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ConfigurationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ConfigurationListResult {
@@ -373,8 +373,8 @@ pub struct FirewallRuleListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for FirewallRuleListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl FirewallRuleListResult {
@@ -759,8 +759,8 @@ pub struct MigrationResourceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MigrationResourceListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl MigrationResourceListResult {
@@ -1376,8 +1376,8 @@ pub struct ServerListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ServerListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ServerListResult {
@@ -1721,7 +1721,7 @@ pub struct ServiceError {
     pub error: Option<ErrorResponse>,
 }
 impl azure_core::Continuable for ServiceError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }

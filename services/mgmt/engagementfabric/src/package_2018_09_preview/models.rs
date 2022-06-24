@@ -23,7 +23,7 @@ pub struct AccountList {
     pub value: Vec<Account>,
 }
 impl azure_core::Continuable for AccountList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -66,7 +66,7 @@ pub struct ChannelList {
     pub value: Vec<Channel>,
 }
 impl azure_core::Continuable for ChannelList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -204,7 +204,7 @@ pub struct CloudError {
     pub error: Option<CloudErrorBody>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -260,7 +260,7 @@ pub struct KeyDescriptionList {
     pub value: Vec<KeyDescription>,
 }
 impl azure_core::Continuable for KeyDescriptionList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -350,7 +350,7 @@ pub struct OperationList {
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -450,7 +450,7 @@ pub struct SkuDescriptionList {
     pub value: Vec<SkuDescription>,
 }
 impl azure_core::Continuable for SkuDescriptionList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }

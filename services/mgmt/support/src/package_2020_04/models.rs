@@ -192,8 +192,8 @@ pub struct CommunicationsListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CommunicationsListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CommunicationsListResult {
@@ -304,7 +304,7 @@ pub struct ExceptionResponse {
     pub error: Option<ServiceError>,
 }
 impl azure_core::Continuable for ExceptionResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -360,7 +360,7 @@ pub struct OperationsListResult {
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationsListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -410,7 +410,7 @@ pub struct ProblemClassificationsListResult {
     pub value: Vec<ProblemClassification>,
 }
 impl azure_core::Continuable for ProblemClassificationsListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -553,7 +553,7 @@ pub struct ServicesListResult {
     pub value: Vec<Service>,
 }
 impl azure_core::Continuable for ServicesListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -748,8 +748,8 @@ pub struct SupportTicketsListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SupportTicketsListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SupportTicketsListResult {

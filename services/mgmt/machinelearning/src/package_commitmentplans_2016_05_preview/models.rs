@@ -69,8 +69,8 @@ pub struct CommitmentAssociationListResult {
     pub value: Vec<CommitmentAssociation>,
 }
 impl azure_core::Continuable for CommitmentAssociationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CommitmentAssociationListResult {
@@ -132,8 +132,8 @@ pub struct CommitmentPlanListResult {
     pub value: Vec<CommitmentPlan>,
 }
 impl azure_core::Continuable for CommitmentPlanListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CommitmentPlanListResult {
@@ -251,7 +251,7 @@ pub struct OperationEntityListResult {
     pub value: Vec<OperationEntity>,
 }
 impl azure_core::Continuable for OperationEntityListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -322,8 +322,8 @@ pub struct PlanUsageHistoryListResult {
     pub value: Vec<PlanUsageHistory>,
 }
 impl azure_core::Continuable for PlanUsageHistoryListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PlanUsageHistoryListResult {
@@ -481,7 +481,7 @@ pub struct SkuListResult {
     pub value: Vec<CatalogSku>,
 }
 impl azure_core::Continuable for SkuListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }

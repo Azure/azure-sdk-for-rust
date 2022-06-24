@@ -340,8 +340,8 @@ pub struct AvailabilitySetListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AvailabilitySetListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AvailabilitySetListResult {
@@ -623,8 +623,8 @@ pub struct CapacityReservationGroupListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CapacityReservationGroupListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CapacityReservationGroupListResult {
@@ -702,8 +702,8 @@ pub struct CapacityReservationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CapacityReservationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CapacityReservationListResult {
@@ -786,7 +786,7 @@ pub struct CloudError {
     pub error: Option<ApiError>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -905,8 +905,8 @@ pub struct CloudServiceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CloudServiceListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CloudServiceListResult {
@@ -1019,8 +1019,8 @@ pub struct CloudServiceRoleListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CloudServiceRoleListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CloudServiceRoleListResult {
@@ -1220,8 +1220,8 @@ pub struct CommunityGalleryImageList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CommunityGalleryImageList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CommunityGalleryImageList {
@@ -1366,8 +1366,8 @@ pub struct CommunityGalleryImageVersionList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CommunityGalleryImageVersionList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CommunityGalleryImageVersionList {
@@ -1431,7 +1431,7 @@ pub struct ComputeOperationListResult {
     pub value: Vec<ComputeOperationValue>,
 }
 impl azure_core::Continuable for ComputeOperationListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1896,8 +1896,8 @@ pub struct DedicatedHostGroupListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DedicatedHostGroupListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DedicatedHostGroupListResult {
@@ -2017,8 +2017,8 @@ pub struct DedicatedHostListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DedicatedHostListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DedicatedHostListResult {
@@ -2378,8 +2378,8 @@ pub struct DiskAccessList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DiskAccessList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DiskAccessList {
@@ -2446,8 +2446,8 @@ pub struct DiskEncryptionSetList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DiskEncryptionSetList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DiskEncryptionSetList {
@@ -2608,8 +2608,8 @@ pub struct DiskList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DiskList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DiskList {
@@ -2828,8 +2828,8 @@ pub struct DiskRestorePointList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DiskRestorePointList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DiskRestorePointList {
@@ -3557,8 +3557,8 @@ pub struct GalleryApplicationList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for GalleryApplicationList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl GalleryApplicationList {
@@ -3650,8 +3650,8 @@ pub struct GalleryApplicationVersionList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for GalleryApplicationVersionList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl GalleryApplicationVersionList {
@@ -4032,8 +4032,8 @@ pub struct GalleryImageList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for GalleryImageList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl GalleryImageList {
@@ -4207,8 +4207,8 @@ pub struct GalleryImageVersionList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for GalleryImageVersionList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl GalleryImageVersionList {
@@ -4295,8 +4295,8 @@ pub struct GalleryList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for GalleryList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl GalleryList {
@@ -5222,8 +5222,8 @@ pub struct ImageListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ImageListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ImageListResult {
@@ -5810,8 +5810,8 @@ pub struct ListUsagesResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ListUsagesResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ListUsagesResult {
@@ -6375,8 +6375,8 @@ pub struct OsFamilyListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OsFamilyListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OsFamilyListResult {
@@ -6469,8 +6469,8 @@ pub struct OsVersionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OsVersionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OsVersionListResult {
@@ -7035,8 +7035,8 @@ pub struct PrivateEndpointConnectionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PrivateEndpointConnectionListResult {
@@ -7258,8 +7258,8 @@ pub struct ProximityPlacementGroupListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ProximityPlacementGroupListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ProximityPlacementGroupListResult {
@@ -8065,8 +8065,8 @@ pub struct ResourceSkusResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResourceSkusResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResourceSkusResult {
@@ -8084,8 +8084,8 @@ pub struct ResourceUriList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResourceUriList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResourceUriList {
@@ -8159,8 +8159,8 @@ pub struct RestorePointCollectionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RestorePointCollectionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RestorePointCollectionListResult {
@@ -8519,8 +8519,8 @@ pub struct RoleInstanceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RoleInstanceListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RoleInstanceListResult {
@@ -8809,8 +8809,8 @@ pub struct RunCommandListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RunCommandListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RunCommandListResult {
@@ -9069,8 +9069,8 @@ pub struct SharedGalleryImageList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SharedGalleryImageList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SharedGalleryImageList {
@@ -9207,8 +9207,8 @@ pub struct SharedGalleryImageVersionList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SharedGalleryImageVersionList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SharedGalleryImageVersionList {
@@ -9262,8 +9262,8 @@ pub struct SharedGalleryList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SharedGalleryList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SharedGalleryList {
@@ -9573,8 +9573,8 @@ pub struct SnapshotList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SnapshotList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SnapshotList {
@@ -9992,8 +9992,8 @@ pub struct SshPublicKeysGroupListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SshPublicKeysGroupListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SshPublicKeysGroupListResult {
@@ -10310,8 +10310,8 @@ pub struct UpdateDomainListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for UpdateDomainListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl UpdateDomainListResult {
@@ -11581,8 +11581,8 @@ pub struct VirtualMachineListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VirtualMachineListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VirtualMachineListResult {
@@ -12254,8 +12254,8 @@ pub struct VirtualMachineRunCommandsListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VirtualMachineRunCommandsListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VirtualMachineRunCommandsListResult {
@@ -12379,8 +12379,8 @@ pub struct VirtualMachineScaleSetExtensionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VirtualMachineScaleSetExtensionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VirtualMachineScaleSetExtensionListResult {
@@ -12664,8 +12664,8 @@ pub struct VirtualMachineScaleSetListOsUpgradeHistory {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VirtualMachineScaleSetListOsUpgradeHistory {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VirtualMachineScaleSetListOsUpgradeHistory {
@@ -12683,8 +12683,8 @@ pub struct VirtualMachineScaleSetListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VirtualMachineScaleSetListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VirtualMachineScaleSetListResult {
@@ -12702,8 +12702,8 @@ pub struct VirtualMachineScaleSetListSkusResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VirtualMachineScaleSetListSkusResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VirtualMachineScaleSetListSkusResult {
@@ -12721,8 +12721,8 @@ pub struct VirtualMachineScaleSetListWithLinkResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VirtualMachineScaleSetListWithLinkResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VirtualMachineScaleSetListWithLinkResult {
@@ -13959,8 +13959,8 @@ pub struct VirtualMachineScaleSetVmListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VirtualMachineScaleSetVmListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VirtualMachineScaleSetVmListResult {
@@ -14153,7 +14153,7 @@ pub struct VirtualMachineSizeListResult {
     pub value: Vec<VirtualMachineSize>,
 }
 impl azure_core::Continuable for VirtualMachineSizeListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }

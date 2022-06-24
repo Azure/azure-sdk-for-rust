@@ -83,11 +83,11 @@ pub struct AppServiceListResponse {
     pub next_link: String,
 }
 impl azure_core::Continuable for AppServiceListResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         if self.next_link.is_empty() {
             None
         } else {
-            Some(self.next_link.clone())
+            Some(azure_core::prelude::Continuation::from(self.next_link.clone()))
         }
     }
 }
@@ -267,11 +267,11 @@ pub struct DynatraceSingleSignOnResourceListResult {
     pub next_link: String,
 }
 impl azure_core::Continuable for DynatraceSingleSignOnResourceListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         if self.next_link.is_empty() {
             None
         } else {
-            Some(self.next_link.clone())
+            Some(azure_core::prelude::Continuation::from(self.next_link.clone()))
         }
     }
 }
@@ -348,7 +348,7 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -449,8 +449,8 @@ pub struct LinkableEnvironmentListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for LinkableEnvironmentListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl LinkableEnvironmentListResponse {
@@ -710,11 +710,11 @@ pub struct MonitorResourceListResult {
     pub next_link: String,
 }
 impl azure_core::Continuable for MonitorResourceListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         if self.next_link.is_empty() {
             None
         } else {
-            Some(self.next_link.clone())
+            Some(azure_core::prelude::Continuation::from(self.next_link.clone()))
         }
     }
 }
@@ -784,11 +784,11 @@ pub struct MonitoredResourceListResponse {
     pub next_link: String,
 }
 impl azure_core::Continuable for MonitoredResourceListResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         if self.next_link.is_empty() {
             None
         } else {
-            Some(self.next_link.clone())
+            Some(azure_core::prelude::Continuation::from(self.next_link.clone()))
         }
     }
 }
@@ -1027,8 +1027,8 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationListResult {
@@ -1504,11 +1504,11 @@ pub struct TagRuleListResult {
     pub next_link: String,
 }
 impl azure_core::Continuable for TagRuleListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         if self.next_link.is_empty() {
             None
         } else {
-            Some(self.next_link.clone())
+            Some(azure_core::prelude::Continuation::from(self.next_link.clone()))
         }
     }
 }
@@ -1676,11 +1676,11 @@ pub struct VmHostsListResponse {
     pub next_link: String,
 }
 impl azure_core::Continuable for VmHostsListResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         if self.next_link.is_empty() {
             None
         } else {
-            Some(self.next_link.clone())
+            Some(azure_core::prelude::Continuation::from(self.next_link.clone()))
         }
     }
 }

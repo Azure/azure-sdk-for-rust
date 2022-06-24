@@ -1905,8 +1905,8 @@ pub struct ListAmlUserFeatureResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ListAmlUserFeatureResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ListAmlUserFeatureResult {
@@ -1925,8 +1925,8 @@ pub struct ListUsagesResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ListUsagesResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ListUsagesResult {
@@ -1961,8 +1961,8 @@ pub struct ListWorkspaceQuotas {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ListWorkspaceQuotas {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ListWorkspaceQuotas {
@@ -2002,7 +2002,7 @@ pub struct MachineLearningServiceError {
     pub error: Option<ErrorResponse>,
 }
 impl azure_core::Continuable for MachineLearningServiceError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -2326,7 +2326,7 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -2346,8 +2346,8 @@ pub struct PaginatedComputeResourcesList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PaginatedComputeResourcesList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PaginatedComputeResourcesList {
@@ -2366,8 +2366,8 @@ pub struct PaginatedServiceList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PaginatedServiceList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PaginatedServiceList {
@@ -3268,8 +3268,8 @@ pub struct SkuListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SkuListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SkuListResult {
@@ -3773,8 +3773,8 @@ pub struct WorkspaceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkspaceListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl WorkspaceListResult {

@@ -72,8 +72,8 @@ pub struct DataLakeStoreAccountListResult {
     pub count: Option<i64>,
 }
 impl azure_core::Continuable for DataLakeStoreAccountListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DataLakeStoreAccountListResult {
@@ -166,8 +166,8 @@ pub struct DataLakeStoreFirewallRuleListResult {
     pub count: Option<i64>,
 }
 impl azure_core::Continuable for DataLakeStoreFirewallRuleListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DataLakeStoreFirewallRuleListResult {

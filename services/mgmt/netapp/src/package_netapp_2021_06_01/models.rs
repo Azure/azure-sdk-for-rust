@@ -216,7 +216,7 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -456,7 +456,7 @@ pub struct SubscriptionQuotaItemList {
     pub value: Vec<SubscriptionQuotaItem>,
 }
 impl azure_core::Continuable for SubscriptionQuotaItemList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -688,7 +688,7 @@ pub struct BackupPoliciesList {
     pub value: Vec<BackupPolicy>,
 }
 impl azure_core::Continuable for BackupPoliciesList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1019,7 +1019,7 @@ pub struct BackupsList {
     pub value: Vec<Backup>,
 }
 impl azure_core::Continuable for BackupsList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1087,8 +1087,8 @@ pub struct CapacityPoolList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CapacityPoolList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CapacityPoolList {
@@ -1422,8 +1422,8 @@ pub struct NetAppAccountList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for NetAppAccountList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl NetAppAccountList {
@@ -2103,7 +2103,7 @@ pub struct SnapshotPoliciesList {
     pub value: Vec<SnapshotPolicy>,
 }
 impl azure_core::Continuable for SnapshotPoliciesList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -2267,7 +2267,7 @@ pub struct SnapshotsList {
     pub value: Vec<Snapshot>,
 }
 impl azure_core::Continuable for SnapshotsList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -2424,7 +2424,7 @@ pub struct VaultList {
     pub value: Vec<Vault>,
 }
 impl azure_core::Continuable for VaultList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -2531,8 +2531,8 @@ pub struct VolumeList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VolumeList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VolumeList {

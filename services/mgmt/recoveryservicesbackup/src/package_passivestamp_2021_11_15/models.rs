@@ -1912,7 +1912,7 @@ pub struct BackupManagementUsageList {
     pub value: Vec<BackupManagementUsage>,
 }
 impl azure_core::Continuable for BackupManagementUsageList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -3293,7 +3293,7 @@ pub struct JobResourceList {
     pub value: Vec<JobResource>,
 }
 impl azure_core::Continuable for JobResourceList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -3722,7 +3722,7 @@ pub struct NewErrorResponse {
     pub error: Option<new_error_response::Error>,
 }
 impl azure_core::Continuable for NewErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -4414,7 +4414,7 @@ pub struct ProtectedItemResourceList {
     pub value: Vec<ProtectedItemResource>,
 }
 impl azure_core::Continuable for ProtectedItemResourceList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -4492,7 +4492,7 @@ pub struct RecoveryPointResourceList {
     pub value: Vec<RecoveryPointResource>,
 }
 impl azure_core::Continuable for RecoveryPointResourceList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }

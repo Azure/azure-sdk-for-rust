@@ -675,8 +675,8 @@ pub struct ClusterJobListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ClusterJobListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ClusterJobListResult {
@@ -695,8 +695,8 @@ pub struct ClusterListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ClusterListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ClusterListResult {
@@ -1062,7 +1062,7 @@ pub struct Error {
     pub error: Option<error::Error>,
 }
 impl azure_core::Continuable for Error {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1387,8 +1387,8 @@ pub struct FunctionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for FunctionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl FunctionListResult {
@@ -1484,8 +1484,8 @@ pub struct InputListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for InputListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl InputListResult {
@@ -1836,8 +1836,8 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationListResult {
@@ -1919,8 +1919,8 @@ pub struct OutputListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OutputListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OutputListResult {
@@ -2090,8 +2090,8 @@ pub struct PrivateEndpointListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PrivateEndpointListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PrivateEndpointListResult {
@@ -2544,8 +2544,8 @@ pub struct StreamingJobListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for StreamingJobListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl StreamingJobListResult {

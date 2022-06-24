@@ -209,7 +209,7 @@ pub struct ErrorResponse {
     pub message: Option<String>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -303,8 +303,8 @@ pub struct NamespaceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for NamespaceListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl NamespaceListResult {
@@ -428,8 +428,8 @@ pub struct NotificationHubListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for NotificationHubListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl NotificationHubListResult {
@@ -548,8 +548,8 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationListResult {
@@ -682,8 +682,8 @@ pub struct SharedAccessAuthorizationRuleListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SharedAccessAuthorizationRuleListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SharedAccessAuthorizationRuleListResult {

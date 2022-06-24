@@ -84,7 +84,7 @@ pub struct ActionGroupList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ActionGroupList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -230,7 +230,7 @@ pub struct ActivityLogAlertList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ActivityLogAlertList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -354,7 +354,7 @@ pub struct AlertRuleResourceCollection {
     pub value: Vec<AlertRuleResource>,
 }
 impl azure_core::Continuable for AlertRuleResourceCollection {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -624,8 +624,8 @@ pub struct AutoscaleSettingResourceCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AutoscaleSettingResourceCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AutoscaleSettingResourceCollection {
@@ -735,8 +735,8 @@ pub struct AzureMonitorPrivateLinkScopeListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AzureMonitorPrivateLinkScopeListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AzureMonitorPrivateLinkScopeListResult {
@@ -1277,7 +1277,7 @@ pub struct ErrorContract {
     pub error: Option<ErrorResponse>,
 }
 impl azure_core::Continuable for ErrorContract {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1297,7 +1297,7 @@ pub struct ErrorResponse {
     pub message: Option<String>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1330,7 +1330,7 @@ pub struct EventCategoryCollection {
     pub value: Vec<LocalizableString>,
 }
 impl azure_core::Continuable for EventCategoryCollection {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1442,8 +1442,8 @@ pub struct EventDataCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for EventDataCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl EventDataCollection {
@@ -1504,7 +1504,7 @@ pub struct IncidentListResult {
     pub value: Vec<Incident>,
 }
 impl azure_core::Continuable for IncidentListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1607,7 +1607,7 @@ pub struct LogProfileCollection {
     pub value: Vec<LogProfileResource>,
 }
 impl azure_core::Continuable for LogProfileCollection {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1882,7 +1882,7 @@ pub struct LogSearchRuleResourceCollection {
     pub value: Vec<LogSearchRuleResource>,
 }
 impl azure_core::Continuable for LogSearchRuleResourceCollection {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -2282,7 +2282,7 @@ pub struct MetricAlertResourceCollection {
     pub value: Vec<MetricAlertResource>,
 }
 impl azure_core::Continuable for MetricAlertResourceCollection {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -2420,7 +2420,7 @@ pub struct MetricBaselinesResponse {
     pub value: Vec<SingleMetricBaseline>,
 }
 impl azure_core::Continuable for MetricBaselinesResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -2592,7 +2592,7 @@ pub struct MetricDefinitionCollection {
     pub value: Vec<MetricDefinition>,
 }
 impl azure_core::Continuable for MetricDefinitionCollection {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -2647,7 +2647,7 @@ pub struct MetricNamespaceCollection {
     pub value: Vec<MetricNamespace>,
 }
 impl azure_core::Continuable for MetricNamespaceCollection {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -3145,8 +3145,8 @@ pub struct PrivateEndpointConnectionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PrivateEndpointConnectionListResult {
@@ -3209,8 +3209,8 @@ pub struct PrivateLinkResourceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PrivateLinkResourceListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PrivateLinkResourceListResult {
@@ -3856,8 +3856,8 @@ pub struct ScopedResourceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ScopedResourceListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ScopedResourceListResult {

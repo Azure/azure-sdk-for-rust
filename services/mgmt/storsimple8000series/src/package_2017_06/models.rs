@@ -27,7 +27,7 @@ pub struct AccessControlRecordList {
     pub value: Vec<AccessControlRecord>,
 }
 impl azure_core::Continuable for AccessControlRecordList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -164,8 +164,8 @@ pub struct AlertList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AlertList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AlertList {
@@ -434,8 +434,8 @@ pub struct AvailableProviderOperationList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AvailableProviderOperationList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AvailableProviderOperationList {
@@ -550,8 +550,8 @@ pub struct BackupList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for BackupList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl BackupList {
@@ -582,7 +582,7 @@ pub struct BackupPolicyList {
     pub value: Vec<BackupPolicy>,
 }
 impl azure_core::Continuable for BackupPolicyList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -722,7 +722,7 @@ pub struct BackupScheduleList {
     pub value: Vec<BackupSchedule>,
 }
 impl azure_core::Continuable for BackupScheduleList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -849,7 +849,7 @@ pub struct BandwidthSettingList {
     pub value: Vec<BandwidthSetting>,
 }
 impl azure_core::Continuable for BandwidthSettingList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1032,7 +1032,7 @@ pub struct CloudApplianceConfigurationList {
     pub value: Vec<CloudApplianceConfiguration>,
 }
 impl azure_core::Continuable for CloudApplianceConfigurationList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1312,7 +1312,7 @@ pub struct DeviceList {
     pub value: Vec<Device>,
 }
 impl azure_core::Continuable for DeviceList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1679,7 +1679,7 @@ pub struct FailoverSetsList {
     pub value: Vec<FailoverSet>,
 }
 impl azure_core::Continuable for FailoverSetsList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1756,7 +1756,7 @@ pub struct FailoverTargetsList {
     pub value: Vec<FailoverTarget>,
 }
 impl azure_core::Continuable for FailoverTargetsList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1807,7 +1807,7 @@ pub struct FeatureList {
     pub value: Vec<Feature>,
 }
 impl azure_core::Continuable for FeatureList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1878,7 +1878,7 @@ pub struct HardwareComponentGroupList {
     pub value: Vec<HardwareComponentGroup>,
 }
 impl azure_core::Continuable for HardwareComponentGroupList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -2023,8 +2023,8 @@ pub struct JobList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for JobList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl JobList {
@@ -2265,7 +2265,7 @@ pub struct ManagerList {
     pub value: Vec<Manager>,
 }
 impl azure_core::Continuable for ManagerList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -2429,7 +2429,7 @@ pub struct MetricDefinitionList {
     pub value: Vec<MetricDefinition>,
 }
 impl azure_core::Continuable for MetricDefinitionList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -2494,7 +2494,7 @@ pub struct MetricList {
     pub value: Vec<Metrics>,
 }
 impl azure_core::Continuable for MetricList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -3056,7 +3056,7 @@ pub struct StorageAccountCredentialList {
     pub value: Vec<StorageAccountCredential>,
 }
 impl azure_core::Continuable for StorageAccountCredentialList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -3358,7 +3358,7 @@ pub struct VolumeContainerList {
     pub value: Vec<VolumeContainer>,
 }
 impl azure_core::Continuable for VolumeContainerList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -3471,7 +3471,7 @@ pub struct VolumeList {
     pub value: Vec<Volume>,
 }
 impl azure_core::Continuable for VolumeList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
