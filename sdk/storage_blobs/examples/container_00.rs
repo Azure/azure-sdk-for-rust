@@ -18,9 +18,9 @@ async fn main() -> azure_core::Result<()> {
     let http_client = azure_core::new_http_client();
     let storage_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key)
-            .as_storage_client();
-    let blob_service_client = storage_client.as_blob_service_client();
-    let container_client = storage_client.as_container_client(container_name);
+            .storage_client();
+    let blob_service_client = storage_client.blob_service_client();
+    let container_client = storage_client.container_client(container_name);
 
     let max_results = NonZeroU32::new(3).unwrap();
     let mut iv = blob_service_client

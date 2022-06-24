@@ -8,11 +8,11 @@ use std::sync::Arc;
 use url::Url;
 
 pub trait AsTableServiceClient {
-    fn as_table_service_client(&self) -> azure_core::Result<Arc<TableServiceClient>>;
+    fn table_service_client(&self) -> azure_core::Result<Arc<TableServiceClient>>;
 }
 
 impl AsTableServiceClient for Arc<StorageClient> {
-    fn as_table_service_client(&self) -> azure_core::Result<Arc<TableServiceClient>> {
+    fn table_service_client(&self) -> azure_core::Result<Arc<TableServiceClient>> {
         TableServiceClient::new(self.clone())
     }
 }
@@ -81,18 +81,18 @@ mod integration_tests {
     use futures::StreamExt;
 
     fn get_emulator_client() -> Arc<StorageClient> {
-        StorageAccountClient::new_emulator_default().as_storage_client()
+        StorageAccountClient::new_emulator_default().storage_client()
     }
 
     #[tokio::test]
     async fn test_list() {
         let storage_account = get_emulator_client();
         let table_client = storage_account
-            .as_table_service_client()
+            .table_service_client()
             .expect("a table service client");
 
         println!("Create a table in the storage account");
-        let table = table_client.as_table_client("TableServiceClientList");
+        let table = table_client.table_client("TableServiceClientList");
         match table.create().execute().await {
             _ => {}
         }

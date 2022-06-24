@@ -19,9 +19,9 @@ async fn main() -> azure_core::Result<()> {
     let http_client = azure_core::new_http_client();
     let storage_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key)
-            .as_storage_client();
-    let container_client = storage_client.as_container_client(&container_name);
-    let blob_client = container_client.as_blob_client("SorgeniaReorganizeRebuildIndexes.zip");
+            .storage_client();
+    let container_client = storage_client.container_client(&container_name);
+    let blob_client = container_client.blob_client("SorgeniaReorganizeRebuildIndexes.zip");
 
     // only get the first 8k chunk
     let result = Box::pin(blob_client.get().stream(1024 * 8))

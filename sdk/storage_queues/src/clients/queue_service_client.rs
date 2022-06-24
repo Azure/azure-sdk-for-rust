@@ -3,18 +3,18 @@ use std::fmt::Debug;
 use std::sync::Arc;
 
 pub trait AsQueueServiceClient {
-    fn as_queue_service_client(&self) -> Arc<QueueServiceClient>;
+    fn queue_service_client(&self) -> Arc<QueueServiceClient>;
 }
 
 impl AsQueueServiceClient for Arc<StorageClient> {
-    fn as_queue_service_client(&self) -> Arc<QueueServiceClient> {
+    fn queue_service_client(&self) -> Arc<QueueServiceClient> {
         QueueServiceClient::new(self.clone())
     }
 }
 
 impl AsQueueServiceClient for Arc<StorageAccountClient> {
-    fn as_queue_service_client(&self) -> Arc<QueueServiceClient> {
-        self.as_storage_client().as_queue_service_client()
+    fn queue_service_client(&self) -> Arc<QueueServiceClient> {
+        self.storage_client().queue_service_client()
     }
 }
 

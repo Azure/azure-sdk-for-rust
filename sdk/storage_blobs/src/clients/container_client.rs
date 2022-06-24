@@ -18,18 +18,18 @@ use http::method::Method;
 use std::sync::Arc;
 
 pub trait AsContainerClient<CN: Into<String>> {
-    fn as_container_client(&self, container_name: CN) -> Arc<ContainerClient>;
+    fn container_client(&self, container_name: CN) -> Arc<ContainerClient>;
 }
 
 impl<CN: Into<String>> AsContainerClient<CN> for Arc<StorageClient> {
-    fn as_container_client(&self, container_name: CN) -> Arc<ContainerClient> {
+    fn container_client(&self, container_name: CN) -> Arc<ContainerClient> {
         ContainerClient::new(self.clone(), container_name.into())
     }
 }
 
 impl<CN: Into<String>> AsContainerClient<CN> for Arc<StorageAccountClient> {
-    fn as_container_client(&self, container_name: CN) -> Arc<ContainerClient> {
-        self.as_storage_client().as_container_client(container_name)
+    fn container_client(&self, container_name: CN) -> Arc<ContainerClient> {
+        self.storage_client().container_client(container_name)
     }
 }
 
@@ -163,9 +163,9 @@ mod integration_tests {
     use crate::{blob::clients::AsBlobClient, core::prelude::*};
 
     fn get_emulator_client(container_name: &str) -> Arc<ContainerClient> {
-        let storage_account = StorageAccountClient::new_emulator_default().as_storage_client();
+        let storage_account = StorageAccountClient::new_emulator_default().storage_client();
 
-        storage_account.as_container_client(container_name)
+        storage_account.container_client(container_name)
     }
 
     #[tokio::test]
@@ -198,7 +198,7 @@ mod integration_tests {
 
         let md5 = md5::compute("world");
         container_client
-            .as_blob_client("hello.txt")
+            .blob_client("hello.txt")
             .put_block_blob("world")
             .into_future()
             .await

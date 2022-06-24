@@ -5,18 +5,18 @@ use std::fmt::Debug;
 use std::sync::Arc;
 
 pub trait AsQueueClient<QN: Into<String>> {
-    fn as_queue_client(&self, queue_name: QN) -> Arc<QueueClient>;
+    fn queue_client(&self, queue_name: QN) -> Arc<QueueClient>;
 }
 
 impl<QN: Into<String>> AsQueueClient<QN> for Arc<StorageClient> {
-    fn as_queue_client(&self, queue_name: QN) -> Arc<QueueClient> {
+    fn queue_client(&self, queue_name: QN) -> Arc<QueueClient> {
         QueueClient::new(self.clone(), queue_name.into())
     }
 }
 
 impl<QN: Into<String>> AsQueueClient<QN> for Arc<StorageAccountClient> {
-    fn as_queue_client(&self, queue_name: QN) -> Arc<QueueClient> {
-        self.as_storage_client().as_queue_client(queue_name)
+    fn queue_client(&self, queue_name: QN) -> Arc<QueueClient> {
+        self.storage_client().queue_client(queue_name)
     }
 }
 
@@ -117,8 +117,8 @@ mod integration_tests {
     use crate::queue::clients::AsQueueClient;
 
     fn get_emulator_client(queue_name: &str) -> Arc<QueueClient> {
-        let storage_account = StorageAccountClient::new_emulator_default().as_storage_client();
-        storage_account.as_queue_client(queue_name)
+        let storage_account = StorageAccountClient::new_emulator_default().storage_client();
+        storage_account.queue_client(queue_name)
     }
 
     #[tokio::test]

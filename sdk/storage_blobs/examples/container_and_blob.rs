@@ -19,8 +19,8 @@ async fn main() -> azure_core::Result<()> {
     let http_client = azure_core::new_http_client();
     let storage_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key)
-            .as_storage_client();
-    let container_client = storage_client.as_container_client(&container_name);
+            .storage_client();
+    let container_client = storage_client.container_client(&container_name);
 
     // create container
     let res = container_client
@@ -37,7 +37,7 @@ async fn main() -> azure_core::Result<()> {
     let hash = md5::compute(&data[..]);
 
     let res = container_client
-        .as_blob_client("blob0.txt")
+        .blob_client("blob0.txt")
         .put_block_blob(data.clone())
         .content_type("text/plain")
         .hash(hash)
@@ -46,7 +46,7 @@ async fn main() -> azure_core::Result<()> {
     println!("{:?}", res);
 
     let res = container_client
-        .as_blob_client("blob1.txt")
+        .blob_client("blob1.txt")
         .put_block_blob(data.clone())
         .content_type("text/plain")
         .hash(hash)
@@ -55,7 +55,7 @@ async fn main() -> azure_core::Result<()> {
     println!("{:?}", res);
 
     let res = container_client
-        .as_blob_client("blob2.txt")
+        .blob_client("blob2.txt")
         .put_block_blob(data)
         .content_type("text/plain")
         .hash(hash)

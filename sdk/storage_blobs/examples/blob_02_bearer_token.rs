@@ -24,8 +24,8 @@ async fn main() -> azure_core::Result<()> {
     let http_client = azure_core::new_http_client();
     let blob_client =
         StorageAccountClient::new_bearer_token(http_client.clone(), &account, bearer_token)
-            .as_container_client(&container)
-            .as_blob_client(&blob);
+            .container_client(&container)
+            .blob_client(&blob);
 
     trace!("Requesting blob");
 

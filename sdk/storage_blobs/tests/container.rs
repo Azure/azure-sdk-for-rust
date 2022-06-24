@@ -7,8 +7,8 @@ use std::{sync::Arc, time::Duration};
 async fn lease() {
     let container_name: &'static str = "azuresdkrustetoets2";
 
-    let storage = initialize().as_storage_client();
-    let container = storage.as_container_client(container_name);
+    let storage = initialize().storage_client();
+    let container = storage.container_client(container_name);
 
     container
         .create()
@@ -23,7 +23,7 @@ async fn lease() {
         .await
         .unwrap();
     let lease_id = res.lease_id;
-    let lease = container.as_container_lease_client(lease_id);
+    let lease = container.container_lease_client(lease_id);
 
     let _res = lease.renew().into_future().await.unwrap();
     let _res = lease.release().into_future().await.unwrap();
@@ -35,8 +35,8 @@ async fn lease() {
 async fn break_lease() {
     let container_name: &'static str = "azuresdkrustetoets3";
 
-    let storage = initialize().as_storage_client();
-    let container = storage.as_container_client(container_name);
+    let storage = initialize().storage_client();
+    let container = storage.container_client(container_name);
 
     container
         .create()
@@ -51,7 +51,7 @@ async fn break_lease() {
         .await
         .unwrap();
 
-    let lease = container.as_container_lease_client(res.lease_id);
+    let lease = container.container_lease_client(res.lease_id);
     lease.renew().into_future().await.unwrap();
 
     let res = container

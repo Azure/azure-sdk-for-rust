@@ -19,11 +19,11 @@ use std::sync::Arc;
 use url::Url;
 
 pub trait AsBlobClient<BN: Into<String>> {
-    fn as_blob_client(&self, blob_name: BN) -> Arc<BlobClient>;
+    fn blob_client(&self, blob_name: BN) -> Arc<BlobClient>;
 }
 
 impl<BN: Into<String>> AsBlobClient<BN> for Arc<ContainerClient> {
-    fn as_blob_client(&self, blob_name: BN) -> Arc<BlobClient> {
+    fn blob_client(&self, blob_name: BN) -> Arc<BlobClient> {
         BlobClient::new(self.clone(), blob_name.into())
     }
 }
@@ -262,10 +262,10 @@ mod tests {
     }
 
     fn build_url(container_name: &str, blob_name: &str, sas: &FakeSas) -> url::Url {
-        let storage_account = StorageAccountClient::new_emulator_default().as_storage_client();
+        let storage_account = StorageAccountClient::new_emulator_default().storage_client();
         storage_account
-            .as_container_client(container_name)
-            .as_blob_client(blob_name)
+            .container_client(container_name)
+            .blob_client(blob_name)
             .generate_signed_blob_url(sas)
             .expect("build url failed")
     }
@@ -297,8 +297,8 @@ mod integration_tests {
     use crate::blob::clients::AsBlobClient;
 
     fn get_emulator_client(container_name: &str) -> Arc<ContainerClient> {
-        let storage_account = StorageAccountClient::new_emulator_default().as_storage_client();
-        storage_account.as_container_client(container_name)
+        let storage_account = StorageAccountClient::new_emulator_default().storage_client();
+        storage_account.container_client(container_name)
     }
 
     #[tokio::test]
@@ -314,13 +314,13 @@ mod integration_tests {
 
         let md5 = md5::compute("world");
         container_client
-            .as_blob_client("hello.txt")
+            .blob_client("hello.txt")
             .put_block_blob("world")
             .into_future()
             .await
             .expect("put block blob should succeed");
         let properties = container_client
-            .as_blob_client("hello.txt")
+            .blob_client("hello.txt")
             .get_properties()
             .into_future()
             .await
