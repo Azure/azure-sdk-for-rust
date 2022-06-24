@@ -2,7 +2,6 @@ use azure_core::error::{ErrorKind, ResultExt};
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::stream::StreamExt;
-use std::{cell::RefCell, rc::Rc};
 
 // This example shows how to stream data from a blob. We will create a simple blob first, the we
 // ask it back using streaming features of the future crate. In this simple example we just
@@ -47,23 +46,17 @@ async fn main() -> azure_core::Result<()> {
     // http overhead will be less but it also means you will have to wait for more
     // time before receiving anything. In this example we use a very small chunk size
     // just to make sure to loop at least twice.
-    let mut stream = Box::pin(blob_client.get().stream(128));
+    let mut stream = blob_client.get().chunk_size(128u64).into_stream();
 
-    let result = Rc::new(RefCell::new(Vec::new()));
+    let mut result = vec![];
 
-    {
-        let mut res_closure = result.borrow_mut();
-        while let Some(value) = stream.next().await {
-            let mut value = value?.data.to_vec();
-            println!("received {:?} bytes", value.len());
-            res_closure.append(&mut value);
-        }
+    while let Some(value) = stream.next().await {
+        let value = value?.data;
+        println!("received {:?} bytes", value.len());
+        result.extend(&value);
     }
 
-    let returned_string = {
-        let rlock = result.borrow();
-        String::from_utf8(rlock.to_vec()).map_kind(ErrorKind::DataConversion)?
-    };
+    let returned_string = { String::from_utf8(result).map_kind(ErrorKind::DataConversion)? };
 
     // You can of course conctenate all the
     // pieces as shown below.

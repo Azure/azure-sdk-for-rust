@@ -21,22 +21,21 @@ use url::Url;
 use uuid::Uuid;
 
 #[tokio::test]
-async fn create_and_delete_container() {
-    let name: &'static str = "azuresdkrustetoets";
+async fn create_and_delete_container() -> azure_core::Result<()> {
+    let container_name = format!("create-{}", Uuid::new_v4().to_string());
 
     let storage_client = initialize().as_storage_client();
     let blob_service = storage_client.as_blob_service_client();
-    let container = storage_client.as_container_client(name);
+    let container = storage_client.as_container_client(&container_name);
 
     container
         .create()
         .public_access(PublicAccess::None)
         .into_future()
-        .await
-        .unwrap();
+        .await?;
 
     // get acl without stored access policy list
-    let _result = container.get_acl().into_future().await.unwrap();
+    let _result = container.get_acl().into_future().await?;
 
     // set stored acess policy list
     let dt_start = Utc::now().with_timezone(&FixedOffset::east(0));
@@ -50,11 +49,10 @@ async fn create_and_delete_container() {
         .set_acl(PublicAccess::None)
         .stored_access_policy_list(sapl.clone())
         .into_future()
-        .await
-        .unwrap();
+        .await?;
 
     // now we get back the acess policy list and compare to the one created
-    let result = container.get_acl().into_future().await.unwrap();
+    let result = container.get_acl().into_future().await?;
 
     assert!(result.public_access == PublicAccess::None);
     // we cannot compare the returned result because Azure will
@@ -70,22 +68,21 @@ async fn create_and_delete_container() {
         assert!(i1.permission == i2.permission);
     }
 
-    let res = container.get_properties().into_future().await.unwrap();
+    let res = container.get_properties().into_future().await?;
     assert!(res.container.public_access == PublicAccess::None);
 
     let list = blob_service
         .list_containers()
-        .prefix(name)
+        .prefix(container_name.clone())
         .into_stream()
         .next()
         .await
-        .unwrap()
-        .unwrap();
+        .unwrap()?;
     let cont_list: Vec<&Container> = list
         .containers
         .deref()
         .into_iter()
-        .filter(|e| e.name == name)
+        .filter(|e| e.name == container_name)
         .collect();
 
     if cont_list.len() != 1 {
@@ -106,8 +103,9 @@ async fn create_and_delete_container() {
         .delete()
         .lease_id(lease_id) // must pass the lease here too
         .into_future()
-        .await
-        .unwrap();
+        .await?;
+
+    Ok(())
 }
 
 #[tokio::test]
@@ -266,14 +264,14 @@ async fn put_block_blob() {
 }
 
 #[tokio::test]
-async fn copy_blob() {
+async fn copy_blob() -> azure_core::Result<()> {
     let blob_name: &'static str = "copysrc";
-    let container_name: &'static str = "rust-upload-test";
+    let container_name = format!("copy-blob-{}", Uuid::new_v4().to_string());
     let data = Bytes::from_static(b"abcdef");
 
     let storage = initialize().as_storage_client();
     let blob_service = storage.as_blob_service_client();
-    let container = storage.as_container_client(container_name);
+    let container = storage.as_container_client(&container_name);
     let blob = container.as_blob_client(blob_name);
 
     if blob_service
@@ -292,8 +290,7 @@ async fn copy_blob() {
             .create()
             .public_access(PublicAccess::None)
             .into_future()
-            .await
-            .unwrap();
+            .await?;
     }
 
     // calculate md5 too!
@@ -303,8 +300,7 @@ async fn copy_blob() {
         .content_type("text/plain")
         .hash(digest)
         .into_future()
-        .await
-        .unwrap();
+        .await?;
 
     trace!("created {:?}", blob_name);
 
@@ -318,7 +314,10 @@ async fn copy_blob() {
     ))
     .unwrap();
 
-    cloned_blob.copy(url).into_future().await.unwrap();
+    cloned_blob.copy(url).into_future().await?;
+
+    container.delete().into_future().await?;
+    Ok(())
 }
 
 async fn requires_send_future<F, O>(fut: F) -> O
@@ -329,14 +328,14 @@ where
 }
 
 #[tokio::test]
-async fn put_block_blob_and_get_properties() {
+async fn put_block_blob_and_get_properties() -> azure_core::Result<()> {
     let blob_name: &'static str = "properties";
-    let container_name: &'static str = "rust-upload-test";
+    let container_name = format!("properties-{}", Uuid::new_v4().to_string());
     let data = Bytes::from_static(b"abcdef");
 
     let storage = initialize().as_storage_client();
     let blob_service = storage.as_blob_service_client();
-    let container = storage.as_container_client(container_name);
+    let container = storage.as_container_client(&container_name);
     let blob = container.as_blob_client(blob_name);
 
     if blob_service
@@ -376,6 +375,8 @@ async fn put_block_blob_and_get_properties() {
     assert_eq!(blob_properties.blob.properties.content_length, 6);
 
     let _ = requires_send_future(blob.get_properties().into_future());
+    container.delete().into_future().await?;
+    Ok(())
 }
 
 #[tokio::test]

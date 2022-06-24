@@ -42,10 +42,12 @@ where
                         r#try!(request.await)
                     }
                     State::Continuation(token) => {
-                        let request = make_request(Some(Continuation::new(token)));
+                        let request = make_request(Some(token));
                         r#try!(request.await)
                     }
-                    State::Done => return None,
+                    State::Done => {
+                        return None;
+                    },
                 };
 
                 let next_state = response
@@ -82,12 +84,12 @@ impl<T, O> std::fmt::Debug for Pageable<T, O> {
 
 /// A type that can yield an optional continuation token
 pub trait Continuable {
-    fn continuation(&self) -> Option<String>;
+    fn continuation(&self) -> Option<Continuation>;
 }
 
 #[derive(Debug, Clone, PartialEq)]
 enum State {
     Init,
-    Continuation(String),
+    Continuation(Continuation),
     Done,
 }

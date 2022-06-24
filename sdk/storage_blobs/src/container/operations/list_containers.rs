@@ -60,7 +60,7 @@ impl ListContainersBuilder {
 
                 if let Some(continuation) = continuation {
                     url.query_pairs_mut()
-                        .append_pair("marker", &continuation.into_raw());
+                        .append_pair("marker", &continuation.as_string());
                 }
 
                 if let Some(include) = match (this.include_metadata, this.include_deleted) {
@@ -125,7 +125,7 @@ impl ListContainersResponse {
 }
 
 impl Continuable for ListContainersResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_marker.clone()
+    fn continuation(&self) -> Option<Continuation> {
+        self.next_marker.clone().map(|x| x.into())
     }
 }

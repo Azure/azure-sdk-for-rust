@@ -112,7 +112,7 @@ impl ListPathsResponse {
 }
 
 impl Continuable for ListPathsResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<Continuation> {
         self.continuation.clone().map(|m| m.as_str().into())
     }
 }

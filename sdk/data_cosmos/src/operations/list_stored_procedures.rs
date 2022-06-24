@@ -113,7 +113,7 @@ impl ListStoredProceduresResponse {
 }
 
 impl Continuable for ListStoredProceduresResponse {
-    fn continuation(&self) -> Option<String> {
-        self.continuation_token.clone()
+    fn continuation(&self) -> Option<Continuation> {
+        self.continuation_token.clone().map(|x| x.into())
     }
 }
