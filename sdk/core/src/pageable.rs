@@ -47,7 +47,7 @@ where
                     }
                     State::Done => {
                         return None;
-                    },
+                    }
                 };
 
                 let next_state = response
