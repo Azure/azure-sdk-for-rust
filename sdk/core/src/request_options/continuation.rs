@@ -7,27 +7,27 @@ pub enum Continuation {
     Range(Range<u64>),
 }
 
-impl Into<Continuation> for NextMarker {
-    fn into(self) -> Continuation {
-        Continuation::String(self.as_str().to_string())
+impl From<NextMarker> for Continuation {
+    fn from(next_marker: NextMarker) -> Self {
+        Continuation::String(next_marker.as_str().to_string())
     }
 }
 
-impl Into<Continuation> for &str {
-    fn into(self) -> Continuation {
-        Continuation::String(self.to_owned())
+impl From<&str> for Continuation {
+    fn from(value: &str) -> Self {
+        Continuation::String(value.to_string())
     }
 }
 
-impl Into<Continuation> for String {
-    fn into(self) -> Continuation {
-        Continuation::String(self)
+impl From<String> for Continuation {
+    fn from(value: String) -> Self {
+        Continuation::String(value)
     }
 }
 
-impl Into<Continuation> for Range<u64> {
-    fn into(self) -> Continuation {
-        Continuation::Range(self)
+impl From<Range<u64>> for Continuation {
+    fn from(value: Range<u64>) -> Self {
+        Continuation::Range(value)
     }
 }
 
