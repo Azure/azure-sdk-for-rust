@@ -24,18 +24,14 @@ async fn code() -> azure_core::Result<()> {
     let access_key =
         std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
-    println!("a");
     let http_client = azure_core::new_http_client();
-    println!("new client");
 
     let storage = StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key)
         .as_storage_client();
-    println!("storage containers");
     let blob_service = storage.as_blob_service_client();
     let container = storage.as_container_client(&container_name);
     let blob = container.as_blob_client(file_name);
 
-    println!("list containers");
     if blob_service
         .list_containers()
         .into_stream()
@@ -54,10 +50,9 @@ async fn code() -> azure_core::Result<()> {
             .into_future()
             .await?;
     }
-    println!("create container");
 
     let string = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
-    println!("put block {}", string.len());
+    println!("putting block {}", string.len());
 
     blob.put_block_blob(string)
         .content_type("text/plain")

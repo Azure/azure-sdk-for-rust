@@ -41,10 +41,8 @@ fn remaining_range(
     // if there was no content range in the response, assume the entire blob was
     // returned.
     let content_range = content_range?;
-    println!("content range: {:?}", content_range);
 
-    // if the response says the end is at or past the total length of the file,
-    // then we're done
+    // if the next byte is at or past the total length, then we're done.
     if content_range.end() + 1 >= content_range.total_length() {
         return None;
     }
@@ -57,17 +55,16 @@ fn remaining_range(
         return None;
     }
     // if the user specified range is smaller than the blob, truncate the
-    // requested range
+    // requested range.  Note, we add + 1, as we don't need to re-fetch the last
+    // byte of the previous request.
     let left = Range::new(
         content_range.end() + 1,
         std::cmp::min(base_range.end, content_range.total_length()),
     );
 
     if left.len() > chunk_size {
-        println!("left: {:?} chunk_size {}", left, chunk_size);
         Some(Range::new(left.start, left.start + chunk_size))
     } else {
-        println!("left: {:?}", left);
         Some(left)
     }
 }
