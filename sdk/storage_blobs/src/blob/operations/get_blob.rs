@@ -10,8 +10,6 @@ use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use std::str::FromStr;
 
-// by default, limit each request to 1MB chunks, which reduces the impact of
-// intermittent network issues while downloading larger blobs.
 const DEFAULT_CHUNK_SIZE: u64 = 0x1000 * 0x1000;
 
 #[derive(Clone)]
@@ -209,7 +207,7 @@ mod tests {
         let result = remaining_range(3, None, None);
         assert!(result.is_none());
 
-        let result = remaining_range(3, None, Some(Range::new(0, 10)));
+        let result = remaining_range(3, Some(Range::new(0, 10)), None);
         assert!(result.is_none());
 
         let result = remaining_range(
