@@ -42,12 +42,11 @@ where
     let encoded = encoded.finish();
 
     let rsp = post_form(http_client.clone(), url, encoded).await?;
-    let (rsp_status, _rsp_headers, rsp_stream) = rsp.deconstruct();
-    let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-    if !rsp_status.is_success() {
-        return Err(
-            ErrorKind::http_response_from_body(rsp_status.as_u16(), &rsp_body).into_error(),
-        );
+    let rsp_status = rsp.status().as_u16();
+    let rsp_is_success = rsp.status().is_success();
+    let rsp_body = rsp.into_body().await;
+    if !rsp_is_success {
+        return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
     }
     let device_code_response: DeviceCodePhaseOneResponse = serde_json::from_slice(&rsp_body)?;
 

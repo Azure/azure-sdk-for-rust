@@ -76,14 +76,14 @@ where
 
                     if !RETRY_STATUSES.contains(&status) {
                         log::error!(
-                            "server returned error status which will not be retried: {:?}",
+                            "server returned error status which will not be retried: {}",
                             status
                         );
                         // Server didn't return a status we retry on so return early
                         return Err(error);
                     }
                     log::debug!(
-                        "server returned error status which requires retry: {:?}",
+                        "server returned error status which requires retry: {}",
                         status
                     );
                     error
