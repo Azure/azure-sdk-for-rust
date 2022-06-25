@@ -81,12 +81,11 @@ pub async fn perform(
     );
     req.set_body(encoded);
     let rsp = http_client.execute_request(&req).await?;
-    let rsp_status = rsp.status().clone();
+    let rsp_status = rsp.status().as_u16();
+    let rsp_is_success = rsp.status().is_success();
     let rsp_body = rsp.into_body().await;
-    if !rsp_status.is_success() {
-        return Err(
-            ErrorKind::http_response_from_body(rsp_status.as_u16(), &rsp_body).into_error(),
-        );
+    if !rsp_is_success {
+        return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
     }
     serde_json::from_slice(&rsp_body).map_kind(ErrorKind::DataConversion)
 }

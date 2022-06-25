@@ -1,5 +1,5 @@
 use azure_core::{
-    error::{Error, ErrorKind},
+    error::{Error, ErrorKind, ResultExt},
     CollectedResponse, Etag, StatusCode,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
@@ -49,7 +49,8 @@ impl TryFrom<CollectedResponse> for SubmitTransactionResponse {
                         .map_err(|_| {
                             Error::message(ErrorKind::DataConversion, "invalid HTTP status code")
                         })?;
-                    operation_response.status_code = StatusCode::try_from(status_code)?
+                    operation_response.status_code =
+                        StatusCode::from_u16(status_code).map_kind(ErrorKind::DataConversion)?;
                 } else if line.starts_with("Location:") {
                     operation_response.location = Some(
                         line.split_whitespace()

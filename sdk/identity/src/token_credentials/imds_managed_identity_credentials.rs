@@ -121,11 +121,12 @@ impl TokenCredential for ImdsManagedIdentityCredential {
         };
 
         let rsp = self.http_client.execute_request(&req).await?;
-        let rsp_status = rsp.status().clone();
+        let rsp_status = rsp.status().as_u16();
+        let rsp_is_success = rsp.status().is_success();
         let rsp_body = rsp.into_body().await;
 
-        if !rsp_status.is_success() {
-            match rsp_status.as_u16() {
+        if !rsp_is_success {
+            match rsp_status {
                 400 => {
                     return Err(Error::message(
                         ErrorKind::Credential,
@@ -140,8 +141,7 @@ impl TokenCredential for ImdsManagedIdentityCredential {
                 }
                 _ => {
                     return Err(
-                        ErrorKind::http_response_from_body(rsp_status.as_u16(), &rsp_body)
-                            .into_error(),
+                        ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error()
                     )
                     .map_kind(ErrorKind::Credential)
                 }
