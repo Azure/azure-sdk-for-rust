@@ -131,4 +131,18 @@ impl DirectoryClient {
             .properties(properties)
             .action(PathUpdateAction::SetProperties)
     }
+
+    pub fn set_access_control_list(
+        &self,
+        acl: impl Into<AccessControlList>,
+        recursive: bool,
+    ) -> PatchPathBuilder<Self> {
+        let builder =
+            PatchPathBuilder::new(self.clone(), self.file_system_client.context.clone()).acl(acl);
+        if recursive {
+            builder.action(PathUpdateAction::SetAccessControlRecursive)
+        } else {
+            builder.action(PathUpdateAction::SetAccessControl)
+        }
+    }
 }

@@ -217,3 +217,25 @@ impl AppendToUrlQuery for Directory {
         url.query_pairs_mut().append_pair("directory", &self.0);
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct AccessControlList(String);
+
+impl<S> From<S> for AccessControlList
+where
+    S: Into<String>,
+{
+    fn from(s: S) -> Self {
+        Self(s.into())
+    }
+}
+
+impl Header for AccessControlList {
+    fn name(&self) -> azure_core::headers::HeaderName {
+        azure_core::headers::ACL
+    }
+
+    fn value(&self) -> azure_core::headers::HeaderValue {
+        self.0.to_owned().into()
+    }
+}

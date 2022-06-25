@@ -129,4 +129,13 @@ impl FileClient {
             .properties(properties)
             .action(PathUpdateAction::SetProperties)
     }
+
+    pub fn set_access_control_list(
+        &self,
+        acl: impl Into<AccessControlList>,
+    ) -> PatchPathBuilder<Self> {
+        PatchPathBuilder::new(self.clone(), self.file_system_client.context.clone())
+            .acl(acl)
+            .action(PathUpdateAction::SetAccessControl)
+    }
 }
