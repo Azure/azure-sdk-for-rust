@@ -14,9 +14,9 @@ impl Default for Properties {
     }
 }
 
-impl Into<Properties> for BTreeMap<Cow<'static, str>, Cow<'static, str>> {
-    fn into(self) -> Properties {
-        Properties(self)
+impl From<BTreeMap<Cow<'static, str>, Cow<'static, str>>> for Properties {
+    fn from(value: BTreeMap<Cow<'static, str>, Cow<'static, str>>) -> Self {
+        Self(value)
     }
 }
 
