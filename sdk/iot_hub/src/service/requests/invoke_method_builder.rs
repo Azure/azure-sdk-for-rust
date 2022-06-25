@@ -1,6 +1,6 @@
 use crate::service::responses::InvokeMethodResponse;
 use crate::service::{ServiceClient, API_VERSION};
-use http::Method;
+use azure_core::Method;
 use serde::Serialize;
 use std::convert::TryInto;
 

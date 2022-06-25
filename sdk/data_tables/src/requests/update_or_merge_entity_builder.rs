@@ -1,6 +1,6 @@
 use crate::{prelude::*, responses::*, IfMatchCondition, TransactionOperation};
+use azure_core::Method;
 use azure_core::{prelude::*, Request};
-use http::method::Method;
 use serde::Serialize;
 use std::convert::TryInto;
 
@@ -49,7 +49,7 @@ impl<'a> UpdateOrMergeEntityBuilder<'a> {
         let mut request = self.entity_client.prepare_request(
             url.as_str(),
             match self.operation {
-                Operation::Merge => crate::MERGE.to_owned(),
+                Operation::Merge => Method::MERGE,
                 Operation::Update => Method::PUT,
             },
             Some(bytes::Bytes::from(request_body_serialized)),
@@ -80,7 +80,7 @@ impl<'a> UpdateOrMergeEntityBuilder<'a> {
         let mut request = Request::new(
             url.clone(),
             match self.operation {
-                Operation::Merge => crate::MERGE.to_owned(),
+                Operation::Merge => Method::MERGE,
                 Operation::Update => Method::PUT,
             },
         );

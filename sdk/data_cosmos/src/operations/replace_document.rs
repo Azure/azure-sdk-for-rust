@@ -55,7 +55,7 @@ impl<D: Serialize + Send + 'static> ReplaceDocumentBuilder<D> {
 
     pub fn into_future(self) -> ReplaceDocument {
         Box::pin(async move {
-            let mut request = self.client.document_request(http::Method::PUT);
+            let mut request = self.client.document_request(azure_core::Method::PUT);
 
             let partition_key = self
                 .partition_key

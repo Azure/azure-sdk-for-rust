@@ -1,6 +1,6 @@
 use crate::{container::PublicAccess, prelude::*};
+use azure_core::Method;
 use azure_core::{headers::AsHeaders, prelude::*};
-use http::method::Method;
 
 #[derive(Debug, Clone)]
 pub struct CreateBuilder {

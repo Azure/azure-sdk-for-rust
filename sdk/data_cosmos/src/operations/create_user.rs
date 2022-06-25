@@ -29,7 +29,7 @@ impl CreateUserBuilder {
                     "dbs/{}/users",
                     self.client.database_client().database_name()
                 ),
-                http::Method::POST,
+                azure_core::Method::POST,
             );
 
             if let Some(cl) = &self.consistency_level {

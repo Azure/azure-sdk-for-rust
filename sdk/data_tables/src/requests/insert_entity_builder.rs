@@ -1,10 +1,10 @@
 use crate::{prelude::*, responses::*, TransactionOperation};
+use azure_core::Method;
 use azure_core::{
     error::{Error, ErrorKind},
     prelude::*,
     Request,
 };
-use http::method::Method;
 use serde::{de::DeserializeOwned, Serialize};
 use std::convert::TryInto;
 

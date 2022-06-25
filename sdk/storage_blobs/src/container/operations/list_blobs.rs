@@ -1,4 +1,5 @@
 use crate::{blob::Blob, prelude::*};
+use azure_core::Method;
 use azure_core::{
     collect_pinned_stream,
     error::{Error, ErrorKind, ResultExt},
@@ -8,7 +9,6 @@ use azure_core::{
 };
 use azure_storage::xml::read_xml;
 use chrono::{DateTime, Utc};
-use http::method::Method;
 
 #[derive(Debug, Clone)]
 pub struct ListBlobsBuilder {

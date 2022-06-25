@@ -113,7 +113,7 @@ impl DataLakeClient {
     // pub(crate) fn prepare_request(
     //     &self,
     //     url: Url,
-    //     http_method: http::Method,
+    //     http_method: azure_core::Method,
     // ) -> azure_core::Request {
     //     Request::new()
     //     Builder::new()

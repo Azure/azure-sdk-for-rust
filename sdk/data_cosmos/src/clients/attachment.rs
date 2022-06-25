@@ -99,7 +99,7 @@ impl AttachmentClient {
         &self.attachment_name
     }
 
-    pub(crate) fn attachments_request(&self, method: http::Method) -> Request {
+    pub(crate) fn attachments_request(&self, method: azure_core::Method) -> Request {
         self.cosmos_client().request(
             &format!(
                 "dbs/{}/colls/{}/docs/{}/attachments",
@@ -111,7 +111,7 @@ impl AttachmentClient {
         )
     }
 
-    pub(crate) fn attachment_request(&self, method: http::Method) -> Request {
+    pub(crate) fn attachment_request(&self, method: azure_core::Method) -> Request {
         self.cosmos_client().request(
             &format!(
                 "dbs/{}/colls/{}/docs/{}/attachments/{}",

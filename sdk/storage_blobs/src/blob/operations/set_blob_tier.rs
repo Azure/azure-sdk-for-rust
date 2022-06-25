@@ -42,7 +42,7 @@ impl SetBlobTierBuilder {
 
             let mut request =
                 self.blob_client
-                    .prepare_request(url.as_str(), http::Method::PUT, None)?;
+                    .prepare_request(url.as_str(), azure_core::Method::PUT, None)?;
             request.add_mandatory_header(&self.access_tier);
             request.add_optional_header(&self.rehydrate_priority);
 

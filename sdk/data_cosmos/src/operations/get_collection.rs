@@ -30,7 +30,7 @@ impl GetCollectionBuilder {
 
     pub fn into_future(self) -> GetCollection {
         Box::pin(async move {
-            let mut request = self.client.collection_request(http::Method::GET);
+            let mut request = self.client.collection_request(azure_core::Method::GET);
 
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);

@@ -29,7 +29,7 @@ impl GetAccountInformationBuilder {
             let mut request = self
                 .client
                 .storage_account_client()
-                .blob_storage_request(http::Method::GET);
+                .blob_storage_request(azure_core::Method::GET);
 
             for (k, v) in [("restype", "account"), ("comp", "properties")].iter() {
                 request.url_mut().query_pairs_mut().append_pair(k, v);

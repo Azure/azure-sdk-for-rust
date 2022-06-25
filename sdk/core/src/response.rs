@@ -1,11 +1,13 @@
 use crate::headers::Headers;
+use crate::StatusCode;
 use bytes::Bytes;
 use futures::Stream;
 use futures::StreamExt;
-use http::StatusCode;
 use std::pin::Pin;
 
 pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send + Sync>>;
+
+pub(crate) const INVALID_BODY: &[u8] = b"<INVALID BODY>";
 
 /// An HTTP Response.
 pub struct Response {
@@ -26,8 +28,8 @@ impl Response {
     }
 
     /// Get the status code from the response.
-    pub fn status(&self) -> StatusCode {
-        self.status
+    pub fn status(&self) -> &StatusCode {
+        &self.status
     }
 
     /// Get the headers from the response.
@@ -44,7 +46,7 @@ impl Response {
     pub async fn into_body(self) -> Bytes {
         collect_pinned_stream(self.body)
             .await
-            .unwrap_or_else(|_| Bytes::from_static(b"<INVALID BODY>"))
+            .unwrap_or_else(|_| Bytes::from_static(INVALID_BODY))
     }
 
     /// Consume the HTTP response and read the HTTP body into a string.

@@ -1,4 +1,4 @@
-use crate::{headers, Response};
+use crate::{headers, response, Response, INVALID_BODY};
 use bytes::Bytes;
 use std::collections::HashMap;
 
@@ -16,19 +16,21 @@ impl HttpError {
     ///
     /// This does not check whether the response was a success and should only be used with unsuccessful responses.
     pub async fn new(response: Response) -> Self {
-        let status = response.status();
         let mut error_code = get_error_code_from_header(&response);
-        let mut headers = HashMap::new();
+        let (status, headers, body) = response.deconstruct();
+        let mut error_headers = HashMap::new();
 
-        for (name, value) in response.headers().iter() {
-            headers.insert(name.as_str().to_string(), value.as_str().to_string());
+        for (name, value) in headers.iter() {
+            error_headers.insert(name.as_str().to_string(), value.as_str().to_string());
         }
 
-        let body = response.into_body().await;
+        let body = response::collect_pinned_stream(body)
+            .await
+            .unwrap_or_else(|_| Bytes::from_static(INVALID_BODY));
         error_code = error_code.or_else(|| get_error_code_from_body(&body));
         HttpError {
             status: status.as_u16(),
-            headers,
+            headers: error_headers,
             error_code,
             body,
         }

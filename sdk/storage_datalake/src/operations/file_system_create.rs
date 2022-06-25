@@ -48,7 +48,7 @@ impl CreateFileSystemBuilder {
             url.query_pairs_mut().append_pair("resource", "filesystem");
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = Request::new(url, http::Method::PUT);
+            let mut request = Request::new(url, azure_core::Method::PUT);
 
             request.insert_headers(&this.client_request_id);
             request.insert_headers(&this.properties);

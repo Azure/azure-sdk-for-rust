@@ -1,7 +1,7 @@
 use crate::prelude::*;
+use azure_core::Method;
 use azure_core::{headers::*, prelude::*, RequestId};
 use chrono::{DateTime, Utc};
-use http::method::Method;
 
 #[derive(Debug, Clone)]
 pub struct AcquireLeaseBuilder {

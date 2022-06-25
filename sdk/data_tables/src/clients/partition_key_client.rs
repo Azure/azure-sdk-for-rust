@@ -1,9 +1,9 @@
 use crate::{prelude::*, requests::*};
 
+use azure_core::Method;
 use azure_core::Request;
 use azure_storage::core::clients::StorageAccountClient;
 use bytes::Bytes;
-use http::method::Method;
 use std::sync::Arc;
 
 pub trait AsPartitionKeyClient<PK: Into<String>> {

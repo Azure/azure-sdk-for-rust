@@ -3,7 +3,7 @@
 use crate::service::{responses::QueryResponse, ServiceClient, API_VERSION};
 use azure_core::prelude::*;
 use azure_core::setters;
-use http::Method;
+use azure_core::Method;
 use serde::Serialize;
 use std::convert::TryInto;
 

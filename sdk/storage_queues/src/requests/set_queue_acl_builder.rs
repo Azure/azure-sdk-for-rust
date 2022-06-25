@@ -56,7 +56,7 @@ impl<'a> SetQueueACLBuilder<'a> {
 
         let mut request = self.queue_client.storage_client().prepare_request(
             url.as_str(),
-            http::method::Method::PUT,
+            azure_core::Method::PUT,
             Some(xml_body.into()),
         )?;
         request.add_optional_header(&self.client_request_id);

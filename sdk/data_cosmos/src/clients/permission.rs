@@ -59,7 +59,7 @@ impl PermissionClient {
         &self.permission_name
     }
 
-    pub(crate) fn permission_request(&self, method: http::Method) -> Request {
+    pub(crate) fn permission_request(&self, method: azure_core::Method) -> Request {
         self.cosmos_client().request(
             &format!(
                 "dbs/{}/users/{}/permissions/{}",

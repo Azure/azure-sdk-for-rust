@@ -1,11 +1,11 @@
 use crate::{prelude::*, responses::*, ContinuationNextPartitionAndRowKey};
+use azure_core::Method;
 use azure_core::{
     error::{Error, ErrorKind},
     prelude::*,
     AppendToUrlQuery,
 };
 use futures::stream::{unfold, Stream};
-use http::method::Method;
 use serde::de::DeserializeOwned;
 use std::convert::TryInto;
 

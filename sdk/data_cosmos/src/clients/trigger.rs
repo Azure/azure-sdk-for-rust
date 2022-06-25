@@ -91,7 +91,7 @@ impl TriggerClient {
     }
 
     /// Create a request for a specific collection trigger
-    pub(crate) fn trigger_request(&self, method: http::Method) -> Request {
+    pub(crate) fn trigger_request(&self, method: azure_core::Method) -> Request {
         self.cosmos_client().request(
             &format!(
                 "dbs/{}/colls/{}/triggers/{}",
@@ -104,7 +104,7 @@ impl TriggerClient {
     }
 
     /// Create a request for collection triggers
-    pub(crate) fn triggers_request(&self, method: http::Method) -> Request {
+    pub(crate) fn triggers_request(&self, method: azure_core::Method) -> Request {
         self.cosmos_client().request(
             &format!(
                 "dbs/{}/colls/{}/triggers",

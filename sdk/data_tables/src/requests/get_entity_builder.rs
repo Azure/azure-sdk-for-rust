@@ -1,6 +1,6 @@
 use crate::{prelude::*, responses::*};
+use azure_core::Method;
 use azure_core::{error::Result, prelude::*, AppendToUrlQuery};
-use http::method::Method;
 use serde::de::DeserializeOwned;
 use std::convert::TryInto;
 

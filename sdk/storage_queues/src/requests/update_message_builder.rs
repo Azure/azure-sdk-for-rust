@@ -49,7 +49,7 @@ impl<'a> UpdateMessageBuilder<'a> {
 
         let mut request = self.pop_receipt_client.storage_client().prepare_request(
             url.as_str(),
-            http::method::Method::PUT,
+            azure_core::Method::PUT,
             Some(message.into()),
         )?;
         request.add_optional_header(&self.client_request_id);

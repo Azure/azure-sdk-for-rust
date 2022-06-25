@@ -1,8 +1,7 @@
 use crate::{blob::operations::*, prelude::*};
-use azure_core::{prelude::*, Context, Request, Response};
+use azure_core::{prelude::*, Context, Method, Request, Response};
 use azure_storage::core::prelude::*;
 use bytes::Bytes;
-use http::method::Method;
 use std::sync::Arc;
 
 pub trait AsBlobLeaseClient {

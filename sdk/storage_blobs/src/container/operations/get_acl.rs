@@ -2,6 +2,7 @@ use crate::{
     container::{public_access_from_header, PublicAccess},
     prelude::*,
 };
+use azure_core::Method;
 use azure_core::{
     collect_pinned_stream,
     error::{Error, ErrorKind, ResultExt},
@@ -12,7 +13,6 @@ use azure_core::{
 use azure_storage::core::StoredAccessPolicyList;
 use bytes::Bytes;
 use chrono::{DateTime, FixedOffset};
-use http::Method;
 use std::convert::TryFrom;
 use uuid::Uuid;
 

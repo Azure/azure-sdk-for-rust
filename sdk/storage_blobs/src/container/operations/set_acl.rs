@@ -1,8 +1,8 @@
 use crate::{container::public_access_from_header, prelude::*};
+use azure_core::Method;
 use azure_core::{headers::AsHeaders, prelude::*};
 use azure_storage::core::StoredAccessPolicyList;
 use bytes::Bytes;
-use http::method::Method;
 
 #[derive(Debug, Clone)]
 pub struct SetACLBuilder {

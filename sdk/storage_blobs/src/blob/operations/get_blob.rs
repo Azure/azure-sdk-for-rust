@@ -51,7 +51,7 @@ impl<'a> GetBlobBuilder<'a> {
 
         let mut request =
             self.blob_client
-                .prepare_request(url.as_str(), http::Method::GET, None)?;
+                .prepare_request(url.as_str(), azure_core::Method::GET, None)?;
         if let Some(item) = &self.range {
             for (name, value) in item.as_headers() {
                 request.insert_header(name, value);

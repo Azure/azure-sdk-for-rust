@@ -66,7 +66,7 @@ impl UserClient {
         &self.user_name
     }
 
-    pub(crate) fn user_request(&self, method: http::Method) -> Request {
+    pub(crate) fn user_request(&self, method: azure_core::Method) -> Request {
         self.cosmos_client().request(
             &format!(
                 "dbs/{}/users/{}",

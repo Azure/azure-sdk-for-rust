@@ -1,6 +1,6 @@
 use azure_core::{error::Error, headers, CollectedResponse, HttpClient, Request, Url};
+use azure_core::{Method, StatusCode};
 use chrono::Duration;
-use http::Method;
 use ring::hmac;
 use std::{ops::Add, sync::Arc};
 use url::form_urlencoded::{self, Serializer};
@@ -17,7 +17,7 @@ const DEFAULT_SAS_DURATION: i64 = 1;
 /// Prepares an HTTP request
 fn prepare_request(
     url: &str,
-    method: http::Method,
+    method: azure_core::Method,
     body: Option<String>,
     policy_name: &str,
     signing_key: &hmac::Key,
@@ -170,7 +170,7 @@ async fn peek_lock_message2(
 
     let res = http_client.execute_request(&req).await?;
 
-    let status = res.status();
+    let status = res.status().clone();
     let lock_location: String = match res.headers().get(&headers::LOCATION) {
         Some(header_value) => header_value.as_str().to_owned(),
         _ => "".to_owned(),
@@ -191,7 +191,7 @@ async fn peek_lock_message2(
 pub struct PeekLockResponse {
     body: String,
     lock_location: String,
-    status: http::StatusCode,
+    status: StatusCode,
     http_client: Arc<dyn HttpClient>,
     policy_name: String,
     signing_key: hmac::Key,
@@ -204,8 +204,8 @@ impl PeekLockResponse {
     }
 
     /// Get the status of the peek
-    pub fn status(&self) -> http::StatusCode {
-        self.status
+    pub fn status(&self) -> &StatusCode {
+        &self.status
     }
 
     /// Delete message in the lock

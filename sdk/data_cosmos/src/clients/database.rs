@@ -2,8 +2,8 @@ use crate::clients::*;
 use crate::operations::*;
 use crate::resources::collection::PartitionKey;
 use crate::ReadonlyString;
+use azure_core::Method;
 use azure_core::Request;
-use http::Method;
 
 /// A client for Cosmos database resources.
 #[derive(Debug, Clone)]
