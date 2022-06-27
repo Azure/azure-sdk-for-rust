@@ -2471,7 +2471,7 @@ pub mod get_cluster_manifest {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/GetClusterManifest", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -2489,13 +2489,13 @@ pub mod get_cluster_manifest {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ClusterManifest = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -2547,7 +2547,7 @@ pub mod get_cluster_health {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/GetClusterHealth", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -2591,13 +2591,13 @@ pub mod get_cluster_health {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ClusterHealth = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -2654,7 +2654,7 @@ pub mod get_cluster_health_using_policy {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/GetClusterHealth", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -2703,13 +2703,13 @@ pub mod get_cluster_health_using_policy {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ClusterHealth = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -2736,7 +2736,7 @@ pub mod get_cluster_health_chunk {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/GetClusterHealthChunk", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -2754,13 +2754,13 @@ pub mod get_cluster_health_chunk {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ClusterHealthChunk = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -2795,7 +2795,7 @@ pub mod get_cluster_health_chunk_using_policy_and_advanced_filters {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/GetClusterHealthChunk", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -2818,13 +2818,13 @@ pub mod get_cluster_health_chunk_using_policy_and_advanced_filters {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ClusterHealthChunk = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -2857,7 +2857,7 @@ pub mod report_cluster_health {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/ReportClusterHealth", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -2879,9 +2879,9 @@ pub mod report_cluster_health {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -2913,7 +2913,7 @@ pub mod get_provisioned_fabric_code_version_info_list {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/GetProvisionedCodeVersions", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -2934,13 +2934,13 @@ pub mod get_provisioned_fabric_code_version_info_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::FabricCodeVersionInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -2972,7 +2972,7 @@ pub mod get_provisioned_fabric_config_version_info_list {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/GetProvisionedConfigVersions", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -2993,13 +2993,13 @@ pub mod get_provisioned_fabric_config_version_info_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::FabricConfigVersionInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -3026,7 +3026,7 @@ pub mod get_cluster_upgrade_progress {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/GetUpgradeProgress", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -3044,13 +3044,13 @@ pub mod get_cluster_upgrade_progress {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ClusterUpgradeProgressObject = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -3078,7 +3078,7 @@ pub mod get_cluster_configuration {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/GetClusterConfiguration", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -3100,13 +3100,13 @@ pub mod get_cluster_configuration {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ClusterConfiguration = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -3133,7 +3133,7 @@ pub mod get_cluster_configuration_upgrade_status {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/GetClusterConfigurationUpgradeStatus", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -3151,13 +3151,13 @@ pub mod get_cluster_configuration_upgrade_status {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ClusterConfigurationUpgradeStatusInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -3184,7 +3184,7 @@ pub mod get_upgrade_orchestration_service_state {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/GetUpgradeOrchestrationServiceState", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -3202,13 +3202,13 @@ pub mod get_upgrade_orchestration_service_state {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::UpgradeOrchestrationServiceState = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -3236,7 +3236,7 @@ pub mod set_upgrade_orchestration_service_state {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/SetUpgradeOrchestrationServiceState", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -3255,13 +3255,13 @@ pub mod set_upgrade_orchestration_service_state {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::UpgradeOrchestrationServiceStateSummary = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -3289,7 +3289,7 @@ pub mod provision_cluster {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/Provision", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -3308,9 +3308,9 @@ pub mod provision_cluster {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -3338,7 +3338,7 @@ pub mod unprovision_cluster {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/Unprovision", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -3357,9 +3357,9 @@ pub mod unprovision_cluster {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -3386,7 +3386,7 @@ pub mod rollback_cluster_upgrade {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/RollbackUpgrade", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -3405,9 +3405,9 @@ pub mod rollback_cluster_upgrade {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -3435,7 +3435,7 @@ pub mod resume_cluster_upgrade {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/MoveToNextUpgradeDomain", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -3454,9 +3454,9 @@ pub mod resume_cluster_upgrade {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -3484,7 +3484,7 @@ pub mod start_cluster_upgrade {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/Upgrade", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -3503,9 +3503,9 @@ pub mod start_cluster_upgrade {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -3533,7 +3533,7 @@ pub mod start_cluster_configuration_upgrade {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/StartClusterConfigurationUpgrade", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -3552,9 +3552,9 @@ pub mod start_cluster_configuration_upgrade {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -3582,7 +3582,7 @@ pub mod update_cluster_upgrade {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/UpdateUpgrade", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -3601,9 +3601,9 @@ pub mod update_cluster_upgrade {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -3630,7 +3630,7 @@ pub mod get_aad_metadata {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/GetAadMetadata", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -3648,13 +3648,13 @@ pub mod get_aad_metadata {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::AadMetadataObject = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -3681,7 +3681,7 @@ pub mod get_cluster_version {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/GetClusterVersion", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -3699,13 +3699,13 @@ pub mod get_cluster_version {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ClusterVersion = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -3732,7 +3732,7 @@ pub mod get_cluster_load {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/GetLoadInformation", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -3750,13 +3750,13 @@ pub mod get_cluster_load {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ClusterLoadInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -3787,7 +3787,7 @@ pub mod toggle_verbose_service_placement_health_reporting {
                         "{}/$/ToggleVerboseServicePlacementHealthReporting",
                         this.client.endpoint(),
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -3808,9 +3808,9 @@ pub mod toggle_verbose_service_placement_health_reporting {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -3852,7 +3852,7 @@ pub mod get_node_info_list {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Nodes", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -3879,13 +3879,13 @@ pub mod get_node_info_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PagedNodeInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -3917,7 +3917,7 @@ pub mod get_node_info {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Nodes/{}", this.client.endpoint(), &this.node_name))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -3935,14 +3935,14 @@ pub mod get_node_info {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::NodeInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(Response::Ok200(rsp_value))
                         }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -3975,7 +3975,7 @@ pub mod get_node_health {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Nodes/{}/$/GetHealth", this.client.endpoint(), &this.node_name))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -3998,13 +3998,13 @@ pub mod get_node_health {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::NodeHealth = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -4042,7 +4042,7 @@ pub mod get_node_health_using_policy {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Nodes/{}/$/GetHealth", this.client.endpoint(), &this.node_name))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -4070,13 +4070,13 @@ pub mod get_node_health_using_policy {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::NodeHealth = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -4110,7 +4110,7 @@ pub mod report_node_health {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Nodes/{}/$/ReportHealth", this.client.endpoint(), &this.node_name))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -4132,9 +4132,9 @@ pub mod report_node_health {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -4166,7 +4166,7 @@ pub mod get_node_load_info {
                         this.client.endpoint(),
                         &this.node_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -4184,13 +4184,13 @@ pub mod get_node_load_info {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::NodeLoadInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -4219,7 +4219,7 @@ pub mod disable_node {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Nodes/{}/$/Deactivate", this.client.endpoint(), &this.node_name))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -4238,9 +4238,9 @@ pub mod disable_node {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -4268,7 +4268,7 @@ pub mod enable_node {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Nodes/{}/$/Activate", this.client.endpoint(), &this.node_name))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -4287,9 +4287,9 @@ pub mod enable_node {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -4317,7 +4317,7 @@ pub mod remove_node_state {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Nodes/{}/$/RemoveNodeState", this.client.endpoint(), &this.node_name))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -4336,9 +4336,9 @@ pub mod remove_node_state {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -4367,7 +4367,7 @@ pub mod restart_node {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Nodes/{}/$/Restart", this.client.endpoint(), &this.node_name))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -4386,9 +4386,9 @@ pub mod restart_node {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -4420,7 +4420,7 @@ pub mod remove_configuration_overrides {
                         this.client.endpoint(),
                         &this.node_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                    let mut req = azure_core::Request::new(url, http::Method::DELETE);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -4438,9 +4438,9 @@ pub mod remove_configuration_overrides {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -4472,7 +4472,7 @@ pub mod get_configuration_overrides {
                         this.client.endpoint(),
                         &this.node_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -4490,13 +4490,13 @@ pub mod get_configuration_overrides {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ConfigParameterOverrideList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -4534,7 +4534,7 @@ pub mod add_configuration_parameter_overrides {
                         this.client.endpoint(),
                         &this.node_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -4556,9 +4556,9 @@ pub mod add_configuration_parameter_overrides {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -4605,7 +4605,7 @@ pub mod get_application_type_info_list {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/ApplicationTypes", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -4640,13 +4640,13 @@ pub mod get_application_type_info_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PagedApplicationTypeInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -4698,7 +4698,7 @@ pub mod get_application_type_info_list_by_name {
                         this.client.endpoint(),
                         &this.application_type_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -4732,13 +4732,13 @@ pub mod get_application_type_info_list_by_name {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PagedApplicationTypeInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -4770,7 +4770,7 @@ pub mod provision_application_type {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/ApplicationTypes/$/Provision", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -4789,10 +4789,10 @@ pub mod provision_application_type {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                        azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -4829,7 +4829,7 @@ pub mod unprovision_application_type {
                         this.client.endpoint(),
                         &this.application_type_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -4848,10 +4848,10 @@ pub mod unprovision_application_type {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                        azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -4884,7 +4884,7 @@ pub mod get_service_type_info_list {
                         this.client.endpoint(),
                         &this.application_type_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -4906,13 +4906,13 @@ pub mod get_service_type_info_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ServiceTypeInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -4951,7 +4951,7 @@ pub mod get_service_type_info_by_name {
                         &this.application_type_name,
                         &this.service_type_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -4973,14 +4973,14 @@ pub mod get_service_type_info_by_name {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ServiceTypeInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(Response::Ok200(rsp_value))
                         }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -5014,7 +5014,7 @@ pub mod get_service_manifest {
                         this.client.endpoint(),
                         &this.application_type_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -5040,13 +5040,13 @@ pub mod get_service_manifest {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ServiceTypeManifest = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -5085,7 +5085,7 @@ pub mod get_deployed_service_type_info_list {
                         &this.node_name,
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -5108,13 +5108,13 @@ pub mod get_deployed_service_type_info_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::DeployedServiceTypeInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -5159,7 +5159,7 @@ pub mod get_deployed_service_type_info_by_name {
                         &this.application_id,
                         &this.service_type_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -5182,14 +5182,14 @@ pub mod get_deployed_service_type_info_by_name {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::DeployedServiceTypeInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(Response::Ok200(rsp_value))
                         }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -5217,7 +5217,7 @@ pub mod create_application {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Applications/$/Create", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -5236,9 +5236,9 @@ pub mod create_application {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Created => Ok(()),
+                        http::StatusCode::CREATED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -5275,7 +5275,7 @@ pub mod delete_application {
                         this.client.endpoint(),
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -5299,9 +5299,9 @@ pub mod delete_application {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -5337,7 +5337,7 @@ pub mod get_application_load_info {
                         this.client.endpoint(),
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -5355,14 +5355,14 @@ pub mod get_application_load_info {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ApplicationLoadInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(Response::Ok200(rsp_value))
                         }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -5414,7 +5414,7 @@ pub mod get_application_info_list {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Applications", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -5453,13 +5453,13 @@ pub mod get_application_info_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PagedApplicationInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -5496,7 +5496,7 @@ pub mod get_application_info {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Applications/{}", this.client.endpoint(), &this.application_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -5519,14 +5519,14 @@ pub mod get_application_info {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ApplicationInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(Response::Ok200(rsp_value))
                         }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -5578,7 +5578,7 @@ pub mod get_application_health {
                         this.client.endpoint(),
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -5617,13 +5617,13 @@ pub mod get_application_health {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ApplicationHealth = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -5680,7 +5680,7 @@ pub mod get_application_health_using_policy {
                         this.client.endpoint(),
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -5724,13 +5724,13 @@ pub mod get_application_health_using_policy {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ApplicationHealth = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -5768,7 +5768,7 @@ pub mod report_application_health {
                         this.client.endpoint(),
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -5790,9 +5790,9 @@ pub mod report_application_health {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -5825,7 +5825,7 @@ pub mod start_application_upgrade {
                         this.client.endpoint(),
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -5844,9 +5844,9 @@ pub mod start_application_upgrade {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -5878,7 +5878,7 @@ pub mod get_application_upgrade {
                         this.client.endpoint(),
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -5896,13 +5896,13 @@ pub mod get_application_upgrade {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ApplicationUpgradeProgressInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -5935,7 +5935,7 @@ pub mod update_application_upgrade {
                         this.client.endpoint(),
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -5954,9 +5954,9 @@ pub mod update_application_upgrade {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -5989,7 +5989,7 @@ pub mod resume_application_upgrade {
                         this.client.endpoint(),
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -6008,9 +6008,9 @@ pub mod resume_application_upgrade {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -6042,7 +6042,7 @@ pub mod rollback_application_upgrade {
                         this.client.endpoint(),
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -6061,9 +6061,9 @@ pub mod rollback_application_upgrade {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -6106,7 +6106,7 @@ pub mod get_deployed_application_info_list {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Nodes/{}/$/GetApplications", this.client.endpoint(), &this.node_name))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -6135,13 +6135,13 @@ pub mod get_deployed_application_info_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PagedDeployedApplicationInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -6184,7 +6184,7 @@ pub mod get_deployed_application_info {
                         &this.node_name,
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -6207,14 +6207,14 @@ pub mod get_deployed_application_info {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::DeployedApplicationInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(Response::Ok200(rsp_value))
                         }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -6263,7 +6263,7 @@ pub mod get_deployed_application_health {
                         &this.node_name,
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -6297,13 +6297,13 @@ pub mod get_deployed_application_health {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::DeployedApplicationHealth = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -6357,7 +6357,7 @@ pub mod get_deployed_application_health_using_policy {
                         &this.node_name,
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -6396,13 +6396,13 @@ pub mod get_deployed_application_health_using_policy {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::DeployedApplicationHealth = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -6442,7 +6442,7 @@ pub mod report_deployed_application_health {
                         &this.node_name,
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -6464,9 +6464,9 @@ pub mod report_deployed_application_health {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -6499,7 +6499,7 @@ pub mod get_application_manifest {
                         this.client.endpoint(),
                         &this.application_type_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -6521,13 +6521,13 @@ pub mod get_application_manifest {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ApplicationTypeManifest = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -6569,7 +6569,7 @@ pub mod get_service_info_list {
                         this.client.endpoint(),
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -6593,13 +6593,13 @@ pub mod get_service_info_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PagedServiceInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -6637,7 +6637,7 @@ pub mod get_service_info {
                         &this.application_id,
                         &this.service_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -6655,14 +6655,14 @@ pub mod get_service_info {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ServiceInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(Response::Ok200(rsp_value))
                         }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -6694,7 +6694,7 @@ pub mod get_application_name_info {
                         this.client.endpoint(),
                         &this.service_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -6712,13 +6712,13 @@ pub mod get_application_name_info {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ApplicationNameInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -6751,7 +6751,7 @@ pub mod create_service {
                         this.client.endpoint(),
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -6770,9 +6770,9 @@ pub mod create_service {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -6805,7 +6805,7 @@ pub mod create_service_from_template {
                         this.client.endpoint(),
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -6824,9 +6824,9 @@ pub mod create_service_from_template {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -6859,7 +6859,7 @@ pub mod delete_service {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Services/{}/$/Delete", this.client.endpoint(), &this.service_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -6883,9 +6883,9 @@ pub mod delete_service {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -6914,7 +6914,7 @@ pub mod update_service {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Services/{}/$/Update", this.client.endpoint(), &this.service_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -6933,9 +6933,9 @@ pub mod update_service {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -6967,7 +6967,7 @@ pub mod get_service_description {
                         this.client.endpoint(),
                         &this.service_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -6985,13 +6985,13 @@ pub mod get_service_description {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ServiceDescription = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -7034,7 +7034,7 @@ pub mod get_service_health {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Services/{}/$/GetHealth", this.client.endpoint(), &this.service_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -7067,13 +7067,13 @@ pub mod get_service_health {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ServiceHealth = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -7121,7 +7121,7 @@ pub mod get_service_health_using_policy {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Services/{}/$/GetHealth", this.client.endpoint(), &this.service_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -7159,13 +7159,13 @@ pub mod get_service_health_using_policy {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ServiceHealth = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -7199,7 +7199,7 @@ pub mod report_service_health {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Services/{}/$/ReportHealth", this.client.endpoint(), &this.service_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -7221,9 +7221,9 @@ pub mod report_service_health {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -7270,7 +7270,7 @@ pub mod resolve_service {
                         this.client.endpoint(),
                         &this.service_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -7303,13 +7303,13 @@ pub mod resolve_service {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ResolvedServicePartition = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -7351,7 +7351,7 @@ pub mod get_unplaced_replica_information {
                         this.client.endpoint(),
                         &this.service_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -7377,13 +7377,13 @@ pub mod get_unplaced_replica_information {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::UnplacedReplicaInformation = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -7416,7 +7416,7 @@ pub mod get_partition_info_list {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Services/{}/$/GetPartitions", this.client.endpoint(), &this.service_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -7437,13 +7437,13 @@ pub mod get_partition_info_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PagedServicePartitionInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -7475,7 +7475,7 @@ pub mod get_partition_info {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Partitions/{}", this.client.endpoint(), &this.partition_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -7493,14 +7493,14 @@ pub mod get_partition_info {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ServicePartitionInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(Response::Ok200(rsp_value))
                         }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -7532,7 +7532,7 @@ pub mod get_service_name_info {
                         this.client.endpoint(),
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -7550,13 +7550,13 @@ pub mod get_service_name_info {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ServiceNameInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -7599,7 +7599,7 @@ pub mod get_partition_health {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Partitions/{}/$/GetHealth", this.client.endpoint(), &this.partition_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -7632,13 +7632,13 @@ pub mod get_partition_health {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PartitionHealth = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -7686,7 +7686,7 @@ pub mod get_partition_health_using_policy {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Partitions/{}/$/GetHealth", this.client.endpoint(), &this.partition_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -7724,13 +7724,13 @@ pub mod get_partition_health_using_policy {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PartitionHealth = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -7768,7 +7768,7 @@ pub mod report_partition_health {
                         this.client.endpoint(),
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -7790,9 +7790,9 @@ pub mod report_partition_health {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -7824,7 +7824,7 @@ pub mod get_partition_load_information {
                         this.client.endpoint(),
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -7842,13 +7842,13 @@ pub mod get_partition_load_information {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PartitionLoadInformation = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -7876,7 +7876,7 @@ pub mod reset_partition_load {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Partitions/{}/$/ResetLoad", this.client.endpoint(), &this.partition_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -7895,9 +7895,9 @@ pub mod reset_partition_load {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -7925,7 +7925,7 @@ pub mod recover_partition {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Partitions/{}/$/Recover", this.client.endpoint(), &this.partition_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -7944,9 +7944,9 @@ pub mod recover_partition {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -7978,7 +7978,7 @@ pub mod recover_service_partitions {
                         this.client.endpoint(),
                         &this.service_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -7997,9 +7997,9 @@ pub mod recover_service_partitions {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -8026,7 +8026,7 @@ pub mod recover_system_partitions {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/RecoverSystemPartitions", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -8045,9 +8045,9 @@ pub mod recover_system_partitions {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -8074,7 +8074,7 @@ pub mod recover_all_partitions {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/RecoverAllPartitions", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -8093,9 +8093,9 @@ pub mod recover_all_partitions {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -8137,7 +8137,7 @@ pub mod move_primary_replica {
                         this.client.endpoint(),
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -8164,9 +8164,9 @@ pub mod move_primary_replica {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -8209,7 +8209,7 @@ pub mod move_secondary_replica {
                         this.client.endpoint(),
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -8238,9 +8238,9 @@ pub mod move_secondary_replica {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -8278,7 +8278,7 @@ pub mod update_partition_load {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/UpdatePartitionLoad", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -8303,13 +8303,13 @@ pub mod update_partition_load {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PagedUpdatePartitionLoadResultList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -8332,7 +8332,7 @@ pub mod create_repair_task {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/CreateRepairTask", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -8348,13 +8348,13 @@ pub mod create_repair_task {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::RepairTaskUpdateInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -8377,7 +8377,7 @@ pub mod cancel_repair_task {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/CancelRepairTask", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -8393,13 +8393,13 @@ pub mod cancel_repair_task {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::RepairTaskUpdateInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -8422,7 +8422,7 @@ pub mod delete_repair_task {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/DeleteRepairTask", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -8438,9 +8438,9 @@ pub mod delete_repair_task {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -8477,7 +8477,7 @@ pub mod get_repair_task_list {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/GetRepairTaskList", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -8503,13 +8503,13 @@ pub mod get_repair_task_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::RepairTaskList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -8532,7 +8532,7 @@ pub mod force_approve_repair_task {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/ForceApproveRepairTask", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -8548,13 +8548,13 @@ pub mod force_approve_repair_task {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::RepairTaskUpdateInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -8577,7 +8577,7 @@ pub mod update_repair_task_health_policy {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/UpdateRepairTaskHealthPolicy", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -8593,13 +8593,13 @@ pub mod update_repair_task_health_policy {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::RepairTaskUpdateInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -8622,7 +8622,7 @@ pub mod update_repair_execution_state {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/UpdateRepairExecutionState", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -8638,13 +8638,13 @@ pub mod update_repair_execution_state {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::RepairTaskUpdateInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -8681,7 +8681,7 @@ pub mod get_replica_info_list {
                         this.client.endpoint(),
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -8702,13 +8702,13 @@ pub mod get_replica_info_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PagedReplicaInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -8746,7 +8746,7 @@ pub mod get_replica_info {
                         &this.partition_id,
                         &this.replica_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -8764,14 +8764,14 @@ pub mod get_replica_info {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ReplicaInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(Response::Ok200(rsp_value))
                         }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -8810,7 +8810,7 @@ pub mod get_replica_health {
                         &this.partition_id,
                         &this.replica_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -8833,13 +8833,13 @@ pub mod get_replica_health {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ReplicaHealth = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -8883,7 +8883,7 @@ pub mod get_replica_health_using_policy {
                         &this.partition_id,
                         &this.replica_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -8911,13 +8911,13 @@ pub mod get_replica_health_using_policy {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ReplicaHealth = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -8958,7 +8958,7 @@ pub mod report_replica_health {
                         &this.partition_id,
                         &this.replica_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -8982,9 +8982,9 @@ pub mod report_replica_health {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -9032,7 +9032,7 @@ pub mod get_deployed_service_replica_info_list {
                         &this.node_name,
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -9058,14 +9058,14 @@ pub mod get_deployed_service_replica_info_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::DeployedServiceReplicaInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(Response::Ok200(rsp_value))
                         }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -9101,7 +9101,7 @@ pub mod get_deployed_service_replica_detail_info {
                         &this.partition_id,
                         &this.replica_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -9119,13 +9119,13 @@ pub mod get_deployed_service_replica_detail_info {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::DeployedServiceReplicaDetailInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -9159,7 +9159,7 @@ pub mod get_deployed_service_replica_detail_info_by_partition_id {
                         &this.node_name,
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -9177,13 +9177,13 @@ pub mod get_deployed_service_replica_detail_info_by_partition_id {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::DeployedServiceReplicaDetailInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -9219,7 +9219,7 @@ pub mod restart_replica {
                         &this.partition_id,
                         &this.replica_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -9238,9 +9238,9 @@ pub mod restart_replica {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -9281,7 +9281,7 @@ pub mod remove_replica {
                         &this.partition_id,
                         &this.replica_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -9305,9 +9305,9 @@ pub mod remove_replica {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -9341,7 +9341,7 @@ pub mod get_deployed_service_package_info_list {
                         &this.node_name,
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -9359,13 +9359,13 @@ pub mod get_deployed_service_package_info_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::DeployedServicePackageInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -9405,7 +9405,7 @@ pub mod get_deployed_service_package_info_list_by_name {
                         &this.application_id,
                         &this.service_package_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -9423,14 +9423,14 @@ pub mod get_deployed_service_package_info_list_by_name {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::DeployedServicePackageInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(Response::Ok200(rsp_value))
                         }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -9471,7 +9471,7 @@ pub mod get_deployed_service_package_health {
                         &this.application_id,
                         &this.service_package_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -9494,13 +9494,13 @@ pub mod get_deployed_service_package_health {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::DeployedServicePackageHealth = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -9546,7 +9546,7 @@ pub mod get_deployed_service_package_health_using_policy {
                         &this.application_id,
                         &this.service_package_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -9574,13 +9574,13 @@ pub mod get_deployed_service_package_health_using_policy {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::DeployedServicePackageHealth = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -9622,7 +9622,7 @@ pub mod report_deployed_service_package_health {
                         &this.application_id,
                         &this.service_package_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -9644,9 +9644,9 @@ pub mod report_deployed_service_package_health {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -9679,7 +9679,7 @@ pub mod deploy_service_package_to_node {
                         this.client.endpoint(),
                         &this.node_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -9698,9 +9698,9 @@ pub mod deploy_service_package_to_node {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -9744,7 +9744,7 @@ pub mod get_deployed_code_package_info_list {
                         &this.node_name,
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -9770,13 +9770,13 @@ pub mod get_deployed_code_package_info_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::DeployedCodePackageInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -9811,7 +9811,7 @@ pub mod restart_deployed_code_package {
                         &this.node_name,
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -9830,9 +9830,9 @@ pub mod restart_deployed_code_package {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -9878,7 +9878,7 @@ pub mod get_container_logs_deployed_on_node {
                         &this.node_name,
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -9908,13 +9908,13 @@ pub mod get_container_logs_deployed_on_node {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ContainerLogs = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -9952,7 +9952,7 @@ pub mod invoke_container_api {
                         &this.node_name,
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -9981,13 +9981,13 @@ pub mod invoke_container_api {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ContainerApiResponse = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -10015,7 +10015,7 @@ pub mod create_compose_deployment {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/ComposeDeployments/$/Create", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                    let mut req = azure_core::Request::new(url, http::Method::PUT);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -10034,9 +10034,9 @@ pub mod create_compose_deployment {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -10064,7 +10064,7 @@ pub mod get_compose_deployment_status {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/ComposeDeployments/{}", this.client.endpoint(), &this.deployment_name))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -10082,13 +10082,13 @@ pub mod get_compose_deployment_status {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ComposeDeploymentStatusInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -10125,7 +10125,7 @@ pub mod get_compose_deployment_status_list {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/ComposeDeployments", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -10149,13 +10149,13 @@ pub mod get_compose_deployment_status_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PagedComposeDeploymentStatusInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -10187,7 +10187,7 @@ pub mod get_compose_deployment_upgrade_progress {
                         this.client.endpoint(),
                         &this.deployment_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -10205,13 +10205,13 @@ pub mod get_compose_deployment_upgrade_progress {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ComposeDeploymentUpgradeProgressInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -10243,7 +10243,7 @@ pub mod remove_compose_deployment {
                         this.client.endpoint(),
                         &this.deployment_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -10262,9 +10262,9 @@ pub mod remove_compose_deployment {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -10297,7 +10297,7 @@ pub mod start_compose_deployment_upgrade {
                         this.client.endpoint(),
                         &this.deployment_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -10316,9 +10316,9 @@ pub mod start_compose_deployment_upgrade {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -10350,7 +10350,7 @@ pub mod start_rollback_compose_deployment_upgrade {
                         this.client.endpoint(),
                         &this.deployment_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -10369,9 +10369,9 @@ pub mod start_rollback_compose_deployment_upgrade {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -10398,7 +10398,7 @@ pub mod get_chaos {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Tools/Chaos", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -10416,13 +10416,13 @@ pub mod get_chaos {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::Chaos = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -10450,7 +10450,7 @@ pub mod start_chaos {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Tools/Chaos/$/Start", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -10469,9 +10469,9 @@ pub mod start_chaos {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -10498,7 +10498,7 @@ pub mod stop_chaos {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Tools/Chaos/$/Stop", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -10517,9 +10517,9 @@ pub mod stop_chaos {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -10566,7 +10566,7 @@ pub mod get_chaos_events {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Tools/Chaos/Events", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -10596,13 +10596,13 @@ pub mod get_chaos_events {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ChaosEventsSegment = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -10629,7 +10629,7 @@ pub mod get_chaos_schedule {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Tools/Chaos/Schedule", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -10647,13 +10647,13 @@ pub mod get_chaos_schedule {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ChaosScheduleDescription = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -10681,7 +10681,7 @@ pub mod post_chaos_schedule {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Tools/Chaos/Schedule", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -10700,9 +10700,9 @@ pub mod post_chaos_schedule {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -10730,7 +10730,7 @@ pub mod get_image_store_content {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/ImageStore/{}", this.client.endpoint(), &this.content_path))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -10748,13 +10748,13 @@ pub mod get_image_store_content {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ImageStoreContent = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -10782,7 +10782,7 @@ pub mod upload_file {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/ImageStore/{}", this.client.endpoint(), &this.content_path))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                    let mut req = azure_core::Request::new(url, http::Method::PUT);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -10800,9 +10800,9 @@ pub mod upload_file {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -10830,7 +10830,7 @@ pub mod delete_image_store_content {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/ImageStore/{}", this.client.endpoint(), &this.content_path))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                    let mut req = azure_core::Request::new(url, http::Method::DELETE);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -10848,9 +10848,9 @@ pub mod delete_image_store_content {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -10877,7 +10877,7 @@ pub mod get_image_store_root_content {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/ImageStore", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -10895,13 +10895,13 @@ pub mod get_image_store_root_content {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ImageStoreContent = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -10929,7 +10929,7 @@ pub mod copy_image_store_content {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/ImageStore/$/Copy", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -10948,9 +10948,9 @@ pub mod copy_image_store_content {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -10978,7 +10978,7 @@ pub mod delete_image_store_upload_session {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/ImageStore/$/DeleteUploadSession", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                    let mut req = azure_core::Request::new(url, http::Method::DELETE);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -10998,9 +10998,9 @@ pub mod delete_image_store_upload_session {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -11028,7 +11028,7 @@ pub mod commit_image_store_upload_session {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/ImageStore/$/CommitUploadSession", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -11049,9 +11049,9 @@ pub mod commit_image_store_upload_session {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -11079,7 +11079,7 @@ pub mod get_image_store_upload_session_by_id {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/ImageStore/$/GetUploadSession", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -11099,13 +11099,13 @@ pub mod get_image_store_upload_session_by_id {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::UploadSession = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -11137,7 +11137,7 @@ pub mod get_image_store_upload_session_by_path {
                         this.client.endpoint(),
                         &this.content_path
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -11155,13 +11155,13 @@ pub mod get_image_store_upload_session_by_path {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::UploadSession = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -11195,7 +11195,7 @@ pub mod upload_file_chunk {
                         this.client.endpoint(),
                         &this.content_path
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                    let mut req = azure_core::Request::new(url, http::Method::PUT);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -11216,9 +11216,9 @@ pub mod upload_file_chunk {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -11245,7 +11245,7 @@ pub mod get_image_store_root_folder_size {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/ImageStore/$/FolderSize", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -11263,13 +11263,13 @@ pub mod get_image_store_root_folder_size {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::FolderSizeInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -11301,7 +11301,7 @@ pub mod get_image_store_folder_size {
                         this.client.endpoint(),
                         &this.content_path
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -11319,13 +11319,13 @@ pub mod get_image_store_folder_size {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::FolderSizeInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -11352,7 +11352,7 @@ pub mod get_image_store_info {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/ImageStore/$/Info", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -11370,13 +11370,13 @@ pub mod get_image_store_info {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ImageStoreInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -11409,7 +11409,7 @@ pub mod invoke_infrastructure_command {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/InvokeInfrastructureCommand", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -11433,13 +11433,13 @@ pub mod invoke_infrastructure_command {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::InfrastructureServiceResponse = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -11472,7 +11472,7 @@ pub mod invoke_infrastructure_query {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/$/InvokeInfrastructureQuery", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -11495,13 +11495,13 @@ pub mod invoke_infrastructure_query {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::InfrastructureServiceResponse = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -11537,7 +11537,7 @@ pub mod start_data_loss {
                         &this.service_id,
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -11560,9 +11560,9 @@ pub mod start_data_loss {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -11597,7 +11597,7 @@ pub mod get_data_loss_progress {
                         &this.service_id,
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -11617,13 +11617,13 @@ pub mod get_data_loss_progress {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PartitionDataLossProgress = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -11660,7 +11660,7 @@ pub mod start_quorum_loss {
                         &this.service_id,
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -11687,9 +11687,9 @@ pub mod start_quorum_loss {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -11724,7 +11724,7 @@ pub mod get_quorum_loss_progress {
                         &this.service_id,
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -11744,13 +11744,13 @@ pub mod get_quorum_loss_progress {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PartitionQuorumLossProgress = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -11786,7 +11786,7 @@ pub mod start_partition_restart {
                         &this.service_id,
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -11811,9 +11811,9 @@ pub mod start_partition_restart {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -11848,7 +11848,7 @@ pub mod get_partition_restart_progress {
                         &this.service_id,
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -11868,13 +11868,13 @@ pub mod get_partition_restart_progress {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PartitionRestartProgress = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -11910,7 +11910,7 @@ pub mod start_node_transition {
                         this.client.endpoint(),
                         &this.node_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -11941,9 +11941,9 @@ pub mod start_node_transition {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -11976,7 +11976,7 @@ pub mod get_node_transition_progress {
                         this.client.endpoint(),
                         &this.node_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -11996,13 +11996,13 @@ pub mod get_node_transition_progress {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::NodeTransitionProgress = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -12031,7 +12031,7 @@ pub mod get_fault_operation_list {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Faults/", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -12055,13 +12055,13 @@ pub mod get_fault_operation_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::OperationStatusList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -12090,7 +12090,7 @@ pub mod cancel_operation {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Faults/$/Cancel", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -12113,9 +12113,9 @@ pub mod cancel_operation {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -12143,7 +12143,7 @@ pub mod create_backup_policy {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/BackupRestore/BackupPolicies/$/Create", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -12162,9 +12162,9 @@ pub mod create_backup_policy {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Created => Ok(()),
+                        http::StatusCode::CREATED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -12196,7 +12196,7 @@ pub mod delete_backup_policy {
                         this.client.endpoint(),
                         &this.backup_policy_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -12215,9 +12215,9 @@ pub mod delete_backup_policy {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -12254,7 +12254,7 @@ pub mod get_backup_policy_list {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/BackupRestore/BackupPolicies", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -12278,13 +12278,13 @@ pub mod get_backup_policy_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PagedBackupPolicyDescriptionList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -12316,7 +12316,7 @@ pub mod get_backup_policy_by_name {
                         this.client.endpoint(),
                         &this.backup_policy_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -12334,13 +12334,13 @@ pub mod get_backup_policy_by_name {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::BackupPolicyDescription = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -12382,7 +12382,7 @@ pub mod get_all_entities_backed_up_by_policy {
                         this.client.endpoint(),
                         &this.backup_policy_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -12406,13 +12406,13 @@ pub mod get_all_entities_backed_up_by_policy {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PagedBackupEntityList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -12445,7 +12445,7 @@ pub mod update_backup_policy {
                         this.client.endpoint(),
                         &this.backup_policy_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -12464,9 +12464,9 @@ pub mod update_backup_policy {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -12499,7 +12499,7 @@ pub mod enable_application_backup {
                         this.client.endpoint(),
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -12518,9 +12518,9 @@ pub mod enable_application_backup {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -12557,7 +12557,7 @@ pub mod disable_application_backup {
                         this.client.endpoint(),
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -12580,9 +12580,9 @@ pub mod disable_application_backup {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -12624,7 +12624,7 @@ pub mod get_application_backup_configuration_info {
                         this.client.endpoint(),
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -12648,13 +12648,13 @@ pub mod get_application_backup_configuration_info {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PagedBackupConfigurationInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -12711,7 +12711,7 @@ pub mod get_application_backup_list {
                         this.client.endpoint(),
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -12748,13 +12748,13 @@ pub mod get_application_backup_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PagedBackupInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -12786,7 +12786,7 @@ pub mod suspend_application_backup {
                         this.client.endpoint(),
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -12805,9 +12805,9 @@ pub mod suspend_application_backup {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -12839,7 +12839,7 @@ pub mod resume_application_backup {
                         this.client.endpoint(),
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -12858,9 +12858,9 @@ pub mod resume_application_backup {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -12889,7 +12889,7 @@ pub mod enable_service_backup {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Services/{}/$/EnableBackup", this.client.endpoint(), &this.service_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -12908,9 +12908,9 @@ pub mod enable_service_backup {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -12943,7 +12943,7 @@ pub mod disable_service_backup {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Services/{}/$/DisableBackup", this.client.endpoint(), &this.service_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -12966,9 +12966,9 @@ pub mod disable_service_backup {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -13010,7 +13010,7 @@ pub mod get_service_backup_configuration_info {
                         this.client.endpoint(),
                         &this.service_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -13034,13 +13034,13 @@ pub mod get_service_backup_configuration_info {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PagedBackupConfigurationInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -13093,7 +13093,7 @@ pub mod get_service_backup_list {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Services/{}/$/GetBackups", this.client.endpoint(), &this.service_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -13130,13 +13130,13 @@ pub mod get_service_backup_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PagedBackupInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -13164,7 +13164,7 @@ pub mod suspend_service_backup {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Services/{}/$/SuspendBackup", this.client.endpoint(), &this.service_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -13183,9 +13183,9 @@ pub mod suspend_service_backup {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -13213,7 +13213,7 @@ pub mod resume_service_backup {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Services/{}/$/ResumeBackup", this.client.endpoint(), &this.service_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -13232,9 +13232,9 @@ pub mod resume_service_backup {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -13267,7 +13267,7 @@ pub mod enable_partition_backup {
                         this.client.endpoint(),
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -13286,9 +13286,9 @@ pub mod enable_partition_backup {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -13325,7 +13325,7 @@ pub mod disable_partition_backup {
                         this.client.endpoint(),
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -13348,9 +13348,9 @@ pub mod disable_partition_backup {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -13382,7 +13382,7 @@ pub mod get_partition_backup_configuration_info {
                         this.client.endpoint(),
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -13400,13 +13400,13 @@ pub mod get_partition_backup_configuration_info {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PartitionBackupConfigurationInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -13453,7 +13453,7 @@ pub mod get_partition_backup_list {
                         this.client.endpoint(),
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -13484,13 +13484,13 @@ pub mod get_partition_backup_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PagedBackupInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -13522,7 +13522,7 @@ pub mod suspend_partition_backup {
                         this.client.endpoint(),
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -13541,9 +13541,9 @@ pub mod suspend_partition_backup {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -13575,7 +13575,7 @@ pub mod resume_partition_backup {
                         this.client.endpoint(),
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -13594,9 +13594,9 @@ pub mod resume_partition_backup {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -13634,7 +13634,7 @@ pub mod backup_partition {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Partitions/{}/$/Backup", this.client.endpoint(), &this.partition_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -13662,9 +13662,9 @@ pub mod backup_partition {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -13696,7 +13696,7 @@ pub mod get_partition_backup_progress {
                         this.client.endpoint(),
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -13714,13 +13714,13 @@ pub mod get_partition_backup_progress {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::BackupProgressInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -13754,7 +13754,7 @@ pub mod restore_partition {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Partitions/{}/$/Restore", this.client.endpoint(), &this.partition_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -13778,9 +13778,9 @@ pub mod restore_partition {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
+                        http::StatusCode::ACCEPTED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -13812,7 +13812,7 @@ pub mod get_partition_restore_progress {
                         this.client.endpoint(),
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -13830,13 +13830,13 @@ pub mod get_partition_restore_progress {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::RestoreProgressInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -13874,7 +13874,7 @@ pub mod get_backups_from_backup_location {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/BackupRestore/$/GetBackups", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -13899,13 +13899,13 @@ pub mod get_backups_from_backup_location {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PagedBackupInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -13933,7 +13933,7 @@ pub mod create_name {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Names/$/Create", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -13952,9 +13952,9 @@ pub mod create_name {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Created => Ok(()),
+                        http::StatusCode::CREATED => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -13982,7 +13982,7 @@ pub mod get_name_exists_info {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Names/{}", this.client.endpoint(), &this.name_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -14000,9 +14000,9 @@ pub mod get_name_exists_info {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -14030,7 +14030,7 @@ pub mod delete_name {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Names/{}", this.client.endpoint(), &this.name_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                    let mut req = azure_core::Request::new(url, http::Method::DELETE);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -14048,9 +14048,9 @@ pub mod delete_name {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -14088,7 +14088,7 @@ pub mod get_sub_name_info_list {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Names/{}/$/GetSubNames", this.client.endpoint(), &this.name_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -14112,13 +14112,13 @@ pub mod get_sub_name_info_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PagedSubNameInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -14156,7 +14156,7 @@ pub mod get_property_info_list {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Names/{}/$/GetProperties", this.client.endpoint(), &this.name_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -14182,13 +14182,13 @@ pub mod get_property_info_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PagedPropertyInfoList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -14217,7 +14217,7 @@ pub mod get_property_info {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Names/{}/$/GetProperty", this.client.endpoint(), &this.name_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -14237,13 +14237,13 @@ pub mod get_property_info {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PropertyInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -14272,7 +14272,7 @@ pub mod put_property {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Names/{}/$/GetProperty", this.client.endpoint(), &this.name_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                    let mut req = azure_core::Request::new(url, http::Method::PUT);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -14291,9 +14291,9 @@ pub mod put_property {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -14322,7 +14322,7 @@ pub mod delete_property {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/Names/{}/$/GetProperty", this.client.endpoint(), &this.name_id))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                    let mut req = azure_core::Request::new(url, http::Method::DELETE);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -14342,9 +14342,9 @@ pub mod delete_property {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
+                        http::StatusCode::OK => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -14377,7 +14377,7 @@ pub mod submit_property_batch {
                         this.client.endpoint(),
                         &this.name_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let mut req = azure_core::Request::new(url, http::Method::POST);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -14396,13 +14396,13 @@ pub mod submit_property_batch {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::SuccessfulPropertyBatchInfo = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -14446,7 +14446,7 @@ pub mod get_cluster_event_list {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/EventsStore/Cluster/Events", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -14483,13 +14483,13 @@ pub mod get_cluster_event_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ClusterEventList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -14533,7 +14533,7 @@ pub mod get_containers_event_list {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/EventsStore/Containers/Events", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -14570,13 +14570,13 @@ pub mod get_containers_event_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ContainerInstanceEventList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -14625,7 +14625,7 @@ pub mod get_node_event_list {
                         this.client.endpoint(),
                         &this.node_name
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -14662,13 +14662,13 @@ pub mod get_node_event_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::NodeEventList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -14712,7 +14712,7 @@ pub mod get_nodes_event_list {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/EventsStore/Nodes/Events", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -14749,13 +14749,13 @@ pub mod get_nodes_event_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::NodeEventList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -14804,7 +14804,7 @@ pub mod get_application_event_list {
                         this.client.endpoint(),
                         &this.application_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -14841,13 +14841,13 @@ pub mod get_application_event_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ApplicationEventList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -14891,7 +14891,7 @@ pub mod get_applications_event_list {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/EventsStore/Applications/Events", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -14928,13 +14928,13 @@ pub mod get_applications_event_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ApplicationEventList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -14983,7 +14983,7 @@ pub mod get_service_event_list {
                         this.client.endpoint(),
                         &this.service_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -15020,13 +15020,13 @@ pub mod get_service_event_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ServiceEventList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -15070,7 +15070,7 @@ pub mod get_services_event_list {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/EventsStore/Services/Events", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -15107,13 +15107,13 @@ pub mod get_services_event_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ServiceEventList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -15162,7 +15162,7 @@ pub mod get_partition_event_list {
                         this.client.endpoint(),
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -15199,13 +15199,13 @@ pub mod get_partition_event_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PartitionEventList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -15249,7 +15249,7 @@ pub mod get_partitions_event_list {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}/EventsStore/Partitions/Events", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -15286,13 +15286,13 @@ pub mod get_partitions_event_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::PartitionEventList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -15343,7 +15343,7 @@ pub mod get_partition_replica_event_list {
                         &this.partition_id,
                         &this.replica_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -15380,13 +15380,13 @@ pub mod get_partition_replica_event_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ReplicaEventList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -15435,7 +15435,7 @@ pub mod get_partition_replicas_event_list {
                         this.client.endpoint(),
                         &this.partition_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -15472,13 +15472,13 @@ pub mod get_partition_replicas_event_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::ReplicaEventList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -15510,7 +15510,7 @@ pub mod get_correlated_event_list {
                         this.client.endpoint(),
                         &this.event_instance_id
                     ))?;
-                    let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                    let mut req = azure_core::Request::new(url, http::Method::GET);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -15528,13 +15528,13 @@ pub mod get_correlated_event_list {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        azure_core::StatusCode::Ok => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                             let rsp_value: models::EventList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code.as_u16(),
                             error_code: None,
                         })),
                     }
@@ -15596,7 +15596,7 @@ pub mod mesh_secret {
                             this.client.endpoint(),
                             &this.secret_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -15611,13 +15611,13 @@ pub mod mesh_secret {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::SecretResourceDescription = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -15650,7 +15650,7 @@ pub mod mesh_secret {
                             this.client.endpoint(),
                             &this.secret_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -15666,19 +15666,19 @@ pub mod mesh_secret {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::SecretResourceDescription = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
-                            azure_core::StatusCode::Created => {
+                            http::StatusCode::CREATED => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::SecretResourceDescription = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -15710,7 +15710,7 @@ pub mod mesh_secret {
                             this.client.endpoint(),
                             &this.secret_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -15725,11 +15725,11 @@ pub mod mesh_secret {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
+                            http::StatusCode::OK => Ok(Response::Ok200),
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                            http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -15751,7 +15751,7 @@ pub mod mesh_secret {
                     let this = self.clone();
                     async move {
                         let url = azure_core::Url::parse(&format!("{}/Resources/Secrets", this.client.endpoint(),))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -15766,13 +15766,13 @@ pub mod mesh_secret {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::PagedSecretResourceDescriptionList = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -15852,7 +15852,7 @@ pub mod mesh_secret_value {
                             &this.secret_resource_name,
                             &this.secret_value_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -15867,13 +15867,13 @@ pub mod mesh_secret_value {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::SecretValueResourceDescription = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -15908,7 +15908,7 @@ pub mod mesh_secret_value {
                             &this.secret_resource_name,
                             &this.secret_value_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -15924,19 +15924,19 @@ pub mod mesh_secret_value {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::SecretValueResourceDescription = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
-                            azure_core::StatusCode::Created => {
+                            http::StatusCode::CREATED => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::SecretValueResourceDescription = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -15970,7 +15970,7 @@ pub mod mesh_secret_value {
                             &this.secret_resource_name,
                             &this.secret_value_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -15985,11 +15985,11 @@ pub mod mesh_secret_value {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
+                            http::StatusCode::OK => Ok(Response::Ok200),
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                            http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -16016,7 +16016,7 @@ pub mod mesh_secret_value {
                             this.client.endpoint(),
                             &this.secret_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -16031,13 +16031,13 @@ pub mod mesh_secret_value {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::PagedSecretValueResourceDescriptionList = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -16066,7 +16066,7 @@ pub mod mesh_secret_value {
                             &this.secret_resource_name,
                             &this.secret_value_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let mut req = azure_core::Request::new(url, http::Method::POST);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -16082,13 +16082,13 @@ pub mod mesh_secret_value {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::SecretValue = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -16151,7 +16151,7 @@ pub mod mesh_volume {
                             this.client.endpoint(),
                             &this.volume_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -16166,13 +16166,13 @@ pub mod mesh_volume {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::VolumeResourceDescription = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -16205,7 +16205,7 @@ pub mod mesh_volume {
                             this.client.endpoint(),
                             &this.volume_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -16221,19 +16221,19 @@ pub mod mesh_volume {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::VolumeResourceDescription = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
-                            azure_core::StatusCode::Created => {
+                            http::StatusCode::CREATED => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::VolumeResourceDescription = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -16265,7 +16265,7 @@ pub mod mesh_volume {
                             this.client.endpoint(),
                             &this.volume_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -16280,11 +16280,11 @@ pub mod mesh_volume {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
+                            http::StatusCode::OK => Ok(Response::Ok200),
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                            http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -16306,7 +16306,7 @@ pub mod mesh_volume {
                     let this = self.clone();
                     async move {
                         let url = azure_core::Url::parse(&format!("{}/Resources/Volumes", this.client.endpoint(),))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -16321,13 +16321,13 @@ pub mod mesh_volume {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::PagedVolumeResourceDescriptionList = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -16390,7 +16390,7 @@ pub mod mesh_network {
                             this.client.endpoint(),
                             &this.network_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -16405,13 +16405,13 @@ pub mod mesh_network {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::NetworkResourceDescription = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -16444,7 +16444,7 @@ pub mod mesh_network {
                             this.client.endpoint(),
                             &this.network_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -16460,19 +16460,19 @@ pub mod mesh_network {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::NetworkResourceDescription = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
-                            azure_core::StatusCode::Created => {
+                            http::StatusCode::CREATED => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::NetworkResourceDescription = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -16504,7 +16504,7 @@ pub mod mesh_network {
                             this.client.endpoint(),
                             &this.network_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -16519,11 +16519,11 @@ pub mod mesh_network {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
+                            http::StatusCode::OK => Ok(Response::Ok200),
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                            http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -16545,7 +16545,7 @@ pub mod mesh_network {
                     let this = self.clone();
                     async move {
                         let url = azure_core::Url::parse(&format!("{}/Resources/Networks", this.client.endpoint(),))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -16560,13 +16560,13 @@ pub mod mesh_network {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::PagedNetworkResourceDescriptionList = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -16636,7 +16636,7 @@ pub mod mesh_application {
                             this.client.endpoint(),
                             &this.application_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -16651,13 +16651,13 @@ pub mod mesh_application {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::ApplicationResourceDescription = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -16690,7 +16690,7 @@ pub mod mesh_application {
                             this.client.endpoint(),
                             &this.application_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -16706,19 +16706,19 @@ pub mod mesh_application {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::ApplicationResourceDescription = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
-                            azure_core::StatusCode::Created => {
+                            http::StatusCode::CREATED => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::ApplicationResourceDescription = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -16750,7 +16750,7 @@ pub mod mesh_application {
                             this.client.endpoint(),
                             &this.application_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -16765,11 +16765,11 @@ pub mod mesh_application {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
+                            http::StatusCode::OK => Ok(Response::Ok200),
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                            http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -16791,7 +16791,7 @@ pub mod mesh_application {
                     let this = self.clone();
                     async move {
                         let url = azure_core::Url::parse(&format!("{}/Resources/Applications", this.client.endpoint(),))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -16806,13 +16806,13 @@ pub mod mesh_application {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::PagedApplicationResourceDescriptionList = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -16839,7 +16839,7 @@ pub mod mesh_application {
                             this.client.endpoint(),
                             &this.application_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -16854,13 +16854,13 @@ pub mod mesh_application {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::ApplicationResourceUpgradeProgressInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -16910,7 +16910,7 @@ pub mod mesh_service {
                             &this.application_resource_name,
                             &this.service_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -16925,13 +16925,13 @@ pub mod mesh_service {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::ServiceResourceDescription = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -16958,7 +16958,7 @@ pub mod mesh_service {
                             this.client.endpoint(),
                             &this.application_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -16973,13 +16973,13 @@ pub mod mesh_service {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::PagedServiceResourceDescriptionList = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -17040,7 +17040,7 @@ pub mod mesh_code_package {
                             &this.replica_name,
                             &this.code_package_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -17058,13 +17058,13 @@ pub mod mesh_code_package {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::ContainerLogs = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -17123,7 +17123,7 @@ pub mod mesh_service_replica {
                             &this.service_resource_name,
                             &this.replica_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -17138,13 +17138,13 @@ pub mod mesh_service_replica {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::ServiceReplicaDescription = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -17173,7 +17173,7 @@ pub mod mesh_service_replica {
                             &this.application_resource_name,
                             &this.service_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -17188,13 +17188,13 @@ pub mod mesh_service_replica {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::PagedServiceReplicaDescriptionList = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -17257,7 +17257,7 @@ pub mod mesh_gateway {
                             this.client.endpoint(),
                             &this.gateway_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -17272,13 +17272,13 @@ pub mod mesh_gateway {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::GatewayResourceDescription = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -17311,7 +17311,7 @@ pub mod mesh_gateway {
                             this.client.endpoint(),
                             &this.gateway_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let mut req = azure_core::Request::new(url, http::Method::PUT);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -17327,19 +17327,19 @@ pub mod mesh_gateway {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::GatewayResourceDescription = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
-                            azure_core::StatusCode::Created => {
+                            http::StatusCode::CREATED => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::GatewayResourceDescription = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -17371,7 +17371,7 @@ pub mod mesh_gateway {
                             this.client.endpoint(),
                             &this.gateway_resource_name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let mut req = azure_core::Request::new(url, http::Method::DELETE);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -17386,11 +17386,11 @@ pub mod mesh_gateway {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
+                            http::StatusCode::OK => Ok(Response::Ok200),
+                            http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                            http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
@@ -17412,7 +17412,7 @@ pub mod mesh_gateway {
                     let this = self.clone();
                     async move {
                         let url = azure_core::Url::parse(&format!("{}/Resources/Gateways", this.client.endpoint(),))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let mut req = azure_core::Request::new(url, http::Method::GET);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
@@ -17427,13 +17427,13 @@ pub mod mesh_gateway {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Ok => {
+                            http::StatusCode::OK => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::PagedGatewayResourceDescriptionList = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code.as_u16(),
                                 error_code: None,
                             })),
                         }
