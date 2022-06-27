@@ -55,7 +55,7 @@ impl ListQueuesBuilder {
 
                 if let Some(continuation) = continuation {
                     url.query_pairs_mut()
-                        .append_pair("marker", &continuation.into_raw());
+                        .append_pair("marker", &continuation.as_string());
                 }
 
                 this.max_results.append_to_url_query(&mut url);
@@ -99,8 +99,8 @@ pub struct ListQueuesResponse {
 }
 
 impl Continuable for ListQueuesResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_marker.clone().map(|x| x.as_str().to_owned())
+    fn continuation(&self) -> Option<Continuation> {
+        self.next_marker.clone().map(Continuation::from)
     }
 }
 
