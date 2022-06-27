@@ -51,7 +51,7 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -196,8 +196,8 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationListResult {
@@ -346,8 +346,8 @@ pub struct CapabilityListResult {
     pub next_link: Option<UrlNullable>,
 }
 impl azure_core::Continuable for CapabilityListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CapabilityListResult {
@@ -410,8 +410,8 @@ pub struct CapabilityTypeListResult {
     pub next_link: Option<UrlNullable>,
 }
 impl azure_core::Continuable for CapabilityTypeListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CapabilityTypeListResult {
@@ -556,8 +556,8 @@ pub struct ExperimentExecutionDetailsListResult {
     pub next_link: Option<UrlNullable>,
 }
 impl azure_core::Continuable for ExperimentExecutionDetailsListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ExperimentExecutionDetailsListResult {
@@ -624,8 +624,8 @@ pub struct ExperimentListResult {
     pub next_link: Option<UrlNullable>,
 }
 impl azure_core::Continuable for ExperimentListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ExperimentListResult {
@@ -700,8 +700,8 @@ pub struct ExperimentStatusListResult {
     pub next_link: Option<UrlNullable>,
 }
 impl azure_core::Continuable for ExperimentStatusListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ExperimentStatusListResult {
@@ -966,8 +966,8 @@ pub struct TargetListResult {
     pub next_link: Option<UrlNullable>,
 }
 impl azure_core::Continuable for TargetListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl TargetListResult {
@@ -1040,8 +1040,8 @@ pub struct TargetTypeListResult {
     pub next_link: Option<UrlNullable>,
 }
 impl azure_core::Continuable for TargetTypeListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl TargetTypeListResult {

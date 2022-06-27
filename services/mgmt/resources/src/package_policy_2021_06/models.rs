@@ -198,7 +198,7 @@ pub struct CloudError {
     pub error: Option<ErrorResponse>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -290,8 +290,8 @@ pub struct DataPolicyManifestListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DataPolicyManifestListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DataPolicyManifestListResult {
@@ -577,8 +577,8 @@ pub struct PolicyAssignmentListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PolicyAssignmentListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PolicyAssignmentListResult {
@@ -745,8 +745,8 @@ pub struct PolicyDefinitionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PolicyDefinitionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PolicyDefinitionListResult {
@@ -894,8 +894,8 @@ pub struct PolicyExemptionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PolicyExemptionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PolicyExemptionListResult {
@@ -1016,8 +1016,8 @@ pub struct PolicySetDefinitionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PolicySetDefinitionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PolicySetDefinitionListResult {

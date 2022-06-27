@@ -190,8 +190,8 @@ pub struct ElasticMonitorResourceListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ElasticMonitorResourceListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ElasticMonitorResourceListResponse {
@@ -481,8 +481,8 @@ pub struct MonitoredResourceListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MonitoredResourceListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl MonitoredResourceListResponse {
@@ -562,8 +562,8 @@ pub struct MonitoringTagRulesListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MonitoringTagRulesListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl MonitoringTagRulesListResponse {
@@ -618,8 +618,8 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationListResult {
@@ -744,7 +744,7 @@ pub struct ResourceProviderDefaultErrorResponse {
     pub error: Option<ErrorResponseBody>,
 }
 impl azure_core::Continuable for ResourceProviderDefaultErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -903,8 +903,8 @@ pub struct VmHostListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VmHostListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VmHostListResponse {

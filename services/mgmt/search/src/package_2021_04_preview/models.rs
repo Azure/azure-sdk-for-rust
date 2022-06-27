@@ -165,7 +165,7 @@ pub struct CloudError {
     pub message: Option<String>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -393,8 +393,8 @@ pub struct ListQueryKeysResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ListQueryKeysResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ListQueryKeysResult {
@@ -531,7 +531,7 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -655,8 +655,8 @@ pub struct PrivateEndpointConnectionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PrivateEndpointConnectionListResult {
@@ -766,7 +766,7 @@ pub struct PrivateLinkResourcesResult {
     pub value: Vec<PrivateLinkResource>,
 }
 impl azure_core::Continuable for PrivateLinkResourcesResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -844,8 +844,8 @@ pub struct SearchServiceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SearchServiceListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SearchServiceListResult {
@@ -1124,8 +1124,8 @@ pub struct SharedPrivateLinkResourceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SharedPrivateLinkResourceListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SharedPrivateLinkResourceListResult {

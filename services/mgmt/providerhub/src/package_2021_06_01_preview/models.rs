@@ -106,8 +106,8 @@ pub struct CustomRolloutArrayResponseWithContinuation {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CustomRolloutArrayResponseWithContinuation {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CustomRolloutArrayResponseWithContinuation {
@@ -187,8 +187,8 @@ pub struct DefaultRolloutArrayResponseWithContinuation {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DefaultRolloutArrayResponseWithContinuation {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DefaultRolloutArrayResponseWithContinuation {
@@ -375,7 +375,7 @@ pub struct ErrorResponse {
     pub error: Option<serde_json::Value>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1014,8 +1014,8 @@ pub struct NotificationRegistrationArrayResponseWithContinuation {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for NotificationRegistrationArrayResponseWithContinuation {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl NotificationRegistrationArrayResponseWithContinuation {
@@ -1215,8 +1215,8 @@ pub struct OperationsDefinitionArrayResponseWithContinuation {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationsDefinitionArrayResponseWithContinuation {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationsDefinitionArrayResponseWithContinuation {
@@ -1291,8 +1291,8 @@ pub struct ProviderRegistrationArrayResponseWithContinuation {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ProviderRegistrationArrayResponseWithContinuation {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ProviderRegistrationArrayResponseWithContinuation {
@@ -2248,8 +2248,8 @@ pub struct ResourceTypeRegistrationArrayResponseWithContinuation {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResourceTypeRegistrationArrayResponseWithContinuation {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResourceTypeRegistrationArrayResponseWithContinuation {
@@ -2657,8 +2657,8 @@ pub struct SkuResourceArrayResponseWithContinuation {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SkuResourceArrayResponseWithContinuation {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SkuResourceArrayResponseWithContinuation {

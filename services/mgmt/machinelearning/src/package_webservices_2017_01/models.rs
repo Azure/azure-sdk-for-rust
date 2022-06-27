@@ -718,7 +718,7 @@ pub struct OperationEntityListResult {
     pub value: Vec<OperationEntity>,
 }
 impl azure_core::Continuable for OperationEntityListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -793,8 +793,8 @@ pub struct PaginatedWebServicesList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PaginatedWebServicesList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PaginatedWebServicesList {

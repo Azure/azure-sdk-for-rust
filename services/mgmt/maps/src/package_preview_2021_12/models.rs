@@ -139,8 +139,8 @@ pub struct CreatorList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CreatorList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CreatorList {
@@ -255,7 +255,7 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -478,8 +478,8 @@ pub struct MapsAccounts {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MapsAccounts {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl MapsAccounts {
@@ -552,8 +552,8 @@ pub struct MapsOperations {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MapsOperations {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl MapsOperations {

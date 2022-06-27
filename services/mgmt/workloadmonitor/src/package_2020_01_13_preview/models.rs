@@ -25,7 +25,7 @@ pub struct ErrorResponse {
     pub error: Option<error_response::Error>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -78,8 +78,8 @@ pub struct HealthMonitorList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for HealthMonitorList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl HealthMonitorList {
@@ -150,8 +150,8 @@ pub struct HealthMonitorStateChangeList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for HealthMonitorStateChangeList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl HealthMonitorStateChangeList {
@@ -286,8 +286,8 @@ pub struct OperationList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationList {

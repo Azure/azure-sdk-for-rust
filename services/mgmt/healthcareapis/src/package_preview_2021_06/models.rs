@@ -65,8 +65,8 @@ pub struct DicomServiceCollection {
     pub value: Vec<DicomService>,
 }
 impl azure_core::Continuable for DicomServiceCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DicomServiceCollection {
@@ -123,7 +123,7 @@ pub struct ErrorDetails {
     pub error: Option<ErrorDetailsInternal>,
 }
 impl azure_core::Continuable for ErrorDetails {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -268,8 +268,8 @@ pub struct FhirServiceCollection {
     pub value: Vec<FhirService>,
 }
 impl azure_core::Continuable for FhirServiceCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl FhirServiceCollection {
@@ -383,8 +383,8 @@ pub struct IotConnectorCollection {
     pub value: Vec<IotConnector>,
 }
 impl azure_core::Continuable for IotConnectorCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl IotConnectorCollection {
@@ -484,8 +484,8 @@ pub struct IotFhirDestinationCollection {
     pub value: Vec<IotFhirDestination>,
 }
 impl azure_core::Continuable for IotFhirDestinationCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl IotFhirDestinationCollection {
@@ -582,8 +582,8 @@ pub struct ListOperations {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ListOperations {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ListOperations {
@@ -806,7 +806,7 @@ pub struct PrivateEndpointConnectionListResultDescription {
     pub value: Vec<PrivateEndpointConnectionDescription>,
 }
 impl azure_core::Continuable for PrivateEndpointConnectionListResultDescription {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1299,8 +1299,8 @@ pub struct ServicesDescriptionListResult {
     pub value: Vec<ServicesDescription>,
 }
 impl azure_core::Continuable for ServicesDescriptionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ServicesDescriptionListResult {
@@ -1696,8 +1696,8 @@ pub struct WorkspaceList {
     pub value: Vec<Workspace>,
 }
 impl azure_core::Continuable for WorkspaceList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl WorkspaceList {

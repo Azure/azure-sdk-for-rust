@@ -597,7 +597,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
         if let Some(_pageable) = &operation.0.pageable {
             response_enum.extend(quote! {
                 impl azure_core::Continuable for Response {
-                    fn continuation(&self) -> Option<String> {
+                    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
                         match self {
                             #continuation_response
                         }
@@ -729,14 +729,17 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                             let mut url = azure_core::Url::parse(&format!(#fpath, this.client.endpoint(), #url_str_args))?;
 
                             let rsp = match continuation {
-                                Some(token) => {
+                                Some(azure_core::prelude::Continuation::String(value)) => {
                                     url.set_path("");
-                                    url = url.join(&token.into_raw())?;
+                                    url = url.join(&value)?;
                                     #new_request_code
                                     #stream_api_version
                                     let req_body = azure_core::EMPTY_BODY;
                                     req.set_body(req_body);
                                     this.client.send(&mut req).await?
+                                }
+                                Some(azure_core::prelude::Continuation::Range(_)) => {
+                                    panic!("unexpected continuation type");
                                 }
                                 None => {
                                     #new_request_code

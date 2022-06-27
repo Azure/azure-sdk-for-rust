@@ -459,11 +459,11 @@ pub struct ListFilesAndDirectoriesSegmentResponse {
     pub directory_id: Option<String>,
 }
 impl azure_core::Continuable for ListFilesAndDirectoriesSegmentResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         if self.next_marker.is_empty() {
             None
         } else {
-            Some(self.next_marker.clone())
+            Some(azure_core::prelude::Continuation::from(self.next_marker.clone()))
         }
     }
 }
@@ -523,11 +523,11 @@ pub struct ListSharesResponse {
     pub next_marker: String,
 }
 impl azure_core::Continuable for ListSharesResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         if self.next_marker.is_empty() {
             None
         } else {
-            Some(self.next_marker.clone())
+            Some(azure_core::prelude::Continuation::from(self.next_marker.clone()))
         }
     }
 }
@@ -788,7 +788,7 @@ pub struct StorageError {
     pub message: Option<String>,
 }
 impl azure_core::Continuable for StorageError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }

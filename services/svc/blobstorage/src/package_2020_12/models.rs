@@ -1097,8 +1097,8 @@ pub struct ListBlobsFlatSegmentResponse {
     pub next_marker: Option<String>,
 }
 impl azure_core::Continuable for ListBlobsFlatSegmentResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_marker.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_marker.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ListBlobsFlatSegmentResponse {
@@ -1135,8 +1135,8 @@ pub struct ListBlobsHierarchySegmentResponse {
     pub next_marker: Option<String>,
 }
 impl azure_core::Continuable for ListBlobsHierarchySegmentResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_marker.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_marker.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ListBlobsHierarchySegmentResponse {
@@ -1170,8 +1170,8 @@ pub struct ListContainersSegmentResponse {
     pub next_marker: Option<String>,
 }
 impl azure_core::Continuable for ListContainersSegmentResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_marker.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_marker.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ListContainersSegmentResponse {
@@ -1260,8 +1260,8 @@ pub struct PageList {
     pub next_marker: Option<String>,
 }
 impl azure_core::Continuable for PageList {
-    fn continuation(&self) -> Option<String> {
-        self.next_marker.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_marker.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PageList {
@@ -1518,7 +1518,7 @@ pub struct StorageError {
     pub message: Option<String>,
 }
 impl azure_core::Continuable for StorageError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }

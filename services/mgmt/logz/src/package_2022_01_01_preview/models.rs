@@ -51,7 +51,7 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -266,8 +266,8 @@ pub struct LogzMonitorResourceListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for LogzMonitorResourceListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl LogzMonitorResourceListResponse {
@@ -363,8 +363,8 @@ pub struct LogzSingleSignOnResourceListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for LogzSingleSignOnResourceListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl LogzSingleSignOnResourceListResponse {
@@ -500,8 +500,8 @@ pub struct MetricsTagRulesListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MetricsTagRulesListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl MetricsTagRulesListResponse {
@@ -608,8 +608,8 @@ pub struct MonitoredResourceListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MonitoredResourceListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl MonitoredResourceListResponse {
@@ -694,8 +694,8 @@ pub struct MonitoringTagRulesListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MonitoringTagRulesListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl MonitoringTagRulesListResponse {
@@ -753,8 +753,8 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationListResult {
@@ -1002,8 +1002,8 @@ pub struct UserRoleListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for UserRoleListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl UserRoleListResponse {
@@ -1128,8 +1128,8 @@ pub struct VmResourcesListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VmResourcesListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VmResourcesListResponse {

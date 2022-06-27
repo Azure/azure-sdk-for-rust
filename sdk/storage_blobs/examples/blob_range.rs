@@ -41,7 +41,10 @@ async fn main() -> azure_core::Result<()> {
 
     assert_eq!(blob.len(), buf.len());
 
-    let chunk0 = Box::pin(blob_client.get().range(0u64..1024).stream(1024))
+    let chunk0 = blob_client
+        .get()
+        .range(0u64..1024)
+        .into_stream()
         .next()
         .await
         .expect("stream failed")?;
@@ -50,7 +53,10 @@ async fn main() -> azure_core::Result<()> {
         assert_eq!(chunk0.data[i], 71);
     }
 
-    let chunk1 = Box::pin(blob_client.get().range(1024u64..1536).stream(1024))
+    let chunk1 = blob_client
+        .get()
+        .range(1024u64..1536)
+        .into_stream()
         .next()
         .await
         .expect("stream failed")?;
@@ -63,7 +69,11 @@ async fn main() -> azure_core::Result<()> {
     // this time, only download them in chunks of 10 bytes
     let mut chunk2 = vec![];
 
-    let mut stream = Box::pin(blob_client.get().range(1536u64..3584).stream(10));
+    let mut stream = blob_client
+        .get()
+        .range(1536u64..3584)
+        .chunk_size(10u64)
+        .into_stream();
     while let Some(result) = stream.next().await {
         chunk2.extend(result?.data);
     }
@@ -72,7 +82,7 @@ async fn main() -> azure_core::Result<()> {
         assert_eq!(chunk2[i], 73);
     }
 
-    let mut stream = Box::pin(blob_client.get().stream(512));
+    let mut stream = blob_client.get().chunk_size(512u64).into_stream();
 
     println!("\nStreaming");
     let mut chunk: usize = 0;

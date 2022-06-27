@@ -260,8 +260,8 @@ pub struct ApiKvReferenceCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ApiKvReferenceCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ApiKvReferenceCollection {
@@ -369,8 +369,8 @@ pub struct AppServiceCertificateCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AppServiceCertificateCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AppServiceCertificateCollection {
@@ -533,8 +533,8 @@ pub struct AppServiceCertificateOrderCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AppServiceCertificateOrderCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AppServiceCertificateOrderCollection {
@@ -861,8 +861,8 @@ pub struct AppServiceEnvironmentCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AppServiceEnvironmentCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AppServiceEnvironmentCollection {
@@ -1033,8 +1033,8 @@ pub struct AppServicePlanCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AppServicePlanCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AppServicePlanCollection {
@@ -1241,8 +1241,8 @@ pub struct ApplicationStackCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ApplicationStackCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ApplicationStackCollection {
@@ -1849,8 +1849,8 @@ pub struct BackupItemCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for BackupItemCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl BackupItemCollection {
@@ -2015,8 +2015,8 @@ pub struct BillingMeterCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for BillingMeterCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl BillingMeterCollection {
@@ -2174,8 +2174,8 @@ pub struct CertificateCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CertificateCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CertificateCollection {
@@ -2819,8 +2819,8 @@ pub struct ContainerAppCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ContainerAppCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ContainerAppCollection {
@@ -3076,8 +3076,8 @@ pub struct ContinuousWebJobCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ContinuousWebJobCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ContinuousWebJobCollection {
@@ -3147,8 +3147,8 @@ pub struct CsmOperationCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CsmOperationCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CsmOperationCollection {
@@ -3343,8 +3343,8 @@ pub struct CsmUsageQuotaCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CsmUsageQuotaCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CsmUsageQuotaCollection {
@@ -3463,8 +3463,8 @@ pub struct CustomHostnameSitesCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CustomHostnameSitesCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CustomHostnameSitesCollection {
@@ -3725,7 +3725,7 @@ pub struct DefaultErrorResponse {
     pub error: Option<default_error_response::Error>,
 }
 impl azure_core::Continuable for DefaultErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -3858,8 +3858,8 @@ pub struct DeletedWebAppCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DeletedWebAppCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DeletedWebAppCollection {
@@ -3930,8 +3930,8 @@ pub struct DeploymentCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DeploymentCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DeploymentCollection {
@@ -4137,8 +4137,8 @@ pub struct DetectorResponseCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DetectorResponseCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DetectorResponseCollection {
@@ -4197,8 +4197,8 @@ pub struct DiagnosticAnalysisCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DiagnosticAnalysisCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DiagnosticAnalysisCollection {
@@ -4245,8 +4245,8 @@ pub struct DiagnosticCategoryCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DiagnosticCategoryCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DiagnosticCategoryCollection {
@@ -4279,8 +4279,8 @@ pub struct DiagnosticDetectorCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DiagnosticDetectorCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DiagnosticDetectorCollection {
@@ -4608,8 +4608,8 @@ pub struct DomainCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DomainCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DomainCollection {
@@ -4674,8 +4674,8 @@ pub struct DomainOwnershipIdentifierCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DomainOwnershipIdentifierCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DomainOwnershipIdentifierCollection {
@@ -5290,8 +5290,8 @@ pub struct FunctionAppStackCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for FunctionAppStackCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl FunctionAppStackCollection {
@@ -5374,8 +5374,8 @@ pub struct FunctionEnvelopeCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for FunctionEnvelopeCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl FunctionEnvelopeCollection {
@@ -5443,8 +5443,8 @@ pub struct GeoRegionCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for GeoRegionCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl GeoRegionCollection {
@@ -5800,8 +5800,8 @@ pub struct HostNameBindingCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for HostNameBindingCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl HostNameBindingCollection {
@@ -6020,8 +6020,8 @@ pub struct HybridConnectionCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for HybridConnectionCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl HybridConnectionCollection {
@@ -6132,8 +6132,8 @@ pub struct IdentifierCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for IdentifierCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl IdentifierCollection {
@@ -6205,8 +6205,8 @@ pub struct InboundEnvironmentEndpointCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for InboundEnvironmentEndpointCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl InboundEnvironmentEndpointCollection {
@@ -6497,8 +6497,8 @@ pub struct KubeEnvironmentCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for KubeEnvironmentCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl KubeEnvironmentCollection {
@@ -7100,8 +7100,8 @@ pub struct NameIdentifierCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for NameIdentifierCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl NameIdentifierCollection {
@@ -7345,8 +7345,8 @@ pub struct OutboundEnvironmentEndpointCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OutboundEnvironmentEndpointCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OutboundEnvironmentEndpointCollection {
@@ -7364,8 +7364,8 @@ pub struct PerfMonCounterCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PerfMonCounterCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PerfMonCounterCollection {
@@ -7556,8 +7556,8 @@ pub struct PremierAddOnOfferCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PremierAddOnOfferCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PremierAddOnOfferCollection {
@@ -7683,8 +7683,8 @@ pub struct PrivateEndpointConnectionCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PrivateEndpointConnectionCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PrivateEndpointConnectionCollection {
@@ -7929,8 +7929,8 @@ pub struct ProcessInfoCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ProcessInfoCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ProcessInfoCollection {
@@ -8007,8 +8007,8 @@ pub struct ProcessModuleInfoCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ProcessModuleInfoCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ProcessModuleInfoCollection {
@@ -8088,8 +8088,8 @@ pub struct ProcessThreadInfoCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ProcessThreadInfoCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ProcessThreadInfoCollection {
@@ -8173,8 +8173,8 @@ pub struct PublicCertificateCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PublicCertificateCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PublicCertificateCollection {
@@ -8192,8 +8192,8 @@ pub struct PublishingCredentialsPoliciesCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PublishingCredentialsPoliciesCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PublishingCredentialsPoliciesCollection {
@@ -8489,8 +8489,8 @@ pub struct RecommendationCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RecommendationCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RecommendationCollection {
@@ -8896,8 +8896,8 @@ pub struct ResourceCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResourceCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResourceCollection {
@@ -8947,8 +8947,8 @@ pub struct ResourceHealthMetadataCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResourceHealthMetadataCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResourceHealthMetadataCollection {
@@ -9022,8 +9022,8 @@ pub struct ResourceMetricDefinitionCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResourceMetricDefinitionCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResourceMetricDefinitionCollection {
@@ -9463,8 +9463,8 @@ pub struct RevisionCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RevisionCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RevisionCollection {
@@ -10489,8 +10489,8 @@ pub struct SiteConfigResourceCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SiteConfigResourceCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SiteConfigResourceCollection {
@@ -10540,8 +10540,8 @@ pub struct SiteConfigurationSnapshotInfoCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SiteConfigurationSnapshotInfoCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SiteConfigurationSnapshotInfoCollection {
@@ -10653,8 +10653,8 @@ pub struct SiteExtensionInfoCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SiteExtensionInfoCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SiteExtensionInfoCollection {
@@ -11119,8 +11119,8 @@ pub struct SkuInfoCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SkuInfoCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SkuInfoCollection {
@@ -11232,8 +11232,8 @@ pub struct SlotDifferenceCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SlotDifferenceCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SlotDifferenceCollection {
@@ -11319,8 +11319,8 @@ pub struct SnapshotCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SnapshotCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SnapshotCollection {
@@ -11481,8 +11481,8 @@ pub struct SourceControlCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SourceControlCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SourceControlCollection {
@@ -11628,8 +11628,8 @@ pub struct StampCapacityCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for StampCapacityCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl StampCapacityCollection {
@@ -11876,8 +11876,8 @@ pub struct StaticSiteBuildCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for StaticSiteBuildCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl StaticSiteBuildCollection {
@@ -11928,8 +11928,8 @@ pub struct StaticSiteCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for StaticSiteCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl StaticSiteCollection {
@@ -12035,8 +12035,8 @@ pub struct StaticSiteCustomDomainOverviewCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for StaticSiteCustomDomainOverviewCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl StaticSiteCustomDomainOverviewCollection {
@@ -12155,8 +12155,8 @@ pub struct StaticSiteFunctionOverviewCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for StaticSiteFunctionOverviewCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl StaticSiteFunctionOverviewCollection {
@@ -12282,8 +12282,8 @@ pub struct StaticSiteUserCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for StaticSiteUserCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl StaticSiteUserCollection {
@@ -12444,8 +12444,8 @@ pub struct StaticSiteUserProvidedFunctionAppsCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for StaticSiteUserProvidedFunctionAppsCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl StaticSiteUserProvidedFunctionAppsCollection {
@@ -12834,8 +12834,8 @@ pub struct TldLegalAgreementCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for TldLegalAgreementCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl TldLegalAgreementCollection {
@@ -12918,8 +12918,8 @@ pub struct TopLevelDomainCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for TopLevelDomainCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl TopLevelDomainCollection {
@@ -12984,8 +12984,8 @@ pub struct TriggeredJobHistoryCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for TriggeredJobHistoryCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl TriggeredJobHistoryCollection {
@@ -13120,8 +13120,8 @@ pub struct TriggeredWebJobCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for TriggeredWebJobCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl TriggeredWebJobCollection {
@@ -13229,8 +13229,8 @@ pub struct UsageCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for UsageCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl UsageCollection {
@@ -13796,8 +13796,8 @@ pub struct WebAppCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WebAppCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl WebAppCollection {
@@ -13815,8 +13815,8 @@ pub struct WebAppInstanceStatusCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WebAppInstanceStatusCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl WebAppInstanceStatusCollection {
@@ -13980,8 +13980,8 @@ pub struct WebAppStackCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WebAppStackCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl WebAppStackCollection {
@@ -14055,8 +14055,8 @@ pub struct WebJobCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WebJobCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl WebJobCollection {
@@ -14194,8 +14194,8 @@ pub struct WorkerPoolCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkerPoolCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl WorkerPoolCollection {

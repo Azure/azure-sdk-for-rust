@@ -212,8 +212,8 @@ pub struct CognitiveServicesAccountListResult {
     pub value: Vec<CognitiveServicesAccount>,
 }
 impl azure_core::Continuable for CognitiveServicesAccountListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CognitiveServicesAccountListResult {
@@ -461,7 +461,7 @@ pub struct Error {
     pub error: Option<ErrorBody>,
 }
 impl azure_core::Continuable for Error {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -669,8 +669,8 @@ pub struct OperationEntityListResult {
     pub value: Vec<OperationEntity>,
 }
 impl azure_core::Continuable for OperationEntityListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationEntityListResult {
@@ -1006,8 +1006,8 @@ pub struct ResourceSkusResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResourceSkusResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResourceSkusResult {

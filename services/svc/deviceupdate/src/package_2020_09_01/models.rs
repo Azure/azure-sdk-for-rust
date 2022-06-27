@@ -850,8 +850,8 @@ pub struct PageableListOfDeploymentDeviceStates {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PageableListOfDeploymentDeviceStates {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PageableListOfDeploymentDeviceStates {
@@ -870,8 +870,8 @@ pub struct PageableListOfDeployments {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PageableListOfDeployments {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PageableListOfDeployments {
@@ -890,8 +890,8 @@ pub struct PageableListOfDeviceClasses {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PageableListOfDeviceClasses {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PageableListOfDeviceClasses {
@@ -910,8 +910,8 @@ pub struct PageableListOfDeviceTags {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PageableListOfDeviceTags {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PageableListOfDeviceTags {
@@ -930,8 +930,8 @@ pub struct PageableListOfDevices {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PageableListOfDevices {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PageableListOfDevices {
@@ -950,8 +950,8 @@ pub struct PageableListOfGroups {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PageableListOfGroups {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PageableListOfGroups {
@@ -970,8 +970,8 @@ pub struct PageableListOfOperations {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PageableListOfOperations {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PageableListOfOperations {
@@ -990,8 +990,8 @@ pub struct PageableListOfStrings {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PageableListOfStrings {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PageableListOfStrings {
@@ -1010,8 +1010,8 @@ pub struct PageableListOfUpdatableDevices {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PageableListOfUpdatableDevices {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PageableListOfUpdatableDevices {
@@ -1030,8 +1030,8 @@ pub struct PageableListOfUpdateIds {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PageableListOfUpdateIds {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PageableListOfUpdateIds {

@@ -108,8 +108,8 @@ pub struct ClustersList {
     pub value: Vec<Cluster>,
 }
 impl azure_core::Continuable for ClustersList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ClustersList {
@@ -246,8 +246,8 @@ pub struct DatastoresList {
     pub value: Vec<Datastore>,
 }
 impl azure_core::Continuable for DatastoresList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DatastoresList {
@@ -400,7 +400,7 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDefinition>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -493,8 +493,8 @@ pub struct GuestAgentList {
     pub value: Vec<GuestAgent>,
 }
 impl azure_core::Continuable for GuestAgentList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl GuestAgentList {
@@ -747,8 +747,8 @@ pub struct HostsList {
     pub value: Vec<Host>,
 }
 impl azure_core::Continuable for HostsList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl HostsList {
@@ -798,8 +798,8 @@ pub struct HybridIdentityMetadataList {
     pub value: Vec<HybridIdentityMetadata>,
 }
 impl azure_core::Continuable for HybridIdentityMetadataList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl HybridIdentityMetadataList {
@@ -1020,8 +1020,8 @@ pub struct InventoryItemsList {
     pub value: Vec<InventoryItem>,
 }
 impl azure_core::Continuable for InventoryItemsList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl InventoryItemsList {
@@ -1287,8 +1287,8 @@ pub struct MachineExtensionsListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MachineExtensionsListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl MachineExtensionsListResult {
@@ -1825,8 +1825,8 @@ pub struct ResourcePoolsList {
     pub value: Vec<ResourcePool>,
 }
 impl azure_core::Continuable for ResourcePoolsList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResourcePoolsList {
@@ -2097,8 +2097,8 @@ pub struct VCentersList {
     pub value: Vec<VCenter>,
 }
 impl azure_core::Continuable for VCentersList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VCentersList {
@@ -2534,8 +2534,8 @@ pub struct VirtualMachineTemplatesList {
     pub value: Vec<VirtualMachineTemplate>,
 }
 impl azure_core::Continuable for VirtualMachineTemplatesList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VirtualMachineTemplatesList {
@@ -2589,8 +2589,8 @@ pub struct VirtualMachinesList {
     pub value: Vec<VirtualMachine>,
 }
 impl azure_core::Continuable for VirtualMachinesList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VirtualMachinesList {
@@ -2696,8 +2696,8 @@ pub struct VirtualNetworksList {
     pub value: Vec<VirtualNetwork>,
 }
 impl azure_core::Continuable for VirtualNetworksList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VirtualNetworksList {
@@ -2823,8 +2823,8 @@ pub struct OperationsList {
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationsList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationsList {

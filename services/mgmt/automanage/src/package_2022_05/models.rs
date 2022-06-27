@@ -75,7 +75,7 @@ pub struct BestPracticeList {
     pub value: Vec<BestPractice>,
 }
 impl azure_core::Continuable for BestPracticeList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -138,7 +138,7 @@ pub struct ConfigurationProfileAssignmentList {
     pub value: Vec<ConfigurationProfileAssignment>,
 }
 impl azure_core::Continuable for ConfigurationProfileAssignmentList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -184,7 +184,7 @@ pub struct ConfigurationProfileList {
     pub value: Vec<ConfigurationProfile>,
 }
 impl azure_core::Continuable for ConfigurationProfileList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -269,7 +269,7 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -414,7 +414,7 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -460,7 +460,7 @@ pub struct ReportList {
     pub value: Vec<Report>,
 }
 impl azure_core::Continuable for ReportList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -536,7 +536,7 @@ pub struct ServicePrincipalListResult {
     pub value: Vec<ServicePrincipal>,
 }
 impl azure_core::Continuable for ServicePrincipalListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }

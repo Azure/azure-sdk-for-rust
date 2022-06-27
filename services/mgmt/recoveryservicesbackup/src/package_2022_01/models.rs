@@ -4112,7 +4112,7 @@ pub struct BackupEngineBaseResourceList {
     pub value: Vec<BackupEngineBaseResource>,
 }
 impl azure_core::Continuable for BackupEngineBaseResourceList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -4237,7 +4237,7 @@ pub struct BackupManagementUsageList {
     pub value: Vec<BackupManagementUsage>,
 }
 impl azure_core::Continuable for BackupManagementUsageList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -5245,8 +5245,8 @@ pub struct ClientDiscoveryResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ClientDiscoveryResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ClientDiscoveryResponse {
@@ -5307,7 +5307,7 @@ pub struct CloudError {
     pub error: Option<CloudErrorBody>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -6828,7 +6828,7 @@ pub struct JobResourceList {
     pub value: Vec<JobResource>,
 }
 impl azure_core::Continuable for JobResourceList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -8556,7 +8556,7 @@ pub struct ProtectableContainerResourceList {
     pub value: Vec<ProtectableContainerResource>,
 }
 impl azure_core::Continuable for ProtectableContainerResourceList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -9035,7 +9035,7 @@ pub struct ProtectedItemResourceList {
     pub value: Vec<ProtectedItemResource>,
 }
 impl azure_core::Continuable for ProtectedItemResourceList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -9240,7 +9240,7 @@ pub struct ProtectionContainerResourceList {
     pub value: Vec<ProtectionContainerResource>,
 }
 impl azure_core::Continuable for ProtectionContainerResourceList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -9580,7 +9580,7 @@ pub struct ProtectionIntentResourceList {
     pub value: Vec<ProtectionIntentResource>,
 }
 impl azure_core::Continuable for ProtectionIntentResourceList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -9779,7 +9779,7 @@ pub struct ProtectionPolicyResourceList {
     pub value: Vec<ProtectionPolicyResource>,
 }
 impl azure_core::Continuable for ProtectionPolicyResourceList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -9912,7 +9912,7 @@ pub struct RecoveryPointResourceList {
     pub value: Vec<RecoveryPointResource>,
 }
 impl azure_core::Continuable for RecoveryPointResourceList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -10146,7 +10146,7 @@ pub struct ResourceGuardProxyBaseResourceList {
     pub value: Vec<ResourceGuardProxyBaseResource>,
 }
 impl azure_core::Continuable for ResourceGuardProxyBaseResourceList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -11201,7 +11201,7 @@ pub struct WorkloadItemResourceList {
     pub value: Vec<WorkloadItemResource>,
 }
 impl azure_core::Continuable for WorkloadItemResourceList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -11310,7 +11310,7 @@ pub struct WorkloadProtectableItemResourceList {
     pub value: Vec<WorkloadProtectableItemResource>,
 }
 impl azure_core::Continuable for WorkloadProtectableItemResourceList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }

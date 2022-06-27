@@ -72,8 +72,8 @@ pub struct ConfluentAgreementResourceListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ConfluentAgreementResourceListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ConfluentAgreementResourceListResponse {
@@ -167,8 +167,8 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationListResult {
@@ -242,8 +242,8 @@ pub struct OrganizationResourceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OrganizationResourceListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OrganizationResourceListResult {
@@ -356,7 +356,7 @@ pub struct ResourceProviderDefaultErrorResponse {
     pub error: Option<ErrorResponseBody>,
 }
 impl azure_core::Continuable for ResourceProviderDefaultErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }

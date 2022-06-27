@@ -63,7 +63,7 @@ pub struct AnnotationError {
     pub innererror: Option<InnerError>,
 }
 impl azure_core::Continuable for AnnotationError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -80,7 +80,7 @@ pub struct AnnotationsListResult {
     pub value: Vec<Annotation>,
 }
 impl azure_core::Continuable for AnnotationsListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -147,7 +147,7 @@ pub struct ApplicationInsightsComponentApiKeyListResult {
     pub value: Vec<ApplicationInsightsComponentApiKey>,
 }
 impl azure_core::Continuable for ApplicationInsightsComponentApiKeyListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -631,8 +631,8 @@ pub struct ApplicationInsightsComponentListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ApplicationInsightsComponentListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ApplicationInsightsComponentListResult {
@@ -1029,7 +1029,7 @@ pub struct ApplicationInsightsWebTestLocationsListResult {
     pub value: Vec<ApplicationInsightsComponentWebTestLocation>,
 }
 impl azure_core::Continuable for ApplicationInsightsWebTestLocationsListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1221,7 +1221,7 @@ pub struct ErrorResponse {
     pub message: Option<String>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1237,7 +1237,7 @@ pub struct ErrorResponseComponents {
     pub error: Option<error_response_components::Error>,
 }
 impl azure_core::Continuable for ErrorResponseComponents {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1484,7 +1484,7 @@ pub struct MyWorkbookError {
     pub error: Option<ErrorDefinition>,
 }
 impl azure_core::Continuable for MyWorkbookError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1617,8 +1617,8 @@ pub struct MyWorkbooksListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MyWorkbooksListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl MyWorkbooksListResult {
@@ -1694,8 +1694,8 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationListResult {
@@ -2081,7 +2081,7 @@ pub struct WorkItemConfigurationError {
     pub innererror: Option<InnerError>,
 }
 impl azure_core::Continuable for WorkItemConfigurationError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -2098,7 +2098,7 @@ pub struct WorkItemConfigurationsListResult {
     pub value: Vec<WorkItemConfiguration>,
 }
 impl azure_core::Continuable for WorkItemConfigurationsListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -2157,7 +2157,7 @@ pub struct WorkbookError {
     pub error: Option<WorkbookErrorDefinition>,
 }
 impl azure_core::Continuable for WorkbookError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -2365,7 +2365,7 @@ pub struct WorkbookTemplateError {
     pub error: Option<WorkbookTemplateErrorBody>,
 }
 impl azure_core::Continuable for WorkbookTemplateError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -2530,7 +2530,7 @@ pub struct WorkbookTemplatesListResult {
     pub value: Vec<WorkbookTemplate>,
 }
 impl azure_core::Continuable for WorkbookTemplatesListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -2606,8 +2606,8 @@ pub struct WorkbooksListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkbooksListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl WorkbooksListResult {
@@ -2737,8 +2737,8 @@ pub struct WebTestListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WebTestListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl WebTestListResult {

@@ -42,7 +42,7 @@ pub struct ErrorResponseBody {
     pub error: Option<ErrorResponse>,
 }
 impl azure_core::Continuable for ErrorResponseBody {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -180,8 +180,8 @@ pub struct GrantListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for GrantListResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl GrantListResponse {
@@ -226,8 +226,8 @@ pub struct JoinRequestList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for JoinRequestList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl JoinRequestList {
@@ -321,8 +321,8 @@ pub struct LabListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for LabListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl LabListResult {
@@ -641,8 +641,8 @@ pub struct StudentLabListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for StudentLabListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl StudentLabListResult {
@@ -780,8 +780,8 @@ pub struct StudentListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for StudentListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl StudentListResult {

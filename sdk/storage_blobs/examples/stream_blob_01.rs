@@ -29,7 +29,7 @@ async fn main() -> azure_core::Result<()> {
             .container_client(&container_name)
             .blob_client(file_name);
 
-    let mut stream = Box::pin(blob_client.get().stream(1024));
+    let mut stream = blob_client.get().into_stream();
     while let Some(res) = stream.next().await {
         println!("{:?}", res.unwrap());
     }

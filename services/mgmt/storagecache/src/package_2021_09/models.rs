@@ -90,8 +90,8 @@ pub struct ApiOperationListResult {
     pub value: Vec<ApiOperation>,
 }
 impl azure_core::Continuable for ApiOperationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ApiOperationListResult {
@@ -785,8 +785,8 @@ pub struct CachesListResult {
     pub value: Vec<Cache>,
 }
 impl azure_core::Continuable for CachesListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CachesListResult {
@@ -814,7 +814,7 @@ pub struct CloudError {
     pub error: Option<CloudErrorBody>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1204,8 +1204,8 @@ pub struct ResourceSkusResult {
     pub value: Vec<ResourceSku>,
 }
 impl azure_core::Continuable for ResourceSkusResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResourceSkusResult {
@@ -1496,8 +1496,8 @@ pub struct StorageTargetsResult {
     pub value: Vec<StorageTarget>,
 }
 impl azure_core::Continuable for StorageTargetsResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl StorageTargetsResult {
@@ -1570,8 +1570,8 @@ pub struct UsageModelsResult {
     pub value: Vec<UsageModel>,
 }
 impl azure_core::Continuable for UsageModelsResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl UsageModelsResult {

@@ -662,8 +662,8 @@ pub struct CostAllocationRuleList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CostAllocationRuleList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CostAllocationRuleList {
@@ -753,7 +753,7 @@ pub struct DimensionsListResult {
     pub value: Vec<Dimension>,
 }
 impl azure_core::Continuable for DimensionsListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -796,7 +796,7 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetails>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1088,8 +1088,8 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationListResult {
@@ -2156,8 +2156,8 @@ pub struct ViewListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ViewListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ViewListResult {

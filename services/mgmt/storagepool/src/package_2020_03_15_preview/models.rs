@@ -147,8 +147,8 @@ pub struct DiskPoolListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DiskPoolListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DiskPoolListResult {
@@ -271,7 +271,7 @@ pub struct Error {
     pub error: Option<ErrorResponse>,
 }
 impl azure_core::Continuable for Error {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -405,8 +405,8 @@ pub struct IscsiTargetList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for IscsiTargetList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl IscsiTargetList {
@@ -620,7 +620,7 @@ pub struct StoragePoolOperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for StoragePoolOperationListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
