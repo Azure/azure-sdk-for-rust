@@ -80,9 +80,9 @@ pub struct GetMessagesResponse {
 #[derive(Debug, Clone, Deserialize)]
 pub struct Message {
     #[serde(rename = "MessageId")]
-    pub message_id: String,
+    message_id: String,
     #[serde(rename = "PopReceipt")]
-    pub pop_receipt: String,
+    pop_receipt: String,
     #[serde(rename = "InsertionTime", deserialize_with = "deserialize_utc")]
     pub insertion_time: DateTime<Utc>,
     #[serde(rename = "ExpirationTime", deserialize_with = "deserialize_utc")]
@@ -93,6 +93,12 @@ pub struct Message {
     pub dequeue_count: u64,
     #[serde(rename = "MessageText")]
     pub message_text: String,
+}
+
+impl Message {
+    pub fn pop_receipt(&self) -> PopReceipt {
+        PopReceipt::new(self.message_id.clone(), self.pop_receipt.clone())
+    }
 }
 
 impl From<Message> for PopReceipt {
