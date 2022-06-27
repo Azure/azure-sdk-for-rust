@@ -27,8 +27,8 @@ impl ListContainersBuilder {
             include_metadata: false,
             include_deleted: false,
             max_results: None,
-            context: Context::new(),
             timeout: None,
+            context: Context::new(),
         }
     }
 
@@ -37,8 +37,8 @@ impl ListContainersBuilder {
         include_metadata: bool => include_metadata,
         include_deleted: bool => include_deleted,
         max_results: MaxResults => Some(max_results),
-
         timeout: Timeout => Some(timeout),
+        context: Context => context,
     }
 
     pub fn into_stream(self) -> Pageable<ListContainersResponse, Error> {

@@ -20,9 +20,9 @@ impl SetACLBuilder {
             container_client,
             public_access,
             stored_access_policy_list: None,
-            context: Context::new(),
             timeout: None,
             lease_id: None,
+            context: Context::new(),
         }
     }
 
@@ -30,6 +30,7 @@ impl SetACLBuilder {
         lease_id: LeaseId => Some(lease_id),
         timeout: Timeout => Some(timeout),
         stored_access_policy_list: StoredAccessPolicyList => Some(stored_access_policy_list),
+        context: Context => context,
     }
 
     pub fn into_future(mut self) -> Response {

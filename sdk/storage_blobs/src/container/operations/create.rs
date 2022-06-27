@@ -17,16 +17,16 @@ impl CreateBuilder {
             container_client,
             public_access: PublicAccess::None,
             metadata: None,
-            context: Context::new(),
             timeout: None,
+            context: Context::new(),
         }
     }
 
     setters! {
         public_access: PublicAccess => public_access,
         metadata: Metadata => Some(metadata),
-
         timeout: Timeout => Some(timeout),
+        context: Context => context,
     }
 
     pub fn into_future(mut self) -> Response {

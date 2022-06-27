@@ -16,15 +16,15 @@ impl DeleteBuilder {
         DeleteBuilder {
             container_client,
             lease_id: None,
-            context: Context::new(),
             timeout: None,
+            context: Context::new(),
         }
     }
 
     setters! {
         lease_id: LeaseId => Some(lease_id),
-
         timeout: Timeout => Some(timeout),
+        context: Context => context,
     }
 
     pub fn into_future(mut self) -> Response {

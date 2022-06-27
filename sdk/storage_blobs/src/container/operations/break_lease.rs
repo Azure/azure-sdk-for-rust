@@ -20,18 +20,18 @@ impl BreakLeaseBuilder {
     pub(crate) fn new(container_client: ContainerClient) -> BreakLeaseBuilder {
         Self {
             container_client,
-            context: Context::new(),
             timeout: None,
             lease_break_period: None,
             lease_id: None,
+            context: Context::new(),
         }
     }
 
     setters! {
         lease_id: LeaseId => Some(lease_id),
         lease_break_period: LeaseBreakPeriod => Some(lease_break_period),
-
         timeout: Timeout => Some(timeout),
+        context: Context => context,
     }
 
     pub fn into_future(mut self) -> Response {

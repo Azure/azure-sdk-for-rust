@@ -21,15 +21,16 @@ impl GetPropertiesBuilder {
     pub(crate) fn new(container_client: ContainerClient) -> Self {
         Self {
             container_client,
-            context: Context::new(),
             timeout: None,
             lease_id: None,
+            context: Context::new(),
         }
     }
 
     setters! {
         timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
+        context: Context => context,
     }
 
     pub fn into_future(mut self) -> Response {

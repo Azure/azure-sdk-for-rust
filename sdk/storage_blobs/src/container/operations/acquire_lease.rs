@@ -18,18 +18,18 @@ impl AcquireLeaseBuilder {
         AcquireLeaseBuilder {
             container_client,
             lease_duration,
-            context: Context::new(),
             timeout: None,
             lease_id: None,
             proposed_lease_id: None,
+            context: Context::new(),
         }
     }
 
     setters! {
         lease_id: LeaseId => Some(lease_id),
         proposed_lease_id: ProposedLeaseId => Some(proposed_lease_id),
-
         timeout: Timeout => Some(timeout),
+        context: Context => context,
     }
 
     pub fn into_future(mut self) -> Response {
