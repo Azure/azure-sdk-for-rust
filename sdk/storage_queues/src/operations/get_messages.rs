@@ -136,7 +136,7 @@ fn deserialize_utc<'de, D>(deserializer: D) -> std::result::Result<DateTime<Utc>
 where
     D: serde::Deserializer<'de>,
 {
-    let s = String::deserialize(deserializer)?.to_string();
+    let s = String::deserialize(deserializer)?;
     let date = DateTime::parse_from_rfc2822(&s).map_err(serde::de::Error::custom)?;
     Ok(DateTime::from_utc(date.naive_utc(), Utc))
 }
