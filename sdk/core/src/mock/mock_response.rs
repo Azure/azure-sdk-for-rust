@@ -70,7 +70,8 @@ impl<'de> Deserialize<'de> for MockResponse {
             headers.insert(name, value);
         }
         let body = Bytes::from(base64::decode(r.body).map_err(Error::custom)?);
-        let status = StatusCode::from_u16(r.status).map_err(Error::custom)?;
+        let status = StatusCode::try_from(r.status)
+            .map_err(|_| Error::custom(format!("invalid status code {}", r.status)))?;
 
         Ok(Self::new(status, headers, body))
     }
