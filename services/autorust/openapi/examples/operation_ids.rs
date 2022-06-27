@@ -1,6 +1,6 @@
 // Print the operation IDs alphabetically
 // cargo run --example operation_ids -- ../../../azure-rest-api-specs/specification/vmware/resource-manager/Microsoft.AVS/stable/2020-03-20/vmware.json
-// cargo run --example operation_ids -- ../../../azure-rest-api-specs/specification/storage/data-plane/Microsoft.BlobStorage/preview/2021-04-10/blob.json
+// cargo run --example operation_ids -- ../../../azure-rest-api-specs/specification/storage/data-plane/Microsoft.BlobStorage/preview/2021-08-06/blob.json
 
 use autorust_openapi::*;
 use camino::Utf8Path;
