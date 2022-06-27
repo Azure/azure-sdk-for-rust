@@ -13,7 +13,7 @@ use azure_core::{
 };
 use azure_storage::parsing_xml::{cast_must, cast_optional, traverse};
 use chrono::{DateTime, Utc};
-use std::{collections::HashMap, str::FromStr};
+use std::collections::HashMap;
 use xml::{Element, Xml};
 
 create_enum!(
@@ -36,11 +36,10 @@ impl AsHeaders for PublicAccess {
 }
 
 pub(crate) fn public_access_from_header(header_map: &Headers) -> azure_core::Result<PublicAccess> {
-    let pa = match header_map.get(&BLOB_PUBLIC_ACCESS) {
-        Some(pa) => PublicAccess::from_str(pa.as_str()).map_kind(ErrorKind::DataConversion)?,
-        None => PublicAccess::None,
-    };
-    Ok(pa)
+    match header_map.get_optional_as(&BLOB_PUBLIC_ACCESS)? {
+        Some(p) => Ok(p),
+        None => Ok(PublicAccess::None),
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -93,23 +92,15 @@ impl Container {
 
         let e_tag = headers.get_as_string_or_err(&headers::ETAG)?;
 
-        let lease_status = headers.get_as_str_or_err(&LEASE_STATUS)?;
-        let lease_status =
-            LeaseStatus::from_str(lease_status).map_kind(ErrorKind::DataConversion)?;
+        let lease_status = headers.get_as(&LEASE_STATUS)?;
+        let lease_state = headers.get_as(&LEASE_STATE)?;
 
-        let lease_state = headers.get_as_str_or_err(&LEASE_STATE)?;
-        let lease_state = LeaseState::from_str(lease_state).map_kind(ErrorKind::DataConversion)?;
-
-        let lease_duration = headers.get_as_enum(&LEASE_DURATION)?;
+        let lease_duration = headers.get_optional_as(&LEASE_DURATION)?;
 
         let public_access = public_access_from_header(headers)?;
 
-        let has_immutability_policy =
-            bool::from_str(headers.get_as_str_or_err(&HAS_IMMUTABILITY_POLICY)?)
-                .map_kind(ErrorKind::DataConversion)?;
-
-        let has_legal_hold = bool::from_str(headers.get_as_str_or_err(&HAS_LEGAL_HOLD)?)
-            .map_kind(ErrorKind::DataConversion)?;
+        let has_immutability_policy = headers.get_as(&HAS_IMMUTABILITY_POLICY)?;
+        let has_legal_hold = headers.get_as(&HAS_LEGAL_HOLD)?;
 
         let mut metadata: HashMap<String, String> = HashMap::new();
         for (key, value) in headers.iter() {

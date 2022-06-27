@@ -84,9 +84,9 @@ fn string_to_sign(
     // content length must only be specified if != 0
     // this is valid from 2015-02-21
     let cl = http_headers
-        .get(&headers::CONTENT_LENGTH)
-        .map(|s| if s.as_str() == "0" { "" } else { s.as_str() })
-        .unwrap_or("");
+        .get_as_str(&headers::CONTENT_LENGTH)
+        .filter(|&s| s != "0")
+        .unwrap_or_default();
     format!(
         "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}{}",
         http_method.as_str(),
@@ -127,27 +127,23 @@ fn string_to_sign(
 }
 
 fn add_if_exists<'a>(h: &'a Headers, key: &HeaderName) -> &'a str {
-    match h.get(key) {
-        Some(ce) => ce.as_str(),
-        None => "",
-    }
+    h.get_as_str(key).unwrap_or_default()
 }
 
-fn canonicalize_header(h: &Headers) -> String {
-    let mut v_headers = h
+fn canonicalize_header(headers: &Headers) -> String {
+    let mut names = headers
         .iter()
-        .filter(|(k, _v)| k.as_str().starts_with("x-ms"))
-        .map(|(k, _)| k)
+        .filter_map(|(k, _)| k.as_str().starts_with("x-ms").then(|| k))
         .collect::<Vec<_>>();
-    v_headers.sort_unstable();
+    names.sort_unstable();
 
-    let mut can = String::new();
+    let mut result = String::new();
 
-    for header_name in v_headers {
-        let s = h.get(header_name).unwrap().as_str();
-        can = can + header_name.as_str() + ":" + s + "\n";
+    for name in names {
+        let value = headers.get_as_str(name).unwrap();
+        result = result + name.as_str() + ":" + value + "\n";
     }
-    can
+    result
 }
 
 fn canonicalized_resource(account: &str, u: &url::Url) -> String {
