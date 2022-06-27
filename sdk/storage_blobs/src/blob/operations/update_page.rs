@@ -1,10 +1,5 @@
 use crate::{prelude::*, BA512Range};
-use azure_core::{
-    error::{ErrorKind, ResultExt},
-    headers::*,
-    prelude::*,
-    RequestId,
-};
+use azure_core::{headers::*, prelude::*, RequestId};
 use azure_storage::{headers::content_md5_from_headers, ConsistencyMD5};
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
@@ -93,7 +88,7 @@ impl UpdatePageResponse {
     pub(crate) fn from_headers(headers: &Headers) -> azure_core::Result<UpdatePageResponse> {
         let etag = etag_from_headers(headers)?;
         let last_modified = last_modified_from_headers(headers)?;
-        let content_md5 = content_md5_from_headers(headers).map_kind(ErrorKind::DataConversion)?;
+        let content_md5 = content_md5_from_headers(headers)?;
         let sequence_number = sequence_number_from_headers(headers)?;
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;

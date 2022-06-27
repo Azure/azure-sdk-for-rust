@@ -1,10 +1,5 @@
 use crate::{clients::QueueClient, QueueStoredAccessPolicy};
-use azure_core::{
-    collect_pinned_stream,
-    error::{ErrorKind, ResultExt},
-    prelude::*,
-    Context, Method, Response as AzureResponse,
-};
+use azure_core::{collect_pinned_stream, prelude::*, Context, Method, Response as AzureResponse};
 use azure_storage::{core::headers::CommonStorageResponseHeaders, StoredAccessPolicyList};
 use std::convert::TryInto;
 
@@ -75,11 +70,10 @@ impl GetQueueACLResponse {
         let body = collect_pinned_stream(body).await?;
 
         let a: azure_core::Result<Vec<QueueStoredAccessPolicy>> =
-            StoredAccessPolicyList::from_xml(&body)
-                .map_kind(ErrorKind::DataConversion)?
+            StoredAccessPolicyList::from_xml(&body)?
                 .stored_access
                 .into_iter()
-                .map(|sap| sap.try_into().map_kind(ErrorKind::DataConversion))
+                .map(|sap| sap.try_into())
                 .collect();
 
         Ok(GetQueueACLResponse {

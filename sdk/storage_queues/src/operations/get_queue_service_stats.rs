@@ -104,11 +104,7 @@ impl GetQueueServiceStatsResponse {
         let (_, headers, body) = response.deconstruct();
         let body = collect_pinned_stream(body).await?;
 
-        debug!("headers == {:?}", headers);
-        debug!("body == {:#?}", body);
-        let response: GetQueueServiceStatsResponseInternal =
-            read_xml(&body).map_kind(ErrorKind::DataConversion)?;
-        debug!("deserde == {:#?}", response);
+        let response: GetQueueServiceStatsResponseInternal = read_xml(&body)?;
 
         Ok(GetQueueServiceStatsResponse {
             common_storage_response_headers: (&headers).try_into()?,

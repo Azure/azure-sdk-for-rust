@@ -1,10 +1,7 @@
 use crate::{clients::QueueClient, prelude::*};
 use azure_core::{
-    collect_pinned_stream,
-    error::{ErrorKind, ResultExt},
-    headers::utc_date_from_rfc2822,
-    prelude::*,
-    Context, Method, Response as AzureResponse,
+    collect_pinned_stream, headers::utc_date_from_rfc2822, prelude::*, Context, Method,
+    Response as AzureResponse,
 };
 use azure_storage::core::{headers::CommonStorageResponseHeaders, xml::read_xml};
 use chrono::{DateTime, Utc};
@@ -108,7 +105,7 @@ impl PeekMessagesResponse {
         let (_, headers, body) = response.deconstruct();
         let body = collect_pinned_stream(body).await?;
 
-        let response: PeekMessagesInternal = read_xml(&body).map_kind(ErrorKind::DataConversion)?;
+        let response: PeekMessagesInternal = read_xml(&body)?;
 
         let mut messages = Vec::new();
         for message in response.messages.unwrap_or_default().into_iter() {

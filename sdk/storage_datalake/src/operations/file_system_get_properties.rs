@@ -1,8 +1,6 @@
 use crate::clients::FileSystemClient;
 use crate::{util::*, Properties};
-use azure_core::error::ResultExt;
 use azure_core::{
-    error::ErrorKind,
     headers::{etag_from_headers, last_modified_from_headers},
     AppendToUrlQuery, Etag, Response as HttpResponse,
 };
@@ -79,7 +77,7 @@ impl GetFileSystemPropertiesResponse {
             etag: Etag::from(etag_from_headers(&headers)?),
             last_modified: last_modified_from_headers(&headers)?,
             namespace_enabled: namespace_enabled_from_headers(&headers)?,
-            properties: (&headers).try_into().map_kind(ErrorKind::DataConversion)?,
+            properties: (&headers).try_into()?,
         })
     }
 }

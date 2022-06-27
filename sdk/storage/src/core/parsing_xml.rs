@@ -56,7 +56,6 @@ pub fn traverse<'a>(
     let mut curnode = node;
 
     for (x, item) in path.iter().enumerate() {
-
         let vec = find_subnodes(curnode, item);
         if vec.is_empty() {
             if (x + 1) >= path.len() && ignore_empty_leaf {

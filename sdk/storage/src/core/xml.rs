@@ -1,10 +1,10 @@
-use azure_core::error::{Error, ErrorKind, ResultExt};
+use azure_core::error::{ErrorKind, ResultExt};
 
 /// The UTF8 [byte order marker](https://en.wikipedia.org/wiki/Byte_order_mark)
 const UTF8_BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
 
 /// Reads the XML from bytes.
-pub fn read_xml<'de, T: serde::de::Deserialize<'de>>(body: &[u8]) -> Result<T, Error> {
+pub fn read_xml<'de, T: serde::de::Deserialize<'de>>(body: &[u8]) -> azure_core::Result<T> {
     serde_xml_rs::from_reader(slice_bom(body))
         .context(ErrorKind::DataConversion, "failed to deserialize xml")
 }

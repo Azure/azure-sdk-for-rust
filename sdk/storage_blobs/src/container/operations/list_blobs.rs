@@ -2,7 +2,7 @@ use crate::{blob::Blob, prelude::*};
 use azure_core::Method;
 use azure_core::{
     collect_pinned_stream,
-    error::{Error, ErrorKind, ResultExt},
+    error::Error,
     headers::{date_from_headers, request_id_from_headers},
     prelude::*,
     Pageable, RequestId, Response as AzureResponse,
@@ -166,8 +166,7 @@ impl ListBlobsResponse {
         let (_, headers, body) = response.deconstruct();
         let body = collect_pinned_stream(body).await?;
 
-        let list_blobs_response_internal: ListBlobsResponseInternal =
-            read_xml(&body).map_kind(ErrorKind::DataConversion)?;
+        let list_blobs_response_internal: ListBlobsResponseInternal = read_xml(&body)?;
 
         let next_marker = match list_blobs_response_internal.next_marker {
             Some(ref nm) if nm.is_empty() => None,
