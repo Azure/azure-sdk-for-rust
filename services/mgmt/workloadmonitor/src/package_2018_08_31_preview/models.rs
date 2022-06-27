@@ -185,8 +185,8 @@ pub struct ComponentsCollection {
     pub value: Vec<Component>,
 }
 impl azure_core::Continuable for ComponentsCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ComponentsCollection {
@@ -226,7 +226,7 @@ pub struct ErrorResponse {
     pub details: Vec<ErrorFieldContract>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -562,8 +562,8 @@ pub struct MonitorInstancesCollection {
     pub value: Vec<MonitorInstance>,
 }
 impl azure_core::Continuable for MonitorInstancesCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl MonitorInstancesCollection {
@@ -710,8 +710,8 @@ pub struct MonitorsCollection {
     pub value: Vec<Monitor>,
 }
 impl azure_core::Continuable for MonitorsCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl MonitorsCollection {
@@ -758,8 +758,8 @@ pub struct NotificationSettingsCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for NotificationSettingsCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl NotificationSettingsCollection {
@@ -796,8 +796,8 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationListResult {

@@ -3,7 +3,7 @@ use azure_core::Method;
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     prelude::*,
-    HttpClient, Request, Response,
+    Request, Response,
 };
 use azure_storage::core::{
     clients::StorageCredentials,
@@ -46,13 +46,6 @@ impl BlobClient {
         &self.blob_name
     }
 
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.container_client
-            .storage_client()
-            .storage_account_client()
-            .http_client()
-    }
-
     #[allow(dead_code)]
     pub(crate) fn storage_account_client(&self) -> &StorageAccountClient {
         self.container_client
@@ -75,17 +68,23 @@ impl BlobClient {
             .map_kind(ErrorKind::DataConversion)
     }
 
+    // stream blob downloads
+    //
+    // By default, blobs are downloaded in 1MB chunks to reduce the impact of
+    // intermittent network issues while downloading large blobs.
     pub fn get(&self) -> GetBlobBuilder {
-        GetBlobBuilder::new(self)
+        GetBlobBuilder::new(self.clone())
     }
 
     // helper function that returns the entire blob stream
     pub async fn get_content(&self) -> azure_core::Result<Vec<u8>> {
         let mut blob = Vec::new();
-        let mut stream = Box::pin(self.get().stream(1024 * 8));
+        // NOTE: this uses the default chunk size of 1MB, which enables the
+        // pipeline to handle intermitent connection failures with retry, rather
+        // than restarting the whole blob on a failure.
+        let mut stream = self.get().into_stream();
         while let Some(value) = stream.next().await {
             let data = value?.data;
-            println!("received {:?} bytes", data.len());
             blob.extend(&data);
         }
         Ok(blob)

@@ -73,7 +73,7 @@ impl ListBlobsBuilder {
 
                 if let Some(continuation) = continuation {
                     url.query_pairs_mut()
-                        .append_pair("marker", &continuation.into_raw());
+                        .append_pair("marker", &continuation.as_string());
                 }
 
                 this.prefix.append_to_url_query(&mut url);
@@ -188,8 +188,8 @@ impl ListBlobsResponse {
 }
 
 impl Continuable for ListBlobsResponse {
-    fn continuation(&self) -> Option<String> {
-        self.next_marker.clone()
+    fn continuation(&self) -> Option<Continuation> {
+        self.next_marker.clone().map(Continuation::from)
     }
 }
 

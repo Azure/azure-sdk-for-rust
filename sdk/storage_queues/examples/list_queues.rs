@@ -19,13 +19,16 @@ async fn main() -> azure_core::Result<()> {
     let queue_service = storage_account.queue_service_client();
 
     println!("getting service stats");
-    let response = queue_service.get_queue_service_stats().execute().await?;
+    let response = queue_service
+        .get_queue_service_stats()
+        .into_future()
+        .await?;
     println!("get_queue_service_properties.response == {:#?}", response);
 
     println!("getting service properties");
     let response = queue_service
         .get_queue_service_properties()
-        .execute()
+        .into_future()
         .await?;
     println!("get_queue_service_stats.response == {:#?}", response);
 
@@ -35,17 +38,16 @@ async fn main() -> azure_core::Result<()> {
         .prefix("a")
         .include_metadata(true)
         .max_results(NonZeroU32::new(2u32).unwrap())
-        .execute()
-        .await?;
+        .into_stream()
+        .next()
+        .await;
     println!("response == {:#?}", response);
 
     println!("streaming queues");
-    let mut stream = Box::pin(
-        queue_service
-            .list_queues()
-            .max_results(NonZeroU32::new(3u32).unwrap())
-            .stream(),
-    );
+    let mut stream = queue_service
+        .list_queues()
+        .max_results(NonZeroU32::new(3u32).unwrap())
+        .into_stream();
 
     while let Some(value) = stream.next().await {
         let value = value?;

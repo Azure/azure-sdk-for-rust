@@ -26,7 +26,7 @@ pub struct ErrorDetails {
     pub error: Option<ErrorDetailsInternal>,
 }
 impl azure_core::Continuable for ErrorDetails {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -103,8 +103,8 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationListResult {
@@ -230,7 +230,7 @@ pub struct PrivateEndpointConnectionListResultDescription {
     pub value: Vec<PrivateEndpointConnectionDescription>,
 }
 impl azure_core::Continuable for PrivateEndpointConnectionListResultDescription {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -564,8 +564,8 @@ pub struct ServicesDescriptionListResult {
     pub value: Vec<ServicesDescription>,
 }
 impl azure_core::Continuable for ServicesDescriptionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ServicesDescriptionListResult {

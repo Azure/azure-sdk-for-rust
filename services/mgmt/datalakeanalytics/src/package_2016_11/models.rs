@@ -199,8 +199,8 @@ pub struct ComputePolicyListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ComputePolicyListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ComputePolicyListResult {
@@ -578,8 +578,8 @@ pub struct DataLakeAnalyticsAccountListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DataLakeAnalyticsAccountListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DataLakeAnalyticsAccountListResult {
@@ -807,8 +807,8 @@ pub struct DataLakeStoreAccountInformationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DataLakeStoreAccountInformationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DataLakeStoreAccountInformationListResult {
@@ -875,7 +875,7 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -909,8 +909,8 @@ pub struct FirewallRuleListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for FirewallRuleListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl FirewallRuleListResult {
@@ -1242,8 +1242,8 @@ pub struct SasTokenInformationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SasTokenInformationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SasTokenInformationListResult {
@@ -1276,8 +1276,8 @@ pub struct StorageAccountInformationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for StorageAccountInformationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl StorageAccountInformationListResult {
@@ -1322,8 +1322,8 @@ pub struct StorageContainerListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for StorageContainerListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl StorageContainerListResult {

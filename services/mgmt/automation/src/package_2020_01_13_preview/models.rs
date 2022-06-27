@@ -33,8 +33,8 @@ pub struct ActivityListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ActivityListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ActivityListResult {
@@ -396,8 +396,8 @@ pub struct AutomationAccountListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AutomationAccountListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AutomationAccountListResult {
@@ -607,8 +607,8 @@ pub struct CertificateListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CertificateListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CertificateListResult {
@@ -730,8 +730,8 @@ pub struct ConnectionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ConnectionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ConnectionListResult {
@@ -838,8 +838,8 @@ pub struct ConnectionTypeListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ConnectionTypeListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ConnectionTypeListResult {
@@ -1054,8 +1054,8 @@ pub struct CredentialListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CredentialListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CredentialListResult {
@@ -1188,8 +1188,8 @@ pub struct DscCompilationJobListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DscCompilationJobListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DscCompilationJobListResult {
@@ -1407,8 +1407,8 @@ pub struct DscConfigurationListResult {
     pub total_count: Option<i64>,
 }
 impl azure_core::Continuable for DscConfigurationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DscConfigurationListResult {
@@ -1663,8 +1663,8 @@ pub struct DscNodeConfigurationListResult {
     pub total_count: Option<i64>,
 }
 impl azure_core::Continuable for DscNodeConfigurationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DscNodeConfigurationListResult {
@@ -1728,8 +1728,8 @@ pub struct DscNodeListResult {
     pub total_count: Option<i64>,
 }
 impl azure_core::Continuable for DscNodeListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DscNodeListResult {
@@ -1853,8 +1853,8 @@ pub struct DscNodeReportListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DscNodeReportListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DscNodeReportListResult {
@@ -2020,7 +2020,7 @@ pub struct ErrorResponse {
     pub message: Option<String>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -2160,8 +2160,8 @@ pub struct HybridRunbookWorkerGroupsListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for HybridRunbookWorkerGroupsListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl HybridRunbookWorkerGroupsListResult {
@@ -2368,8 +2368,8 @@ pub struct JobListResultV2 {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for JobListResultV2 {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl JobListResultV2 {
@@ -2598,8 +2598,8 @@ pub struct JobScheduleListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for JobScheduleListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl JobScheduleListResult {
@@ -2657,8 +2657,8 @@ pub struct JobStreamListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for JobStreamListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl JobStreamListResult {
@@ -3024,8 +3024,8 @@ pub struct ModuleListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ModuleListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ModuleListResult {
@@ -3230,7 +3230,7 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -3261,7 +3261,7 @@ pub struct PrivateEndpointConnectionListResult {
     pub value: Vec<PrivateEndpointConnection>,
 }
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -3322,7 +3322,7 @@ pub struct PrivateLinkResourceListResult {
     pub value: Vec<PrivateLinkResource>,
 }
 impl azure_core::Continuable for PrivateLinkResourceListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -3856,8 +3856,8 @@ pub struct RunbookListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RunbookListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RunbookListResult {
@@ -4211,8 +4211,8 @@ pub struct ScheduleListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ScheduleListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ScheduleListResult {
@@ -4472,8 +4472,8 @@ pub struct SourceControlListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SourceControlListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SourceControlListResult {
@@ -4795,8 +4795,8 @@ pub struct SourceControlSyncJobListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SourceControlSyncJobListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SourceControlSyncJobListResult {
@@ -5079,8 +5079,8 @@ pub struct SourceControlSyncJobStreamsListBySyncJob {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SourceControlSyncJobStreamsListBySyncJob {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SourceControlSyncJobStreamsListBySyncJob {
@@ -5158,7 +5158,7 @@ pub struct StatisticsListResult {
     pub value: Vec<Statistics>,
 }
 impl azure_core::Continuable for StatisticsListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -5303,7 +5303,7 @@ pub struct TypeFieldListResult {
     pub value: Vec<TypeField>,
 }
 impl azure_core::Continuable for TypeFieldListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -5362,7 +5362,7 @@ pub struct UsageListResult {
     pub value: Vec<Usage>,
 }
 impl azure_core::Continuable for UsageListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -5427,8 +5427,8 @@ pub struct VariableListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VariableListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VariableListResult {
@@ -5524,8 +5524,8 @@ pub struct WatcherListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WatcherListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl WatcherListResult {
@@ -5660,8 +5660,8 @@ pub struct WebhookListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WebhookListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl WebhookListResult {

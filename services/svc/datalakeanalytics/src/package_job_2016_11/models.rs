@@ -290,8 +290,8 @@ pub struct JobInfoListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for JobInfoListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl JobInfoListResult {
@@ -541,8 +541,8 @@ pub struct JobPipelineInformationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for JobPipelineInformationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl JobPipelineInformationListResult {
@@ -633,8 +633,8 @@ pub struct JobRecurrenceInformationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for JobRecurrenceInformationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl JobRecurrenceInformationListResult {

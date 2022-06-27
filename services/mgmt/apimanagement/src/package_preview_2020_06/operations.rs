@@ -544,9 +544,9 @@ pub mod api {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -564,6 +564,9 @@ pub mod api {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -964,9 +967,9 @@ pub mod api {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -984,6 +987,9 @@ pub mod api {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -1097,9 +1103,9 @@ pub mod api_revision {
                             &this.api_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1117,6 +1123,9 @@ pub mod api_revision {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -1319,9 +1328,9 @@ pub mod api_release {
                             &this.api_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1339,6 +1348,9 @@ pub mod api_release {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -1849,9 +1861,9 @@ pub mod api_operation {
                             &this.api_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1869,6 +1881,9 @@ pub mod api_operation {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -3010,9 +3025,9 @@ pub mod tag {
                             &this.operation_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3030,6 +3045,9 @@ pub mod tag {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -3316,9 +3334,9 @@ pub mod tag {
                             &this.api_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3336,6 +3354,9 @@ pub mod tag {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -3650,9 +3671,9 @@ pub mod tag {
                             &this.product_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3670,6 +3691,9 @@ pub mod tag {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -3987,9 +4011,9 @@ pub mod tag {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -4007,6 +4031,9 @@ pub mod tag {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -4410,9 +4437,9 @@ pub mod api_product {
                             &this.api_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -4430,6 +4457,9 @@ pub mod api_product {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -5011,9 +5041,9 @@ pub mod api_schema {
                             &this.api_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -5031,6 +5061,9 @@ pub mod api_schema {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -5486,9 +5519,9 @@ pub mod api_diagnostic {
                             &this.api_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -5506,6 +5539,9 @@ pub mod api_diagnostic {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -6017,9 +6053,9 @@ pub mod api_issue {
                             &this.api_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -6037,6 +6073,9 @@ pub mod api_issue {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -6547,9 +6586,9 @@ pub mod api_issue_comment {
                             &this.issue_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -6567,6 +6606,9 @@ pub mod api_issue_comment {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -6966,9 +7008,9 @@ pub mod api_issue_attachment {
                     async move {
                         let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiManagement/service/{}/apis/{}/issues/{}/attachments" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . service_name , & this . api_id , & this . issue_id)) ? ;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -6986,6 +7028,9 @@ pub mod api_issue_attachment {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -7381,9 +7426,9 @@ pub mod api_tag_description {
                             &this.api_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -7401,6 +7446,9 @@ pub mod api_tag_description {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -7757,9 +7805,9 @@ pub mod operation {
                             &this.api_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -7777,6 +7825,9 @@ pub mod operation {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -7970,9 +8021,9 @@ pub mod api_version_set {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -7990,6 +8041,9 @@ pub mod api_version_set {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -8485,9 +8539,9 @@ pub mod authorization_server {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -8505,6 +8559,9 @@ pub mod authorization_server {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -9049,9 +9106,9 @@ pub mod backend {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -9069,6 +9126,9 @@ pub mod backend {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -9603,9 +9663,9 @@ pub mod cache {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -9623,6 +9683,9 @@ pub mod cache {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -10102,9 +10165,9 @@ pub mod certificate {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -10122,6 +10185,9 @@ pub mod certificate {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -10543,9 +10609,9 @@ pub mod content_type {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -10563,6 +10629,9 @@ pub mod content_type {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -10890,9 +10959,9 @@ pub mod content_item {
                     async move {
                         let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiManagement/service/{}/contentTypes/{}/contentItems" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . service_name , & this . content_type_id)) ? ;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -10910,6 +10979,9 @@ pub mod content_item {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -11210,9 +11282,9 @@ pub mod deleted_services {
                             &this.subscription_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -11230,6 +11302,9 @@ pub mod deleted_services {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -11400,9 +11475,9 @@ pub mod api_management_operations {
                         let mut url =
                             azure_core::Url::parse(&format!("{}/providers/Microsoft.ApiManagement/operations", this.client.endpoint(),))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -11420,6 +11495,9 @@ pub mod api_management_operations {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -11498,9 +11576,9 @@ pub mod api_management_service_skus {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -11518,6 +11596,9 @@ pub mod api_management_service_skus {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -12085,9 +12166,9 @@ pub mod api_management_service {
                             &this.resource_group_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -12105,6 +12186,9 @@ pub mod api_management_service {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -12159,9 +12243,9 @@ pub mod api_management_service {
                             &this.subscription_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -12179,6 +12263,9 @@ pub mod api_management_service {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -12573,9 +12660,9 @@ pub mod diagnostic {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -12593,6 +12680,9 @@ pub mod diagnostic {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -13073,9 +13163,9 @@ pub mod email_template {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -13093,6 +13183,9 @@ pub mod email_template {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -13622,9 +13715,9 @@ pub mod gateway {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -13642,6 +13735,9 @@ pub mod gateway {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -14271,9 +14367,9 @@ pub mod gateway_hostname_configuration {
                     async move {
                         let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiManagement/service/{}/gateways/{}/hostnameConfigurations" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . service_name , & this . gateway_id)) ? ;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -14291,6 +14387,9 @@ pub mod gateway_hostname_configuration {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -14661,9 +14760,9 @@ pub mod gateway_api {
                             &this.gateway_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -14681,6 +14780,9 @@ pub mod gateway_api {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -15039,9 +15141,9 @@ pub mod gateway_certificate_authority {
                     async move {
                         let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ApiManagement/service/{}/gateways/{}/certificateAuthorities" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . service_name , & this . gateway_id)) ? ;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -15059,6 +15161,9 @@ pub mod gateway_certificate_authority {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -15457,9 +15562,9 @@ pub mod group {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -15477,6 +15582,9 @@ pub mod group {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -15928,9 +16036,9 @@ pub mod group_user {
                             &this.group_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -15948,6 +16056,9 @@ pub mod group_user {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -16307,9 +16418,9 @@ pub mod identity_provider {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -16327,6 +16438,9 @@ pub mod identity_provider {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -16777,9 +16891,9 @@ pub mod issue {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -16797,6 +16911,9 @@ pub mod issue {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -17039,9 +17156,9 @@ pub mod logger {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -17059,6 +17176,9 @@ pub mod logger {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -17575,9 +17695,9 @@ pub mod named_value {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -17595,6 +17715,9 @@ pub mod named_value {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -18279,9 +18402,9 @@ pub mod notification {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -18299,6 +18422,9 @@ pub mod notification {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -19153,9 +19279,9 @@ pub mod open_id_connect_provider {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -19173,6 +19299,9 @@ pub mod open_id_connect_provider {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -20142,9 +20271,9 @@ pub mod portal_revision {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -20162,6 +20291,9 @@ pub mod portal_revision {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -21578,9 +21710,9 @@ pub mod product {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -21598,6 +21730,9 @@ pub mod product {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -21995,9 +22130,9 @@ pub mod product {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -22015,6 +22150,9 @@ pub mod product {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -22179,9 +22317,9 @@ pub mod product_api {
                             &this.product_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -22199,6 +22337,9 @@ pub mod product_api {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -22532,9 +22673,9 @@ pub mod product_group {
                             &this.product_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -22552,6 +22693,9 @@ pub mod product_group {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -22834,9 +22978,9 @@ pub mod product_subscriptions {
                             &this.product_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -22854,6 +22998,9 @@ pub mod product_subscriptions {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -23643,9 +23790,9 @@ pub mod region {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -23663,6 +23810,9 @@ pub mod region {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -23887,9 +24037,9 @@ pub mod reports {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -23907,6 +24057,9 @@ pub mod reports {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -23992,9 +24145,9 @@ pub mod reports {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -24012,6 +24165,9 @@ pub mod reports {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -24097,9 +24253,9 @@ pub mod reports {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -24117,6 +24273,9 @@ pub mod reports {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -24202,9 +24361,9 @@ pub mod reports {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -24222,6 +24381,9 @@ pub mod reports {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -24302,9 +24464,9 @@ pub mod reports {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -24322,6 +24484,9 @@ pub mod reports {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -24404,9 +24569,9 @@ pub mod reports {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -24424,6 +24589,9 @@ pub mod reports {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -24510,9 +24678,9 @@ pub mod reports {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -24530,6 +24698,9 @@ pub mod reports {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -24713,9 +24884,9 @@ pub mod tenant_settings {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -24733,6 +24904,9 @@ pub mod tenant_settings {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -24856,9 +25030,9 @@ pub mod api_management_skus {
                             &this.subscription_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -24876,6 +25050,9 @@ pub mod api_management_skus {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -25104,9 +25281,9 @@ pub mod subscription {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -25124,6 +25301,9 @@ pub mod subscription {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -25688,9 +25868,9 @@ pub mod tag_resource {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -25708,6 +25888,9 @@ pub mod tag_resource {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -25913,9 +26096,9 @@ pub mod tenant_access {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -25933,6 +26116,9 @@ pub mod tenant_access {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -26956,9 +27142,9 @@ pub mod user {
                             &this.service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -26976,6 +27162,9 @@ pub mod user {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -27526,9 +27715,9 @@ pub mod user_group {
                             &this.user_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -27546,6 +27735,9 @@ pub mod user_group {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -27671,9 +27863,9 @@ pub mod user_subscription {
                             &this.user_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -27691,6 +27883,9 @@ pub mod user_subscription {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
@@ -27837,9 +28032,9 @@ pub mod user_identities {
                             &this.user_id
                         ))?;
                         let rsp = match continuation {
-                            Some(token) => {
+                            Some(azure_core::prelude::Continuation::String(value)) => {
                                 url.set_path("");
-                                url = url.join(&token.into_raw())?;
+                                url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, http::Method::GET);
                                 let credential = this.client.token_credential();
                                 let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -27857,6 +28052,9 @@ pub mod user_identities {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
+                            }
+                            Some(azure_core::prelude::Continuation::Range(_)) => {
+                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, http::Method::GET);

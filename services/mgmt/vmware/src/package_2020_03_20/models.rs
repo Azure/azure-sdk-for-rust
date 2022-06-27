@@ -54,7 +54,7 @@ pub struct CloudError {
     pub error: Option<ErrorResponse>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -93,8 +93,8 @@ pub struct ClusterList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ClusterList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ClusterList {
@@ -268,8 +268,8 @@ pub struct ExpressRouteAuthorizationList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ExpressRouteAuthorizationList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ExpressRouteAuthorizationList {
@@ -362,8 +362,8 @@ pub struct HcxEnterpriseSiteList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for HcxEnterpriseSiteList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl HcxEnterpriseSiteList {
@@ -680,8 +680,8 @@ pub struct OperationList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationList {
@@ -731,8 +731,8 @@ pub struct PrivateCloudList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PrivateCloudList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PrivateCloudList {

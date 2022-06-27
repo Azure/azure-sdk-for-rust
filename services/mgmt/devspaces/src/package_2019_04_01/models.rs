@@ -68,8 +68,8 @@ pub struct ControllerList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ControllerList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ControllerList {
@@ -192,7 +192,7 @@ pub struct DevSpacesErrorResponse {
     pub error: Option<ErrorDetails>,
 }
 impl azure_core::Continuable for DevSpacesErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -319,8 +319,8 @@ pub struct ResourceProviderOperationList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResourceProviderOperationList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResourceProviderOperationList {

@@ -48,7 +48,7 @@ impl AppendToUrlQuery for NextMarker {
 
 impl From<Continuation> for NextMarker {
     fn from(next_marker: Continuation) -> Self {
-        Self::new(next_marker.into_raw())
+        Self::new(next_marker.as_string())
     }
 }
 

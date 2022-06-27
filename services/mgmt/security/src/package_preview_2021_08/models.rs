@@ -56,8 +56,8 @@ pub struct AssignmentList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AssignmentList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AssignmentList {
@@ -136,7 +136,7 @@ pub struct CloudError {
     pub error: Option<CloudErrorBody>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -266,8 +266,8 @@ pub struct StandardList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for StandardList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl StandardList {

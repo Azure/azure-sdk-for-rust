@@ -137,7 +137,7 @@ pub struct ListApplyUpdate {
     pub value: Vec<ApplyUpdate>,
 }
 impl azure_core::Continuable for ListApplyUpdate {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -154,7 +154,7 @@ pub struct ListConfigurationAssignmentsResult {
     pub value: Vec<ConfigurationAssignment>,
 }
 impl azure_core::Continuable for ListConfigurationAssignmentsResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -171,7 +171,7 @@ pub struct ListMaintenanceConfigurationsResult {
     pub value: Vec<MaintenanceConfiguration>,
 }
 impl azure_core::Continuable for ListMaintenanceConfigurationsResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -188,7 +188,7 @@ pub struct ListUpdatesResult {
     pub value: Vec<Update>,
 }
 impl azure_core::Continuable for ListUpdatesResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -337,7 +337,7 @@ pub struct MaintenanceError {
     pub error: Option<ErrorDetails>,
 }
 impl azure_core::Continuable for MaintenanceError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -423,7 +423,7 @@ pub struct OperationsListResult {
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationsListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }

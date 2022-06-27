@@ -25,9 +25,8 @@ async fn main() -> azure_core::Result<()> {
 
     trace!("putting message");
     let response = queue
-        .put_message()
-        .client_request_id("optional correlation token")
-        .execute(format!("Azure SDK for Rust rocks! {}", chrono::Utc::now()))
+        .put_message(format!("Azure SDK for Rust rocks! {}", chrono::Utc::now()))
+        .into_future()
         .await?;
 
     println!("response == {:#?}", response);

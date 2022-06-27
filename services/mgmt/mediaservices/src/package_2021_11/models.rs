@@ -218,8 +218,8 @@ pub struct AccountFilterCollection {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for AccountFilterCollection {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AccountFilterCollection {
@@ -352,8 +352,8 @@ pub struct AssetCollection {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for AssetCollection {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AssetCollection {
@@ -423,8 +423,8 @@ pub struct AssetFilterCollection {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for AssetFilterCollection {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AssetFilterCollection {
@@ -562,7 +562,7 @@ pub struct AssetTrackCollection {
     pub value: Vec<AssetTrack>,
 }
 impl azure_core::Continuable for AssetTrackCollection {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1093,8 +1093,8 @@ pub struct ContentKeyPolicyCollection {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for ContentKeyPolicyCollection {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ContentKeyPolicyCollection {
@@ -2147,7 +2147,7 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -3119,8 +3119,8 @@ pub struct JobCollection {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for JobCollection {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl JobCollection {
@@ -4122,8 +4122,8 @@ pub struct LiveEventListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for LiveEventListResult {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl LiveEventListResult {
@@ -4339,8 +4339,8 @@ pub struct LiveOutputListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for LiveOutputListResult {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl LiveOutputListResult {
@@ -4511,8 +4511,8 @@ pub struct MediaServiceCollection {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for MediaServiceCollection {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl MediaServiceCollection {
@@ -5928,8 +5928,8 @@ pub struct StreamingEndpointListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for StreamingEndpointListResult {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl StreamingEndpointListResult {
@@ -6110,8 +6110,8 @@ pub struct StreamingLocatorCollection {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for StreamingLocatorCollection {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl StreamingLocatorCollection {
@@ -6379,8 +6379,8 @@ pub struct StreamingPolicyCollection {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for StreamingPolicyCollection {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl StreamingPolicyCollection {
@@ -6760,8 +6760,8 @@ pub struct TransformCollection {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for TransformCollection {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl TransformCollection {

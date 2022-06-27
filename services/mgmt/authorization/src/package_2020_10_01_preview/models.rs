@@ -99,8 +99,8 @@ pub struct AccessReviewDecisionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AccessReviewDecisionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AccessReviewDecisionListResult {
@@ -383,8 +383,8 @@ pub struct AccessReviewInstanceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AccessReviewInstanceListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AccessReviewInstanceListResult {
@@ -695,8 +695,8 @@ pub struct AccessReviewScheduleDefinitionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AccessReviewScheduleDefinitionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AccessReviewScheduleDefinitionListResult {
@@ -1082,7 +1082,7 @@ pub struct CloudError {
     pub error: Option<CloudErrorBody>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1156,8 +1156,8 @@ pub struct DenyAssignmentListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DenyAssignmentListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DenyAssignmentListResult {
@@ -1248,8 +1248,8 @@ pub struct EligibleChildResourcesListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for EligibleChildResourcesListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl EligibleChildResourcesListResult {
@@ -1280,7 +1280,7 @@ pub struct ErrorDefinition {
     pub error: Option<ErrorDefinitionProperties>,
 }
 impl azure_core::Continuable for ErrorDefinition {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1336,7 +1336,7 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1475,8 +1475,8 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationListResult {
@@ -1516,8 +1516,8 @@ pub struct PermissionGetResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PermissionGetResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PermissionGetResult {
@@ -1717,8 +1717,8 @@ pub struct ProviderOperationsMetadataListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ProviderOperationsMetadataListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ProviderOperationsMetadataListResult {
@@ -1799,8 +1799,8 @@ pub struct RoleAssignmentListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RoleAssignmentListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RoleAssignmentListResult {
@@ -2030,8 +2030,8 @@ pub struct RoleAssignmentScheduleInstanceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RoleAssignmentScheduleInstanceListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RoleAssignmentScheduleInstanceListResult {
@@ -2312,8 +2312,8 @@ pub struct RoleAssignmentScheduleListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RoleAssignmentScheduleListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RoleAssignmentScheduleListResult {
@@ -2629,8 +2629,8 @@ pub struct RoleAssignmentScheduleRequestListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RoleAssignmentScheduleRequestListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RoleAssignmentScheduleRequestListResult {
@@ -3041,8 +3041,8 @@ pub struct RoleDefinitionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RoleDefinitionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RoleDefinitionListResult {
@@ -3166,8 +3166,8 @@ pub struct RoleEligibilityScheduleInstanceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RoleEligibilityScheduleInstanceListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RoleEligibilityScheduleInstanceListResult {
@@ -3395,8 +3395,8 @@ pub struct RoleEligibilityScheduleListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RoleEligibilityScheduleListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RoleEligibilityScheduleListResult {
@@ -3669,8 +3669,8 @@ pub struct RoleEligibilityScheduleRequestListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RoleEligibilityScheduleRequestListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RoleEligibilityScheduleRequestListResult {
@@ -4100,8 +4100,8 @@ pub struct RoleManagementPolicyAssignmentListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RoleManagementPolicyAssignmentListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RoleManagementPolicyAssignmentListResult {
@@ -4199,8 +4199,8 @@ pub struct RoleManagementPolicyListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RoleManagementPolicyListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RoleManagementPolicyListResult {

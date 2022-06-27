@@ -89,8 +89,8 @@ pub struct AttachedDataNetworkListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AttachedDataNetworkListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AttachedDataNetworkListResult {
@@ -308,8 +308,8 @@ pub struct DataNetworkListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DataNetworkListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DataNetworkListResult {
@@ -390,7 +390,7 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -463,8 +463,8 @@ pub struct MobileNetworkListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MobileNetworkListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl MobileNetworkListResult {
@@ -624,8 +624,8 @@ pub struct OperationList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationList {
@@ -664,8 +664,8 @@ pub struct PacketCoreControlPlaneListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PacketCoreControlPlaneListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PacketCoreControlPlaneListResult {
@@ -738,8 +738,8 @@ pub struct PacketCoreDataPlaneListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PacketCoreDataPlaneListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PacketCoreDataPlaneListResult {
@@ -1232,8 +1232,8 @@ pub struct ServiceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ServiceListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ServiceListResult {
@@ -1324,8 +1324,8 @@ pub struct SimListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SimListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SimListResult {
@@ -1364,8 +1364,8 @@ pub struct SimPolicyListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SimPolicyListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SimPolicyListResult {
@@ -1572,8 +1572,8 @@ pub struct SiteListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SiteListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SiteListResult {
@@ -1652,8 +1652,8 @@ pub struct SliceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SliceListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SliceListResult {

@@ -32,8 +32,8 @@ pub struct ElasticSanList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ElasticSanList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ElasticSanList {
@@ -73,7 +73,7 @@ pub struct ElasticSanOperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ElasticSanOperationListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -239,7 +239,7 @@ pub struct Error {
     pub error: Option<ErrorResponse>,
 }
 impl azure_core::Continuable for Error {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -606,7 +606,7 @@ pub struct SkuInformationList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SkuInformationList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -814,8 +814,8 @@ pub struct VolumeGroupList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VolumeGroupList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VolumeGroupList {
@@ -906,8 +906,8 @@ pub struct VolumeList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VolumeList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VolumeList {

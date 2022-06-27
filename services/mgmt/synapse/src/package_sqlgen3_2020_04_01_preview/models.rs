@@ -96,7 +96,7 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -366,8 +366,8 @@ pub struct SqlDatabaseListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SqlDatabaseListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SqlDatabaseListResult {
@@ -548,8 +548,8 @@ pub struct SqlPoolListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SqlPoolListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SqlPoolListResult {

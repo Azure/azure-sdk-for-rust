@@ -273,7 +273,7 @@ pub struct CloudError {
     pub error: Option<CloudErrorBody>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1328,8 +1328,8 @@ pub struct ResponseWithContinuationArtifactSource {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResponseWithContinuationArtifactSource {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResponseWithContinuationArtifactSource {
@@ -1348,8 +1348,8 @@ pub struct ResponseWithContinuationArtifact {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResponseWithContinuationArtifact {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResponseWithContinuationArtifact {
@@ -1368,8 +1368,8 @@ pub struct ResponseWithContinuationCostInsight {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResponseWithContinuationCostInsight {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResponseWithContinuationCostInsight {
@@ -1388,8 +1388,8 @@ pub struct ResponseWithContinuationCost {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResponseWithContinuationCost {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResponseWithContinuationCost {
@@ -1408,8 +1408,8 @@ pub struct ResponseWithContinuationCustomImage {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResponseWithContinuationCustomImage {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResponseWithContinuationCustomImage {
@@ -1428,8 +1428,8 @@ pub struct ResponseWithContinuationFormula {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResponseWithContinuationFormula {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResponseWithContinuationFormula {
@@ -1448,8 +1448,8 @@ pub struct ResponseWithContinuationGalleryImage {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResponseWithContinuationGalleryImage {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResponseWithContinuationGalleryImage {
@@ -1468,8 +1468,8 @@ pub struct ResponseWithContinuationLabVhd {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResponseWithContinuationLabVhd {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResponseWithContinuationLabVhd {
@@ -1488,8 +1488,8 @@ pub struct ResponseWithContinuationLabVirtualMachine {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResponseWithContinuationLabVirtualMachine {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResponseWithContinuationLabVirtualMachine {
@@ -1508,8 +1508,8 @@ pub struct ResponseWithContinuationLab {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResponseWithContinuationLab {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResponseWithContinuationLab {
@@ -1528,8 +1528,8 @@ pub struct ResponseWithContinuationPolicy {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResponseWithContinuationPolicy {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResponseWithContinuationPolicy {
@@ -1548,8 +1548,8 @@ pub struct ResponseWithContinuationSchedule {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResponseWithContinuationSchedule {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResponseWithContinuationSchedule {
@@ -1568,8 +1568,8 @@ pub struct ResponseWithContinuationVirtualNetwork {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResponseWithContinuationVirtualNetwork {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResponseWithContinuationVirtualNetwork {

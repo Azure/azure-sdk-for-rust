@@ -14,7 +14,7 @@ pub struct ApiError {
     pub system_data: Option<SystemData>,
 }
 impl azure_core::Continuable for ApiError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1626,8 +1626,8 @@ pub struct DataMigrationServiceList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DataMigrationServiceList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DataMigrationServiceList {
@@ -2013,8 +2013,8 @@ pub struct DatabaseMigrationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DatabaseMigrationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DatabaseMigrationListResult {
@@ -2555,8 +2555,8 @@ pub struct FileList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for FileList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl FileList {
@@ -7279,8 +7279,8 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationListResult {
@@ -7536,8 +7536,8 @@ pub struct ProjectList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ProjectList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ProjectList {
@@ -8096,8 +8096,8 @@ pub struct QuotaList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for QuotaList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl QuotaList {
@@ -8464,8 +8464,8 @@ pub struct ResourceSkusResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResourceSkusResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ResourceSkusResult {
@@ -8883,8 +8883,8 @@ pub struct ServiceSkuList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ServiceSkuList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ServiceSkuList {
@@ -9124,8 +9124,8 @@ pub struct SqlMigrationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SqlMigrationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SqlMigrationListResult {
@@ -9706,8 +9706,8 @@ pub struct TaskList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for TaskList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl TaskList {

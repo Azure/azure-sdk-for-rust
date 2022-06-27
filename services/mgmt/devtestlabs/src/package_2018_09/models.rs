@@ -108,8 +108,8 @@ pub struct ArmTemplateList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ArmTemplateList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ArmTemplateList {
@@ -264,8 +264,8 @@ pub struct ArtifactList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ArtifactList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ArtifactList {
@@ -367,8 +367,8 @@ pub struct ArtifactSourceList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ArtifactSourceList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ArtifactSourceList {
@@ -614,7 +614,7 @@ pub struct CloudError {
     pub error: Option<CloudErrorBody>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -876,8 +876,8 @@ pub struct CustomImageList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CustomImageList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CustomImageList {
@@ -1278,8 +1278,8 @@ pub struct DiskList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DiskList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DiskList {
@@ -1418,8 +1418,8 @@ pub struct DtlEnvironmentList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DtlEnvironmentList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DtlEnvironmentList {
@@ -1666,8 +1666,8 @@ pub struct FormulaList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for FormulaList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl FormulaList {
@@ -1763,8 +1763,8 @@ pub struct GalleryImageList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for GalleryImageList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl GalleryImageList {
@@ -2332,8 +2332,8 @@ pub struct LabList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for LabList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl LabList {
@@ -2662,8 +2662,8 @@ pub struct LabVhdList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for LabVhdList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl LabVhdList {
@@ -2827,8 +2827,8 @@ pub struct LabVirtualMachineList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for LabVirtualMachineList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl LabVirtualMachineList {
@@ -3146,8 +3146,8 @@ pub struct NotificationChannelList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for NotificationChannelList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl NotificationChannelList {
@@ -3610,8 +3610,8 @@ pub struct PolicyList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PolicyList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PolicyList {
@@ -3897,8 +3897,8 @@ pub struct ProviderOperationResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ProviderOperationResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ProviderOperationResult {
@@ -4122,8 +4122,8 @@ pub struct ScheduleList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ScheduleList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ScheduleList {
@@ -4264,8 +4264,8 @@ pub struct SecretList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SecretList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SecretList {
@@ -4337,8 +4337,8 @@ pub struct ServiceFabricList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ServiceFabricList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ServiceFabricList {
@@ -4863,8 +4863,8 @@ pub struct UserList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for UserList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl UserList {
@@ -4963,8 +4963,8 @@ pub struct VirtualNetworkList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VirtualNetworkList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl VirtualNetworkList {

@@ -149,7 +149,7 @@ impl ListTriggersResponse {
 }
 
 impl Continuable for ListTriggersResponse {
-    fn continuation(&self) -> Option<String> {
-        self.continuation_token.clone()
+    fn continuation(&self) -> Option<Continuation> {
+        self.continuation_token.clone().map(Continuation::from)
     }
 }

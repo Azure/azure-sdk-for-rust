@@ -372,11 +372,11 @@ pub struct ListQueuesSegmentResponse {
     pub next_marker: String,
 }
 impl azure_core::Continuable for ListQueuesSegmentResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         if self.next_marker.is_empty() {
             None
         } else {
-            Some(self.next_marker.clone())
+            Some(azure_core::prelude::Continuation::from(self.next_marker.clone()))
         }
     }
 }
@@ -549,7 +549,7 @@ pub struct StorageError {
     pub message: Option<String>,
 }
 impl azure_core::Continuable for StorageError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }

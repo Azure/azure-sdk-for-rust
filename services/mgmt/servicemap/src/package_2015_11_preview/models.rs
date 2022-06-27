@@ -328,8 +328,8 @@ pub struct ClientGroupMembersCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ClientGroupMembersCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ClientGroupMembersCollection {
@@ -404,8 +404,8 @@ pub struct ConnectionCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ConnectionCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ConnectionCollection {
@@ -502,7 +502,7 @@ pub struct ErrorResponse {
     pub error: Error,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -720,8 +720,8 @@ pub struct MachineCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MachineCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl MachineCollection {
@@ -854,8 +854,8 @@ pub struct MachineGroupCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MachineGroupCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl MachineGroupCollection {
@@ -1248,8 +1248,8 @@ pub struct PortCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PortCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PortCollection {
@@ -1425,8 +1425,8 @@ pub struct ProcessCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ProcessCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ProcessCollection {

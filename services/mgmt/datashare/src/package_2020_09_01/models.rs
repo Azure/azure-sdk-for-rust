@@ -753,8 +753,8 @@ pub struct AccountList {
     pub value: Vec<Account>,
 }
 impl azure_core::Continuable for AccountList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AccountList {
@@ -1494,8 +1494,8 @@ pub struct ConsumerInvitationList {
     pub value: Vec<ConsumerInvitation>,
 }
 impl azure_core::Continuable for ConsumerInvitationList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ConsumerInvitationList {
@@ -1641,8 +1641,8 @@ pub struct ConsumerSourceDataSetList {
     pub value: Vec<ConsumerSourceDataSet>,
 }
 impl azure_core::Continuable for ConsumerSourceDataSetList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ConsumerSourceDataSetList {
@@ -1830,8 +1830,8 @@ pub struct DataSetList {
     pub value: Vec<DataSet>,
 }
 impl azure_core::Continuable for DataSetList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DataSetList {
@@ -1925,8 +1925,8 @@ pub struct DataSetMappingList {
     pub value: Vec<DataSetMapping>,
 }
 impl azure_core::Continuable for DataSetMappingList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl DataSetMappingList {
@@ -1941,7 +1941,7 @@ pub struct DataShareError {
     pub error: DataShareErrorInfo,
 }
 impl azure_core::Continuable for DataShareError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -2154,8 +2154,8 @@ pub struct InvitationList {
     pub value: Vec<Invitation>,
 }
 impl azure_core::Continuable for InvitationList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl InvitationList {
@@ -2684,8 +2684,8 @@ pub struct OperationList {
     pub value: Vec<OperationModel>,
 }
 impl azure_core::Continuable for OperationList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationList {
@@ -2922,8 +2922,8 @@ pub struct ProviderShareSubscriptionList {
     pub value: Vec<ProviderShareSubscription>,
 }
 impl azure_core::Continuable for ProviderShareSubscriptionList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ProviderShareSubscriptionList {
@@ -3475,8 +3475,8 @@ pub struct ShareList {
     pub value: Vec<Share>,
 }
 impl azure_core::Continuable for ShareList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ShareList {
@@ -3623,8 +3623,8 @@ pub struct ShareSubscriptionList {
     pub value: Vec<ShareSubscription>,
 }
 impl azure_core::Continuable for ShareSubscriptionList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ShareSubscriptionList {
@@ -3914,8 +3914,8 @@ pub struct ShareSubscriptionSynchronizationList {
     pub value: Vec<ShareSubscriptionSynchronization>,
 }
 impl azure_core::Continuable for ShareSubscriptionSynchronizationList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ShareSubscriptionSynchronizationList {
@@ -4012,8 +4012,8 @@ pub struct ShareSynchronizationList {
     pub value: Vec<ShareSynchronization>,
 }
 impl azure_core::Continuable for ShareSynchronizationList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ShareSynchronizationList {
@@ -4080,8 +4080,8 @@ pub struct SourceShareSynchronizationSettingList {
     pub value: Vec<SourceShareSynchronizationSetting>,
 }
 impl azure_core::Continuable for SourceShareSynchronizationSettingList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SourceShareSynchronizationSettingList {
@@ -4755,8 +4755,8 @@ pub struct SynchronizationDetailsList {
     pub value: Vec<SynchronizationDetails>,
 }
 impl azure_core::Continuable for SynchronizationDetailsList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SynchronizationDetailsList {
@@ -4828,8 +4828,8 @@ pub struct SynchronizationSettingList {
     pub value: Vec<SynchronizationSetting>,
 }
 impl azure_core::Continuable for SynchronizationSettingList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SynchronizationSettingList {
@@ -5065,8 +5065,8 @@ pub struct TriggerList {
     pub value: Vec<Trigger>,
 }
 impl azure_core::Continuable for TriggerList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl TriggerList {

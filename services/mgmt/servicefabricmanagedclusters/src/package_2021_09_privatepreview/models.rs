@@ -90,8 +90,8 @@ pub struct ApplicationResourceList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ApplicationResourceList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ApplicationResourceList {
@@ -147,8 +147,8 @@ pub struct ApplicationTypeResourceList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ApplicationTypeResourceList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ApplicationTypeResourceList {
@@ -205,8 +205,8 @@ pub struct ApplicationTypeVersionResourceList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ApplicationTypeVersionResourceList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ApplicationTypeVersionResourceList {
@@ -650,7 +650,7 @@ pub struct ErrorModel {
     pub error: Option<ErrorModelError>,
 }
 impl azure_core::Continuable for ErrorModel {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -934,8 +934,8 @@ pub struct ManagedClusterListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ManagedClusterListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ManagedClusterListResult {
@@ -1230,8 +1230,8 @@ pub struct ManagedVmSizesResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ManagedVmSizesResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ManagedVmSizesResult {
@@ -1539,8 +1539,8 @@ pub struct NodeTypeListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for NodeTypeListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl NodeTypeListResult {
@@ -1559,8 +1559,8 @@ pub struct NodeTypeListSkuResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for NodeTypeListSkuResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl NodeTypeListSkuResult {
@@ -1791,8 +1791,8 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationListResult {
@@ -2451,8 +2451,8 @@ pub struct ServiceResourceList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ServiceResourceList {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ServiceResourceList {

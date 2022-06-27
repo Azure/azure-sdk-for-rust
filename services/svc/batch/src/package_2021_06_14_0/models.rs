@@ -13,8 +13,8 @@ pub struct AccountListSupportedImagesResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for AccountListSupportedImagesResult {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AccountListSupportedImagesResult {
@@ -41,8 +41,8 @@ pub struct ApplicationListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for ApplicationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ApplicationListResult {
@@ -263,7 +263,7 @@ pub struct BatchError {
     pub values: Vec<BatchErrorDetail>,
 }
 impl azure_core::Continuable for BatchError {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -427,8 +427,8 @@ pub struct CertificateListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for CertificateListResult {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CertificateListResult {
@@ -584,8 +584,8 @@ pub struct CloudJobListPreparationAndReleaseTaskStatusResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for CloudJobListPreparationAndReleaseTaskStatusResult {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CloudJobListPreparationAndReleaseTaskStatusResult {
@@ -601,8 +601,8 @@ pub struct CloudJobListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for CloudJobListResult {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CloudJobListResult {
@@ -669,8 +669,8 @@ pub struct CloudJobScheduleListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for CloudJobScheduleListResult {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CloudJobScheduleListResult {
@@ -814,8 +814,8 @@ pub struct CloudPoolListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for CloudPoolListResult {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CloudPoolListResult {
@@ -931,8 +931,8 @@ pub struct CloudTaskListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for CloudTaskListResult {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl CloudTaskListResult {
@@ -1155,8 +1155,8 @@ pub struct ComputeNodeListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for ComputeNodeListResult {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ComputeNodeListResult {
@@ -2771,8 +2771,8 @@ pub struct NodeFileListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for NodeFileListResult {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl NodeFileListResult {
@@ -2931,8 +2931,8 @@ pub struct NodeVmExtensionList {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for NodeVmExtensionList {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl NodeVmExtensionList {
@@ -3183,8 +3183,8 @@ pub struct PoolListUsageMetricsResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for PoolListUsageMetricsResult {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PoolListUsageMetricsResult {
@@ -3219,8 +3219,8 @@ pub struct PoolNodeCountsListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for PoolNodeCountsListResult {
-    fn continuation(&self) -> Option<String> {
-        self.odata_next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PoolNodeCountsListResult {

@@ -431,7 +431,7 @@ impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsRespo
     }
 }
 impl<T> Continuable for QueryDocumentsResponse<T> {
-    fn continuation(&self) -> Option<String> {
-        self.continuation_token.clone()
+    fn continuation(&self) -> Option<Continuation> {
+        self.continuation_token.clone().map(Continuation::from)
     }
 }

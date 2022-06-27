@@ -31,7 +31,7 @@ impl<'a> QueryBuilder<'a> {
     }
 
     azure_core::setters! {
-        continuation: String => Some(Continuation::new(continuation)),
+        continuation: String => Some(Continuation::String(continuation)),
         max_item_count: i32 => MaxItemCount::new(max_item_count),
     }
 

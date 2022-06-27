@@ -33,7 +33,7 @@ pub struct ErrorResponse {
     pub error: Option<Error>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -75,8 +75,8 @@ pub struct EventRouteCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for EventRouteCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl EventRouteCollection {
@@ -115,8 +115,8 @@ pub struct IncomingRelationshipCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for IncomingRelationshipCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl IncomingRelationshipCollection {
@@ -184,8 +184,8 @@ pub struct PagedModelDataCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PagedModelDataCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PagedModelDataCollection {
@@ -234,8 +234,8 @@ pub struct RelationshipCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RelationshipCollection {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl RelationshipCollection {

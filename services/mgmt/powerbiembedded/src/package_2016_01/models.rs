@@ -210,7 +210,7 @@ pub struct Error {
     pub details: Vec<ErrorDetail>,
 }
 impl azure_core::Continuable for Error {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -370,7 +370,7 @@ pub struct WorkspaceCollectionList {
     pub value: Vec<WorkspaceCollection>,
 }
 impl azure_core::Continuable for WorkspaceCollectionList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -385,7 +385,7 @@ pub struct WorkspaceList {
     pub value: Vec<Workspace>,
 }
 impl azure_core::Continuable for WorkspaceList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }

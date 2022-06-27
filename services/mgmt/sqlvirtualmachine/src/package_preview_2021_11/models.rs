@@ -423,8 +423,8 @@ pub struct AvailabilityGroupListenerListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AvailabilityGroupListenerListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl AvailabilityGroupListenerListResult {
@@ -606,8 +606,8 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationListResult {
@@ -1036,8 +1036,8 @@ pub struct SqlVirtualMachineGroupListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SqlVirtualMachineGroupListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SqlVirtualMachineGroupListResult {
@@ -1245,8 +1245,8 @@ pub struct SqlVirtualMachineListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SqlVirtualMachineListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl SqlVirtualMachineListResult {

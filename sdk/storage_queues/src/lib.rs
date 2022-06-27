@@ -8,12 +8,11 @@ extern crate azure_core;
 mod clients;
 mod message_ttl;
 mod number_of_messages;
+pub mod operations;
 mod pop_receipt;
 pub mod prelude;
 mod queue_service_properties;
 mod queue_stored_access_policy;
-pub mod requests;
-pub mod responses;
 mod visibility_timeout;
 
 pub use clients::*;

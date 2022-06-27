@@ -42,8 +42,8 @@ pub struct ApiKeyListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ApiKeyListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ApiKeyListResult {
@@ -141,8 +141,8 @@ pub struct ConfigurationStoreListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ConfigurationStoreListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl ConfigurationStoreListResult {
@@ -348,7 +348,7 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetails>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -389,8 +389,8 @@ pub struct KeyValueListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for KeyValueListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl KeyValueListResult {
@@ -586,8 +586,8 @@ pub struct OperationDefinitionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationDefinitionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationDefinitionListResult {
@@ -651,8 +651,8 @@ pub struct PrivateEndpointConnectionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PrivateEndpointConnectionListResult {
@@ -783,8 +783,8 @@ pub struct PrivateLinkResourceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PrivateLinkResourceListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl PrivateLinkResourceListResult {

@@ -24,38 +24,22 @@ async fn main() -> azure_core::Result<()> {
             .storage_client();
     let blob_service_client = storage_client.blob_service_client();
 
+    let response = blob_service_client
+        .list_containers()
+        .into_stream()
+        .next()
+        .await
+        .expect("stream failed")?;
+    println!("response = {:#?}", response);
+
     let response = storage_client
-        .container_client("azuresdkforrust")
+        .container_client("$logs")
         .list_blobs()
         .into_stream()
         .next()
         .await
         .expect("stream failed")?;
-
-    println!("key response = {:#?}", response);
-
-    let response = blob_service_client
-        .list_containers()
-        .into_stream()
-        .next()
-        .await
-        .expect("stream failed")?;
-    println!("key response = {:#?}", response);
-
-    // let's test a SAS token
-    // the code is identical
-    // once instantiated
-    let sas_token = "?sv=2019-12-12&ss=bfqt&srt=sco&sp=rwdlacupx&se=2020-12-05T20:20:58Z&st=2020-12-05T12:20:58Z&spr=https&sig=vxUuKjQW4%2FmB884f%2BdqCp4h3O%2BYuYgIJN8RVGHFVFpY%3D";
-    let blob_service_client =
-        StorageAccountClient::new_sas_token(http_client.clone(), &account, sas_token)?
-            .blob_service_client();
-    let response = blob_service_client
-        .list_containers()
-        .into_stream()
-        .next()
-        .await
-        .expect("stream failed")?;
-    println!("sas response = {:#?}", response);
+    println!("response = {:#?}", response);
 
     Ok(())
 }

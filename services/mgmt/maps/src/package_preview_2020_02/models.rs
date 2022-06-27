@@ -43,7 +43,7 @@ pub struct CreatorList {
     pub value: Vec<Creator>,
 }
 impl azure_core::Continuable for CreatorList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -123,7 +123,7 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -226,7 +226,7 @@ pub struct MapsAccounts {
     pub value: Vec<MapsAccount>,
 }
 impl azure_core::Continuable for MapsAccounts {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -297,7 +297,7 @@ pub struct MapsOperations {
     pub value: Vec<serde_json::Value>,
 }
 impl azure_core::Continuable for MapsOperations {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -345,7 +345,7 @@ pub struct PrivateAtlasList {
     pub value: Vec<PrivateAtlas>,
 }
 impl azure_core::Continuable for PrivateAtlasList {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }

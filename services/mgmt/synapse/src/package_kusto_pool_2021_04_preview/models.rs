@@ -301,7 +301,7 @@ pub struct ClusterPrincipalAssignmentListResult {
     pub value: Vec<ClusterPrincipalAssignment>,
 }
 impl azure_core::Continuable for ClusterPrincipalAssignmentListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -541,7 +541,7 @@ pub struct DataConnectionListResult {
     pub value: Vec<DataConnection>,
 }
 impl azure_core::Continuable for DataConnectionListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -622,7 +622,7 @@ pub struct DatabaseListResult {
     pub value: Vec<Database>,
 }
 impl azure_core::Continuable for DatabaseListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -656,7 +656,7 @@ pub struct DatabasePrincipalAssignmentListResult {
     pub value: Vec<DatabasePrincipalAssignment>,
 }
 impl azure_core::Continuable for DatabasePrincipalAssignmentListResult {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -852,7 +852,7 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<String> {
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
         None
     }
 }
@@ -1534,8 +1534,8 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<String> {
-        self.next_link.clone()
+    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+        self.next_link.clone().map(azure_core::prelude::Continuation::from)
     }
 }
 impl OperationListResult {
