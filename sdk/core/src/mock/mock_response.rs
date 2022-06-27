@@ -1,13 +1,11 @@
-use bytes::Bytes;
-use http::StatusCode;
-use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
-
 use crate::{
     collect_pinned_stream, error,
     headers::{HeaderName, HeaderValue, Headers},
-    BytesStream, Response,
+    BytesStream, Response, StatusCode,
 };
+use bytes::Bytes;
+use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct MockResponse {

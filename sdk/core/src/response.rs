@@ -1,8 +1,8 @@
 use crate::headers::Headers;
+use crate::StatusCode;
 use bytes::Bytes;
 use futures::Stream;
 use futures::StreamExt;
-use http::StatusCode;
 use std::pin::Pin;
 
 pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send + Sync>>;

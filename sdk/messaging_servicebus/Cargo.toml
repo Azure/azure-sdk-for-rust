@@ -23,7 +23,6 @@ url = "2.2"
 hmac = "0.12"
 sha2 = "0.10"
 ring = "0.16"
-http = "0.2"
 bytes = "1.0"
 
 [dev-dependencies]

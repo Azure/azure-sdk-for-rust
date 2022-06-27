@@ -24,7 +24,7 @@ impl GetUserBuilder {
 
     pub fn into_future(self) -> GetUser {
         Box::pin(async move {
-            let mut request = self.client.user_request(http::Method::GET);
+            let mut request = self.client.user_request(azure_core::Method::GET);
 
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);

@@ -1,6 +1,6 @@
 use crate::service::{ServiceClient, API_VERSION};
 
-use http::Method;
+use azure_core::Method;
 use serde::Serialize;
 /// The ApplyOnEdgeDeviceBuilder is used to construct a new device identity
 /// or the update an existing one.

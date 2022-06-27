@@ -6,6 +6,7 @@
 mod device_code_responses;
 
 use async_timer::timer::new_timer;
+use azure_core::Method;
 use azure_core::{
     content_type,
     error::{Error, ErrorKind},
@@ -13,7 +14,6 @@ use azure_core::{
 };
 pub use device_code_responses::*;
 use futures::stream::unfold;
-use http::Method;
 use oauth2::ClientId;
 use serde::Deserialize;
 use std::{borrow::Cow, sync::Arc, time::Duration};

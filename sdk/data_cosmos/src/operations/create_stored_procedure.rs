@@ -31,7 +31,9 @@ impl CreateStoredProcedureBuilder {
 
     pub fn into_future(self) -> CreateStoredProcedure {
         Box::pin(async move {
-            let mut req = self.client.stored_procedures_request(http::Method::POST);
+            let mut req = self
+                .client
+                .stored_procedures_request(azure_core::Method::POST);
 
             if let Some(cl) = &self.consistency_level {
                 req.insert_headers(cl);

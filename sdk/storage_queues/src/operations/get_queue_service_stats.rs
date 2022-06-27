@@ -3,11 +3,10 @@ use azure_core::{
     collect_pinned_stream,
     error::{ErrorKind, ResultExt},
     prelude::*,
-    Response as AzureResponse,
+    Method, Response as AzureResponse,
 };
 use azure_storage::core::{headers::CommonStorageResponseHeaders, xml::read_xml};
 use chrono::{DateTime, Utc};
-use http::method::Method;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]

@@ -2,7 +2,7 @@ use crate::{QueueServiceClient, QueueServiceProperties};
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     prelude::*,
-    Context, Response as AzureResponse,
+    Context, Method, Response as AzureResponse,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
@@ -50,7 +50,7 @@ impl SetQueueServicePropertiesBuilder {
 
             let mut request = self.service_client.storage_client.prepare_request(
                 url.as_str(),
-                http::method::Method::PUT,
+                Method::PUT,
                 Some(xml_body.into()),
             )?;
 

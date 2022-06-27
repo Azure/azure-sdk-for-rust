@@ -42,7 +42,7 @@ impl ListPermissionsBuilder {
                         this.client.database_client().database_name(),
                         this.client.user_name()
                     ),
-                    http::Method::GET,
+                    azure_core::Method::GET,
                 );
 
                 if let Some(cl) = &this.consistency_level {

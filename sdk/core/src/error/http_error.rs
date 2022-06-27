@@ -18,12 +18,11 @@ impl HttpError {
     pub async fn new(response: Response) -> Self {
         let status = response.status();
         let mut error_code = get_error_code_from_header(&response);
-        let mut headers = HashMap::new();
-
-        for (name, value) in response.headers().iter() {
-            headers.insert(name.as_str().to_string(), value.as_str().to_string());
-        }
-
+        let headers: HashMap<String, String> = response
+            .headers()
+            .iter()
+            .map(|(name, value)| (name.as_str().to_owned(), value.as_str().to_owned()))
+            .collect();
         let body = response.into_body().await;
         error_code = error_code.or_else(|| get_error_code_from_body(&body));
         HttpError {

@@ -39,12 +39,12 @@
 
 mod login_response;
 
+use azure_core::Method;
 use azure_core::{
     content_type,
     error::{ErrorKind, ResultExt},
     headers, HttpClient, Request,
 };
-use http::Method;
 use login_response::LoginResponse;
 use std::sync::Arc;
 use url::{form_urlencoded, Url};

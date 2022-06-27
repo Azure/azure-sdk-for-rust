@@ -1,9 +1,8 @@
 use azure_core::{
-    error::{Error, ErrorKind},
-    CollectedResponse, Etag,
+    error::{Error, ErrorKind, ResultExt},
+    CollectedResponse, Etag, StatusCode,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
-use http::StatusCode;
 use std::convert::{TryFrom, TryInto};
 use url::Url;
 
@@ -40,13 +39,16 @@ impl TryFrom<CollectedResponse> for SubmitTransactionResponse {
 
             for line in change_set_response.lines() {
                 if line.starts_with("HTTP/1.1") {
-                    operation_response.status_code = line
-                        .split_whitespace()
-                        .nth(1)
-                        .ok_or_else(|| {
-                            Error::message(ErrorKind::Other, "missing HTTP status code")
-                        })?
-                        .parse()?;
+                    let status_code = line.split_whitespace().nth(1).ok_or_else(|| {
+                        Error::message(ErrorKind::Other, "missing HTTP status code")
+                    })?;
+                    let status_code = status_code.parse::<u16>().map_err(|_| {
+                        Error::with_message(ErrorKind::DataConversion, || {
+                            format!("invalid HTTP status code `{status_code}`")
+                        })
+                    })?;
+                    operation_response.status_code =
+                        StatusCode::from_u16(status_code).map_kind(ErrorKind::DataConversion)?;
                 } else if line.starts_with("Location:") {
                     operation_response.location = Some(
                         line.split_whitespace()

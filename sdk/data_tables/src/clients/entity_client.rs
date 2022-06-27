@@ -1,10 +1,10 @@
 use crate::{prelude::*, requests::*};
+use azure_core::Method;
 use azure_core::{
     error::{Error, ErrorKind},
     Request,
 };
 use bytes::Bytes;
-use http::method::Method;
 use std::sync::Arc;
 use url::Url;
 

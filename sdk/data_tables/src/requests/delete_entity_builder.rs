@@ -3,8 +3,8 @@ use crate::{
     responses::*,
     TransactionOperation,
 };
+use azure_core::Method;
 use azure_core::{prelude::*, Request};
-use http::method::Method;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]

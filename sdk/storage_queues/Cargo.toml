@@ -17,7 +17,6 @@ azure_core = { path = "../core", version = "0.3", default-features=false }
 azure_storage = { path = "../storage", version = "0.4", default-features=false, features=["account"] }
 chrono = { version = "0.4", features = ["serde"] }
 futures = "0.3"
-http = "0.2"
 log = "0.4"
 serde = { version = "1.0" }
 serde_derive = "1.0"

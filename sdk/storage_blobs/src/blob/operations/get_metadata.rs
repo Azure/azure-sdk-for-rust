@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::{headers::*, prelude::*, RequestId};
+use azure_core::{headers::*, prelude::*, Method, RequestId};
 use chrono::{DateTime, Utc};
 use std::convert::{TryFrom, TryInto};
 
@@ -37,9 +37,9 @@ impl GetMetadataBuilder {
             self.blob_versioning.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request =
-                self.blob_client
-                    .prepare_request(url.as_str(), http::Method::GET, None)?;
+            let mut request = self
+                .blob_client
+                .prepare_request(url.as_str(), Method::GET, None)?;
             request.add_optional_header(&self.lease_id);
 
             let response = self

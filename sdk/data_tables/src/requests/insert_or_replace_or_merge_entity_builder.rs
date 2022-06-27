@@ -1,6 +1,6 @@
 use crate::{prelude::*, responses::*, TransactionOperation};
+use azure_core::Method;
 use azure_core::{prelude::*, Request};
-use http::method::Method;
 use serde::Serialize;
 use std::convert::TryInto;
 

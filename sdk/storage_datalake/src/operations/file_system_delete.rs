@@ -41,7 +41,7 @@ impl DeleteFileSystemBuilder {
             self.timeout.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("resource", "filesystem");
 
-            let mut request = Request::new(url, http::Method::DELETE);
+            let mut request = Request::new(url, azure_core::Method::DELETE);
 
             request.insert_headers(&this.client_request_id);
             request.insert_headers(&this.if_modified_since_condition);

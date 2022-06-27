@@ -21,6 +21,7 @@ mod select;
 mod top;
 mod transaction;
 mod transaction_operation;
+use azure_core::Method;
 pub use continuation_next_partition_and_row_key::ContinuationNextPartitionAndRowKey;
 pub use continuation_next_table_name::ContinuationNextTableName;
 pub use entity_metadata::EntityMetadata;
@@ -36,4 +37,4 @@ pub use transaction::Transaction;
 pub use transaction_operation::TransactionOperation;
 
 // we need this since the http::Method does not have the MERGE verb. The unwrap is safe here.
-static MERGE: Lazy<http::Method> = Lazy::new(|| http::Method::from_bytes(b"MERGE").unwrap());
+static MERGE: Lazy<Method> = Lazy::new(|| Method::from_bytes(b"MERGE").unwrap());

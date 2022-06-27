@@ -1,8 +1,8 @@
 use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
 use azure_core::error::{Error, ErrorKind, ResultExt};
+use azure_core::Method;
 use azure_core::{HttpClient, Request};
 use chrono::{DateTime, TimeZone, Utc};
-use http::Method;
 use serde::{
     de::{self, Deserializer},
     Deserialize,
@@ -138,10 +138,9 @@ impl TokenCredential for ImdsManagedIdentityCredential {
                         "the request failed due to a gateway error",
                     ))
                 }
-                _ => {
+                rsp_status => {
                     return Err(
-                        ErrorKind::http_response_from_body(rsp_status.as_u16(), &rsp_body)
-                            .into_error(),
+                        ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error()
                     )
                     .map_kind(ErrorKind::Credential)
                 }

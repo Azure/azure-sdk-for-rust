@@ -1,12 +1,12 @@
 //! Refresh token utilities
 
+use azure_core::Method;
 use azure_core::{
     auth::AccessToken,
     content_type,
     error::{Error, ErrorKind, ResultExt},
     headers, HttpClient, Request,
 };
-use http::Method;
 use oauth2::{ClientId, ClientSecret};
 use serde::Deserialize;
 use std::fmt;
@@ -48,7 +48,6 @@ pub async fn exchange(
     req.set_body(encoded);
 
     let rsp = http_client.execute_request(&req).await?;
-
     let rsp_status = rsp.status();
     let rsp_body = rsp.into_body().await;
 

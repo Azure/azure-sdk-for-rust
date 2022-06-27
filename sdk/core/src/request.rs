@@ -1,7 +1,6 @@
 use crate::headers::{AsHeaders, Headers};
-use crate::SeekableStream;
+use crate::{Method, SeekableStream};
 use bytes::Bytes;
-use http::Method;
 use std::fmt::Debug;
 use url::Url;
 

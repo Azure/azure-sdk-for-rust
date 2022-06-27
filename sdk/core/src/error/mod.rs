@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 use std::fmt::{Debug, Display};
 mod http_error;
-mod hyperium_http;
 mod macros;
 pub use http_error::HttpError;
 

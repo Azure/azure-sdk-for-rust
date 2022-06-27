@@ -1,6 +1,6 @@
 use crate::{container::operations::AcquireLeaseResponse, prelude::*};
+use azure_core::Method;
 use azure_core::{headers::LEASE_ACTION, prelude::*};
-use http::method::Method;
 
 pub type RenewLeaseResponse = AcquireLeaseResponse;
 

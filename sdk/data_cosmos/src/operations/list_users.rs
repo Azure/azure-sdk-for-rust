@@ -41,7 +41,7 @@ impl ListUsersBuilder {
             async move {
                 let mut request = this.client.cosmos_client().request(
                     &format!("dbs/{}/users", this.client.database_name()),
-                    http::Method::GET,
+                    azure_core::Method::GET,
                 );
 
                 if let Some(cl) = &this.consistency_level {

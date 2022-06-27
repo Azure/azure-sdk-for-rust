@@ -1,10 +1,8 @@
 use crate::error::{Error, ErrorKind, HttpError};
 use crate::policies::{Policy, PolicyResult, Request};
 use crate::sleep::sleep;
-use crate::Context;
-
+use crate::{Context, StatusCode};
 use chrono::{DateTime, Local};
-use http::StatusCode;
 use std::sync::Arc;
 use std::time::Duration;
 

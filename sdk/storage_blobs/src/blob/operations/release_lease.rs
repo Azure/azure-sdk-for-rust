@@ -34,9 +34,11 @@ impl ReleaseLeaseBuilder {
             url.query_pairs_mut().append_pair("comp", "lease");
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request =
-                self.blob_lease_client
-                    .prepare_request(url.as_str(), http::Method::PUT, None)?;
+            let mut request = self.blob_lease_client.prepare_request(
+                url.as_str(),
+                azure_core::Method::PUT,
+                None,
+            )?;
             request.insert_header(LEASE_ACTION, "release");
             request.add_mandatory_header(self.blob_lease_client.lease_id());
 

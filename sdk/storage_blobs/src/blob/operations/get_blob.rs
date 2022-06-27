@@ -58,9 +58,11 @@ impl GetBlobBuilder {
                 this.blob_versioning.append_to_url_query(&mut url);
                 this.timeout.append_to_url_query(&mut url);
 
-                let mut request =
-                    this.blob_client
-                        .prepare_request(url.as_str(), http::Method::GET, None)?;
+                let mut request = this.blob_client.prepare_request(
+                    url.as_str(),
+                    azure_core::Method::GET,
+                    None,
+                )?;
 
                 for (name, value) in range.as_headers() {
                     request.insert_header(name, value);

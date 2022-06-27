@@ -7,6 +7,7 @@ use crate::{
         AccountSharedAccessSignatureBuilder, ClientAccountSharedAccessSignature,
     },
 };
+use azure_core::Method;
 use azure_core::{
     auth::TokenCredential,
     error::{Error, ErrorKind, ResultExt},
@@ -14,7 +15,6 @@ use azure_core::{
     ClientOptions, Context, HttpClient, Pipeline, Request, Response,
 };
 use bytes::Bytes;
-use http::method::Method;
 use std::sync::Arc;
 use url::Url;
 
@@ -509,7 +509,7 @@ impl StorageAccountClient {
     }
 
     /// Prepares' an `azure_core::Request`.
-    pub(crate) fn blob_storage_request(&self, http_method: http::Method) -> Request {
+    pub(crate) fn blob_storage_request(&self, http_method: azure_core::Method) -> Request {
         Request::new(self.blob_storage_url().clone(), http_method)
     }
 }

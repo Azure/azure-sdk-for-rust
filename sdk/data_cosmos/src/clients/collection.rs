@@ -127,7 +127,7 @@ impl CollectionClient {
         &self.collection_name
     }
 
-    pub(crate) fn collection_request(&self, http_method: http::Method) -> Request {
+    pub(crate) fn collection_request(&self, http_method: azure_core::Method) -> Request {
         let path = &format!(
             "dbs/{}/colls/{}",
             self.database_client().database_name(),
@@ -136,7 +136,7 @@ impl CollectionClient {
         self.cosmos_client().request(path, http_method)
     }
 
-    pub(crate) fn docs_request(&self, http_method: http::Method) -> Request {
+    pub(crate) fn docs_request(&self, http_method: azure_core::Method) -> Request {
         let path = &format!(
             "dbs/{}/colls/{}/docs",
             self.database_client().database_name(),

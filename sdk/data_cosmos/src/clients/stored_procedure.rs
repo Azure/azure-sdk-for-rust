@@ -70,7 +70,7 @@ impl StoredProcedureClient {
         &self.stored_procedure_name
     }
 
-    pub(crate) fn stored_procedure_request(&self, method: http::Method) -> Request {
+    pub(crate) fn stored_procedure_request(&self, method: azure_core::Method) -> Request {
         self.cosmos_client().request(
             &format!(
                 "dbs/{}/colls/{}/sprocs/{}",
@@ -82,7 +82,7 @@ impl StoredProcedureClient {
         )
     }
 
-    pub(crate) fn stored_procedures_request(&self, method: http::Method) -> Request {
+    pub(crate) fn stored_procedures_request(&self, method: azure_core::Method) -> Request {
         self.cosmos_client().request(
             &format!(
                 "dbs/{}/colls/{}/sprocs",

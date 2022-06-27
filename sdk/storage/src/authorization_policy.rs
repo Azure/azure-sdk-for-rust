@@ -1,7 +1,7 @@
 use crate::clients::{ServiceType, StorageCredentials};
 use azure_core::error::{ErrorKind, ResultExt};
+use azure_core::Method;
 use azure_core::{headers::*, Context, Policy, PolicyResult, Request};
-use http::Method;
 use std::borrow::Cow;
 use std::sync::Arc;
 use url::Url;

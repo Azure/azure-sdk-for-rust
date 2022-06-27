@@ -1,4 +1,5 @@
 use crate::{container::operations::*, prelude::PublicAccess};
+use azure_core::Method;
 use azure_core::{
     error::{Error, ErrorKind},
     prelude::*,
@@ -14,7 +15,6 @@ use azure_storage::{
     },
 };
 use bytes::Bytes;
-use http::method::Method;
 use std::sync::Arc;
 
 pub trait AsContainerClient<CN: Into<String>> {

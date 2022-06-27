@@ -1,5 +1,5 @@
+use crate::Method;
 use crate::{Body, Request};
-use http::Method;
 use serde::de::Visitor;
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use serde::{Deserialize, Deserializer};

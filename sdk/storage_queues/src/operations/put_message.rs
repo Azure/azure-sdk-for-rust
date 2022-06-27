@@ -4,7 +4,7 @@ use azure_core::{
     error::{ErrorKind, ResultExt},
     headers::utc_date_from_rfc2822,
     prelude::*,
-    Context, Response as AzureResponse,
+    Context, Method, Response as AzureResponse,
 };
 use azure_storage::{core::headers::CommonStorageResponseHeaders, xml::read_xml};
 use chrono::{DateTime, Utc};
@@ -56,7 +56,7 @@ impl PutMessageBuilder {
 
             let mut request = self.queue_client.storage_client().prepare_request(
                 url.as_str(),
-                http::method::Method::POST,
+                Method::POST,
                 Some(message.into()),
             )?;
 

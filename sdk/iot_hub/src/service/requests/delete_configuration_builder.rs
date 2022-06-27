@@ -1,7 +1,7 @@
 use crate::service::{ServiceClient, API_VERSION};
 
 use azure_core::headers;
-use http::Method;
+use azure_core::Method;
 
 /// The DeleteConfigurationBuilder is used to construct a request to delete a configuration.
 pub struct DeleteConfigurationBuilder<'a> {

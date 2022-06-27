@@ -27,7 +27,6 @@ async-trait = "0.1"
 openssl = { version = "0.10",  optional=true }
 base64 = "0.13.0"
 uuid = { version = "1.0",  features = ["v4"] }
-http = "0.2"
 # work around https://github.com/rust-lang/rust/issues/63033
 fix-hidden-lifetime-bug = "0.2"
 

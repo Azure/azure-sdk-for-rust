@@ -1,11 +1,11 @@
 use crate::core::clients::{ServiceType, StorageAccountClient};
 use crate::operations::*;
+use azure_core::Method;
 use azure_core::{
     error::{Error, ErrorKind},
     Context, Request, Response,
 };
 use bytes::Bytes;
-use http::method::Method;
 use std::sync::Arc;
 
 pub trait AsStorageClient {

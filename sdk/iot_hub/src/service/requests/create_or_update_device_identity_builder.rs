@@ -6,7 +6,7 @@ use crate::service::responses::DeviceIdentityResponse;
 use crate::service::{ServiceClient, API_VERSION};
 use azure_core::error::{Error, ErrorKind};
 use azure_core::headers;
-use http::Method;
+use azure_core::Method;
 use serde::Serialize;
 use std::convert::TryInto;
 
