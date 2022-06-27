@@ -50,7 +50,7 @@ impl PutAppendBlobBuilder {
 
             let mut request =
                 self.blob_client
-                    .prepare_request(url.as_str(), azure_core::Method::PUT, None)?;
+                    .prepare_request(url.as_str(), azure_core::Method::Put, None)?;
             request.insert_header(BLOB_TYPE, "AppendBlob");
             request.add_optional_header(&self.content_type);
             request.add_optional_header(&self.content_encoding);

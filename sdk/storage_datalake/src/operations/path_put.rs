@@ -72,7 +72,7 @@ impl<C: PathClient + 'static> PutPathBuilder<C> {
             self.mode.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = Request::new(url, azure_core::Method::PUT);
+            let mut request = Request::new(url, azure_core::Method::Put);
 
             request.insert_headers(&this.client_request_id);
             request.insert_headers(&this.properties);
@@ -149,7 +149,7 @@ impl<C: PathClient + 'static> RenamePathBuilder<C> {
             self.mode.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = Request::new(url, azure_core::Method::PUT);
+            let mut request = Request::new(url, azure_core::Method::Put);
 
             request.insert_headers(&this.client_request_id);
             request.insert_headers(&this.properties);

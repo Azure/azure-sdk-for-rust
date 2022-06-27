@@ -39,7 +39,7 @@ impl GetMetadataBuilder {
 
             let mut request = self
                 .blob_client
-                .prepare_request(url.as_str(), Method::GET, None)?;
+                .prepare_request(url.as_str(), Method::Get, None)?;
             request.add_optional_header(&self.lease_id);
 
             let response = self

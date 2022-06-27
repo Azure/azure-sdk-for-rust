@@ -556,7 +556,7 @@ fn string_to_sign(
         ServiceType::Table => {
             format!(
                 "{}\n{}\n{}\n{}\n{}",
-                method.as_str(),
+                method.as_ref(),
                 add_if_exists(headers, &CONTENT_MD5),
                 add_if_exists(headers, &CONTENT_TYPE),
                 add_if_exists(headers, &MS_DATE),
@@ -572,7 +572,7 @@ fn string_to_sign(
                 .unwrap_or_default();
             format!(
                 "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}{}",
-                method.as_str(),
+                method.as_ref(),
                 add_if_exists(headers, &CONTENT_ENCODING),
                 add_if_exists(headers, &CONTENT_LANGUAGE),
                 cl,

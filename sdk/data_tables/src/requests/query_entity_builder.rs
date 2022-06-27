@@ -57,7 +57,7 @@ impl<'a> QueryEntityBuilder<'a> {
 
         let mut request = self
             .table_client
-            .prepare_request(url.as_str(), Method::GET, None)?;
+            .prepare_request(url.as_str(), Method::Get, None)?;
         request.add_optional_header(&self.client_request_id);
         request.insert_header("Accept", "application/json;odata=fullmetadata");
 

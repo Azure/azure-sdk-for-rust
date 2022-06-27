@@ -50,7 +50,7 @@ impl SetQueueServicePropertiesBuilder {
 
             let mut request = self.service_client.storage_client.prepare_request(
                 url.as_str(),
-                Method::PUT,
+                Method::Put,
                 Some(xml_body.into()),
             )?;
 

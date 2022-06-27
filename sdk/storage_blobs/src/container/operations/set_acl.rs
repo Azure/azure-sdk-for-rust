@@ -46,7 +46,7 @@ impl SetACLBuilder {
 
             let mut request = self.container_client.prepare_request(
                 url.as_str(),
-                Method::PUT,
+                Method::Put,
                 xml.map(Bytes::from),
             )?;
             for (name, value) in self.public_access.as_headers() {

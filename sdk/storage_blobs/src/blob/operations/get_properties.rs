@@ -37,7 +37,7 @@ impl GetPropertiesBuilder {
 
             let mut request =
                 self.blob_client
-                    .prepare_request(url.as_str(), azure_core::Method::HEAD, None)?;
+                    .prepare_request(url.as_str(), azure_core::Method::Head, None)?;
             request.add_optional_header(&self.lease_id);
 
             let response = self

@@ -33,7 +33,7 @@ impl GetQueueMetadataBuilder {
 
             let mut request = self.queue_client.storage_client().prepare_request(
                 url.as_str(),
-                Method::GET,
+                Method::Get,
                 None,
             )?;
 

@@ -72,7 +72,7 @@ impl CopyBlobFromUrlBuilder {
 
             let mut request =
                 self.blob_client
-                    .prepare_request(url.as_str(), azure_core::Method::PUT, None)?;
+                    .prepare_request(url.as_str(), azure_core::Method::Put, None)?;
             request.insert_header(COPY_SOURCE, self.source_url.to_string());
             request.insert_header(REQUIRES_SYNC, format!("{}", self.is_synchronous));
             if let Some(metadata) = &self.metadata {

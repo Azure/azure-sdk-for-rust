@@ -53,7 +53,7 @@ impl PutMessageBuilder {
 
             let mut request = self.queue_client.storage_client().prepare_request(
                 url.as_str(),
-                Method::POST,
+                Method::Post,
                 Some(message.into()),
             )?;
 

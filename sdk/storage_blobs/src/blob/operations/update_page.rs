@@ -52,7 +52,7 @@ impl UpdatePageBuilder {
 
             let mut request = self.blob_client.prepare_request(
                 url.as_str(),
-                azure_core::Method::PUT,
+                azure_core::Method::Put,
                 Some(self.content.clone()),
             )?;
             request.insert_header(PAGE_WRITE, "update");

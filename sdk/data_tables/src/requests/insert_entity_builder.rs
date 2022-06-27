@@ -48,7 +48,7 @@ impl<'a> InsertEntityBuilder<'a> {
 
         let mut request = self.table_client.prepare_request(
             url.as_str(),
-            Method::POST,
+            Method::Post,
             Some(bytes::Bytes::from(request_body_serialized)),
         )?;
         request.add_optional_header(&self.client_request_id);
@@ -78,7 +78,7 @@ impl<'a> InsertEntityBuilder<'a> {
             .pop()
             .push(self.table_client.table_name());
 
-        let mut request = Request::new(url, Method::POST);
+        let mut request = Request::new(url, Method::Post);
         request.add_optional_header(&self.client_request_id);
         request.insert_header("Accept", "application/json;odata=fullmetadata");
         request.insert_header("Content-Type", "application/json");

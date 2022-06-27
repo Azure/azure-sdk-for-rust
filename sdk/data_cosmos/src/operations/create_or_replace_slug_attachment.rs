@@ -49,9 +49,9 @@ impl CreateOrReplaceSlugAttachmentBuilder {
     pub fn into_future(self) -> CreateOrReplaceSlugAttachment {
         Box::pin(async move {
             let mut request = if self.is_create {
-                self.client.attachments_request(Method::POST)
+                self.client.attachments_request(Method::Post)
             } else {
-                self.client.attachment_request(Method::PUT)
+                self.client.attachment_request(Method::Put)
             };
 
             request.insert_headers(&self.if_match_condition);

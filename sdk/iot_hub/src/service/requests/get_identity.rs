@@ -23,7 +23,7 @@ where
         ),
     };
 
-    let mut request = service_client.prepare_request(&uri, Method::GET)?;
+    let mut request = service_client.prepare_request(&uri, Method::Get)?;
     request.set_body(azure_core::EMPTY_BODY);
 
     service_client

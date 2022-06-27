@@ -45,7 +45,7 @@ impl BreakLeaseBuilder {
 
             let mut request =
                 self.container_client
-                    .prepare_request(url.as_str(), Method::PUT, None)?;
+                    .prepare_request(url.as_str(), Method::Put, None)?;
             request.insert_header(LEASE_ACTION, "break");
             request.add_optional_header(&self.lease_id);
             request.add_optional_header(&self.lease_break_period);

@@ -45,7 +45,7 @@ impl AppendBlockBuilder {
 
             let mut request = self.blob_client.prepare_request(
                 url.as_str(),
-                azure_core::Method::PUT,
+                azure_core::Method::Put,
                 Some(self.body.clone()),
             )?;
             request.add_optional_header(&self.hash);

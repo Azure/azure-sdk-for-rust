@@ -36,7 +36,7 @@ impl ChangeLeaseBuilder {
 
             let mut request = self.blob_lease_client.prepare_request(
                 url.as_str(),
-                azure_core::Method::PUT,
+                azure_core::Method::Put,
                 None,
             )?;
             request.insert_header(LEASE_ACTION, "change");

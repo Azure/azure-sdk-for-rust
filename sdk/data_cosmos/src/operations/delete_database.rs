@@ -28,7 +28,7 @@ impl DeleteDatabaseBuilder {
 
     pub fn into_future(self) -> DeleteDatabase {
         Box::pin(async move {
-            let mut request = self.client.database_request(azure_core::Method::DELETE);
+            let mut request = self.client.database_request(azure_core::Method::Delete);
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);
             }

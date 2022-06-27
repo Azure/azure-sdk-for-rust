@@ -114,7 +114,7 @@ impl ListBlobsBuilder {
 
                 let mut request =
                     this.container_client
-                        .prepare_request(url.as_str(), Method::GET, None)?;
+                        .prepare_request(url.as_str(), Method::Get, None)?;
 
                 let response = this.container_client.send(&mut ctx, &mut request).await?;
 

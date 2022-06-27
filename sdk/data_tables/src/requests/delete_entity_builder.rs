@@ -38,7 +38,7 @@ impl<'a> DeleteEntityBuilder<'a> {
 
         let mut request = self
             .entity_client
-            .prepare_request(url.as_str(), Method::DELETE, None)?;
+            .prepare_request(url.as_str(), Method::Delete, None)?;
         request.add_optional_header(&self.client_request_id);
         request.add_mandatory_header(&self.if_match);
 
@@ -54,7 +54,7 @@ impl<'a> DeleteEntityBuilder<'a> {
     pub fn to_transaction_operation(&self) -> azure_core::Result<TransactionOperation> {
         let url = self.entity_client.url();
 
-        let mut request = Request::new(url.clone(), Method::DELETE);
+        let mut request = Request::new(url.clone(), Method::Delete);
         request.add_optional_header(&self.client_request_id);
         request.insert_header("Accept", "application/json;odata=minimalmetadata");
         request.insert_header("If-Match", "*");

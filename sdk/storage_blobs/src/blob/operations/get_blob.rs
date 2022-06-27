@@ -60,7 +60,7 @@ impl GetBlobBuilder {
 
                 let mut request = this.blob_client.prepare_request(
                     url.as_str(),
-                    azure_core::Method::GET,
+                    azure_core::Method::Get,
                     None,
                 )?;
 

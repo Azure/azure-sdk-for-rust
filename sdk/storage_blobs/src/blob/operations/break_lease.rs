@@ -37,7 +37,7 @@ impl BreakLeaseBuilder {
 
             let mut request =
                 self.blob_client
-                    .prepare_request(url.as_str(), azure_core::Method::PUT, None)?;
+                    .prepare_request(url.as_str(), azure_core::Method::Put, None)?;
             request.insert_header(LEASE_ACTION, "break");
             request.add_optional_header(&self.lease_break_period);
             request.add_optional_header(&self.lease_id);
