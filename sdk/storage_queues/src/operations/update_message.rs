@@ -3,7 +3,7 @@ use azure_core::{
     error::Error,
     headers::{get_str_from_headers, rfc2822_from_headers_mandatory, HeaderName},
     prelude::*,
-    Context, Response as AzureResponse,
+    Context, Method, Response as AzureResponse,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use chrono::{DateTime, Utc};
@@ -54,7 +54,7 @@ impl UpdateMessageBuilder {
 
             let mut request = self.pop_receipt_client.storage_client().prepare_request(
                 url.as_str(),
-                http::method::Method::PUT,
+                Method::PUT,
                 Some(message.into()),
             )?;
 

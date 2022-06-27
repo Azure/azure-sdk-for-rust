@@ -3,10 +3,9 @@ use azure_core::{
     collect_pinned_stream,
     error::{Error, ErrorKind, ResultExt},
     prelude::*,
-    Context, Pageable, Response as AzureResponse,
+    Context, Method, Pageable, Response as AzureResponse,
 };
 use azure_storage::{core::headers::CommonStorageResponseHeaders, xml::read_xml};
-use http::method::Method;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]

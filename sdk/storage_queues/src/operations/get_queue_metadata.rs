@@ -1,7 +1,6 @@
 use crate::clients::QueueClient;
-use azure_core::{error::Error, prelude::*, Context, Response as AzureResponse};
+use azure_core::{error::Error, prelude::*, Context, Method, Response as AzureResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
-use http::method::Method;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
