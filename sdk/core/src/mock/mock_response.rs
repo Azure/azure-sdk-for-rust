@@ -46,7 +46,7 @@ impl MockResponse {
         )?;
 
         let response = Response::new(
-            status_code.clone(),
+            status_code,
             header_map.clone(),
             Box::pin(BytesStream::new(response_bytes.clone())),
         );

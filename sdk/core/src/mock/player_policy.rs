@@ -115,7 +115,7 @@ impl Policy for MockTransportPlayerPolicy {
         if expected_request.method() != request.method() {
             return Err(Error::with_message(ErrorKind::MockFramework, || {
                 format!(
-                    "mismatched HTTP request method. Actual: {0:?}, Expected: {1:?}",
+                    "mismatched HTTP request method. Actual: {0}, Expected: {1}",
                     expected_request.method(),
                     request.method(),
                 )
