@@ -54,7 +54,7 @@ impl std::fmt::Debug for StorageCredentials {
 #[derive(Debug, Clone, Copy)]
 pub enum ServiceType {
     Blob,
-    // Queue,
+    Queue,
     // File,
     Table,
 }

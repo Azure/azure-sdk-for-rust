@@ -1,8 +1,13 @@
-use crate::requests::*;
-use azure_core::error::{ErrorKind, ResultExt};
-use azure_storage::core::clients::{AsStorageClient, StorageAccountClient, StorageClient};
-use std::fmt::Debug;
-use std::sync::Arc;
+use crate::{operations::*, QueueStoredAccessPolicy};
+use azure_core::{
+    error::{ErrorKind, ResultExt},
+    prelude::*,
+    Context, Request, Response,
+};
+use azure_storage::core::clients::{
+    AsStorageClient, ServiceType, StorageAccountClient, StorageClient,
+};
+use std::{fmt::Debug, sync::Arc};
 
 pub trait AsQueueClient<QN: Into<String>> {
     fn queue_client(&self, queue_name: QN) -> Arc<QueueClient>;
@@ -34,6 +39,16 @@ impl QueueClient {
         })
     }
 
+    pub(crate) async fn send(
+        &self,
+        context: &mut Context,
+        request: &mut Request,
+    ) -> azure_core::Result<Response> {
+        self.storage_client
+            .send(context, request, ServiceType::Queue)
+            .await
+    }
+
     pub(crate) fn storage_client(&self) -> &StorageClient {
         self.storage_client.as_ref()
     }
@@ -53,59 +68,69 @@ impl QueueClient {
 
     /// Creates the queue.
     pub fn create(&self) -> CreateQueueBuilder {
-        CreateQueueBuilder::new(self)
+        CreateQueueBuilder::new(self.clone())
     }
 
     /// Deletes the queue.
     pub fn delete(&self) -> DeleteQueueBuilder {
-        DeleteQueueBuilder::new(self)
+        DeleteQueueBuilder::new(self.clone())
     }
 
-    /// Sets or clears the queue metadata. The metadata
-    /// will be passed to the `execute` function of the returned struct.
-    pub fn set_metadata(&self) -> SetQueueMetadataBuilder {
-        SetQueueMetadataBuilder::new(self)
+    /// Sets or clears the queue metadata.
+    ///
+    /// Keep in mind that keys present on Azure but not included in the passed
+    /// metadata parameter will be deleted. If you want to keep the preexisting
+    /// key-value pairs, retrieve them with GetMetadata first and then
+    /// update/add to the received Metadata struct. Then pass the Metadata back
+    /// to SetQueueMetadata.  If you just want to clear the metadata, just pass
+    /// an empty Metadata struct.
+    pub fn set_metadata(&self, metadata: Metadata) -> SetQueueMetadataBuilder {
+        SetQueueMetadataBuilder::new(self.clone(), metadata)
     }
 
     /// Get the queue metadata.
+
     pub fn get_metadata(&self) -> GetQueueMetadataBuilder {
-        GetQueueMetadataBuilder::new(self)
+        GetQueueMetadataBuilder::new(self.clone())
     }
 
     /// Get the queue ACL. This call returns
     /// all the stored access policies associated
     /// to the current queue.
     pub fn get_acl(&self) -> GetQueueACLBuilder {
-        GetQueueACLBuilder::new(self)
+        GetQueueACLBuilder::new(self.clone())
     }
 
-    /// Set the queue ACL. You can call this function
-    /// to change or remove already existing stored
-    /// access policies by modifying the list returned
+    /// Set the queue ACL. You can call this function to change or remove
+    /// already existing stored access policies by modifying the list returned
     /// by `get_acl`.
-    pub fn set_acl(&self) -> SetQueueACLBuilder {
-        SetQueueACLBuilder::new(self)
+    ///
+    /// While this SDK does not enforce any limit, keep in mind Azure supports a
+    /// limited number of stored access policies for each queue.  More info here
+    /// [https://docs.microsoft.com/rest/api/storageservices/set-queue-acl#remarks](https://docs.microsoft.com/rest/api/storageservices/set-queue-acl#remarks).
+    pub fn set_acl(&self, policies: Vec<QueueStoredAccessPolicy>) -> SetQueueACLBuilder {
+        SetQueueACLBuilder::new(self.clone(), policies)
     }
 
     /// Puts a message in the queue. The body will be passed
     /// to the `execute` function of the returned struct.
-    pub fn put_message(&self) -> PutMessageBuilder {
-        PutMessageBuilder::new(self)
+    pub fn put_message<S: Into<String>>(&self, message: S) -> PutMessageBuilder {
+        PutMessageBuilder::new(self.clone(), message.into())
     }
 
     /// Peeks, without removing, one or more messages.
     pub fn peek_messages(&self) -> PeekMessagesBuilder {
-        PeekMessagesBuilder::new(self)
+        PeekMessagesBuilder::new(self.clone())
     }
 
     /// Gets, shadowing them, one or more messages.
     pub fn get_messages(&self) -> GetMessagesBuilder {
-        GetMessagesBuilder::new(self)
+        GetMessagesBuilder::new(self.clone())
     }
 
     /// Removes all messages from the queue.
     pub fn clear_messages(&self) -> ClearMessagesBuilder {
-        ClearMessagesBuilder::new(self)
+        ClearMessagesBuilder::new(self.clone())
     }
 }
 
@@ -113,8 +138,7 @@ impl QueueClient {
 #[cfg(feature = "test_integration")]
 mod integration_tests {
     use super::*;
-    use crate::core::prelude::*;
-    use crate::queue::clients::AsQueueClient;
+    use crate::{core::prelude::*, queue::clients::AsQueueClient};
 
     fn get_emulator_client(queue_name: &str) -> Arc<QueueClient> {
         let storage_account = StorageAccountClient::new_emulator_default().storage_client();

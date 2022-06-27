@@ -30,7 +30,7 @@ async fn main() -> azure_core::Result<()> {
         .get_messages()
         .number_of_messages(2)
         .visibility_timeout(Duration::from_secs(5)) // the message will become visible again after 5 secs
-        .execute()
+        .into_future()
         .await?;
 
     println!("response == {:#?}", response);
@@ -39,7 +39,7 @@ async fn main() -> azure_core::Result<()> {
         .get_messages()
         .number_of_messages(2)
         .visibility_timeout(Duration::from_secs(10)) // the message will become visible again after 10 secs
-        .execute()
+        .into_future()
         .await?;
     println!("get_messages_response == {:#?}", get_messages_response);
 
@@ -50,8 +50,11 @@ async fn main() -> azure_core::Result<()> {
         let pop_receipt = queue.pop_receipt_client(message_to_update);
 
         let response = pop_receipt
-            .update(Duration::from_secs(4))
-            .execute(format!("new body at {}", chrono::Utc::now()))
+            .update(
+                format!("new body at {}", chrono::Utc::now()),
+                Duration::from_secs(4),
+            )
+            .into_future()
             .await?;
         println!("response == {:#?}", response);
     }
