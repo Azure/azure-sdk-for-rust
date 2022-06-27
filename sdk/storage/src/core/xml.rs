@@ -1,14 +1,15 @@
 use azure_core::error::{Error, ErrorKind, ResultExt};
 
+/// The UTF8 [byte order marker](https://en.wikipedia.org/wiki/Byte_order_mark)
 const UTF8_BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
 
-/// Reads the XML from the Bytes.
+/// Reads the XML from bytes.
 pub fn read_xml<'de, T: serde::de::Deserialize<'de>>(body: &[u8]) -> Result<T, Error> {
     serde_xml_rs::from_reader(slice_bom(body))
         .context(ErrorKind::DataConversion, "failed to deserialize xml")
 }
 
-/// Returns Bytes without the UTF-8 BOM.
+/// Returns bytes without the UTF-8 BOM.
 fn slice_bom(bytes: &[u8]) -> &[u8] {
     if bytes.len() > 3 && bytes[0..3] == UTF8_BOM {
         &bytes[3..]
