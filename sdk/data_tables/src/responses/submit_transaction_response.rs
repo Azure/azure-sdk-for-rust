@@ -39,16 +39,14 @@ impl TryFrom<CollectedResponse> for SubmitTransactionResponse {
 
             for line in change_set_response.lines() {
                 if line.starts_with("HTTP/1.1") {
-                    let status_code = line
-                        .split_whitespace()
-                        .nth(1)
-                        .ok_or_else(|| {
-                            Error::message(ErrorKind::Other, "missing HTTP status code")
-                        })?
-                        .parse::<u16>()
-                        .map_err(|_| {
-                            Error::message(ErrorKind::DataConversion, "invalid HTTP status code")
-                        })?;
+                    let status_code = line.split_whitespace().nth(1).ok_or_else(|| {
+                        Error::message(ErrorKind::Other, "missing HTTP status code")
+                    })?;
+                    let status_code = status_code.parse::<u16>().map_err(|_| {
+                        Error::with_message(ErrorKind::DataConversion, || {
+                            format!("invalid HTTP status code `{status_code}`")
+                        })
+                    })?;
                     operation_response.status_code =
                         StatusCode::from_u16(status_code).map_kind(ErrorKind::DataConversion)?;
                 } else if line.starts_with("Location:") {

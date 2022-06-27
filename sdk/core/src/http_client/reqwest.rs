@@ -18,22 +18,19 @@ impl HttpClient for ::reqwest::Client {
         let body = request.body().clone();
 
         let reqwest_request = match body {
-            Body::Bytes(bytes) => req
-                .body(bytes)
-                .build()
-                .context(ErrorKind::Other, "failed to build request")?,
+            Body::Bytes(bytes) => req.body(bytes).build(),
             Body::SeekableStream(mut seekable_stream) => {
                 seekable_stream.reset().await.unwrap(); // TODO: remove unwrap when `HttpError` has been removed
                 req.body(::reqwest::Body::wrap_stream(seekable_stream))
                     .build()
-                    .context(ErrorKind::Other, "failed to build request")?
             }
-        };
+        }
+        .context(ErrorKind::Other, "failed to build `reqwest` request")?;
 
         let rsp = self
             .execute(reqwest_request)
             .await
-            .context(ErrorKind::Io, "failed to execute request")?;
+            .context(ErrorKind::Io, "failed to execute `reqwest` request")?;
 
         let status = rsp.status();
         let headers = to_headers(rsp.headers())?;
@@ -52,13 +49,18 @@ impl HttpClient for ::reqwest::Client {
 fn to_headers(map: &::reqwest::header::HeaderMap) -> crate::Result<crate::headers::Headers> {
     let map = map
         .iter()
-        .map(|(k, v)| {
+        .filter_map(|(k, v)| {
             let key = k.as_str();
-            let value = std::str::from_utf8(v.as_bytes()).expect("non-UTF8 header value");
-            (
-                crate::headers::HeaderName::from(key.to_owned()),
-                crate::headers::HeaderValue::from(value.to_owned()),
-            )
+            match std::str::from_utf8(v.as_bytes()) {
+                Ok(value) => Some((
+                    crate::headers::HeaderName::from(key.to_owned()),
+                    crate::headers::HeaderValue::from(value.to_owned()),
+                )),
+                Err(_) => {
+                    log::warn!("header value for `{key}` is not utf8");
+                    None
+                }
+            }
         })
         .collect::<HashMap<_, _>>();
     Ok(crate::headers::Headers::from(map))

@@ -1,4 +1,4 @@
-use crate::{headers, response, Response, INVALID_BODY};
+use crate::{headers, response, Response};
 use bytes::Bytes;
 use std::collections::HashMap;
 
@@ -18,19 +18,19 @@ impl HttpError {
     pub async fn new(response: Response) -> Self {
         let mut error_code = get_error_code_from_header(&response);
         let (status, headers, body) = response.deconstruct();
-        let mut error_headers = HashMap::new();
 
-        for (name, value) in headers.iter() {
-            error_headers.insert(name.as_str().to_string(), value.as_str().to_string());
-        }
+        let headers: HashMap<String, String> = headers
+            .iter()
+            .map(|(name, value)| (name.as_str().to_owned(), value.as_str().to_owned()))
+            .collect();
 
         let body = response::collect_pinned_stream(body)
             .await
-            .unwrap_or_else(|_| Bytes::from_static(INVALID_BODY));
+            .unwrap_or_else(|_| Bytes::from_static(b"<INVALID BODY>"));
         error_code = error_code.or_else(|| get_error_code_from_body(&body));
         HttpError {
             status: status.as_u16(),
-            headers: error_headers,
+            headers,
             error_code,
             body,
         }
