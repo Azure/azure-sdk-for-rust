@@ -64,13 +64,9 @@ impl PopReceiptClient {
         Ok(url)
     }
 
-    /// Deletes the message. The message must not have been made visible again
-    /// or this call would fail.
-    pub fn delete(&self) -> DeleteMessageBuilder {
-        DeleteMessageBuilder::new(self.clone())
-    }
-
-    /// Updates the message.  The message must not have been made visible again
+    /// Updates the message.
+    ///
+    /// The message must not have been made visible again
     /// or this call would fail.
     pub fn update(
         &self,
@@ -78,5 +74,13 @@ impl PopReceiptClient {
         visibility_timeout: impl Into<VisibilityTimeout>,
     ) -> UpdateMessageBuilder {
         UpdateMessageBuilder::new(self.clone(), body.into(), visibility_timeout.into())
+    }
+
+    /// Deletes the message.
+    ///
+    /// The message must not have been made visible again
+    /// or this call would fail.
+    pub fn delete(&self) -> DeleteMessageBuilder {
+        DeleteMessageBuilder::new(self.clone())
     }
 }
