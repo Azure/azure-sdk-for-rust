@@ -4,7 +4,7 @@ use crate::{
 };
 use azure_core::{
     collect_pinned_stream,
-    error::{Error, ErrorKind, ResultExt},
+    error::{ErrorKind, ResultExt},
     headers::{self, Headers, REQUEST_ID},
     prelude::*,
     RequestId,
@@ -14,7 +14,6 @@ use bytes::Bytes;
 use chrono::{DateTime, FixedOffset};
 use http::Method;
 use std::convert::TryFrom;
-use uuid::Uuid;
 
 #[derive(Debug, Clone)]
 pub struct GetACLBuilder {
@@ -90,33 +89,15 @@ impl GetACLResponse {
     ) -> azure_core::Result<GetACLResponse> {
         let public_access = public_access_from_header(&headers)?;
 
-        let etag = match headers.get(&headers::ETAG) {
-            Some(etag) => etag.as_str(),
-            None => {
-                static E: headers::HeaderName = headers::ETAG;
-                return Err(Error::message(ErrorKind::DataConversion, E.as_str()));
-            }
-        };
+        let etag = headers.get_as_str_or_err(&headers::ETAG)?;
 
-        let last_modified = match headers.get(&headers::LAST_MODIFIED) {
-            Some(last_modified) => last_modified.as_str(),
-            None => {
-                static LM: headers::HeaderName = headers::LAST_MODIFIED;
-                return Err(Error::message(ErrorKind::DataConversion, LM.as_str()));
-            }
-        };
+        let last_modified = headers.get_as_str_or_err(&headers::LAST_MODIFIED)?;
         let last_modified =
             DateTime::parse_from_rfc2822(last_modified).map_kind(ErrorKind::DataConversion)?;
 
-        let request_id = headers.get_as_str_or_err(&REQUEST_ID)?;
+        let request_id = headers.get_as(&REQUEST_ID)?;
 
-        let date = match headers.get(&headers::DATE) {
-            Some(date) => date.as_str(),
-            None => {
-                static D: headers::HeaderName = headers::DATE;
-                return Err(Error::message(ErrorKind::DataConversion, D.as_str()));
-            }
-        };
+        let date = headers.get_as_str_or_err(&headers::DATE)?;
         let date = DateTime::parse_from_rfc2822(date).map_kind(ErrorKind::DataConversion)?;
 
         let stored_access_policy_list =
@@ -126,7 +107,7 @@ impl GetACLResponse {
             public_access,
             etag: etag.to_owned(),
             last_modified,
-            request_id: Uuid::parse_str(request_id).map_kind(ErrorKind::DataConversion)?,
+            request_id,
             date,
             stored_access_policy_list,
         })

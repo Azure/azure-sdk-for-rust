@@ -66,9 +66,8 @@ impl Headers {
 
     /// Get a header value or error if it is not found
     pub fn get_or_err(&self, key: &HeaderName) -> crate::Result<&HeaderValue> {
-        let value = self.0.get(key);
-        value.ok_or_else(|| {
-            Error::with_message(ErrorKind::Other, || {
+        self.get(key).ok_or_else(|| {
+            Error::with_message(ErrorKind::DataConversion, || {
                 format!("header not found {}", key.as_str())
             })
         })
@@ -94,41 +93,32 @@ impl Headers {
         self.get_or_err(key).map(|v| v.as_str().to_string())
     }
 
-    /// Get a header value as a u64
-    pub fn get_as_u64(&self, key: &HeaderName) -> crate::Result<Option<u64>> {
-        self.get(key)
-            .map(|v: &HeaderValue| {
-                let v = v.as_str();
-                v.parse::<u64>()
-                    .with_context(ErrorKind::DataConversion, || {
-                        format!("unable to parse header into u64 {key:?}: {v}")
-                    })
-            })
-            .transpose()
-    }
-
-    /// Get a header value as a u64 or error if it is not found
-    pub fn get_as_u64_or_err(&self, key: &HeaderName) -> crate::Result<u64> {
-        let v = self.get_or_err(key)?;
-        let v = v.as_str();
-        v.parse::<u64>()
-            .with_context(ErrorKind::DataConversion, || {
-                format!("unable to parse header into u64 {key:?}: {v}")
-            })
-    }
-
-    pub fn get_as_enum<V: FromStr<Err = E>, E>(&self, key: &HeaderName) -> crate::Result<Option<V>>
+    pub fn get_optional_as<V, E>(&self, key: &HeaderName) -> crate::Result<Option<V>>
     where
+        V: FromStr<Err = E>,
         E: std::error::Error + Send + Sync + 'static,
     {
         self.get(key)
             .map(|v: &HeaderValue| {
                 let v = v.as_str();
                 v.parse::<V>().with_context(ErrorKind::DataConversion, || {
-                    format!("unable to parse header into enum {key:?}: {v}")
+                    let ty = std::any::type_name::<V>();
+                    format!("unable to parse header '{key:?}: {v}' into {ty}",)
                 })
             })
             .transpose()
+    }
+
+    pub fn get_as<V, E>(&self, key: &HeaderName) -> crate::Result<V>
+    where
+        V: FromStr<Err = E>,
+        E: std::error::Error + Send + Sync + 'static,
+    {
+        self.get_optional_as(key)?.ok_or_else(|| {
+            Error::with_message(ErrorKind::Other, || {
+                format!("header not found {}", key.as_str())
+            })
+        })
     }
 
     /// Insert a header name/value pair

@@ -1,7 +1,7 @@
 use crate::{clients::PopReceiptClient, prelude::*};
 use azure_core::{
     error::Error,
-    headers::{get_str_from_headers, rfc2822_from_headers_mandatory, HeaderName},
+    headers::{rfc2822_from_headers_mandatory, HeaderName},
     prelude::*,
     Context, Response as AzureResponse,
 };
@@ -90,17 +90,15 @@ impl std::convert::TryFrom<AzureResponse> for UpdateMessageResponse {
     type Error = Error;
 
     fn try_from(response: AzureResponse) -> azure_core::Result<Self> {
+        let headers = response.headers();
         Ok(UpdateMessageResponse {
             common_storage_response_headers: response.headers().try_into()?,
             time_next_visible: rfc2822_from_headers_mandatory(
-                response.headers(),
+                headers,
                 &HeaderName::from_static("x-ms-time-next-visible"),
             )?,
-            pop_receipt: get_str_from_headers(
-                response.headers(),
-                &HeaderName::from_static("x-ms-popreceipt"),
-            )?
-            .to_owned(),
+            pop_receipt: headers
+                .get_as_string_or_err(&HeaderName::from_static("x-ms-popreceipt"))?,
         })
     }
 }
