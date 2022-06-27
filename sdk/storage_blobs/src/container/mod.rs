@@ -124,39 +124,19 @@ impl Container {
     }
 
     fn parse(elem: &Element) -> azure_core::Result<Container> {
-        let name = cast_must::<String>(elem, &["Name"]).map_kind(ErrorKind::DataConversion)?;
-        let last_modified = cast_must::<DateTime<Utc>>(elem, &["Properties", "Last-Modified"])
-            .map_kind(ErrorKind::DataConversion)?;
-        let e_tag = cast_must::<String>(elem, &["Properties", "Etag"])
-            .map_kind(ErrorKind::DataConversion)?;
-
-        let lease_state = cast_must::<LeaseState>(elem, &["Properties", "LeaseState"])
-            .map_kind(ErrorKind::DataConversion)?;
-
-        let lease_duration = cast_optional::<LeaseDuration>(elem, &["Properties", "LeaseDuration"])
-            .map_kind(ErrorKind::DataConversion)?;
-
-        let lease_status = cast_must::<LeaseStatus>(elem, &["Properties", "LeaseStatus"])
-            .map_kind(ErrorKind::DataConversion)?;
-
+        let name = cast_must(elem, &["Name"]).map_kind(ErrorKind::DataConversion)?;
+        let last_modified = cast_must(elem, &["Properties", "Last-Modified"])?;
+        let e_tag = cast_must(elem, &["Properties", "Etag"])?;
+        let lease_state = cast_must(elem, &["Properties", "LeaseState"])?;
+        let lease_duration = cast_optional(elem, &["Properties", "LeaseDuration"])?;
+        let lease_status = cast_must(elem, &["Properties", "LeaseStatus"])?;
         let public_access =
-            match cast_optional::<PublicAccess>(elem, &["Properties", "PublicAccess"])
-                .map_kind(ErrorKind::DataConversion)?
-            {
-                Some(pa) => pa,
-                None => PublicAccess::None,
-            };
-
-        let has_immutability_policy =
-            cast_must::<bool>(elem, &["Properties", "HasImmutabilityPolicy"])
-                .map_kind(ErrorKind::DataConversion)?;
-        let has_legal_hold = cast_must::<bool>(elem, &["Properties", "HasLegalHold"])
-            .map_kind(ErrorKind::DataConversion)?;
-
+            cast_optional(elem, &["Properties", "PublicAccess"])?.unwrap_or(PublicAccess::None);
+        let has_immutability_policy = cast_must(elem, &["Properties", "HasImmutabilityPolicy"])?;
+        let has_legal_hold = cast_must(elem, &["Properties", "HasLegalHold"])?;
         let metadata = {
             let mut hm = HashMap::new();
-            let metadata =
-                traverse(elem, &["Metadata"], true).map_kind(ErrorKind::DataConversion)?;
+            let metadata = traverse(elem, &["Metadata"], true)?;
 
             for m in metadata {
                 for key in &m.children {
@@ -170,8 +150,6 @@ impl Container {
                         }
                     };
 
-                    let key = elem.name.to_owned();
-
                     if elem.children.is_empty() {
                         return Err(Error::message(
                             ErrorKind::DataConversion,
@@ -179,9 +157,11 @@ impl Container {
                         ));
                     }
 
+                    let key = elem.name.clone();
+
                     let content = {
-                        match elem.children[0] {
-                            Xml::CharacterNode(ref content) => content.to_owned(),
+                        match &elem.children[0] {
+                            Xml::CharacterNode(content) => content.clone(),
                             _ => {
                                 return Err(Error::message(ErrorKind::DataConversion,
                                     "Metadata node should contain a CharacterNode with metadata value",

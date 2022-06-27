@@ -57,8 +57,7 @@ pub async fn exchange(
         } else {
             return Err(
                 ErrorKind::http_response_from_body(rsp_status.as_u16(), &rsp_body).into_error(),
-            )
-            .map_kind(ErrorKind::Credential);
+            );
         }
     }
 

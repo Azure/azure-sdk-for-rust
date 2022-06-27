@@ -1,9 +1,7 @@
 use crate::QueueServiceClient;
 use azure_core::{
-    collect_pinned_stream,
-    error::{Error, ErrorKind, ResultExt},
-    prelude::*,
-    Context, Method, Pageable, Response as AzureResponse,
+    collect_pinned_stream, error::Error, prelude::*, Context, Method, Pageable,
+    Response as AzureResponse,
 };
 use azure_storage::{core::headers::CommonStorageResponseHeaders, xml::read_xml};
 use std::convert::TryInto;
@@ -140,8 +138,7 @@ impl ListQueuesResponse {
         let (_, headers, body) = response.deconstruct();
         let body = collect_pinned_stream(body).await?;
 
-        let mut response: ListQueuesResponseInternal =
-            read_xml(&body).map_kind(ErrorKind::DataConversion)?;
+        let mut response: ListQueuesResponseInternal = read_xml(&body)?;
 
         // get rid of the ugly Some("") empty string
         // we use None instead

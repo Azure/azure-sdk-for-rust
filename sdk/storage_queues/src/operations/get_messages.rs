@@ -1,10 +1,5 @@
 use crate::{clients::QueueClient, prelude::*, PopReceipt};
-use azure_core::{
-    collect_pinned_stream,
-    error::{ErrorKind, ResultExt},
-    prelude::*,
-    Context, Method, Response as AzureResponse,
-};
+use azure_core::{collect_pinned_stream, prelude::*, Context, Method, Response as AzureResponse};
 use azure_storage::core::{headers::CommonStorageResponseHeaders, xml::read_xml};
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
@@ -115,7 +110,7 @@ struct MessageList {
 
 impl GetMessagesResponse {
     fn parse_messages(body: &[u8]) -> azure_core::Result<Vec<Message>> {
-        let response: MessageList = read_xml(body).map_kind(ErrorKind::DataConversion)?;
+        let response: MessageList = read_xml(body)?;
         Ok(response.messages.unwrap_or_default())
     }
 

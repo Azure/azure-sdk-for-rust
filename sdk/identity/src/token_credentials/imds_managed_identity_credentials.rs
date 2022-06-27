@@ -142,7 +142,6 @@ impl TokenCredential for ImdsManagedIdentityCredential {
                     return Err(
                         ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error()
                     )
-                    .map_kind(ErrorKind::Credential)
                 }
             }
         }

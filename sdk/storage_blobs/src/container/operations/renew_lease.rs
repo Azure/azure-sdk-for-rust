@@ -15,9 +15,14 @@ impl RenewLeaseBuilder {
     pub(crate) fn new(container_lease_client: ContainerLeaseClient) -> Self {
         Self {
             container_lease_client,
-            context: Context::new(),
             timeout: None,
+            context: Context::new(),
         }
+    }
+
+    setters! {
+        timeout: Timeout => Some(timeout),
+        context: Context => context,
     }
 
     pub fn into_future(mut self) -> Response {

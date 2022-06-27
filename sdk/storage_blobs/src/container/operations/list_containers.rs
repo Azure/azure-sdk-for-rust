@@ -27,8 +27,8 @@ impl ListContainersBuilder {
             include_metadata: false,
             include_deleted: false,
             max_results: None,
-            context: Context::new(),
             timeout: None,
+            context: Context::new(),
         }
     }
 
@@ -37,8 +37,8 @@ impl ListContainersBuilder {
         include_metadata: bool => include_metadata,
         include_deleted: bool => include_deleted,
         max_results: MaxResults => Some(max_results),
-
         timeout: Timeout => Some(timeout),
+        context: Context => context,
     }
 
     pub fn into_stream(self) -> Pageable<ListContainersResponse, Error> {
@@ -96,25 +96,20 @@ pub struct ListContainersResponse {
 
 impl ListContainersResponse {
     async fn try_from(response: Response) -> azure_core::Result<Self> {
-        let body = response.into_body().await;
-        let body = std::str::from_utf8(&body)?;
-
+        let body = response.into_body_string().await;
         let elem: Element = body.parse().map_kind(ErrorKind::Other)?;
 
         let mut containers = Vec::new();
 
-        for container in
-            traverse(&elem, &["Containers", "Container"], true).map_kind(ErrorKind::Other)?
-        {
+        for container in traverse(&elem, &["Containers", "Container"], true)? {
             containers.push(Container::parse(container)?);
         }
 
-        let next_marker =
-            match cast_optional::<String>(&elem, &["NextMarker"]).map_kind(ErrorKind::Other)? {
-                Some(ref nm) if nm.is_empty() => None,
-                Some(nm) => Some(nm),
-                None => None,
-            };
+        let next_marker = match cast_optional::<String>(&elem, &["NextMarker"])? {
+            Some(nm) if nm.is_empty() => None,
+            Some(nm) => Some(nm),
+            None => None,
+        };
 
         Ok(Self {
             containers,

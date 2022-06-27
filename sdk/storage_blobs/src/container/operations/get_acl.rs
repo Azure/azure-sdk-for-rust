@@ -6,14 +6,12 @@ use azure_core::Method;
 use azure_core::{
     collect_pinned_stream,
     error::{ErrorKind, ResultExt},
-    headers::{self, Headers, REQUEST_ID},
+    headers,
     prelude::*,
-    RequestId,
+    RequestId, Response,
 };
 use azure_storage::core::StoredAccessPolicyList;
-use bytes::Bytes;
 use chrono::{DateTime, FixedOffset};
-use std::convert::TryFrom;
 
 #[derive(Debug, Clone)]
 pub struct GetACLBuilder {
@@ -27,18 +25,19 @@ impl GetACLBuilder {
     pub(crate) fn new(container_client: ContainerClient) -> Self {
         Self {
             container_client,
-            context: Context::new(),
             timeout: None,
             lease_id: None,
+            context: Context::new(),
         }
     }
 
     setters! {
         timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
+        context: Context => context,
     }
 
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> GetACL {
         Box::pin(async move {
             let mut url = self.container_client.url_with_segments(None)?;
 
@@ -53,12 +52,7 @@ impl GetACLBuilder {
                 .container_client
                 .send(&mut self.context, &mut request)
                 .await?;
-
-            let (_, headers, body) = response.deconstruct();
-            let body = collect_pinned_stream(body).await?;
-
-            // todo: parse SAS policies
-            (body, headers).try_into()
+            GetACLResponse::from_response(response).await
         })
     }
 }
@@ -73,39 +67,31 @@ pub struct GetACLResponse {
     pub stored_access_policy_list: StoredAccessPolicyList,
 }
 
-impl TryFrom<(Bytes, Headers)> for GetACLResponse {
-    type Error = crate::Error;
-
-    fn try_from((body, header_map): (Bytes, Headers)) -> azure_core::Result<Self> {
-        GetACLResponse::from_response(body, header_map)
-    }
-}
-
 impl GetACLResponse {
     // this should be named into and be consuming
-    pub(crate) fn from_response(
-        body: Bytes,
-        headers: Headers,
-    ) -> azure_core::Result<GetACLResponse> {
+    pub(crate) async fn from_response(response: Response) -> azure_core::Result<GetACLResponse> {
+        let (_, headers, body) = response.deconstruct();
+        let body = collect_pinned_stream(body).await?;
+
+        // todo: parse SAS policies
         let public_access = public_access_from_header(&headers)?;
 
-        let etag = headers.get_as_str_or_err(&headers::ETAG)?;
+        let etag = headers.get_as_string_or_err(&headers::ETAG)?;
 
         let last_modified = headers.get_as_str_or_err(&headers::LAST_MODIFIED)?;
         let last_modified =
             DateTime::parse_from_rfc2822(last_modified).map_kind(ErrorKind::DataConversion)?;
 
-        let request_id = headers.get_as(&REQUEST_ID)?;
+        let request_id = headers.get_as(&headers::REQUEST_ID)?;
 
         let date = headers.get_as_str_or_err(&headers::DATE)?;
         let date = DateTime::parse_from_rfc2822(date).map_kind(ErrorKind::DataConversion)?;
 
-        let stored_access_policy_list =
-            StoredAccessPolicyList::from_xml(&body).map_kind(ErrorKind::DataConversion)?;
+        let stored_access_policy_list = StoredAccessPolicyList::from_xml(&body)?;
 
         Ok(GetACLResponse {
             public_access,
-            etag: etag.to_owned(),
+            etag,
             last_modified,
             request_id,
             date,
@@ -114,7 +100,7 @@ impl GetACLResponse {
     }
 }
 
-pub type Response = futures::future::BoxFuture<'static, azure_core::Result<GetACLResponse>>;
+pub type GetACL = futures::future::BoxFuture<'static, azure_core::Result<GetACLResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for GetACLBuilder {

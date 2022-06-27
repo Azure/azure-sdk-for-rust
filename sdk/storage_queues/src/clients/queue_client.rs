@@ -1,9 +1,5 @@
 use crate::{operations::*, QueueStoredAccessPolicy};
-use azure_core::{
-    error::{ErrorKind, ResultExt},
-    prelude::*,
-    Context, Request, Response,
-};
+use azure_core::{prelude::*, Context, Request, Response};
 use azure_storage::core::clients::{
     AsStorageClient, ServiceType, StorageAccountClient, StorageClient,
 };
@@ -59,7 +55,6 @@ impl QueueClient {
     {
         self.storage_client
             .queue_url_with_segments(Some(self.queue_name.as_str()).into_iter().chain(segments))
-            .map_kind(ErrorKind::DataConversion)
     }
 
     pub fn queue_name(&self) -> &str {

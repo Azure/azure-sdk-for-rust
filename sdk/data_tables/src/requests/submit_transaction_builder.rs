@@ -1,7 +1,7 @@
 use crate::{prelude::*, responses::*};
 use azure_core::Method;
 use azure_core::{
-    error::{Error, ErrorKind, ResultExt},
+    error::{Error, ErrorKind},
     prelude::*,
 };
 use std::convert::TryInto;
@@ -39,7 +39,7 @@ impl<'a> SubmitTransactionBuilder<'a> {
 
         self.timeout.append_to_url_query(&mut url);
 
-        let payload = batch.to_string().map_kind(ErrorKind::DataConversion)?;
+        let payload = batch.to_string()?;
 
         let mut request = self.partition_key_client.prepare_request(
             url.as_str(),

@@ -1,10 +1,5 @@
 use crate::prelude::*;
-use azure_core::{
-    error::{ErrorKind, ResultExt},
-    headers::*,
-    prelude::*,
-    RequestId,
-};
+use azure_core::{headers::*, prelude::*, RequestId};
 use azure_storage::{headers::consistency_from_headers, ConsistencyCRC64, ConsistencyMD5};
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
@@ -74,8 +69,7 @@ pub struct PutBlockResponse {
 
 impl PutBlockResponse {
     pub(crate) fn from_headers(headers: &Headers) -> azure_core::Result<PutBlockResponse> {
-        let (content_md5, content_crc64) =
-            consistency_from_headers(headers).map_kind(ErrorKind::DataConversion)?;
+        let (content_md5, content_crc64) = consistency_from_headers(headers)?;
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;
         let request_server_encrypted = request_server_encrypted_from_headers(headers)?;
