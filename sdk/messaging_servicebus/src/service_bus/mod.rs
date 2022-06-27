@@ -168,19 +168,19 @@ async fn peek_lock_message2(
 
     let req = prepare_request(url.as_ref(), Method::POST, None, policy_name, signing_key)?;
 
-    let rsp = http_client.execute_request(&req).await?;
-    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-    let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-    let lock_location: String = match rsp_headers.get(&headers::LOCATION) {
-        Some(header_value) => header_value.as_str().to_owned(),
-        _ => "".to_owned(),
-    };
-    let body = body_bytes_to_utf8(&rsp_body)?;
+    let res = http_client.execute_request(&req).await?;
+
+    let status = res.status().clone();
+    let lock_location = res
+        .headers()
+        .get_as_string(&headers::LOCATION)
+        .unwrap_or_default();
+    let body = body_bytes_to_utf8(&res.into_body().await)?;
 
     Ok(PeekLockResponse {
         body,
         lock_location,
-        status: rsp_status,
+        status,
         http_client: http_client.clone(),
         policy_name: policy_name.to_owned(),
         signing_key: signing_key.to_owned(),

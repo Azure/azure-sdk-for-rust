@@ -1,7 +1,7 @@
 use crate::{container::operations::*, prelude::PublicAccess};
 use azure_core::Method;
 use azure_core::{
-    error::{Error, ErrorKind, ResultExt},
+    error::{Error, ErrorKind},
     prelude::*,
     Request, Response,
 };
@@ -123,7 +123,6 @@ impl ContainerClient {
     ) -> azure_core::Result<Request> {
         self.storage_client
             .prepare_request(url, method, request_body)
-            .map_kind(ErrorKind::DataConversion)
     }
 
     pub fn shared_access_signature(

@@ -1,7 +1,7 @@
 use crate::{blob::operations::*, prelude::*, BA512Range};
 use azure_core::Method;
 use azure_core::{
-    error::{Error, ErrorKind, ResultExt},
+    error::{Error, ErrorKind},
     prelude::*,
     Request, Response,
 };
@@ -65,7 +65,6 @@ impl BlobClient {
         let blob_name_with_segments = self.blob_name.split('/').into_iter().chain(segments);
         self.container_client
             .url_with_segments(blob_name_with_segments)
-            .map_kind(ErrorKind::DataConversion)
     }
 
     // stream blob downloads

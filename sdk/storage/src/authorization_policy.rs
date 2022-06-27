@@ -92,7 +92,7 @@ fn generate_authorization(
 }
 
 fn add_if_exists<'a>(h: &'a Headers, key: &HeaderName) -> &'a str {
-    h.get(key).map(|ce| ce.as_str()).unwrap_or_default()
+    h.get_as_str(key).unwrap_or_default()
 }
 
 #[allow(unknown_lints)]
@@ -118,8 +118,8 @@ fn string_to_sign(
             // content length must only be specified if != 0
             // this is valid from 2015-02-21
             let content_length = h
-                .get(&CONTENT_LENGTH)
-                .map(|v| if v.as_str() == "0" { "" } else { v.as_str() })
+                .get_as_str(&CONTENT_LENGTH)
+                .filter(|&v| v != "0")
                 .unwrap_or_default();
             format!(
                 "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}{}",
@@ -142,22 +142,21 @@ fn string_to_sign(
     }
 }
 
-fn canonicalize_header(h: &Headers) -> String {
-    let mut v_headers = h
+fn canonicalize_header(headers: &Headers) -> String {
+    let mut names = headers
         .iter()
-        .filter(|(k, _)| k.as_str().starts_with("x-ms"))
-        .map(|(k, _)| k)
+        .filter_map(|(k, _)| (k.as_str().starts_with("x-ms")).then(|| k))
         .collect::<Vec<_>>();
-    v_headers.sort_unstable();
+    names.sort_unstable();
 
-    let mut can = String::new();
+    let mut result = String::new();
 
-    for header_name in v_headers {
-        let s = h.get(header_name).unwrap().as_str();
-        let header_name = header_name.as_str();
-        can = format!("{can}{header_name}:{s}\n");
+    for header_name in names {
+        let value = headers.get_as_str(header_name).unwrap();
+        let name = header_name.as_str();
+        result = format!("{result}{name}:{value}\n");
     }
-    can
+    result
 }
 
 fn canonicalized_resource_table(account: &str, u: &Url) -> String {

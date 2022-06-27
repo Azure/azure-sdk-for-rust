@@ -2,20 +2,14 @@ use super::headers::COPY_ID;
 use azure_core::error::{Error, ErrorKind, ResultExt};
 use azure_core::headers::Headers;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::convert::TryFrom;
 use std::fmt;
+use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CopyId(uuid::Uuid);
 
 pub fn copy_id_from_headers(headers: &Headers) -> azure_core::Result<CopyId> {
-    let copy_id = headers
-        .get(&COPY_ID)
-        .ok_or_else(|| Error::message(ErrorKind::Other, "failed to get copy id from headers"))?;
-    Ok(CopyId(uuid::Uuid::parse_str(copy_id.as_str()).context(
-        ErrorKind::DataConversion,
-        "failed to parse uuid from copy_id",
-    )?))
+    headers.get_as(&COPY_ID)
 }
 
 impl From<uuid::Uuid> for CopyId {
@@ -24,15 +18,14 @@ impl From<uuid::Uuid> for CopyId {
     }
 }
 
-impl TryFrom<&str> for CopyId {
-    type Error = Error;
+impl FromStr for CopyId {
+    type Err = Error;
 
-    fn try_from(s: &str) -> azure_core::Result<Self> {
-        Ok(Self(
-            s.parse().with_context(ErrorKind::DataConversion, || {
-                format!("failed to parse CopyId from {s}")
-            })?,
-        ))
+    fn from_str(s: &str) -> azure_core::Result<Self> {
+        let uuid = s
+            .parse()
+            .with_context(ErrorKind::DataConversion, || format!("malformed UUID: {s}"))?;
+        Ok(Self(uuid))
     }
 }
 
@@ -56,10 +49,8 @@ impl<'de> Deserialize<'de> for CopyId {
     where
         D: Deserializer<'de>,
     {
-        let s = String::deserialize(deserializer)?;
-        let uuid: uuid::Uuid = s
+        String::deserialize(deserializer)?
             .parse()
-            .map_err(|e: uuid::Error| serde::de::Error::custom(e.to_string()))?;
-        Ok(Self(uuid))
+            .map_err(|e: Error| serde::de::Error::custom(e.to_string()))
     }
 }

@@ -541,10 +541,7 @@ fn generate_authorization(
 }
 
 fn add_if_exists<'a>(headers: &'a Headers, key: &HeaderName) -> &'a str {
-    match headers.get(key) {
-        Some(value) => value.as_str(),
-        None => "",
-    }
+    headers.get_as_str(key).unwrap_or_default()
 }
 
 #[allow(unknown_lints)]
@@ -570,15 +567,9 @@ fn string_to_sign(
             // content length must only be specified if != 0
             // this is valid from 2015-02-21
             let cl = headers
-                .get(&CONTENT_LENGTH)
-                .map(|s| {
-                    if s == &HeaderValue::from_static("0") {
-                        ""
-                    } else {
-                        s.as_str()
-                    }
-                })
-                .unwrap_or("");
+                .get_as_str(&CONTENT_LENGTH)
+                .filter(|&s| s != "0")
+                .unwrap_or_default();
             format!(
                 "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}{}",
                 method.as_str(),

@@ -3,12 +3,7 @@ use crate::{
     prelude::*,
     RehydratePriority,
 };
-use azure_core::{
-    error::{ErrorKind, ResultExt},
-    headers::*,
-    prelude::*,
-    RequestId,
-};
+use azure_core::{headers::*, prelude::*, RequestId};
 use azure_storage::core::{copy_id_from_headers, CopyId};
 use chrono::{DateTime, Utc};
 use std::convert::{TryFrom, TryInto};
@@ -123,7 +118,7 @@ impl TryFrom<&Headers> for CopyBlobResponse {
             version: version_from_headers(headers)?.to_owned(),
             server: server_from_headers(headers)?.to_owned(),
             date: date_from_headers(headers)?,
-            copy_id: copy_id_from_headers(headers).map_kind(ErrorKind::DataConversion)?,
+            copy_id: copy_id_from_headers(headers)?,
             copy_status: copy_status_from_headers(headers)?,
         })
     }

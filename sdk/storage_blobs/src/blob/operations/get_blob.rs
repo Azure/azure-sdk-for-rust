@@ -1,14 +1,10 @@
 use crate::{blob::Blob, prelude::*};
 use azure_core::{
-    collect_pinned_stream,
-    error::{Error, ErrorKind, ResultExt},
-    headers::*,
-    prelude::*,
-    Context, Pageable, RequestId, Response as AzureResponse,
+    collect_pinned_stream, error::Error, headers::*, prelude::*, Context, Pageable, RequestId,
+    Response as AzureResponse,
 };
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
-use std::str::FromStr;
 
 const DEFAULT_CHUNK_SIZE: u64 = 0x1000 * 0x1000;
 
@@ -103,13 +99,7 @@ impl GetBlobResponse {
         let request_id = request_id_from_headers(&headers)?;
         let date = date_from_headers(&headers)?;
 
-        let content_range_header = headers.get(&CONTENT_RANGE);
-        let content_range = match content_range_header {
-            Some(hv) => {
-                Some(ContentRange::from_str(hv.as_str()).map_kind(ErrorKind::DataConversion)?)
-            }
-            None => None,
-        };
+        let content_range = headers.get_optional_as(&CONTENT_RANGE)?;
 
         let remaining_range = remaining_range(request.chunk_size, request.range, content_range);
 

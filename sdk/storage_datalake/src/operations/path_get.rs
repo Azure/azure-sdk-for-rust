@@ -1,15 +1,11 @@
 use crate::clients::{FileClient, PathClient};
-use azure_core::error::ResultExt;
 use azure_core::headers::{self, etag_from_headers, last_modified_from_headers};
-use azure_core::{
-    collect_pinned_stream, error::ErrorKind, AppendToUrlQuery, Response as HttpResponse,
-};
+use azure_core::{collect_pinned_stream, AppendToUrlQuery, Response as HttpResponse};
 use azure_core::{prelude::*, Request};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use std::convert::TryInto;
-use std::str::FromStr;
 
 /// A future of a delete file response
 type GetFile = futures::future::BoxFuture<'static, azure_core::Result<GetFileResponse>>;
@@ -94,13 +90,7 @@ impl GetFileResponse {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
 
         let data = collect_pinned_stream(pinned_stream).await?;
-        let content_range_header = headers.get(&headers::CONTENT_RANGE);
-        let content_range = match content_range_header {
-            Some(hv) => {
-                Some(ContentRange::from_str(hv.as_str()).map_kind(ErrorKind::DataConversion)?)
-            }
-            None => None,
-        };
+        let content_range = headers.get_optional_as(&headers::CONTENT_RANGE)?;
 
         Ok(Self {
             common_storage_response_headers: (&headers).try_into()?,
