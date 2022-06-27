@@ -8,7 +8,6 @@ use azure_core::{
 use chrono::{DateTime, FixedOffset};
 use http::method::Method;
 use std::convert::{TryFrom, TryInto};
-use uuid::Uuid;
 
 #[derive(Debug, Clone)]
 pub struct GetPropertiesBuilder {
@@ -73,8 +72,7 @@ impl GetPropertiesResponse {
         container_name: &str,
         headers: &Headers,
     ) -> azure_core::Result<GetPropertiesResponse> {
-        let request_id = Uuid::parse_str(headers.get_as_str_or_err(&headers::REQUEST_ID)?)
-            .map_kind(ErrorKind::DataConversion)?;
+        let request_id = headers.get_as(&headers::REQUEST_ID)?;
 
         let date = DateTime::parse_from_rfc2822(headers.get_as_str_or_err(&headers::DATE)?)
             .map_kind(ErrorKind::DataConversion)?;

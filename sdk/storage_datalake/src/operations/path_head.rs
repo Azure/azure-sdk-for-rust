@@ -1,11 +1,7 @@
 use crate::{clients::PathClient, request_options::*, Properties};
-use azure_core::error::ResultExt;
-use azure_core::headers::{
-    self, etag_from_headers, get_option_from_headers, get_option_str_from_headers,
-    last_modified_from_headers,
-};
-use azure_core::{error::ErrorKind, AppendToUrlQuery, Response as HttpResponse};
+use azure_core::headers::{self, etag_from_headers, last_modified_from_headers};
 use azure_core::{prelude::*, Request};
+use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use chrono::{DateTime, Utc};
 use std::convert::TryInto;
@@ -103,13 +99,13 @@ impl HeadPathResponse {
             common_storage_response_headers: headers.try_into()?,
             etag: etag_from_headers(headers)?,
             last_modified: last_modified_from_headers(headers)?,
-            content_length: get_option_from_headers(headers, &headers::CONTENT_LENGTH)?,
-            content_type: get_option_from_headers(headers, &headers::CONTENT_TYPE)?,
-            properties: get_option_str_from_headers(headers, &headers::PROPERTIES)?
+            content_length: headers.get_optional_as(&headers::CONTENT_LENGTH)?,
+            content_type: headers.get_optional_as(&headers::CONTENT_TYPE)?,
+            properties: headers
+                .get_as_str(&headers::PROPERTIES)
                 .map(Properties::try_from)
-                .transpose()
-                .map_kind(ErrorKind::DataConversion)?,
-            acl: get_option_str_from_headers(headers, &headers::ACL)?.map(|s| s.to_owned()),
+                .transpose()?,
+            acl: headers.get_as_string(&headers::ACL),
         })
     }
 }

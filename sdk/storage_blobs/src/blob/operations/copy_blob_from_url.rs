@@ -3,7 +3,6 @@ use crate::{
     prelude::*,
 };
 use azure_core::{
-    error::{ErrorKind, ResultExt},
     headers::{
         date_from_headers, etag_from_headers, last_modified_from_headers, request_id_from_headers,
         server_from_headers, version_from_headers, Headers, *,
@@ -115,14 +114,13 @@ impl TryFrom<&Headers> for CopyBlobFromUrlResponse {
     type Error = crate::Error;
     fn try_from(headers: &Headers) -> azure_core::Result<Self> {
         Ok(Self {
-            content_md5: content_md5_from_headers_optional(headers)
-                .map_kind(ErrorKind::DataConversion)?,
+            content_md5: content_md5_from_headers_optional(headers)?,
             last_modified: last_modified_from_headers(headers)?,
             etag: etag_from_headers(headers)?,
             server: server_from_headers(headers)?.to_owned(),
             request_id: request_id_from_headers(headers)?,
             version: version_from_headers(headers)?.to_owned(),
-            copy_id: copy_id_from_headers(headers).map_kind(ErrorKind::DataConversion)?,
+            copy_id: copy_id_from_headers(headers)?,
             copy_status: copy_status_from_headers(headers)?,
             date: date_from_headers(headers)?,
         })

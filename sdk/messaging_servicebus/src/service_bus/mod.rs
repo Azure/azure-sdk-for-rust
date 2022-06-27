@@ -171,10 +171,10 @@ async fn peek_lock_message2(
     let res = http_client.execute_request(&req).await?;
 
     let status = res.status();
-    let lock_location: String = match res.headers().get(&headers::LOCATION) {
-        Some(header_value) => header_value.as_str().to_owned(),
-        _ => "".to_owned(),
-    };
+    let lock_location = res
+        .headers()
+        .get_as_string(&headers::LOCATION)
+        .unwrap_or_default();
     let body = body_bytes_to_utf8(&res.into_body().await)?;
 
     Ok(PeekLockResponse {
