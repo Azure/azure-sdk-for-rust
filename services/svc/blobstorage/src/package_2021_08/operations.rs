@@ -527,7 +527,57 @@ pub mod service {
     }
     pub mod get_account_info {
         use super::models;
-        type Response = ();
+
+        pub enum Response {
+            Ok200(Ok200Response),
+        }
+
+        impl Response {
+            pub fn inner(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+
+        impl Response {
+            pub fn into_inner(self) -> azure_core::Response {
+                self.0
+            }
+        }
+
+        pub struct Ok200Response(azure_core::Response);
+
+        impl Ok200Response {
+            pub fn headers(&self) -> azure_core::Result<Ok200Headers> {
+                self.0.headers().try_into()
+            }
+        }
+
+        pub struct Ok200Headers {
+            pub client_request_id: Option<String>,
+            pub request_id: Option<String>,
+            pub version: Option<String>,
+            pub date: Option<String>,         // TODO "format": "date-time-rfc1123"
+            pub sku_name: Option<String>,     // TODO type SkuName
+            pub account_kind: Option<String>, // TODO type AccountKind
+            pub is_hierarchical_namespace_enabled: Option<bool>,
+        }
+
+        impl TryFrom<&azure_core::headers::Headers> for Ok200Headers {
+            type Error = azure_core::error::Error;
+            fn try_from(_headers: &azure_core::headers::Headers) -> azure_core::Result<Self> {
+                Ok(Ok200Headers {
+                    // TODO get these values
+                    client_request_id: None,
+                    request_id: None,
+                    version: None,
+                    date: None,
+                    sku_name: None,
+                    account_kind: None,
+                    is_hierarchical_namespace_enabled: None,
+                })
+            }
+        }
+
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -550,9 +600,11 @@ pub mod service {
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        // let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        let rsp_status = rsp.status().clone();
                         match rsp_status {
-                            http::StatusCode::OK => Ok(()),
+                            // http::StatusCode::OK => Ok(()),
+                            http::StatusCode::OK => Ok(Response::Ok200(Ok200Response(rsp))),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code.as_u16(),
                                 error_code: None,
