@@ -170,7 +170,7 @@ async fn peek_lock_message2(
 
     let res = http_client.execute_request(&req).await?;
 
-    let status = res.status().clone();
+    let status = res.status();
     let lock_location = res
         .headers()
         .get_as_string(&headers::LOCATION)

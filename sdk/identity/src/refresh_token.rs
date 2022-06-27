@@ -48,8 +48,8 @@ pub async fn exchange(
     req.set_body(encoded);
 
     let rsp = http_client.execute_request(&req).await?;
-    let (rsp_status, _rsp_headers, rsp_stream) = rsp.deconstruct();
-    let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+    let rsp_status = rsp.status();
+    let rsp_body = rsp.into_body().await;
 
     if !rsp_status.is_success() {
         if let Ok(token_error) = serde_json::from_slice::<RefreshTokenError>(&rsp_body) {

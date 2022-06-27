@@ -26,8 +26,8 @@ impl Response {
     }
 
     /// Get the status code from the response.
-    pub fn status(&self) -> &StatusCode {
-        &self.status
+    pub fn status(&self) -> StatusCode {
+        self.status
     }
 
     /// Get the headers from the response.
