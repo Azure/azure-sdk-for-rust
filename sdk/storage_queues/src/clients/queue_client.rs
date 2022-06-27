@@ -94,16 +94,18 @@ impl QueueClient {
         GetQueueMetadataBuilder::new(self.clone())
     }
 
-    /// Get the queue ACL. This call returns
-    /// all the stored access policies associated
-    /// to the current queue.
+    /// Get the queue ACL.
+    ///
+    /// This call returns all the stored access policies associated to the
+    /// current queue.
     pub fn get_acl(&self) -> GetQueueACLBuilder {
         GetQueueACLBuilder::new(self.clone())
     }
 
-    /// Set the queue ACL. You can call this function to change or remove
-    /// already existing stored access policies by modifying the list returned
-    /// by `get_acl`.
+    /// Set the queue ACL.
+    ///
+    /// You can call this function to change or remove already existing stored
+    /// access policies by modifying the list returned by `get_acl`.
     ///
     /// While this SDK does not enforce any limit, keep in mind Azure supports a
     /// limited number of stored access policies for each queue.  More info here
@@ -112,8 +114,10 @@ impl QueueClient {
         SetQueueACLBuilder::new(self.clone(), policies)
     }
 
-    /// Puts a message in the queue. The body will be passed
-    /// to the `execute` function of the returned struct.
+    /// Puts a message in the queue.
+    ///
+    /// The body will be passed to the `execute` function of the returned
+    /// struct.
     pub fn put_message<S: Into<String>>(&self, message: S) -> PutMessageBuilder {
         PutMessageBuilder::new(self.clone(), message.into())
     }
