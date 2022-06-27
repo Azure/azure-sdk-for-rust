@@ -534,13 +534,17 @@ pub mod service {
 
         impl Response {
             pub fn inner(&self) -> &azure_core::Response {
-                &self.0
+                match self {
+                    Response::Ok200(rsp) => &rsp.0,
+                }
             }
         }
 
         impl Response {
             pub fn into_inner(self) -> azure_core::Response {
-                self.0
+                match self {
+                    Response::Ok200(rsp) => rsp.0,
+                }
             }
         }
 
