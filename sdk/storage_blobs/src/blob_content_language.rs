@@ -4,12 +4,12 @@ use azure_core::headers::{self, Header};
 pub struct BlobContentLanguage(std::borrow::Cow<'static, str>);
 
 impl BlobContentLanguage {
-    pub fn as_str(&self) -> &str {
-        self.0.as_ref()
-    }
-
     pub const fn from_static(s: &'static str) -> Self {
         Self(std::borrow::Cow::Borrowed(s))
+    }
+
+    pub fn as_str(&self) -> &str {
+        self.0.as_ref()
     }
 }
 
