@@ -1,11 +1,9 @@
 use crate::core::clients::{ServiceType, StorageAccountClient};
 use crate::operations::*;
-use azure_core::Method;
 use azure_core::{
     error::{Error, ErrorKind},
     Context, Request, Response,
 };
-use bytes::Bytes;
 use std::sync::Arc;
 
 pub trait AsStorageClient {
@@ -85,16 +83,6 @@ impl StorageClient {
 
     pub fn find_blobs_by_tags(&self) -> FindBlobsByTagsBuilder {
         FindBlobsByTagsBuilder::new(self.clone())
-    }
-
-    pub fn prepare_request(
-        &self,
-        url: &str,
-        method: Method,
-        request_body: Option<Bytes>,
-    ) -> azure_core::Result<Request> {
-        self.storage_account_client
-            .prepare_request(url, method, ServiceType::Blob, request_body)
     }
 
     pub async fn send(
