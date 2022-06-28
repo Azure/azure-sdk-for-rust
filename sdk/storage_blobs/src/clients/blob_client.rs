@@ -276,13 +276,13 @@ mod tests {
 
         let url = build_url("a", "b", &sas);
         assert_eq!(
-            url,
+            url.as_str(),
             "http://127.0.0.1:10000/devstoreaccount1/a/b?fake_token"
         );
 
         let url = build_url("a", "b/c/d", &sas);
         assert_eq!(
-            url,
+            url.as_str(),
             "http://127.0.0.1:10000/devstoreaccount1/a/b/c/d?fake_token"
         );
     }
