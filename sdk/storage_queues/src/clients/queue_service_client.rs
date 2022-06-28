@@ -41,8 +41,8 @@ impl QueueServiceClient {
 
     /// Set queue service properties.
     ///
-    /// More info here
-    /// [https://docs.microsoft.com/rest/api/storageservices/set-queue-service-properties](https://docs.microsoft.com/rest/api/storageservices/set-queue-service-properties).
+    /// More info here:
+    /// <https://docs.microsoft.com/rest/api/storageservices/set-queue-service-properties>
     pub fn set_queue_service_properties(
         &self,
         properties: QueueServiceProperties,

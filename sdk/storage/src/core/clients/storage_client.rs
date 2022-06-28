@@ -40,24 +40,6 @@ impl StorageClient {
         self.storage_account_client.http_client()
     }
 
-    fn url_with_segments<'a, I>(mut url: url::Url, segments: I) -> azure_core::Result<url::Url>
-    where
-        I: IntoIterator<Item = &'a str>,
-    {
-        {
-            let original_url = url.clone();
-            let mut segs = url.path_segments_mut().map_err(|_| {
-                Error::with_message(ErrorKind::DataConversion, || {
-                    format!("failed to parse url path segments. url: {original_url}")
-                })
-            })?;
-            for segment in segments.into_iter() {
-                segs.push(segment);
-            }
-        }
-        Ok(url)
-    }
-
     pub fn blob_url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
     where
         I: IntoIterator<Item = &'a str>,
@@ -106,5 +88,20 @@ impl StorageClient {
         self.storage_account_client
             .send(context, request, service_type)
             .await
+    }
+
+    fn url_with_segments<'a, I>(mut url: url::Url, new_segements: I) -> azure_core::Result<url::Url>
+    where
+        I: IntoIterator<Item = &'a str>,
+    {
+        let original_url = url.clone();
+        {
+            let mut segements = url.path_segments_mut().map_err(|_| {
+                let message = format!("failed to parse url path segments from '{original_url}'");
+                Error::message(ErrorKind::DataConversion, message)
+            })?;
+            segements.extend(new_segements);
+        }
+        Ok(url)
     }
 }

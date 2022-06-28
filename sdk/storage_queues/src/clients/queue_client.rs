@@ -84,7 +84,6 @@ impl QueueClient {
     }
 
     /// Get the queue metadata.
-
     pub fn get_metadata(&self) -> GetQueueMetadataBuilder {
         GetQueueMetadataBuilder::new(self.clone())
     }

@@ -30,6 +30,7 @@ impl SetQueueServicePropertiesBuilder {
 
     setters! {
         timeout: Timeout => Some(timeout),
+        context: Context => context,
     }
 
     pub fn into_future(mut self) -> Response {
