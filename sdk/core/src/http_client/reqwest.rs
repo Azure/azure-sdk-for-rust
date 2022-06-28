@@ -71,7 +71,18 @@ fn to_headers(map: &::reqwest::header::HeaderMap) -> crate::Result<crate::header
 }
 
 fn try_from_method(method: &crate::Method) -> crate::Result<::reqwest::Method> {
-    ::reqwest::Method::from_str(method.as_ref()).map_kind(ErrorKind::DataConversion)
+    match method {
+        crate::Method::Connect => Ok(::reqwest::Method::CONNECT),
+        crate::Method::Delete => Ok(::reqwest::Method::DELETE),
+        crate::Method::Get => Ok(::reqwest::Method::GET),
+        crate::Method::Head => Ok(::reqwest::Method::HEAD),
+        crate::Method::Options => Ok(::reqwest::Method::OPTIONS),
+        crate::Method::Patch => Ok(::reqwest::Method::PATCH),
+        crate::Method::Post => Ok(::reqwest::Method::POST),
+        crate::Method::Put => Ok(::reqwest::Method::PUT),
+        crate::Method::Trace => Ok(::reqwest::Method::TRACE),
+        _ => ::reqwest::Method::from_str(method.as_ref()).map_kind(ErrorKind::DataConversion),
+    }
 }
 
 fn try_from_status(status: ::reqwest::StatusCode) -> crate::Result<crate::StatusCode> {
