@@ -36,7 +36,7 @@ impl RenewLeaseBuilder {
 
             let mut request =
                 self.container_lease_client
-                    .prepare_request(url.as_str(), Method::Put, None)?;
+                    .prepare_request(url, Method::Put, None)?;
             request.insert_header(LEASE_ACTION, "renew");
             request.add_mandatory_header(self.container_lease_client.lease_id());
 

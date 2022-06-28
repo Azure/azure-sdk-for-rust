@@ -51,7 +51,7 @@ impl UpdatePageBuilder {
             url.query_pairs_mut().append_pair("comp", "page");
 
             let mut request = self.blob_client.prepare_request(
-                url.as_str(),
+                url,
                 azure_core::Method::Put,
                 Some(self.content.clone()),
             )?;

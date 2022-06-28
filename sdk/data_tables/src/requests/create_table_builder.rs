@@ -35,7 +35,7 @@ impl<'a> CreateTableBuilder<'a> {
         })?;
 
         let mut request = self.table_client.prepare_request(
-            url.as_str(),
+            url,
             Method::Post,
             Some(bytes::Bytes::from(request_body_serialized)),
         )?;

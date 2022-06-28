@@ -37,9 +37,9 @@ impl CreateBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request =
-                self.container_client
-                    .prepare_request(url.as_str(), Method::Put, None)?;
+            let mut request = self
+                .container_client
+                .prepare_request(url, Method::Put, None)?;
             for (name, value) in self.public_access.as_headers() {
                 request.insert_header(name, value);
             }

@@ -33,7 +33,7 @@ impl<'a> DeleteTableBuilder<'a> {
 
         let mut request = self
             .table_client
-            .prepare_request(url.as_str(), Method::Delete, None)?;
+            .prepare_request(url, Method::Delete, None)?;
         request.add_optional_header(&self.client_request_id);
         request.insert_header("Accept", "application/json");
 

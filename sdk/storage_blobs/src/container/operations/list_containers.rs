@@ -76,7 +76,7 @@ impl ListContainersBuilder {
                 let mut request =
                     this.client
                         .storage_client
-                        .prepare_request(url.as_str(), Method::Get, None)?;
+                        .prepare_request(url, Method::Get, None)?;
 
                 let response = this.client.send(&mut ctx, &mut request).await?;
 

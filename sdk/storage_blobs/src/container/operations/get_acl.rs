@@ -43,9 +43,9 @@ impl GetACLBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request =
-                self.container_client
-                    .prepare_request(url.as_str(), Method::Get, None)?;
+            let mut request = self
+                .container_client
+                .prepare_request(url, Method::Get, None)?;
             request.add_optional_header(&self.lease_id);
 
             let response = self

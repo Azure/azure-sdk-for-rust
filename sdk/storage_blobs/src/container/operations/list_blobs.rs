@@ -112,9 +112,9 @@ impl ListBlobsBuilder {
 
                 this.timeout.append_to_url_query(&mut url);
 
-                let mut request =
-                    this.container_client
-                        .prepare_request(url.as_str(), Method::Get, None)?;
+                let mut request = this
+                    .container_client
+                    .prepare_request(url, Method::Get, None)?;
 
                 let response = this.container_client.send(&mut ctx, &mut request).await?;
 

@@ -33,11 +33,10 @@ impl CreateQueueBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = self.queue_client.storage_client().prepare_request(
-                url.as_str(),
-                Method::Put,
-                None,
-            )?;
+            let mut request =
+                self.queue_client
+                    .storage_client()
+                    .prepare_request(url, Method::Put, None)?;
 
             if let Some(metadata) = &self.metadata {
                 for m in metadata.iter() {

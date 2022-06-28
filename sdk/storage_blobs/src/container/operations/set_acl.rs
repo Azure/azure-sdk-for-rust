@@ -44,11 +44,9 @@ impl SetACLBuilder {
 
             let xml = self.stored_access_policy_list.map(|xml| xml.to_xml());
 
-            let mut request = self.container_client.prepare_request(
-                url.as_str(),
-                Method::Put,
-                xml.map(Bytes::from),
-            )?;
+            let mut request =
+                self.container_client
+                    .prepare_request(url, Method::Put, xml.map(Bytes::from))?;
             for (name, value) in self.public_access.as_headers() {
                 request.insert_header(name, value);
             }
