@@ -33,7 +33,7 @@ impl From<&String> for BlobCacheControl {
 
 impl Header for BlobCacheControl {
     fn name(&self) -> headers::HeaderName {
-        azure_core::headers::BLOB_CACHE_CONTROL.into()
+        azure_core::headers::BLOB_CACHE_CONTROL
     }
 
     fn value(&self) -> headers::HeaderValue {
