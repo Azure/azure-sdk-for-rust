@@ -76,7 +76,7 @@ fn try_from_method(method: &crate::Method) -> crate::Result<::reqwest::Method> {
 
 fn try_from_status(status: ::reqwest::StatusCode) -> crate::Result<crate::StatusCode> {
     let status = u16::from(status);
-    http_types::StatusCode::try_from(status).map_err(|_| {
+    crate::StatusCode::try_from(status).map_err(|_| {
         Error::with_message(ErrorKind::DataConversion, || {
             format!("invalid status code {status}")
         })
