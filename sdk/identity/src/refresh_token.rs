@@ -40,7 +40,7 @@ pub async fn exchange(
         tenant_id
     ))?;
 
-    let mut req = Request::new(url, Method::POST);
+    let mut req = Request::new(url, Method::Post);
     req.insert_header(
         headers::CONTENT_TYPE,
         content_type::APPLICATION_X_WWW_FORM_URLENCODED,
@@ -56,7 +56,7 @@ pub async fn exchange(
             return Err(Error::new(ErrorKind::Credential, token_error));
         } else {
             return Err(
-                ErrorKind::http_response_from_body(rsp_status.as_u16(), &rsp_body).into_error(),
+                ErrorKind::http_response_from_body(rsp_status as u16, &rsp_body).into_error(),
             );
         }
     }

@@ -57,7 +57,7 @@ impl PutPageBlobBuilder {
 
             let mut request =
                 self.blob_client
-                    .prepare_request(url, azure_core::Method::PUT, None)?;
+                    .prepare_request(url, azure_core::Method::Put, None)?;
             request.insert_header(BLOB_TYPE, "PageBlob");
             request.insert_header(BLOB_CONTENT_LENGTH, &format!("{}", self.length));
             request.add_optional_header(&self.content_type);

@@ -38,7 +38,7 @@ impl<'a> GetPageRangesBuilder {
 
             let mut request =
                 self.blob_client
-                    .prepare_request(url, azure_core::Method::GET, None)?;
+                    .prepare_request(url, azure_core::Method::Get, None)?;
             request.add_optional_header(&self.lease_id);
 
             let response = self

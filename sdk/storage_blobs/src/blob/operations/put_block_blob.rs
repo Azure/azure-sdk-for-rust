@@ -59,7 +59,7 @@ impl PutBlockBlobBuilder {
 
             let mut request = self.blob_client.prepare_request(
                 url,
-                azure_core::Method::PUT,
+                azure_core::Method::Put,
                 Some(self.body.clone()),
             )?;
             request.insert_header(BLOB_TYPE, "BlockBlob");

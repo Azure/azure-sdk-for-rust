@@ -41,7 +41,7 @@ impl GetQueueServicePropertiesBuilder {
             let mut request =
                 self.service_client
                     .storage_client
-                    .prepare_request(url, Method::GET, None)?;
+                    .prepare_request(url, Method::Get, None)?;
 
             let response = self
                 .service_client

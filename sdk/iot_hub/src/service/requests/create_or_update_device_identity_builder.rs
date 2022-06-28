@@ -58,7 +58,7 @@ impl<'a> CreateOrUpdateDeviceIdentityBuilder<'a> {
             API_VERSION
         );
 
-        let mut request = self.service_client.prepare_request(&uri, Method::PUT)?;
+        let mut request = self.service_client.prepare_request(&uri, Method::Put)?;
 
         if self.operation == IdentityOperation::Update {
             match &self.etag {

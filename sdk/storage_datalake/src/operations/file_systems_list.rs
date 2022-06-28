@@ -59,7 +59,7 @@ impl ListFileSystemsBuilder {
                     this.next_marker.append_to_url_query(&mut url);
                 };
 
-                let mut request = Request::new(url, azure_core::Method::GET);
+                let mut request = Request::new(url, azure_core::Method::Get);
 
                 request.insert_headers(&this.client_request_id);
 

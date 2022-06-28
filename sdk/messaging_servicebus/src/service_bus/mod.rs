@@ -92,7 +92,7 @@ async fn send_message(
 
     let req = prepare_request(
         &url,
-        Method::POST,
+        Method::Post,
         Some(msg.to_string()),
         policy_name,
         signing_key,
@@ -118,7 +118,7 @@ async fn receive_and_delete_message(
         namespace, queue
     );
 
-    let req = prepare_request(&url, Method::DELETE, None, policy_name, signing_key)?;
+    let req = prepare_request(&url, Method::Delete, None, policy_name, signing_key)?;
 
     http_client
         .as_ref()
@@ -144,7 +144,7 @@ async fn peek_lock_message(
 ) -> azure_core::Result<CollectedResponse> {
     let url = craft_peek_lock_url(namespace, queue, lock_expiry)?;
 
-    let req = prepare_request(url.as_ref(), Method::POST, None, policy_name, signing_key)?;
+    let req = prepare_request(url.as_ref(), Method::Post, None, policy_name, signing_key)?;
 
     http_client
         .as_ref()
@@ -166,7 +166,7 @@ async fn peek_lock_message2(
 ) -> azure_core::Result<PeekLockResponse> {
     let url = craft_peek_lock_url(namespace, queue, lock_expiry)?;
 
-    let req = prepare_request(url.as_ref(), Method::POST, None, policy_name, signing_key)?;
+    let req = prepare_request(url.as_ref(), Method::Post, None, policy_name, signing_key)?;
 
     let res = http_client.execute_request(&req).await?;
 
@@ -212,7 +212,7 @@ impl PeekLockResponse {
     pub async fn delete_message(&self) -> azure_core::Result<CollectedResponse> {
         let req = prepare_request(
             &self.lock_location.clone(),
-            Method::DELETE,
+            Method::Delete,
             None,
             &self.policy_name,
             &self.signing_key,
@@ -228,7 +228,7 @@ impl PeekLockResponse {
     pub async fn unlock_message(&self) -> Result<(), Error> {
         let req = prepare_request(
             &self.lock_location.clone(),
-            Method::PUT,
+            Method::Put,
             None,
             &self.policy_name,
             &self.signing_key,
@@ -245,7 +245,7 @@ impl PeekLockResponse {
     pub async fn renew_message_lock(&self) -> Result<(), Error> {
         let req = prepare_request(
             &self.lock_location.clone(),
-            Method::POST,
+            Method::Post,
             None,
             &self.policy_name,
             &self.signing_key,

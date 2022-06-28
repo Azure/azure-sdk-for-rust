@@ -36,7 +36,7 @@ impl SetQueueMetadataBuilder {
             let mut request =
                 self.queue_client
                     .storage_client()
-                    .prepare_request(url, Method::PUT, None)?;
+                    .prepare_request(url, Method::Put, None)?;
             for m in self.metadata.iter() {
                 request.add_mandatory_header(&m);
             }

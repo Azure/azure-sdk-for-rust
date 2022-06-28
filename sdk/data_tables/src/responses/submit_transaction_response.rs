@@ -1,17 +1,28 @@
 use azure_core::{
-    error::{Error, ErrorKind, ResultExt},
+    error::{Error, ErrorKind},
     CollectedResponse, Etag, StatusCode,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::{TryFrom, TryInto};
 use url::Url;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct OperationResponse {
     pub status_code: StatusCode,
     pub location: Option<Url>,
     pub data_service_id: Option<String>,
     pub etag: Option<Etag>,
+}
+
+impl Default for OperationResponse {
+    fn default() -> Self {
+        Self {
+            status_code: StatusCode::Ok,
+            location: None,
+            data_service_id: None,
+            etag: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -48,7 +59,11 @@ impl TryFrom<CollectedResponse> for SubmitTransactionResponse {
                         })
                     })?;
                     operation_response.status_code =
-                        StatusCode::from_u16(status_code).map_kind(ErrorKind::DataConversion)?;
+                        StatusCode::try_from(status_code).map_err(|_| {
+                            Error::with_message(ErrorKind::DataConversion, || {
+                                format!("invalid status code {status_code}")
+                            })
+                        })?;
                 } else if line.starts_with("Location:") {
                     operation_response.location = Some(
                         line.split_whitespace()

@@ -55,7 +55,7 @@ impl<'a> QueryEntityBuilder<'a> {
         self.continuation_next_partition_and_row_key
             .append_to_url_query(&mut url);
 
-        let mut request = self.table_client.prepare_request(url, Method::GET, None)?;
+        let mut request = self.table_client.prepare_request(url, Method::Get, None)?;
         request.add_optional_header(&self.client_request_id);
         request.insert_header("Accept", "application/json;odata=fullmetadata");
 

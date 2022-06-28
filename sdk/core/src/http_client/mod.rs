@@ -37,7 +37,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
         let rsp = self.execute_request(request).await?;
         let (status, headers, body) = rsp.deconstruct();
         let body = crate::collect_pinned_stream(body).await?;
-        let status_u16 = status.as_u16();
+        let status_u16 = status as u16;
         if !(200..400).contains(&status_u16) {
             return Err(ErrorKind::http_response_from_body(status_u16, &body).into_error());
         }

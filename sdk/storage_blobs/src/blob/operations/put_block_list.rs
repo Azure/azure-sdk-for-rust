@@ -70,7 +70,7 @@ impl PutBlockListBuilder {
 
             let mut request =
                 self.blob_client
-                    .prepare_request(url, azure_core::Method::PUT, Some(body_bytes))?;
+                    .prepare_request(url, azure_core::Method::Put, Some(body_bytes))?;
             request.insert_header("Content-MD5", &md5);
             request.add_optional_header(&self.content_type);
             request.add_optional_header(&self.content_encoding);

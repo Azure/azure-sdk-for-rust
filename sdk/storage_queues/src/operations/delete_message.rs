@@ -32,7 +32,7 @@ impl DeleteMessageBuilder {
 
             let mut request = self.pop_receipt_client.storage_client().prepare_request(
                 url,
-                Method::DELETE,
+                Method::Delete,
                 None,
             )?;
 

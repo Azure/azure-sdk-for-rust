@@ -37,7 +37,7 @@ impl CreatePermissionBuilder {
                     self.client.database_client().database_name(),
                     self.client.user_client().user_name()
                 ),
-                azure_core::Method::POST,
+                azure_core::Method::Post,
             );
 
             if let Some(cl) = &self.consistency_level {

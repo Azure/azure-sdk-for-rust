@@ -60,7 +60,7 @@ impl GetBlobBuilder {
 
                 let mut request =
                     this.blob_client
-                        .prepare_request(url, azure_core::Method::GET, None)?;
+                        .prepare_request(url, azure_core::Method::Get, None)?;
 
                 for (name, value) in range.as_headers() {
                     request.insert_header(name, value);

@@ -40,7 +40,7 @@ impl GetPropertiesBuilder {
 
             let mut request = self
                 .container_client
-                .prepare_request(url, Method::HEAD, None)?;
+                .prepare_request(url, Method::Head, None)?;
             request.add_optional_header(&self.lease_id);
 
             let response = self

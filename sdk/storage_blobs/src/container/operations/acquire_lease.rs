@@ -43,7 +43,7 @@ impl AcquireLeaseBuilder {
 
             let mut request = self
                 .container_client
-                .prepare_request(url, Method::PUT, None)?;
+                .prepare_request(url, Method::Put, None)?;
             request.insert_header(LEASE_ACTION, "acquire");
             request.add_mandatory_header(&self.lease_duration);
             request.add_optional_header(&self.lease_id);

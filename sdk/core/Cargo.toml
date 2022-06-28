@@ -19,7 +19,7 @@ bytes = "1.0"
 chrono = "0.4"
 dyn-clone = "1.0"
 futures = "0.3"
-http = "0.2"
+http-types = "2.12"
 log = "0.4"
 rand = "0.8"
 reqwest = { version = "0.11", features = [

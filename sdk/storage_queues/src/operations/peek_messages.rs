@@ -42,7 +42,7 @@ impl PeekMessagesBuilder {
             let mut request =
                 self.queue_client
                     .storage_client()
-                    .prepare_request(url, Method::GET, None)?;
+                    .prepare_request(url, Method::Get, None)?;
 
             let response = self
                 .queue_client

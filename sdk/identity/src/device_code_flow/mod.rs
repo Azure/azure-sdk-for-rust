@@ -45,9 +45,7 @@ where
     let rsp_status = rsp.status();
     let rsp_body = rsp.into_body().await;
     if !rsp_status.is_success() {
-        return Err(
-            ErrorKind::http_response_from_body(rsp_status.as_u16(), &rsp_body).into_error(),
-        );
+        return Err(ErrorKind::http_response_from_body(rsp_status as u16, &rsp_body).into_error());
     }
     let device_code_response: DeviceCodePhaseOneResponse = serde_json::from_slice(&rsp_body)?;
 
@@ -174,7 +172,7 @@ async fn post_form(
     form_body: String,
 ) -> azure_core::Result<Response> {
     let url = Url::parse(url)?;
-    let mut req = Request::new(url, Method::POST);
+    let mut req = Request::new(url, Method::Post);
     req.insert_header(
         headers::CONTENT_TYPE,
         content_type::APPLICATION_X_WWW_FORM_URLENCODED,

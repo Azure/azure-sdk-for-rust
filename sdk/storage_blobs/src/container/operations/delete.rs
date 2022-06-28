@@ -35,7 +35,7 @@ impl DeleteBuilder {
 
             let mut request = self
                 .container_client
-                .prepare_request(url, Method::DELETE, None)?;
+                .prepare_request(url, Method::Delete, None)?;
             request.add_optional_header(&self.lease_id);
 
             let _response = self

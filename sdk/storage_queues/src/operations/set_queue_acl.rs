@@ -47,7 +47,7 @@ impl SetQueueACLBuilder {
 
             let mut request = self.queue_client.storage_client().prepare_request(
                 url,
-                Method::PUT,
+                Method::Put,
                 Some(xml_body.into()),
             )?;
 
