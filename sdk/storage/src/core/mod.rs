@@ -21,21 +21,6 @@ mod stored_access_policy;
 pub use azure_core::error::{Error, ErrorKind, ResultExt};
 pub mod xml;
 
-#[derive(Debug, Clone, Eq, PartialEq, Copy, Serialize, Deserialize)]
-pub struct Yes;
-#[derive(Debug, Clone, Eq, PartialEq, Copy, Serialize, Deserialize)]
-pub struct No;
-
-pub trait ToAssign: std::fmt::Debug {}
-pub trait Assigned: ToAssign {}
-pub trait NotAssigned: ToAssign {}
-
-impl ToAssign for Yes {}
-impl ToAssign for No {}
-
-impl Assigned for Yes {}
-impl NotAssigned for No {}
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct IPRange {
     pub start: std::net::IpAddr,

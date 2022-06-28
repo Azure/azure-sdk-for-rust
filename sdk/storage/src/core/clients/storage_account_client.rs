@@ -1,11 +1,7 @@
 use crate::authorization_policy::AuthorizationPolicy;
 use crate::ConnectionString;
 use crate::{
-    core::No,
-    hmac::sign,
-    shared_access_signature::account_sas::{
-        AccountSharedAccessSignatureBuilder, ClientAccountSharedAccessSignature,
-    },
+    hmac::sign, shared_access_signature::account_sas::AccountSharedAccessSignatureBuilder,
 };
 use azure_core::Method;
 use azure_core::{
@@ -518,15 +514,13 @@ impl StorageAccountClient {
             None,
         )
     }
-}
 
-impl ClientAccountSharedAccessSignature for StorageAccountClient {
-    fn shared_access_signature(
+    pub fn shared_access_signature(
         &self,
-    ) -> azure_core::Result<AccountSharedAccessSignatureBuilder<No, No, No, No>> {
-        match self.storage_credentials {
-            StorageCredentials::Key(ref account, ref key) => {
-                Ok(AccountSharedAccessSignatureBuilder::new(account, key))
+    ) -> azure_core::Result<AccountSharedAccessSignatureBuilder> {
+        match &self.storage_credentials {
+            StorageCredentials::Key(account, key) => {
+                Ok(AccountSharedAccessSignatureBuilder::new(account.clone(), key.clone()))
             }
             _ => Err(Error::message(ErrorKind::Other, "failed shared access signature generation. SAS can be generated only from key and account clients")),
         }
