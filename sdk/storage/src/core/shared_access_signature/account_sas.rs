@@ -1,10 +1,9 @@
 use crate::core::{
     hmac::sign,
     shared_access_signature::{format_date, format_form, SasProtocol, SasToken},
-    No, ToAssign,
 };
 use chrono::{DateTime, Utc};
-use std::{fmt, marker::PhantomData};
+use std::fmt;
 
 /// Service version of the shared access signature ([Azure documentation](https://docs.microsoft.com/rest/api/storageservices/create-service-sas#specifying-the-signed-version-field)).
 #[derive(Copy, Clone)]
@@ -132,7 +131,6 @@ impl fmt::Display for AccountSasPermissions {
 pub struct AccountSharedAccessSignature {
     account: String,
     key: String,
-
     signed_version: AccountSasVersion,
     signed_resource: AccountSasResource,
     signed_resource_type: AccountSasResourceType,
@@ -145,10 +143,7 @@ pub struct AccountSharedAccessSignature {
 
 impl AccountSharedAccessSignature {
     #[allow(clippy::new_ret_no_self)]
-    pub fn new<'a>(
-        account: &'a str,
-        key: &'a str,
-    ) -> AccountSharedAccessSignatureBuilder<'a, No, No, No, No> {
+    pub fn new(account: String, key: String) -> AccountSharedAccessSignatureBuilder {
         AccountSharedAccessSignatureBuilder::new(account, key)
     }
 
@@ -220,48 +215,29 @@ impl std::fmt::Debug for AccountSharedAccessSignature {
     }
 }
 
-pub struct AccountSharedAccessSignatureBuilder<
-    'a,
-    SasResourceSet,
-    SasResourceTypeSet,
-    SasExpirySet,
-    SasPermissionsSet,
-> where
-    SasResourceSet: ToAssign,
-    SasResourceTypeSet: ToAssign,
-    SasExpirySet: ToAssign,
-    SasPermissionsSet: ToAssign,
-{
-    account: &'a str,
-    key: &'a str,
+pub struct AccountSharedAccessSignatureBuilder {
+    account: String,
+    key: String,
     signed_version: AccountSasVersion,
-    p_signed_resource: PhantomData<SasResourceSet>,
     signed_resource: Option<AccountSasResource>,
-    p_signed_resource_type: PhantomData<SasResourceTypeSet>,
     signed_resource_type: Option<AccountSasResourceType>,
     signed_start: Option<DateTime<Utc>>,
-    p_signed_expiry: PhantomData<SasExpirySet>,
     signed_expiry: Option<DateTime<Utc>>,
-    p_signed_permissions: PhantomData<SasPermissionsSet>,
     signed_permissions: Option<AccountSasPermissions>,
     signed_ip: Option<String>,
     signed_protocol: Option<SasProtocol>,
 }
 
-impl<'a> AccountSharedAccessSignatureBuilder<'a, No, No, No, No> {
-    pub fn new(account: &'a str, key: &'a str) -> Self {
+impl AccountSharedAccessSignatureBuilder {
+    pub fn new(account: String, key: String) -> Self {
         Self {
             account,
             key,
             signed_version: AccountSasVersion::V20181109,
-            p_signed_resource: PhantomData {},
             signed_resource: None,
-            p_signed_resource_type: PhantomData {},
             signed_resource_type: None,
             signed_start: None,
-            p_signed_expiry: PhantomData {},
             signed_expiry: None,
-            p_signed_permissions: PhantomData {},
             signed_permissions: None,
             signed_ip: None,
             signed_protocol: None,
@@ -282,445 +258,92 @@ impl<'a> AccountSharedAccessSignatureBuilder<'a, No, No, No, No> {
             signed_protocol: self.signed_protocol,
         }
     }
-}
 
-pub trait ClientAccountSharedAccessSignature {
-    fn shared_access_signature(
-        &self,
-    ) -> Result<AccountSharedAccessSignatureBuilder<'_, No, No, No, No>, crate::Error>;
-}
+    pub fn version(&self) -> AccountSasVersion {
+        self.signed_version
+    }
 
-pub trait SasResourceRequired {
-    fn resource(&self) -> AccountSasResource;
-}
+    pub fn with_version(self, version: AccountSasVersion) -> Self {
+        Self {
+            signed_version: version,
+            ..self
+        }
+    }
 
-impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasResourceRequired
-    for AccountSharedAccessSignatureBuilder<
-        'a,
-        SasResourceSet,
-        SasResourceTypeSet,
-        SasExpirySet,
-        SasPermissionsSet,
-    >
-where
-    SasResourceSet: ToAssign,
-    SasResourceTypeSet: ToAssign,
-    SasExpirySet: ToAssign,
-    SasPermissionsSet: ToAssign,
-{
-    #[inline]
-    fn resource(&self) -> AccountSasResource {
+    pub fn resource(&self) -> AccountSasResource {
         self.signed_resource.unwrap()
     }
-}
 
-pub trait SasResourceSupport<'a> {
-    type O;
-    fn with_resource(self, resource: AccountSasResource) -> Self::O;
-}
-
-impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasResourceSupport<'a>
-    for AccountSharedAccessSignatureBuilder<
-        'a,
-        SasResourceSet,
-        SasResourceTypeSet,
-        SasExpirySet,
-        SasPermissionsSet,
-    >
-where
-    SasResourceSet: ToAssign,
-    SasResourceTypeSet: ToAssign,
-    SasExpirySet: ToAssign,
-    SasPermissionsSet: ToAssign,
-{
-    type O = AccountSharedAccessSignatureBuilder<
-        'a,
-        SasResourceSet,
-        SasResourceTypeSet,
-        SasExpirySet,
-        SasPermissionsSet,
-    >;
-
-    #[inline]
-    fn with_resource(self, resource: AccountSasResource) -> Self::O {
-        AccountSharedAccessSignatureBuilder {
-            account: self.account,
-            key: self.key,
-            signed_version: self.signed_version,
-            p_signed_resource: PhantomData {},
+    pub fn with_resource(self, resource: AccountSasResource) -> Self {
+        Self {
             signed_resource: Some(resource),
-            p_signed_resource_type: PhantomData {},
-            signed_resource_type: self.signed_resource_type,
-            signed_start: self.signed_start,
-            p_signed_expiry: PhantomData {},
-            signed_expiry: self.signed_expiry,
-            p_signed_permissions: PhantomData {},
-            signed_permissions: self.signed_permissions,
-            signed_ip: self.signed_ip,
-            signed_protocol: self.signed_protocol,
+            ..self
         }
     }
-}
 
-pub trait SasResourceTypeRequired {
-    fn resource_type(&self) -> AccountSasResourceType;
-}
-
-impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
-    SasResourceTypeRequired
-    for AccountSharedAccessSignatureBuilder<
-        'a,
-        SasResourceSet,
-        SasResourceTypeSet,
-        SasExpirySet,
-        SasPermissionsSet,
-    >
-where
-    SasResourceSet: ToAssign,
-    SasResourceTypeSet: ToAssign,
-    SasExpirySet: ToAssign,
-    SasPermissionsSet: ToAssign,
-{
-    #[inline]
-    fn resource_type(&self) -> AccountSasResourceType {
+    pub fn resource_type_type(&self) -> AccountSasResourceType {
         self.signed_resource_type.unwrap()
     }
-}
 
-pub trait SasResourceTypeSupport<'a> {
-    type O;
-    fn with_resource_type(self, resource_type: AccountSasResourceType) -> Self::O;
-}
-
-impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
-    SasResourceTypeSupport<'a>
-    for AccountSharedAccessSignatureBuilder<
-        'a,
-        SasResourceSet,
-        SasResourceTypeSet,
-        SasExpirySet,
-        SasPermissionsSet,
-    >
-where
-    SasResourceSet: ToAssign,
-    SasResourceTypeSet: ToAssign,
-    SasExpirySet: ToAssign,
-    SasPermissionsSet: ToAssign,
-{
-    type O = AccountSharedAccessSignatureBuilder<
-        'a,
-        SasResourceSet,
-        SasResourceTypeSet,
-        SasExpirySet,
-        SasPermissionsSet,
-    >;
-
-    #[inline]
-    fn with_resource_type(self, resource_type: AccountSasResourceType) -> Self::O {
-        AccountSharedAccessSignatureBuilder {
-            account: self.account,
-            key: self.key,
-            signed_version: self.signed_version,
-            p_signed_resource: PhantomData {},
-            signed_resource: self.signed_resource,
-            p_signed_resource_type: PhantomData {},
+    pub fn with_resource_type(self, resource_type: AccountSasResourceType) -> Self {
+        Self {
             signed_resource_type: Some(resource_type),
-            signed_start: self.signed_start,
-            p_signed_expiry: PhantomData {},
-            signed_expiry: self.signed_expiry,
-            p_signed_permissions: PhantomData {},
-            signed_permissions: self.signed_permissions,
-            signed_ip: self.signed_ip,
-            signed_protocol: self.signed_protocol,
+            ..self
         }
     }
-}
 
-pub trait SasExpiryRequired {
-    fn signed_expiry(&self) -> DateTime<Utc>;
-}
-
-impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasExpiryRequired
-    for AccountSharedAccessSignatureBuilder<
-        'a,
-        SasResourceSet,
-        SasResourceTypeSet,
-        SasExpirySet,
-        SasPermissionsSet,
-    >
-where
-    SasResourceSet: ToAssign,
-    SasResourceTypeSet: ToAssign,
-    SasExpirySet: ToAssign,
-    SasPermissionsSet: ToAssign,
-{
-    #[inline]
-    fn signed_expiry(&self) -> DateTime<Utc> {
+    pub fn expiry(&self) -> DateTime<Utc> {
         self.signed_expiry.unwrap()
     }
-}
 
-pub trait SasExpirySupport<'a> {
-    type O;
-    fn with_expiry(self, expiry: DateTime<Utc>) -> Self::O;
-}
-
-impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasExpirySupport<'a>
-    for AccountSharedAccessSignatureBuilder<
-        'a,
-        SasResourceSet,
-        SasResourceTypeSet,
-        SasExpirySet,
-        SasPermissionsSet,
-    >
-where
-    SasResourceSet: ToAssign,
-    SasResourceTypeSet: ToAssign,
-    SasExpirySet: ToAssign,
-    SasPermissionsSet: ToAssign,
-{
-    type O = AccountSharedAccessSignatureBuilder<
-        'a,
-        SasResourceSet,
-        SasResourceTypeSet,
-        SasExpirySet,
-        SasPermissionsSet,
-    >;
-
-    #[inline]
-    fn with_expiry(self, expiry: DateTime<Utc>) -> Self::O {
-        AccountSharedAccessSignatureBuilder {
-            account: self.account,
-            key: self.key,
-            signed_version: self.signed_version,
-            p_signed_resource: PhantomData {},
-            signed_resource: self.signed_resource,
-            p_signed_resource_type: PhantomData {},
-            signed_resource_type: self.signed_resource_type,
-            signed_start: self.signed_start,
-            p_signed_expiry: PhantomData {},
+    pub fn with_expiry(self, expiry: DateTime<Utc>) -> Self {
+        Self {
             signed_expiry: Some(expiry),
-            p_signed_permissions: PhantomData {},
-            signed_permissions: self.signed_permissions,
-            signed_ip: self.signed_ip,
-            signed_protocol: self.signed_protocol,
+            ..self
         }
     }
-}
 
-pub trait SasPermissionsRequired {
-    fn signed_permissions(&self) -> AccountSasPermissions;
-}
-
-impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasPermissionsRequired
-    for AccountSharedAccessSignatureBuilder<
-        'a,
-        SasResourceSet,
-        SasResourceTypeSet,
-        SasExpirySet,
-        SasPermissionsSet,
-    >
-where
-    SasResourceSet: ToAssign,
-    SasResourceTypeSet: ToAssign,
-    SasExpirySet: ToAssign,
-    SasPermissionsSet: ToAssign,
-{
-    #[inline]
-    fn signed_permissions(&self) -> AccountSasPermissions {
+    pub fn signed_permissions(&self) -> AccountSasPermissions {
         self.signed_permissions.unwrap()
     }
-}
 
-pub trait SasPermissionsSupport<'a> {
-    type O;
-    fn with_permissions(self, permissions: AccountSasPermissions) -> Self::O;
-}
-
-impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet>
-    SasPermissionsSupport<'a>
-    for AccountSharedAccessSignatureBuilder<
-        'a,
-        SasResourceSet,
-        SasResourceTypeSet,
-        SasExpirySet,
-        SasPermissionsSet,
-    >
-where
-    SasResourceSet: ToAssign,
-    SasResourceTypeSet: ToAssign,
-    SasExpirySet: ToAssign,
-    SasPermissionsSet: ToAssign,
-{
-    type O = AccountSharedAccessSignatureBuilder<
-        'a,
-        SasResourceSet,
-        SasResourceTypeSet,
-        SasExpirySet,
-        SasPermissionsSet,
-    >;
-
-    #[inline]
-    fn with_permissions(self, permissions: AccountSasPermissions) -> Self::O {
-        AccountSharedAccessSignatureBuilder {
-            account: self.account,
-            key: self.key,
-            signed_version: self.signed_version,
-            p_signed_resource: PhantomData {},
-            signed_resource: self.signed_resource,
-            p_signed_resource_type: PhantomData {},
-            signed_resource_type: self.signed_resource_type,
-            signed_start: self.signed_start,
-            p_signed_expiry: PhantomData {},
-            signed_expiry: self.signed_expiry,
-            p_signed_permissions: PhantomData {},
+    pub fn with_permissions(self, permissions: AccountSasPermissions) -> Self {
+        Self {
             signed_permissions: Some(permissions),
-            signed_ip: self.signed_ip,
-            signed_protocol: self.signed_protocol,
+            ..self
         }
     }
-}
 
-pub trait SasStartSupport<'a> {
-    type O;
-    fn with_start(self, start: DateTime<Utc>) -> Self::O;
-}
+    pub fn signed_start(&self) -> DateTime<Utc> {
+        self.signed_start.unwrap()
+    }
 
-impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasStartSupport<'a>
-    for AccountSharedAccessSignatureBuilder<
-        'a,
-        SasResourceSet,
-        SasResourceTypeSet,
-        SasExpirySet,
-        SasPermissionsSet,
-    >
-where
-    SasResourceSet: ToAssign,
-    SasResourceTypeSet: ToAssign,
-    SasExpirySet: ToAssign,
-    SasPermissionsSet: ToAssign,
-{
-    type O = AccountSharedAccessSignatureBuilder<
-        'a,
-        SasResourceSet,
-        SasResourceTypeSet,
-        SasExpirySet,
-        SasPermissionsSet,
-    >;
-
-    #[inline]
-    fn with_start(self, start: DateTime<Utc>) -> Self::O {
-        AccountSharedAccessSignatureBuilder {
-            account: self.account,
-            key: self.key,
-            signed_version: self.signed_version,
-            p_signed_resource: PhantomData {},
-            signed_resource: self.signed_resource,
-            p_signed_resource_type: PhantomData {},
-            signed_resource_type: self.signed_resource_type,
+    pub fn with_start(self, start: DateTime<Utc>) -> Self {
+        Self {
             signed_start: Some(start),
-            p_signed_expiry: PhantomData {},
-            signed_expiry: self.signed_expiry,
-            p_signed_permissions: PhantomData {},
-            signed_permissions: self.signed_permissions,
-            signed_ip: self.signed_ip,
-            signed_protocol: self.signed_protocol,
+            ..self
         }
     }
-}
 
-pub trait SasIpSupport<'a> {
-    type O;
-    fn with_ip(self, ip: &str) -> Self::O;
-}
+    pub fn ip(&self) -> &str {
+        self.signed_ip.as_deref().unwrap()
+    }
 
-impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasIpSupport<'a>
-    for AccountSharedAccessSignatureBuilder<
-        'a,
-        SasResourceSet,
-        SasResourceTypeSet,
-        SasExpirySet,
-        SasPermissionsSet,
-    >
-where
-    SasResourceSet: ToAssign,
-    SasResourceTypeSet: ToAssign,
-    SasExpirySet: ToAssign,
-    SasPermissionsSet: ToAssign,
-{
-    type O = AccountSharedAccessSignatureBuilder<
-        'a,
-        SasResourceSet,
-        SasResourceTypeSet,
-        SasExpirySet,
-        SasPermissionsSet,
-    >;
-
-    #[inline]
-    fn with_ip(self, ip: &str) -> Self::O {
-        AccountSharedAccessSignatureBuilder {
-            account: self.account,
-            key: self.key,
-            signed_version: self.signed_version,
-            p_signed_resource: PhantomData {},
-            signed_resource: self.signed_resource,
-            p_signed_resource_type: PhantomData {},
-            signed_resource_type: self.signed_resource_type,
-            signed_start: self.signed_start,
-            p_signed_expiry: PhantomData {},
-            signed_expiry: self.signed_expiry,
-            p_signed_permissions: PhantomData {},
-            signed_permissions: self.signed_permissions,
-            signed_ip: Some(ip.to_string()),
-            signed_protocol: self.signed_protocol,
+    pub fn with_ip(self, ip: String) -> Self {
+        Self {
+            signed_ip: Some(ip),
+            ..self
         }
     }
-}
 
-pub trait SasProtocolSupport<'a> {
-    type O;
-    fn with_protocol(self, protocol: SasProtocol) -> Self::O;
-}
+    pub fn protocol(&self) -> SasProtocol {
+        self.signed_protocol.unwrap()
+    }
 
-impl<'a, SasResourceSet, SasResourceTypeSet, SasExpirySet, SasPermissionsSet> SasProtocolSupport<'a>
-    for AccountSharedAccessSignatureBuilder<
-        'a,
-        SasResourceSet,
-        SasResourceTypeSet,
-        SasExpirySet,
-        SasPermissionsSet,
-    >
-where
-    SasResourceSet: ToAssign,
-    SasResourceTypeSet: ToAssign,
-    SasExpirySet: ToAssign,
-    SasPermissionsSet: ToAssign,
-{
-    type O = AccountSharedAccessSignatureBuilder<
-        'a,
-        SasResourceSet,
-        SasResourceTypeSet,
-        SasExpirySet,
-        SasPermissionsSet,
-    >;
-
-    #[inline]
-    fn with_protocol(self, protocol: SasProtocol) -> Self::O {
-        AccountSharedAccessSignatureBuilder {
-            account: self.account,
-            key: self.key,
-            signed_version: self.signed_version,
-            p_signed_resource: PhantomData {},
-            signed_resource: self.signed_resource,
-            p_signed_resource_type: PhantomData {},
-            signed_resource_type: self.signed_resource_type,
-            signed_start: self.signed_start,
-            p_signed_expiry: PhantomData {},
-            signed_expiry: self.signed_expiry,
-            p_signed_permissions: PhantomData {},
-            signed_permissions: self.signed_permissions,
-            signed_ip: self.signed_ip,
+    pub fn with_protocol(self, protocol: SasProtocol) -> Self {
+        Self {
             signed_protocol: Some(protocol),
+            ..self
         }
     }
 }

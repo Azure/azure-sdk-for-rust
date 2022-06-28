@@ -1,10 +1,10 @@
 use crate::{container::operations::*, prelude::PublicAccess};
-use azure_core::Method;
 use azure_core::{
     error::{Error, ErrorKind},
     prelude::*,
     Request, Response,
 };
+use azure_core::{Method, Url};
 use azure_storage::{
     core::clients::{
         AsStorageClient, ServiceType, StorageAccountClient, StorageClient, StorageCredentials,
@@ -117,7 +117,7 @@ impl ContainerClient {
 
     pub(crate) fn prepare_request(
         &self,
-        url: &str,
+        url: Url,
         method: Method,
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {

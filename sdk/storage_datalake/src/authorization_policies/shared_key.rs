@@ -84,7 +84,7 @@ fn string_to_sign(
     // content length must only be specified if != 0
     // this is valid from 2015-02-21
     let cl = http_headers
-        .get_as_str(&headers::CONTENT_LENGTH)
+        .get_optional_str(&headers::CONTENT_LENGTH)
         .filter(|&s| s != "0")
         .unwrap_or_default();
     format!(
@@ -127,7 +127,7 @@ fn string_to_sign(
 }
 
 fn add_if_exists<'a>(h: &'a Headers, key: &HeaderName) -> &'a str {
-    h.get_as_str(key).unwrap_or_default()
+    h.get_optional_str(key).unwrap_or_default()
 }
 
 fn canonicalize_header(headers: &Headers) -> String {
@@ -140,7 +140,7 @@ fn canonicalize_header(headers: &Headers) -> String {
     let mut result = String::new();
 
     for name in names {
-        let value = headers.get_as_str(name).unwrap();
+        let value = headers.get_optional_str(name).unwrap();
         result = result + name.as_str() + ":" + value + "\n";
     }
     result

@@ -29,7 +29,7 @@ where
     fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
         let headers = response.headers();
         let entity_with_metadata =
-            match headers.get_as_str_or_err(&HeaderName::from_static("preference-applied"))? {
+            match headers.get_str(&HeaderName::from_static("preference-applied"))? {
                 "return-no-content" => None,
                 "return-content" => Some(response.clone().try_into()?),
                 _ => {

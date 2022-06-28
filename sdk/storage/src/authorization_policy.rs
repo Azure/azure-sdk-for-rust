@@ -92,7 +92,7 @@ fn generate_authorization(
 }
 
 fn add_if_exists<'a>(h: &'a Headers, key: &HeaderName) -> &'a str {
-    h.get_as_str(key).unwrap_or_default()
+    h.get_optional_str(key).unwrap_or_default()
 }
 
 #[allow(unknown_lints)]
@@ -118,7 +118,7 @@ fn string_to_sign(
             // content length must only be specified if != 0
             // this is valid from 2015-02-21
             let content_length = h
-                .get_as_str(&CONTENT_LENGTH)
+                .get_optional_str(&CONTENT_LENGTH)
                 .filter(|&v| v != "0")
                 .unwrap_or_default();
             format!(
@@ -152,7 +152,7 @@ fn canonicalize_header(headers: &Headers) -> String {
     let mut result = String::new();
 
     for header_name in names {
-        let value = headers.get_as_str(header_name).unwrap();
+        let value = headers.get_optional_str(header_name).unwrap();
         let name = header_name.as_str();
         result = format!("{result}{name}:{value}\n");
     }

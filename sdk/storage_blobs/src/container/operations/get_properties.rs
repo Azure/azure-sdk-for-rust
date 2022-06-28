@@ -75,7 +75,7 @@ impl GetPropertiesResponse {
     ) -> azure_core::Result<GetPropertiesResponse> {
         let request_id = headers.get_as(&headers::REQUEST_ID)?;
 
-        let date = DateTime::parse_from_rfc2822(headers.get_as_str_or_err(&headers::DATE)?)
+        let date = DateTime::parse_from_rfc2822(headers.get_str(&headers::DATE)?)
             .map_kind(ErrorKind::DataConversion)?;
 
         let container = Container::from_response(container_name, headers)?;

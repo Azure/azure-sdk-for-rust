@@ -59,66 +59,76 @@ impl Headers {
         Self(Default::default())
     }
 
-    /// Get a header value given a specific header name
-    pub fn get(&self, key: &HeaderName) -> Option<&HeaderValue> {
-        self.0.get(key)
+    /// Get a header value as a String or error if it is not found
+    pub fn get_string(&self, key: &HeaderName) -> crate::Result<String> {
+        Ok(self.get_str(key)?.to_owned())
     }
 
-    /// Get a header value or error if it is not found
-    pub fn get_or_err(&self, key: &HeaderName) -> crate::Result<&HeaderValue> {
-        self.get(key).ok_or_else(|| {
+    /// Optionally get a header value as a String
+    pub fn get_optional_string(&self, key: &HeaderName) -> Option<String> {
+        self.get_string(key).ok()
+    }
+
+    /// Get a header value as a str or error if it is not found
+    pub fn get_str(&self, key: &HeaderName) -> crate::Result<&str> {
+        self.get_with(key, |s| crate::Result::Ok(s.as_str()))
+    }
+
+    /// Optionally get a header value as a str
+    pub fn get_optional_str(&self, key: &HeaderName) -> Option<&str> {
+        self.get_str(key).ok()
+    }
+
+    /// Get a header value parsing it as the type or error if it's not found or it fails to parse
+    pub fn get_as<V, E>(&self, key: &HeaderName) -> crate::Result<V>
+    where
+        V: FromStr<Err = E>,
+        E: std::error::Error + Send + Sync + 'static,
+    {
+        self.get_with(key, |s| s.as_str().parse())
+    }
+
+    /// Optionally get a header value parsing it as the type or error if it fails to parse
+    pub fn get_optional_as<V, E>(&self, key: &HeaderName) -> crate::Result<Option<V>>
+    where
+        V: FromStr<Err = E>,
+        E: std::error::Error + Send + Sync + 'static,
+    {
+        self.get_optional_with(key, |s| s.as_str().parse())
+    }
+
+    /// Get a header value using the parser or error if it is not found or fails to parse
+    pub fn get_with<'a, V, F, E>(&'a self, key: &HeaderName, parser: F) -> crate::Result<V>
+    where
+        F: FnOnce(&'a HeaderValue) -> Result<V, E>,
+        E: std::error::Error + Send + Sync + 'static,
+    {
+        self.get_optional_with(key, parser)?.ok_or_else(|| {
             Error::with_message(ErrorKind::DataConversion, || {
                 format!("header not found {}", key.as_str())
             })
         })
     }
 
-    /// Get a header value as a str
-    pub fn get_as_str(&self, key: &HeaderName) -> Option<&str> {
-        self.get(key).map(|v| v.as_str())
-    }
-
-    /// Get a header value as a str or error if it is not found
-    pub fn get_as_str_or_err(&self, key: &HeaderName) -> crate::Result<&str> {
-        self.get_or_err(key).map(|v| v.as_str())
-    }
-
-    /// Get a header value as a String
-    pub fn get_as_string(&self, key: &HeaderName) -> Option<String> {
-        self.get(key).map(|v| v.as_str().to_string())
-    }
-
-    /// Get a header value as a String or error if it is not found
-    pub fn get_as_string_or_err(&self, key: &HeaderName) -> crate::Result<String> {
-        self.get_or_err(key).map(|v| v.as_str().to_string())
-    }
-
-    pub fn get_optional_as<V, E>(&self, key: &HeaderName) -> crate::Result<Option<V>>
+    /// Optionally get a header value using the parser or error if it fails to parse
+    pub fn get_optional_with<'a, V, F, E>(
+        &'a self,
+        key: &HeaderName,
+        parser: F,
+    ) -> crate::Result<Option<V>>
     where
-        V: FromStr<Err = E>,
+        F: FnOnce(&'a HeaderValue) -> Result<V, E>,
         E: std::error::Error + Send + Sync + 'static,
     {
-        self.get(key)
+        self.0
+            .get(key)
             .map(|v: &HeaderValue| {
-                let v = v.as_str();
-                v.parse::<V>().with_context(ErrorKind::DataConversion, || {
+                parser(v).with_context(ErrorKind::DataConversion, || {
                     let ty = std::any::type_name::<V>();
-                    format!("unable to parse header '{key:?}: {v}' into {ty}",)
+                    format!("unable to parse header '{key:?}: {v:?}' into {ty}",)
                 })
             })
             .transpose()
-    }
-
-    pub fn get_as<V, E>(&self, key: &HeaderName) -> crate::Result<V>
-    where
-        V: FromStr<Err = E>,
-        E: std::error::Error + Send + Sync + 'static,
-    {
-        self.get_optional_as(key)?.ok_or_else(|| {
-            Error::with_message(ErrorKind::Other, || {
-                format!("header not found {}", key.as_str())
-            })
-        })
     }
 
     /// Insert a header name/value pair

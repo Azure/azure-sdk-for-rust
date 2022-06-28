@@ -1,11 +1,7 @@
 pub use crate::core::{
     clients::{AsStorageClient, StorageAccountClient, StorageClient},
     shared_access_signature::{
-        account_sas::{
-            AccountSasPermissions, AccountSasResource, AccountSasResourceType,
-            ClientAccountSharedAccessSignature, SasExpirySupport, SasPermissionsSupport,
-            SasProtocolSupport, SasResourceSupport, SasResourceTypeSupport, SasStartSupport,
-        },
+        account_sas::{AccountSasPermissions, AccountSasResource, AccountSasResourceType},
         service_sas::{BlobSasPermissions, BlobSignedResource},
         SasProtocol, SasToken,
     },

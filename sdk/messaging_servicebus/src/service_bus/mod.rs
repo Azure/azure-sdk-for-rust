@@ -173,7 +173,7 @@ async fn peek_lock_message2(
     let status = res.status();
     let lock_location = res
         .headers()
-        .get_as_string(&headers::LOCATION)
+        .get_optional_string(&headers::LOCATION)
         .unwrap_or_default();
     let body = body_bytes_to_utf8(&res.into_body().await)?;
 

@@ -33,6 +33,7 @@ impl FindBlobsByTagsBuilder {
         next_marker: NextMarker => Some(next_marker),
         max_results: MaxResults => Some(max_results),
         timeout: Timeout => Some(timeout),
+        context: Context => context,
     }
 
     // TODO: Make this a stream instead of a `Future`

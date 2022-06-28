@@ -33,6 +33,7 @@ impl PutMessageBuilder {
         visibility_timeout: VisibilityTimeout => Some(visibility_timeout),
         ttl: MessageTTL => Some(ttl),
         timeout: Timeout => Some(timeout),
+        context: Context => context,
     }
 
     pub fn into_future(mut self) -> Response {

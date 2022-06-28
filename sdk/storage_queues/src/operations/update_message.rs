@@ -35,6 +35,7 @@ impl UpdateMessageBuilder {
 
     setters! {
         timeout: Timeout => Some(timeout),
+        context: Context => context,
     }
 
     pub fn into_future(mut self) -> Response {
@@ -97,8 +98,7 @@ impl std::convert::TryFrom<AzureResponse> for UpdateMessageResponse {
                 headers,
                 &HeaderName::from_static("x-ms-time-next-visible"),
             )?,
-            pop_receipt: headers
-                .get_as_string_or_err(&HeaderName::from_static("x-ms-popreceipt"))?,
+            pop_receipt: headers.get_string(&HeaderName::from_static("x-ms-popreceipt"))?,
         })
     }
 }

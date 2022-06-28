@@ -76,15 +76,15 @@ impl GetACLResponse {
         // todo: parse SAS policies
         let public_access = public_access_from_header(&headers)?;
 
-        let etag = headers.get_as_string_or_err(&headers::ETAG)?;
+        let etag = headers.get_string(&headers::ETAG)?;
 
-        let last_modified = headers.get_as_str_or_err(&headers::LAST_MODIFIED)?;
+        let last_modified = headers.get_str(&headers::LAST_MODIFIED)?;
         let last_modified =
             DateTime::parse_from_rfc2822(last_modified).map_kind(ErrorKind::DataConversion)?;
 
         let request_id = headers.get_as(&headers::REQUEST_ID)?;
 
-        let date = headers.get_as_str_or_err(&headers::DATE)?;
+        let date = headers.get_str(&headers::DATE)?;
         let date = DateTime::parse_from_rfc2822(date).map_kind(ErrorKind::DataConversion)?;
 
         let stored_access_policy_list = StoredAccessPolicyList::from_xml(&body)?;

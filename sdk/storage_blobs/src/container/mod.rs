@@ -85,12 +85,12 @@ impl Container {
     where
         NAME: Into<String>,
     {
-        let last_modified = headers.get_as_str_or_err(&headers::LAST_MODIFIED)?;
+        let last_modified = headers.get_str(&headers::LAST_MODIFIED)?;
         let last_modified =
             DateTime::parse_from_rfc2822(last_modified).map_kind(ErrorKind::DataConversion)?;
         let last_modified = DateTime::from_utc(last_modified.naive_utc(), Utc);
 
-        let e_tag = headers.get_as_string_or_err(&headers::ETAG)?;
+        let e_tag = headers.get_string(&headers::ETAG)?;
 
         let lease_status = headers.get_as(&LEASE_STATUS)?;
         let lease_state = headers.get_as(&LEASE_STATE)?;
