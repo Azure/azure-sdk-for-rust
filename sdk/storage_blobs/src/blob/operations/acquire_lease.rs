@@ -46,7 +46,7 @@ impl AcquireLeaseBuilder {
 
             let mut request =
                 self.blob_client
-                    .prepare_request(url.as_str(), azure_core::Method::PUT, None)?;
+                    .prepare_request(url, azure_core::Method::PUT, None)?;
             request.insert_header(LEASE_ACTION, "acquire");
             request.add_mandatory_header(&self.lease_duration);
             request.add_optional_header(&self.proposed_lease_id);

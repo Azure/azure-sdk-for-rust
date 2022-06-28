@@ -41,7 +41,7 @@ impl FindBlobsByTagsBuilder {
             let mut request = self
                 .client
                 .storage_account_client()
-                .blob_storage_request(azure_core::Method::GET);
+                .blob_storage_request(azure_core::Method::GET)?;
 
             self.timeout.append_to_url_query(request.url_mut());
             request

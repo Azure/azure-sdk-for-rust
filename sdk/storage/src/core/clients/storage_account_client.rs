@@ -59,6 +59,12 @@ pub enum ServiceType {
     Table,
 }
 
+impl Default for ServiceType {
+    fn default() -> Self {
+        Self::Blob
+    }
+}
+
 #[derive(Debug)]
 pub struct StorageAccountClient {
     storage_credentials: StorageCredentials,
@@ -178,14 +184,10 @@ impl StorageAccountClient {
         let key = key.into();
         let storage_credentials = StorageCredentials::Key(account.clone(), key.clone());
         let pipeline = new_pipeline_from_options(StorageOptions::new(), storage_credentials);
-        let blob_storage_url =
-            Url::parse(&format!("{}{}", blob_storage_url.as_str(), account)).unwrap();
-        let table_storage_url =
-            Url::parse(&format!("{}{}", table_storage_url.as_str(), account)).unwrap();
-        let queue_storage_url =
-            Url::parse(&format!("{}{}", queue_storage_url.as_str(), account)).unwrap();
-        let filesystem_url =
-            Url::parse(&format!("{}{}", filesystem_url.as_str(), account)).unwrap();
+        let blob_storage_url = Url::parse(&format!("{}{}", blob_storage_url, account)).unwrap();
+        let table_storage_url = Url::parse(&format!("{}{}", table_storage_url, account)).unwrap();
+        let queue_storage_url = Url::parse(&format!("{}{}", queue_storage_url, account)).unwrap();
+        let filesystem_url = Url::parse(&format!("{}{}", filesystem_url, account)).unwrap();
 
         Arc::new(Self {
             blob_storage_url,
@@ -420,7 +422,7 @@ impl StorageAccountClient {
 
     pub fn prepare_request(
         &self,
-        url: &str,
+        url: Url,
         method: Method,
         service_type: ServiceType,
         request_body: Option<Bytes>,
@@ -428,18 +430,14 @@ impl StorageAccountClient {
         let dt = chrono::Utc::now();
         let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
-        let mut url = url::Url::parse(url).with_context(ErrorKind::DataConversion, || {
-            format!("failed to parse request url: {url}")
-        })?;
+        let mut request = Request::new(url, method);
 
         // if we have a SAS token (in form of query pairs), let's add it to the url here
         if let StorageCredentials::SASToken(query_pairs) = &self.storage_credentials {
             for (k, v) in query_pairs {
-                url.query_pairs_mut().append_pair(k, v);
+                request.url_mut().query_pairs_mut().append_pair(k, v);
             }
         }
-
-        let mut request = Request::new(url, method);
 
         // let's add content length to avoid "chunking" errors.
         match request_body {
@@ -509,8 +507,16 @@ impl StorageAccountClient {
     }
 
     /// Prepares' an `azure_core::Request`.
-    pub(crate) fn blob_storage_request(&self, http_method: azure_core::Method) -> Request {
-        Request::new(self.blob_storage_url().clone(), http_method)
+    pub(crate) fn blob_storage_request(
+        &self,
+        http_method: azure_core::Method,
+    ) -> azure_core::Result<Request> {
+        self.prepare_request(
+            self.blob_storage_url().clone(),
+            http_method,
+            ServiceType::Blob,
+            None,
+        )
     }
 }
 
@@ -544,7 +550,6 @@ fn add_if_exists<'a>(headers: &'a Headers, key: &HeaderName) -> &'a str {
     headers.get_as_str(key).unwrap_or_default()
 }
 
-#[allow(unknown_lints)]
 fn string_to_sign(
     headers: &Headers,
     url: &url::Url,

@@ -64,11 +64,10 @@ impl ListQueuesBuilder {
                 this.timeout.append_to_url_query(&mut url);
                 AppendToUrlQuery::append_to_url_query(&this.timeout, &mut url);
 
-                let mut request = this.service_client.storage_client.prepare_request(
-                    url.as_str(),
-                    Method::GET,
-                    None,
-                )?;
+                let mut request =
+                    this.service_client
+                        .storage_client
+                        .prepare_request(url, Method::GET, None)?;
 
                 let response = this
                     .service_client

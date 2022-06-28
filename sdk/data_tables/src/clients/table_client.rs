@@ -1,6 +1,7 @@
 use crate::{clients::TableServiceClient, requests::*};
 use azure_core::Method;
 use azure_core::Request;
+use azure_core::Url;
 use azure_storage::core::clients::StorageAccountClient;
 use bytes::Bytes;
 use std::sync::Arc;
@@ -66,7 +67,7 @@ impl TableClient {
 
     pub(crate) fn prepare_request(
         &self,
-        url: &str,
+        url: Url,
         method: Method,
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {

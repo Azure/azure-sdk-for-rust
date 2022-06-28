@@ -22,7 +22,7 @@ impl<'a> CreateTableBuilder<'a> {
     }
 
     pub async fn execute(&self) -> azure_core::Result<CreateTableResponse> {
-        let url = self.table_client.url();
+        let url = self.table_client.url().clone();
 
         #[derive(Debug, Clone, Serialize)]
         struct RequestBody<'a> {
@@ -35,7 +35,7 @@ impl<'a> CreateTableBuilder<'a> {
         })?;
 
         let mut request = self.table_client.prepare_request(
-            url.as_str(),
+            url,
             Method::POST,
             Some(bytes::Bytes::from(request_body_serialized)),
         )?;

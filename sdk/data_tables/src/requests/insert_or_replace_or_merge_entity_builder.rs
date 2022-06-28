@@ -44,7 +44,7 @@ impl<'a> InsertOrReplaceOrMergeEntityBuilder<'a> {
         let request_body_serialized = serde_json::to_string(entity)?;
 
         let mut request = self.entity_client.prepare_request(
-            url.as_str(),
+            url,
             match self.operation {
                 Operation::InsertOrMerge => crate::MERGE.to_owned(),
                 Operation::InsertOrReplace => Method::PUT,

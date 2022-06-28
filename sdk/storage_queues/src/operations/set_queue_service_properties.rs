@@ -49,7 +49,7 @@ impl SetQueueServicePropertiesBuilder {
                 serde_xml_rs::to_string(&self.properties).map_kind(ErrorKind::DataConversion)?;
 
             let mut request = self.service_client.storage_client.prepare_request(
-                url.as_str(),
+                url,
                 Method::PUT,
                 Some(xml_body.into()),
             )?;

@@ -39,7 +39,7 @@ impl ReleaseLeaseBuilder {
 
             let mut request =
                 self.container_lease_client
-                    .prepare_request(url.as_str(), Method::PUT, None)?;
+                    .prepare_request(url, Method::PUT, None)?;
             request.insert_header(LEASE_ACTION, "release");
             request.add_mandatory_header(self.container_lease_client.lease_id());
 

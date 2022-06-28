@@ -1,10 +1,10 @@
 use crate::core::clients::{ServiceType, StorageAccountClient};
 use crate::operations::*;
-use azure_core::Method;
 use azure_core::{
     error::{Error, ErrorKind},
     Context, Request, Response,
 };
+use azure_core::{Method, Url};
 use bytes::Bytes;
 use std::sync::Arc;
 
@@ -89,7 +89,7 @@ impl StorageClient {
 
     pub fn prepare_request(
         &self,
-        url: &str,
+        url: Url,
         method: Method,
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
