@@ -24,24 +24,24 @@ pub(crate) fn activity_id_from_headers(headers: &Headers) -> azure_core::Result<
 }
 
 pub(crate) fn content_path_from_headers(headers: &Headers) -> azure_core::Result<&str> {
-    headers.get_as_str_or_err(&HEADER_CONTENT_PATH)
+    headers.get_str(&HEADER_CONTENT_PATH)
 }
 
 pub(crate) fn alt_content_path_from_headers(headers: &Headers) -> azure_core::Result<&str> {
-    headers.get_as_str_or_err(&HEADER_ALT_CONTENT_PATH)
+    headers.get_str(&HEADER_ALT_CONTENT_PATH)
 }
 
 pub(crate) fn resource_quota_from_headers(
     headers: &Headers,
 ) -> azure_core::Result<Vec<ResourceQuota>> {
-    let s = headers.get_as_str_or_err(&HEADER_RESOURCE_QUOTA)?;
+    let s = headers.get_str(&HEADER_RESOURCE_QUOTA)?;
     resource_quotas_from_str(s)
 }
 
 pub(crate) fn resource_usage_from_headers(
     headers: &Headers,
 ) -> azure_core::Result<Vec<ResourceQuota>> {
-    let s = headers.get_as_str_or_err(&HEADER_RESOURCE_USAGE)?;
+    let s = headers.get_str(&HEADER_RESOURCE_USAGE)?;
     resource_quotas_from_str(s)
 }
 
@@ -104,7 +104,7 @@ pub(crate) fn transport_request_id_from_headers(headers: &Headers) -> azure_core
 }
 
 pub(crate) fn global_committed_lsn_from_headers(headers: &Headers) -> azure_core::Result<u64> {
-    let s = headers.get_as_str_or_err(&HEADER_GLOBAL_COMMITTED_LSN)?;
+    let s = headers.get_str(&HEADER_GLOBAL_COMMITTED_LSN)?;
     Ok(if s == "-1" {
         0
     } else {
@@ -140,23 +140,23 @@ pub(crate) fn current_replica_set_size_from_headers_optional(
 }
 
 pub(crate) fn schema_version_from_headers(headers: &Headers) -> azure_core::Result<&str> {
-    headers.get_as_str_or_err(&HEADER_SCHEMA_VERSION)
+    headers.get_str(&HEADER_SCHEMA_VERSION)
 }
 
 pub(crate) fn server_from_headers(headers: &Headers) -> azure_core::Result<&str> {
-    headers.get_as_str_or_err(&headers::SERVER)
+    headers.get_str(&headers::SERVER)
 }
 
 pub(crate) fn service_version_from_headers(headers: &Headers) -> azure_core::Result<&str> {
-    headers.get_as_str_or_err(&HEADER_SERVICE_VERSION)
+    headers.get_str(&HEADER_SERVICE_VERSION)
 }
 
 pub(crate) fn content_location_from_headers(headers: &Headers) -> azure_core::Result<&str> {
-    headers.get_as_str_or_err(&headers::CONTENT_LOCATION)
+    headers.get_str(&headers::CONTENT_LOCATION)
 }
 
 pub(crate) fn gateway_version_from_headers(headers: &Headers) -> azure_core::Result<&str> {
-    headers.get_as_str_or_err(&HEADER_GATEWAY_VERSION)
+    headers.get_str(&HEADER_GATEWAY_VERSION)
 }
 
 pub(crate) fn max_media_storage_usage_mb_from_headers(
@@ -173,7 +173,7 @@ fn _date_from_headers(
     headers: &Headers,
     header_name: &HeaderName,
 ) -> azure_core::Result<DateTime<Utc>> {
-    let date = headers.get_as_str_or_err(header_name)?;
+    let date = headers.get_str(header_name)?;
     // since Azure returns "GMT" instead of +0000 as timezone we replace it ourselves.
     // For example: Wed, 15 Jan 2020 23:39:44.369 GMT
     let date = date.replace("GMT", "+0000");

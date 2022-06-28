@@ -102,10 +102,10 @@ impl HeadPathResponse {
             content_length: headers.get_optional_as(&headers::CONTENT_LENGTH)?,
             content_type: headers.get_optional_as(&headers::CONTENT_TYPE)?,
             properties: headers
-                .get_as_str(&headers::PROPERTIES)
+                .get_optional_str(&headers::PROPERTIES)
                 .map(Properties::try_from)
                 .transpose()?,
-            acl: headers.get_as_string(&headers::ACL),
+            acl: headers.get_optional_string(&headers::ACL),
         })
     }
 }

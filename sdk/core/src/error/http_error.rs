@@ -71,7 +71,7 @@ impl std::error::Error for HttpError {}
 ///
 /// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
 fn get_error_code_from_header(response: &Response) -> Option<String> {
-    response.headers().get_as_string(&headers::ERROR_CODE)
+    response.headers().get_optional_string(&headers::ERROR_CODE)
 }
 
 /// Gets the error code if it's present in the body
