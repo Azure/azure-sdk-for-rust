@@ -50,7 +50,7 @@ mod consistency {
     use azure_core::error::{Error, ErrorKind, ResultExt};
     use bytes::Bytes;
     use serde::{Deserialize, Deserializer};
-    use std::convert::TryInto;
+    use std::{convert::TryInto, str::FromStr};
 
     #[derive(Debug, Clone, PartialEq)]
     pub struct ConsistencyCRC64(Bytes);
@@ -99,12 +99,18 @@ mod consistency {
         }
     }
 
+    impl FromStr for ConsistencyCRC64 {
+        type Err = azure_core::error::Error;
+
+        fn from_str(s: &str) -> Result<Self, Self::Err> {
+            Self::decode(s)
+        }
+    }
+
     #[derive(Debug, Clone, PartialEq)]
     pub struct ConsistencyMD5(Bytes);
 
     const MD5_BYTE_LENGTH: usize = 16;
-
-    impl ConsistencyMD5 {}
 
     impl ConsistencyMD5 {
         /// Decodes from base64 encoded input
@@ -143,6 +149,14 @@ mod consistency {
         {
             let bytes = String::deserialize(deserializer)?;
             ConsistencyMD5::decode(bytes).map_err(serde::de::Error::custom)
+        }
+    }
+
+    impl FromStr for ConsistencyMD5 {
+        type Err = azure_core::error::Error;
+
+        fn from_str(s: &str) -> Result<Self, Self::Err> {
+            Self::decode(s)
         }
     }
 

@@ -36,7 +36,7 @@ pub fn request_id_from_headers(headers: &Headers) -> crate::Result<RequestId> {
 }
 
 pub fn client_request_id_from_headers_optional(headers: &Headers) -> Option<String> {
-    headers.get_as_string(&CLIENT_REQUEST_ID)
+    headers.get_optional_string(&CLIENT_REQUEST_ID)
 }
 
 pub fn last_modified_from_headers_optional(
@@ -57,7 +57,7 @@ pub fn rfc2822_from_headers_mandatory(
     headers: &Headers,
     header_name: &HeaderName,
 ) -> crate::Result<DateTime<Utc>> {
-    let date = headers.get_as_str_or_err(header_name)?;
+    let date = headers.get_str(header_name)?;
     utc_date_from_rfc2822(date)
 }
 
@@ -69,23 +69,23 @@ pub fn utc_date_from_rfc2822(date: &str) -> crate::Result<DateTime<Utc>> {
 pub fn continuation_token_from_headers_optional(
     headers: &Headers,
 ) -> crate::Result<Option<String>> {
-    Ok(headers.get_as_string(&CONTINUATION))
+    Ok(headers.get_optional_string(&CONTINUATION))
 }
 
 pub fn sku_name_from_headers(headers: &Headers) -> crate::Result<String> {
-    headers.get_as_string_or_err(&SKU_NAME)
+    headers.get_string(&SKU_NAME)
 }
 
 pub fn account_kind_from_headers(headers: &Headers) -> crate::Result<String> {
-    headers.get_as_string_or_err(&ACCOUNT_KIND)
+    headers.get_string(&ACCOUNT_KIND)
 }
 
 pub fn etag_from_headers_optional(headers: &Headers) -> crate::Result<Option<String>> {
-    Ok(headers.get_as_string(&ETAG))
+    Ok(headers.get_optional_string(&ETAG))
 }
 
 pub fn etag_from_headers(headers: &Headers) -> crate::Result<String> {
-    headers.get_as_string_or_err(&ETAG)
+    headers.get_string(&ETAG)
 }
 
 pub fn lease_time_from_headers(headers: &Headers) -> crate::Result<u8> {
@@ -107,15 +107,15 @@ pub fn sequence_number_from_headers(headers: &Headers) -> crate::Result<u64> {
 }
 
 pub fn session_token_from_headers(headers: &Headers) -> crate::Result<SessionToken> {
-    headers.get_as_string_or_err(&SESSION_TOKEN)
+    headers.get_string(&SESSION_TOKEN)
 }
 
 pub fn server_from_headers(headers: &Headers) -> crate::Result<&str> {
-    headers.get_as_str_or_err(&SERVER)
+    headers.get_str(&SERVER)
 }
 
 pub fn version_from_headers(headers: &Headers) -> crate::Result<&str> {
-    headers.get_as_str_or_err(&VERSION)
+    headers.get_str(&VERSION)
 }
 
 pub fn request_server_encrypted_from_headers(headers: &Headers) -> crate::Result<bool> {
@@ -123,7 +123,7 @@ pub fn request_server_encrypted_from_headers(headers: &Headers) -> crate::Result
 }
 
 pub fn content_type_from_headers(headers: &Headers) -> crate::Result<&str> {
-    headers.get_as_str_or_err(&CONTENT_TYPE)
+    headers.get_str(&CONTENT_TYPE)
 }
 
 pub fn item_count_from_headers(headers: &Headers) -> crate::Result<u32> {

@@ -32,7 +32,7 @@ impl NextMarker {
     }
 
     pub fn from_header_optional(headers: &Headers) -> crate::Result<Option<Self>> {
-        let header_as_str = headers.get_as_str(&headers::CONTINUATION);
+        let header_as_str = headers.get_optional_str(&headers::CONTINUATION);
 
         Ok(header_as_str
             .filter(|h| !h.is_empty())

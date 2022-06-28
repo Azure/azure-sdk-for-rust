@@ -541,7 +541,7 @@ fn generate_authorization(
 }
 
 fn add_if_exists<'a>(headers: &'a Headers, key: &HeaderName) -> &'a str {
-    headers.get_as_str(key).unwrap_or_default()
+    headers.get_optional_str(key).unwrap_or_default()
 }
 
 fn string_to_sign(
@@ -566,7 +566,7 @@ fn string_to_sign(
             // content length must only be specified if != 0
             // this is valid from 2015-02-21
             let cl = headers
-                .get_as_str(&CONTENT_LENGTH)
+                .get_optional_str(&CONTENT_LENGTH)
                 .filter(|&s| s != "0")
                 .unwrap_or_default();
             format!(

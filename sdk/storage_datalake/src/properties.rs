@@ -53,7 +53,7 @@ impl TryFrom<&Headers> for Properties {
     type Error = crate::Error;
 
     fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
-        let header_value = headers.get_as_str_or_err(&PROPERTIES)?;
+        let header_value = headers.get_str(&PROPERTIES)?;
         Properties::try_from(header_value)
     }
 }
