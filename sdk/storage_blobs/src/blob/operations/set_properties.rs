@@ -82,7 +82,7 @@ impl SetPropertiesBuilder {
             url.query_pairs_mut().append_pair("comp", "properties");
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = self.blob_client.prepare_request(url, Method::PUT, None)?;
+            let mut request = self.blob_client.prepare_request(url, Method::Put, None)?;
             request.add_optional_header(&self.lease_id);
             request.add_optional_header(&self.cache_control);
             request.add_optional_header(&self.content_type);
