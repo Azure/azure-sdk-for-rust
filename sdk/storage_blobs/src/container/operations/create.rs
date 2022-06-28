@@ -1,6 +1,6 @@
 use crate::{container::PublicAccess, prelude::*};
 use azure_core::Method;
-use azure_core::{headers::AsHeaders, prelude::*};
+use azure_core::{headers::AsHeaders, headers::Headers, prelude::*};
 
 #[derive(Debug, Clone)]
 pub struct CreateBuilder {
@@ -37,17 +37,20 @@ impl CreateBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = self
-                .container_client
-                .prepare_request(url, Method::Put, None)?;
-            for (name, value) in self.public_access.as_headers() {
-                request.insert_header(name, value);
-            }
+            let mut headers = Headers::new();
             if let Some(metadata) = &self.metadata {
                 for m in metadata.iter() {
-                    request.add_mandatory_header(&m);
+                    headers.add(m);
                 }
             }
+
+            for (name, value) in self.public_access.as_headers() {
+                headers.insert(name, value);
+            }
+
+            let mut request =
+                self.container_client
+                    .prepare_request(url, Method::Put, headers, None)?;
 
             let _response = self
                 .container_client

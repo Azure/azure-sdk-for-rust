@@ -1,8 +1,5 @@
 use crate::{prelude::*, requests::*};
-
-use azure_core::Method;
-use azure_core::Request;
-use azure_core::Url;
+use azure_core::{headers::Headers, Method, Request, Url};
 use azure_storage::core::clients::StorageAccountClient;
 use bytes::Bytes;
 use std::sync::Arc;
@@ -58,9 +55,11 @@ impl PartitionKeyClient {
         &self,
         url: Url,
         method: Method,
+        headers: Headers,
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
-        self.table_client.prepare_request(url, method, request_body)
+        self.table_client
+            .prepare_request(url, method, headers, request_body)
     }
 }
 

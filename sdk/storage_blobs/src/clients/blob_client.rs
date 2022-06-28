@@ -2,6 +2,7 @@ use crate::{blob::operations::*, prelude::*, BA512Range};
 use azure_core::Method;
 use azure_core::{
     error::{Error, ErrorKind},
+    headers::Headers,
     prelude::*,
     Request, Response,
 };
@@ -226,10 +227,11 @@ impl BlobClient {
         &self,
         url: Url,
         method: Method,
+        headers: Headers,
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
         self.container_client
-            .prepare_request(url, method, request_body)
+            .prepare_request(url, method, headers, request_body)
     }
 
     pub(crate) async fn send(

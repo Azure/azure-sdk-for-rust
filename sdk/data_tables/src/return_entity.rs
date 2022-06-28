@@ -1,4 +1,4 @@
-use azure_core::headers::{self, Header};
+use azure_core::headers::{Header, HeaderName, HeaderValue, PREFER};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ReturnEntity(bool);
@@ -10,11 +10,11 @@ impl ReturnEntity {
 }
 
 impl Header for ReturnEntity {
-    fn name(&self) -> headers::HeaderName {
-        "Prefer".into()
+    fn name(&self) -> HeaderName {
+        PREFER
     }
 
-    fn value(&self) -> headers::HeaderValue {
+    fn value(&self) -> HeaderValue {
         match self.0 {
             true => "return-content",
             false => "return-no-content",

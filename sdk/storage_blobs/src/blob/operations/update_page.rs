@@ -50,19 +50,22 @@ impl UpdatePageBuilder {
             self.timeout.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("comp", "page");
 
+            let mut headers = Headers::new();
+            headers.insert(PAGE_WRITE, "update");
+            headers.insert(BLOB_TYPE, "PageBlob");
+            headers.add(self.ba512_range);
+            headers.add(self.sequence_number_condition);
+            headers.add(self.hash);
+            headers.add(self.if_modified_since_condition);
+            headers.add(self.if_match_condition);
+            headers.add(self.lease_id);
+
             let mut request = self.blob_client.prepare_request(
                 url,
                 azure_core::Method::Put,
+                headers,
                 Some(self.content.clone()),
             )?;
-            request.insert_header(PAGE_WRITE, "update");
-            request.insert_header(BLOB_TYPE, "PageBlob");
-            request.add_mandatory_header(&self.ba512_range);
-            request.add_optional_header(&self.sequence_number_condition);
-            request.add_optional_header(&self.hash);
-            request.add_optional_header(&self.if_modified_since_condition);
-            request.add_optional_header(&self.if_match_condition);
-            request.add_optional_header(&self.lease_id);
 
             let response = self
                 .blob_client

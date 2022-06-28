@@ -2,6 +2,7 @@ use crate::{prelude::*, responses::*};
 use azure_core::Method;
 use azure_core::{
     error::{Error, ErrorKind},
+    headers::*,
     prelude::*,
 };
 use std::convert::TryInto;
@@ -31,11 +32,13 @@ impl<'a> DeleteTableBuilder<'a> {
             .pop()
             .push(&format!("Tables('{}')", self.table_client.table_name()));
 
-        let mut request = self
+        let mut headers = Headers::new();
+        headers.add(self.client_request_id.clone());
+        headers.insert(ACCEPT, "application/json");
+
+        let request = self
             .table_client
-            .prepare_request(url, Method::Delete, None)?;
-        request.add_optional_header(&self.client_request_id);
-        request.insert_header("Accept", "application/json");
+            .prepare_request(url, Method::Delete, headers, None)?;
 
         let response = self
             .table_client

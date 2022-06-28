@@ -43,10 +43,12 @@ impl GetBlockListBuilder {
             self.block_list_type.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
+            let mut headers = Headers::new();
+            headers.add(self.lease_id);
+
             let mut request =
                 self.blob_client
-                    .prepare_request(url, azure_core::Method::Get, None)?;
-            request.add_optional_header(&self.lease_id);
+                    .prepare_request(url, azure_core::Method::Get, headers, None)?;
 
             let response = self
                 .blob_client

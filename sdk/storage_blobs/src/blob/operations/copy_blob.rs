@@ -66,24 +66,26 @@ impl CopyBlobBuilder {
             let mut url = self.blob_client.url_with_segments(None)?;
 
             self.timeout.append_to_url_query(&mut url);
-            let mut request =
-                self.blob_client
-                    .prepare_request(url, azure_core::Method::Put, None)?;
-            request.insert_header(COPY_SOURCE, self.source_url.as_str().to_owned());
+            let mut headers = Headers::new();
+            headers.insert(COPY_SOURCE, self.source_url.as_str().to_owned());
             if let Some(metadata) = &self.metadata {
                 for m in metadata.iter() {
-                    request.add_mandatory_header(&m);
+                    headers.add(m);
                 }
             }
-            request.add_optional_header(&self.sequence_number_condition);
-            request.add_optional_header(&self.if_modified_since_condition);
-            request.add_optional_header(&self.if_match_condition);
-            request.add_optional_header(&self.access_tier);
-            request.add_optional_header(&self.lease_id);
-            request.add_optional_header(&self.if_source_since_condition);
-            request.add_optional_header(&self.if_source_match_condition);
-            request.add_optional_header(&self.source_lease_id);
-            request.add_mandatory_header(&self.rehydrate_priority);
+            headers.add(self.sequence_number_condition);
+            headers.add(self.if_modified_since_condition);
+            headers.add(self.if_match_condition);
+            headers.add(self.access_tier);
+            headers.add(self.lease_id);
+            headers.add(self.if_source_since_condition);
+            headers.add(self.if_source_match_condition);
+            headers.add(self.source_lease_id);
+            headers.add(self.rehydrate_priority);
+
+            let mut request =
+                self.blob_client
+                    .prepare_request(url, azure_core::Method::Put, headers, None)?;
 
             let response = self
                 .blob_client

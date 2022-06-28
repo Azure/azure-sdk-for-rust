@@ -1,6 +1,5 @@
 use crate::{prelude::*, responses::*};
-use azure_core::Method;
-use azure_core::{error::Result, prelude::*, AppendToUrlQuery};
+use azure_core::{error::Result, headers::*, prelude::*, AppendToUrlQuery, Method};
 use serde::de::DeserializeOwned;
 use std::convert::TryInto;
 
@@ -33,9 +32,13 @@ impl<'a> GetEntityBuilder<'a> {
 
         self.select.append_to_url_query(&mut url);
 
-        let mut request = self.entity_client.prepare_request(url, Method::Get, None)?;
-        request.add_optional_header(&self.client_request_id);
-        request.insert_header("Accept", "application/json;odata=fullmetadata");
+        let mut headers = Headers::new();
+        headers.add(self.client_request_id.clone());
+        headers.insert(ACCEPT, "application/json;odata=fullmetadata");
+
+        let request = self
+            .entity_client
+            .prepare_request(url, Method::Get, headers, None)?;
 
         let response = self
             .entity_client

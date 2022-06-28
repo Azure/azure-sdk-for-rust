@@ -1,6 +1,7 @@
 use crate::{clients::PopReceiptClient, prelude::*};
 use azure_core::{
     error::Error,
+    headers::Headers,
     headers::{rfc2822_from_headers_mandatory, HeaderName},
     prelude::*,
     Context, Method, Response as AzureResponse,
@@ -56,6 +57,7 @@ impl UpdateMessageBuilder {
             let mut request = self.pop_receipt_client.storage_client().prepare_request(
                 url,
                 Method::Put,
+                Headers::new(),
                 Some(message.into()),
             )?;
 

@@ -1,5 +1,5 @@
 use crate::{blob::operations::put_block::PutBlockResponse, prelude::*};
-use azure_core::prelude::*;
+use azure_core::{headers::*, prelude::*};
 use bytes::Bytes;
 
 #[derive(Debug, Clone)]
@@ -43,15 +43,18 @@ impl AppendBlockBuilder {
             self.timeout.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("comp", "appendblock");
 
+            let mut headers = Headers::new();
+            headers.add(self.hash);
+            headers.add(self.condition_max_size);
+            headers.add(self.condition_append_position);
+            headers.add(self.lease_id);
+
             let mut request = self.blob_client.prepare_request(
                 url,
                 azure_core::Method::Put,
+                headers,
                 Some(self.body.clone()),
             )?;
-            request.add_optional_header(&self.hash);
-            request.add_optional_header(&self.condition_max_size);
-            request.add_optional_header(&self.condition_append_position);
-            request.add_optional_header(&self.lease_id);
 
             let response = self
                 .blob_client

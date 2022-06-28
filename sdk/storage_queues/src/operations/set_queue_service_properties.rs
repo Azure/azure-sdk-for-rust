@@ -1,6 +1,7 @@
 use crate::{QueueServiceClient, QueueServiceProperties};
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
+    headers::Headers,
     prelude::*,
     Context, Method, Response as AzureResponse,
 };
@@ -52,6 +53,7 @@ impl SetQueueServicePropertiesBuilder {
             let mut request = self.service_client.storage_client.prepare_request(
                 url,
                 Method::Put,
+                Headers::new(),
                 Some(xml_body.into()),
             )?;
 

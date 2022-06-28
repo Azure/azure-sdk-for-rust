@@ -1,8 +1,8 @@
 use crate::{prelude::*, requests::*};
-use azure_core::Method;
 use azure_core::{
     error::{Error, ErrorKind},
-    Request,
+    headers::Headers,
+    Method, Request,
 };
 use bytes::Bytes;
 use std::sync::Arc;
@@ -102,10 +102,11 @@ impl EntityClient {
         &self,
         url: Url,
         method: Method,
+        headers: Headers,
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
         self.partition_key_client
-            .prepare_request(url, method, request_body)
+            .prepare_request(url, method, headers, request_body)
     }
 }
 

@@ -1,9 +1,9 @@
 use crate::{prelude::*, responses::*, ContinuationNextPartitionAndRowKey};
-use azure_core::Method;
 use azure_core::{
     error::{Error, ErrorKind},
+    headers::*,
     prelude::*,
-    AppendToUrlQuery,
+    AppendToUrlQuery, Method,
 };
 use futures::stream::{unfold, Stream};
 use serde::de::DeserializeOwned;
@@ -55,9 +55,13 @@ impl<'a> QueryEntityBuilder<'a> {
         self.continuation_next_partition_and_row_key
             .append_to_url_query(&mut url);
 
-        let mut request = self.table_client.prepare_request(url, Method::Get, None)?;
-        request.add_optional_header(&self.client_request_id);
-        request.insert_header("Accept", "application/json;odata=fullmetadata");
+        let mut headers = Headers::new();
+        headers.add(self.client_request_id.clone());
+        headers.insert(ACCEPT, "application/json;odata=fullmetadata");
+
+        let request = self
+            .table_client
+            .prepare_request(url, Method::Get, headers, None)?;
 
         let response = self
             .table_client

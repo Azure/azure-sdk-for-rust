@@ -1,6 +1,5 @@
 use crate::{prelude::*, responses::*, TransactionOperation};
-use azure_core::Method;
-use azure_core::{prelude::*, Request};
+use azure_core::{headers::*, prelude::*, Method, Request};
 use serde::Serialize;
 use std::convert::TryInto;
 
@@ -43,16 +42,19 @@ impl<'a> InsertOrReplaceOrMergeEntityBuilder<'a> {
 
         let request_body_serialized = serde_json::to_string(entity)?;
 
-        let mut request = self.entity_client.prepare_request(
+        let mut headers = Headers::new();
+        headers.add(self.client_request_id.clone());
+        headers.insert(CONTENT_TYPE, "application/json");
+
+        let request = self.entity_client.prepare_request(
             url,
             match self.operation {
                 Operation::InsertOrMerge => Method::Merge,
                 Operation::InsertOrReplace => Method::Put,
             },
+            headers,
             Some(bytes::Bytes::from(request_body_serialized)),
         )?;
-        request.add_optional_header(&self.client_request_id);
-        request.insert_header("Content-Type", "application/json");
 
         let response = self
             .entity_client
@@ -80,9 +82,8 @@ impl<'a> InsertOrReplaceOrMergeEntityBuilder<'a> {
             },
         );
         request.add_optional_header(&self.client_request_id);
-        request.insert_header("Accept", "application/json;odata=fullmetadata");
-        request.insert_header("Content-Type", "application/json");
-
+        request.insert_header(ACCEPT, "application/json;odata=fullmetadata");
+        request.insert_header(CONTENT_TYPE, "application/json");
         request.set_body(serde_json::to_vec(entity)?);
 
         Ok(TransactionOperation::new(request))

@@ -48,20 +48,22 @@ impl PutAppendBlobBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request =
-                self.blob_client
-                    .prepare_request(url, azure_core::Method::Put, None)?;
-            request.insert_header(BLOB_TYPE, "AppendBlob");
-            request.add_optional_header(&self.content_type);
-            request.add_optional_header(&self.content_encoding);
-            request.add_optional_header(&self.content_language);
-            request.add_optional_header(&self.content_disposition);
+            let mut headers = Headers::new();
+            headers.insert(BLOB_TYPE, "AppendBlob");
+            headers.add(self.content_type);
+            headers.add(self.content_encoding);
+            headers.add(self.content_language);
+            headers.add(self.content_disposition);
             if let Some(metadata) = &self.metadata {
                 for m in metadata.iter() {
-                    request.add_mandatory_header(&m);
+                    headers.add(m);
                 }
             }
-            request.add_optional_header(&self.lease_id);
+            headers.add(self.lease_id);
+
+            let mut request =
+                self.blob_client
+                    .prepare_request(url, azure_core::Method::Put, headers, None)?;
 
             let response = self
                 .blob_client

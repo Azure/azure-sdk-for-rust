@@ -1,10 +1,6 @@
 use crate::prelude::*;
 use azure_core::Method;
-use azure_core::{
-    headers::{LEASE_ACTION, *},
-    prelude::*,
-    RequestId,
-};
+use azure_core::{headers::*, prelude::*, RequestId};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
@@ -43,12 +39,14 @@ impl BreakLeaseBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = self
-                .container_client
-                .prepare_request(url, Method::Put, None)?;
-            request.insert_header(LEASE_ACTION, "break");
-            request.add_optional_header(&self.lease_id);
-            request.add_optional_header(&self.lease_break_period);
+            let mut headers = Headers::new();
+            headers.insert(LEASE_ACTION, "break");
+            headers.add(self.lease_id);
+            headers.add(self.lease_break_period);
+
+            let mut request =
+                self.container_client
+                    .prepare_request(url, Method::Put, headers, None)?;
 
             let response = self
                 .container_client

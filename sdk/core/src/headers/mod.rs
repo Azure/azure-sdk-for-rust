@@ -55,7 +55,7 @@ pub trait Header {
 pub struct Headers(std::collections::HashMap<HeaderName, HeaderValue>);
 
 impl Headers {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self(Default::default())
     }
 
@@ -140,9 +140,24 @@ impl Headers {
         self.0.insert(key.into(), value.into());
     }
 
+    pub fn add<H>(&mut self, header: H)
+    where
+        H: AsHeaders,
+    {
+        for (key, value) in header.as_headers() {
+            self.insert(key, value);
+        }
+    }
+
     /// Iterate over all the header name/value pairs
     pub fn iter(&self) -> impl Iterator<Item = (&HeaderName, &HeaderValue)> {
         self.0.iter()
+    }
+}
+
+impl Default for Headers {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -178,13 +193,14 @@ impl HeaderName {
 
 impl From<&'static str> for HeaderName {
     fn from(s: &'static str) -> Self {
+        assert_eq!(s.to_lowercase(), s, "header names must be lower-case");
         Self::from_static(s)
     }
 }
 
 impl From<String> for HeaderName {
     fn from(s: String) -> Self {
-        Self(std::borrow::Cow::Owned(s))
+        Self(std::borrow::Cow::Owned(s.to_lowercase()))
     }
 }
 
@@ -216,7 +232,7 @@ impl From<String> for HeaderValue {
 
 impl From<&String> for HeaderValue {
     fn from(s: &String) -> Self {
-        Self(std::borrow::Cow::Owned(s.clone()))
+        s.clone().into()
     }
 }
 
@@ -295,6 +311,7 @@ pub const MS_RANGE: HeaderName = HeaderName::from_static("x-ms-range");
 pub const NAMESPACE_ENABLED: HeaderName = HeaderName::from_static("x-ms-namespace-enabled");
 pub const PAGE_WRITE: HeaderName = HeaderName::from_static("x-ms-page-write");
 pub const PROPERTIES: HeaderName = HeaderName::from_static("x-ms-properties");
+pub const PREFER: HeaderName = HeaderName::from_static("prefer");
 pub const PROPOSED_LEASE_ID: HeaderName = HeaderName::from_static("x-ms-proposed-lease-id");
 pub const RANGE: HeaderName = HeaderName::from_static("range");
 pub const RANGE_GET_CONTENT_CRC64: HeaderName =

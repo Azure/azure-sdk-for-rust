@@ -41,13 +41,15 @@ impl AcquireLeaseBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = self
-                .container_client
-                .prepare_request(url, Method::Put, None)?;
-            request.insert_header(LEASE_ACTION, "acquire");
-            request.add_mandatory_header(&self.lease_duration);
-            request.add_optional_header(&self.lease_id);
-            request.add_optional_header(&self.proposed_lease_id);
+            let mut headers = Headers::new();
+            headers.insert(LEASE_ACTION, "acquire");
+            headers.add(self.lease_duration);
+            headers.add(self.lease_id);
+            headers.add(self.proposed_lease_id);
+
+            let mut request =
+                self.container_client
+                    .prepare_request(url, Method::Put, headers, None)?;
 
             let response = self
                 .container_client

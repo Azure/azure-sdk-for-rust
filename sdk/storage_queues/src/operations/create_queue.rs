@@ -1,5 +1,5 @@
 use crate::clients::QueueClient;
-use azure_core::{error::Error, prelude::*, Method, Response as AzureResponse};
+use azure_core::{error::Error, headers::Headers, prelude::*, Method, Response as AzureResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
@@ -33,16 +33,19 @@ impl CreateQueueBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request =
-                self.queue_client
-                    .storage_client()
-                    .prepare_request(url, Method::Put, None)?;
-
+            let mut headers = Headers::new();
             if let Some(metadata) = &self.metadata {
                 for m in metadata.iter() {
-                    request.add_mandatory_header(&m);
+                    headers.add(m);
                 }
             }
+
+            let mut request = self.queue_client.storage_client().prepare_request(
+                url,
+                Method::Put,
+                headers,
+                None,
+            )?;
 
             let response = self
                 .queue_client

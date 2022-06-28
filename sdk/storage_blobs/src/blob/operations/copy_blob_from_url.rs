@@ -2,14 +2,7 @@ use crate::{
     blob::{copy_status_from_headers, CopyStatus, SourceContentMD5},
     prelude::*,
 };
-use azure_core::{
-    headers::{
-        date_from_headers, etag_from_headers, last_modified_from_headers, request_id_from_headers,
-        server_from_headers, version_from_headers, Headers, *,
-    },
-    prelude::*,
-    RequestId,
-};
+use azure_core::{headers::*, prelude::*, RequestId};
 use azure_storage::{
     core::{copy_id_from_headers, CopyId},
     headers::content_md5_from_headers_optional,
@@ -70,22 +63,24 @@ impl CopyBlobFromUrlBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request =
-                self.blob_client
-                    .prepare_request(url, azure_core::Method::Put, None)?;
-            request.insert_header(COPY_SOURCE, self.source_url.to_string());
-            request.insert_header(REQUIRES_SYNC, format!("{}", self.is_synchronous));
+            let mut headers = Headers::new();
+            headers.insert(COPY_SOURCE, self.source_url.to_string());
+            headers.insert(REQUIRES_SYNC, format!("{}", self.is_synchronous));
             if let Some(metadata) = &self.metadata {
                 for m in metadata.iter() {
-                    request.add_mandatory_header(&m);
+                    headers.add(m);
                 }
             }
-            request.add_optional_header(&self.if_modified_since_condition);
-            request.add_optional_header(&self.if_match_condition);
-            request.add_optional_header(&self.lease_id);
-            request.add_optional_header(&self.if_source_since_condition);
-            request.add_optional_header(&self.if_source_match_condition);
-            request.add_optional_header(&self.source_content_md5);
+            headers.add(self.if_modified_since_condition);
+            headers.add(self.if_match_condition);
+            headers.add(self.lease_id);
+            headers.add(self.if_source_since_condition);
+            headers.add(self.if_source_match_condition);
+            headers.add(self.source_content_md5);
+
+            let mut request =
+                self.blob_client
+                    .prepare_request(url, azure_core::Method::Put, headers, None)?;
 
             let response = self
                 .blob_client

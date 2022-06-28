@@ -2,6 +2,7 @@ use crate::{prelude::*, responses::*, TransactionOperation};
 use azure_core::Method;
 use azure_core::{
     error::{Error, ErrorKind},
+    headers::*,
     prelude::*,
     Request,
 };
@@ -46,15 +47,18 @@ impl<'a> InsertEntityBuilder<'a> {
 
         let request_body_serialized = serde_json::to_string(entity)?;
 
-        let mut request = self.table_client.prepare_request(
+        let mut headers = Headers::new();
+        headers.add(self.client_request_id.clone());
+        headers.add(self.return_entity.clone());
+        headers.insert(ACCEPT, "application/json;odata=fullmetadata");
+        headers.insert(CONTENT_TYPE, "application/json");
+
+        let request = self.table_client.prepare_request(
             url,
             Method::Post,
+            headers,
             Some(bytes::Bytes::from(request_body_serialized)),
         )?;
-        request.add_optional_header(&self.client_request_id);
-        request.add_mandatory_header(&self.return_entity);
-        request.insert_header("Accept", "application/json;odata=fullmetadata");
-        request.insert_header("Content-Type", "application/json");
 
         let response = self
             .table_client
@@ -80,8 +84,8 @@ impl<'a> InsertEntityBuilder<'a> {
 
         let mut request = Request::new(url, Method::Post);
         request.add_optional_header(&self.client_request_id);
-        request.insert_header("Accept", "application/json;odata=fullmetadata");
-        request.insert_header("Content-Type", "application/json");
+        request.insert_header(ACCEPT, "application/json;odata=fullmetadata");
+        request.insert_header(CONTENT_TYPE, "application/json");
 
         request.set_body(serde_json::to_vec(entity)?);
 
