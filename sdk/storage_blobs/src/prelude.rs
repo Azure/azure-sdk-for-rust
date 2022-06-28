@@ -6,7 +6,8 @@ pub use crate::{
         AsContainerLeaseClient, BlobClient, BlobLeaseClient, BlobServiceClient, ContainerClient,
         ContainerLeaseClient,
     },
-    AccessTier, BlobContentMD5, BlobVersioning, BlockId, ConditionAppendPosition, ConditionMaxSize,
-    DeleteSnapshotsMethod, Hash, RehydratePriority, Snapshot, VersionId,
+    AccessTier, BlobCacheControl, BlobContentDisposition, BlobContentEncoding, BlobContentLanguage,
+    BlobContentMD5, BlobContentType, BlobVersioning, BlockId, ConditionAppendPosition,
+    ConditionMaxSize, DeleteSnapshotsMethod, Hash, RehydratePriority, Snapshot, VersionId,
 };
 pub use azure_storage::core::{StoredAccessPolicy, StoredAccessPolicyList};
