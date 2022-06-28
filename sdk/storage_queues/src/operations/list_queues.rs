@@ -33,6 +33,7 @@ impl ListQueuesBuilder {
         max_results: MaxResults => Some(max_results),
         include_metadata: bool => include_metadata,
         timeout: Timeout => Some(timeout),
+        context: Context => context,
     }
 
     pub fn into_stream(self) -> Pageable<ListQueuesResponse, Error> {

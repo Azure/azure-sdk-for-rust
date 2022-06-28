@@ -28,6 +28,7 @@ impl PeekMessagesBuilder {
     setters! {
         number_of_messages: NumberOfMessages => Some(number_of_messages),
         timeout: Timeout => Some(timeout),
+        context: Context => context,
     }
 
     pub fn into_future(mut self) -> Response {
