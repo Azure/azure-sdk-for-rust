@@ -42,7 +42,8 @@ impl Policy for AuthorizationPolicy {
                         request.method(),
                         account,
                         key,
-                        ctx.get().unwrap_or(&ServiceType::default()),
+                        ctx.get()
+                            .expect("ServiceType must be in the Context at this point"),
                     );
                     request.insert_header(AUTHORIZATION, auth)
                 }

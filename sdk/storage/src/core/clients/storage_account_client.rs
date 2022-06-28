@@ -59,12 +59,6 @@ pub enum ServiceType {
     Table,
 }
 
-impl Default for ServiceType {
-    fn default() -> Self {
-        Self::Blob
-    }
-}
-
 #[derive(Debug)]
 pub struct StorageAccountClient {
     storage_credentials: StorageCredentials,
