@@ -1,8 +1,5 @@
-use crate::{prelude::*, requests::*};
-
-use azure_core::Method;
-use azure_core::Request;
-use azure_core::Url;
+use crate::{operations::*, prelude::*};
+use azure_core::{Context, Method, Request, Response, Url};
 use azure_storage::core::clients::StorageAccountClient;
 use bytes::Bytes;
 use std::sync::Arc;
@@ -34,8 +31,8 @@ impl PartitionKeyClient {
         })
     }
 
-    pub fn submit_transaction(&self) -> SubmitTransactionBuilder {
-        SubmitTransactionBuilder::new(self)
+    pub fn submit_transaction(&self, transaction: Transaction) -> SubmitTransactionBuilder {
+        SubmitTransactionBuilder::new(self.clone(), transaction)
     }
 
     pub fn partition_key(&self) -> &str {
@@ -50,10 +47,6 @@ impl PartitionKeyClient {
         self.table_client.storage_account_client()
     }
 
-    pub(crate) fn http_client(&self) -> &dyn azure_core::HttpClient {
-        self.table_client.http_client()
-    }
-
     pub(crate) fn prepare_request(
         &self,
         url: Url,
@@ -61,6 +54,14 @@ impl PartitionKeyClient {
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
         self.table_client.prepare_request(url, method, request_body)
+    }
+
+    pub(crate) async fn send(
+        &self,
+        context: &mut Context,
+        request: &mut Request,
+    ) -> azure_core::Result<Response> {
+        self.table_client.send(context, request).await
     }
 }
 

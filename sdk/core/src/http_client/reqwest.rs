@@ -14,9 +14,11 @@ impl HttpClient for ::reqwest::Client {
         for (name, value) in request.headers().iter() {
             req = req.header(name.as_str(), value.as_str());
         }
-
+                
         let body = request.body().clone();
 
+        println!("with body {:#?}", body);
+        
         let reqwest_request = match body {
             Body::Bytes(bytes) => req.body(bytes).build(),
             Body::SeekableStream(mut seekable_stream) => {
@@ -26,6 +28,8 @@ impl HttpClient for ::reqwest::Client {
             }
         }
         .context(ErrorKind::Other, "failed to build `reqwest` request")?;
+
+        println!("with body {:#?}", reqwest_request);
 
         let rsp = self
             .execute(reqwest_request)

@@ -114,4 +114,11 @@ impl CollectedResponse {
     pub fn into_body(self) -> Bytes {
         self.body
     }
+
+    /// From a response
+    pub async fn from_response(response: Response) -> crate::Result<Self> {
+        let (status, headers, body) = response.deconstruct();
+        let body = collect_pinned_stream(body).await?;
+        Ok(Self::new(status, headers, body))
+    }
 }

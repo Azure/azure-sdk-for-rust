@@ -1,10 +1,10 @@
-use crate::{prelude::*, requests::*};
-use azure_core::Method;
+use crate::{operations::*, prelude::*, IfMatchCondition};
 use azure_core::{
     error::{Error, ErrorKind},
-    Request,
+    Context, Method, Request, Response,
 };
 use bytes::Bytes;
+use serde::Serialize;
 use std::sync::Arc;
 use url::Url;
 
@@ -61,41 +61,67 @@ impl EntityClient {
     }
 
     pub fn get(&self) -> GetEntityBuilder {
-        GetEntityBuilder::new(self)
+        GetEntityBuilder::new(self.clone())
     }
 
-    pub fn update(&self) -> UpdateOrMergeEntityBuilder {
-        UpdateOrMergeEntityBuilder::new(self, update_or_merge_entity_builder::Operation::Update)
+    pub fn update<E: Serialize>(
+        &self,
+        entity: E,
+        if_match_condition: IfMatchCondition,
+    ) -> azure_core::Result<UpdateOrMergeEntityBuilder> {
+        let body = serde_json::to_string(&entity)?.into();
+        Ok(UpdateOrMergeEntityBuilder::new(
+            self.clone(),
+            body,
+            if_match_condition,
+            UpdateOperation::Update,
+        ))
     }
 
-    pub fn merge(&self) -> UpdateOrMergeEntityBuilder {
-        UpdateOrMergeEntityBuilder::new(self, update_or_merge_entity_builder::Operation::Merge)
+    pub fn merge<E: Serialize>(
+        &self,
+        entity: E,
+        if_match_condition: IfMatchCondition,
+    ) -> azure_core::Result<UpdateOrMergeEntityBuilder> {
+        let body = serde_json::to_string(&entity)?.into();
+        Ok(UpdateOrMergeEntityBuilder::new(
+            self.clone(),
+            body,
+            if_match_condition,
+            UpdateOperation::Merge,
+        ))
     }
 
-    pub fn insert_or_replace(&self) -> InsertOrReplaceOrMergeEntityBuilder {
-        InsertOrReplaceOrMergeEntityBuilder::new(
-            self,
-            insert_or_replace_or_merge_entity_builder::Operation::InsertOrReplace,
-        )
+    pub fn insert_or_replace<E: Serialize>(
+        &self,
+        entity: E,
+    ) -> azure_core::Result<InsertOrReplaceOrMergeEntityBuilder> {
+        let body = serde_json::to_string(&entity)?.into();
+        Ok(InsertOrReplaceOrMergeEntityBuilder::new(
+            self.clone(),
+            body,
+            InsertOperation::InsertOrReplace,
+        ))
     }
 
-    pub fn insert_or_merge(&self) -> InsertOrReplaceOrMergeEntityBuilder {
-        InsertOrReplaceOrMergeEntityBuilder::new(
-            self,
-            insert_or_replace_or_merge_entity_builder::Operation::InsertOrMerge,
-        )
+    pub fn insert_or_merge<E: Serialize>(
+        &self,
+        entity: E,
+    ) -> azure_core::Result<InsertOrReplaceOrMergeEntityBuilder> {
+        let body = serde_json::to_string(&entity)?.into();
+        Ok(InsertOrReplaceOrMergeEntityBuilder::new(
+            self.clone(),
+            body,
+            InsertOperation::InsertOrMerge,
+        ))
     }
 
     pub fn delete(&self) -> DeleteEntityBuilder {
-        DeleteEntityBuilder::new(self)
+        DeleteEntityBuilder::new(self.clone())
     }
 
     pub(crate) fn url(&self) -> &Url {
         &self.url
-    }
-
-    pub(crate) fn http_client(&self) -> &dyn azure_core::HttpClient {
-        self.partition_key_client.http_client()
     }
 
     pub(crate) fn prepare_request(
@@ -106,6 +132,14 @@ impl EntityClient {
     ) -> azure_core::Result<Request> {
         self.partition_key_client
             .prepare_request(url, method, request_body)
+    }
+
+    pub(crate) async fn send(
+        &self,
+        context: &mut Context,
+        request: &mut Request,
+    ) -> azure_core::Result<Response> {
+        self.partition_key_client.send(context, request).await
     }
 }
 

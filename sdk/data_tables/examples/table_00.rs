@@ -14,6 +14,8 @@ struct MyEntity {
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"));
+
     // First we retrieve the account name and access key from environment variables.
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
@@ -34,7 +36,8 @@ async fn main() -> azure_core::Result<()> {
         .table_service_client()?;
 
     let table_client = table_service.table_client(table_name);
-    let response = table_client.create().execute().await?;
+    println!("creating table");
+    let response = table_client.create().into_future().await?;
     println!("response = {:?}\n", response);
 
     let mut entity = MyEntity {
@@ -47,51 +50,49 @@ async fn main() -> azure_core::Result<()> {
 
     let mut transaction = Transaction::default();
 
-    transaction.add(table_client.insert().to_transaction_operation(&entity)?);
+    transaction.add(table_client.insert(&entity)?.to_transaction_operation()?);
 
     entity.surname = "Doe".to_owned();
-    transaction.add(table_client.insert().to_transaction_operation(&entity)?);
+    transaction.add(table_client.insert(&entity)?.to_transaction_operation()?);
 
     entity.surname = "Karl".to_owned();
-    transaction.add(table_client.insert().to_transaction_operation(&entity)?);
+    transaction.add(table_client.insert(&entity)?.to_transaction_operation()?);
 
     entity.surname = "Potter".to_owned();
     let entity_client = partition_key_client.entity_client(&entity.surname)?;
     transaction.add(
         entity_client
-            .insert_or_replace()
-            .to_transaction_operation(&entity)?,
+            .insert_or_replace(&entity)?
+            .to_transaction_operation()?,
     );
 
     let response = partition_key_client
-        .submit_transaction()
-        .execute(&transaction)
+        .submit_transaction(transaction)
+        .into_future()
         .await?;
     println!("response = {:?}\n", response);
 
-    let response = entity_client.delete().execute().await?;
+    let response = entity_client.delete().into_future().await?;
     println!("response = {:?}\n", response);
 
-    let response = table_client
-        .insert()
+    table_client
+        .insert(&entity)?
         .return_entity(false)
-        .execute(&entity)
+        .into_future::<MyEntity>()
         .await?;
-    println!("response = {:?}\n", response);
 
     // Get an entity from the table
-    let response = entity_client.get().execute().await?;
+    let response = entity_client.get().into_future().await?;
     println!("response = {:?}\n", response);
 
     let mut entity: MyEntity = response.entity;
     entity.city = "Rome".to_owned();
 
-    let response = table_client
-        .insert()
+    table_client
+        .insert(&entity)?
         .return_entity(true)
-        .execute(&entity)
+        .into_future::<MyEntity>()
         .await?;
-    println!("response = {:?}\n", response);
 
     let entity_client = table_client
         .partition_key_client(&entity.city)
@@ -99,33 +100,35 @@ async fn main() -> azure_core::Result<()> {
     // update the name passing the Etag received from the previous call.
     entity.name = "Ryan".to_owned();
     let response = entity_client
-        .update()
-        .execute(&entity, &(response.etag.into()))
+        .update(&entity, response.etag.into())?
+        .into_future()
         .await?;
     println!("response = {:?}\n", response);
 
     // now we perform an upsert
     entity.name = "Carl".to_owned();
-    let response = entity_client.insert_or_replace().execute(&entity).await?;
+    let response = entity_client
+        .insert_or_replace(&entity)?
+        .into_future()
+        .await?;
     println!("response = {:?}\n", response);
 
-    let mut stream = Box::pin(table_service.list().top(2).stream());
+    let mut stream = table_service.list().top(2).into_stream();
     while let Some(response) = stream.next().await {
         println!("response = {:?}\n", response);
     }
 
-    let mut stream = Box::pin(
-        table_client
-            .query()
-            .filter("Name eq 'Carl'")
-            .top(2)
-            .stream::<MyEntity>(),
-    );
+    let mut stream = table_client
+        .query()
+        .filter("Name eq 'Carl'")
+        .top(2)
+        .into_stream::<MyEntity>();
+
     while let Some(response) = stream.next().await {
         println!("response = {:?}\n", response);
     }
 
-    let response = table_client.delete().execute().await?;
+    let response = table_client.delete().into_future().await?;
     println!("response = {:?}\n", response);
 
     Ok(())

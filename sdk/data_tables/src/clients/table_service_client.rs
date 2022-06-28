@@ -1,8 +1,9 @@
-use crate::requests::ListTablesBuilder;
-use azure_core::error::{ErrorKind, ResultExt};
-use azure_core::Method;
-use azure_core::Request;
-use azure_storage::core::clients::{StorageAccountClient, StorageClient};
+use crate::operations::ListTablesBuilder;
+use azure_core::{
+    error::{ErrorKind, ResultExt},
+    Context, Method, Request, Response,
+};
+use azure_storage::core::clients::{ServiceType, StorageAccountClient, StorageClient};
 use bytes::Bytes;
 use std::sync::Arc;
 use url::Url;
@@ -40,7 +41,7 @@ impl TableServiceClient {
     }
 
     pub fn list(&self) -> ListTablesBuilder {
-        ListTablesBuilder::new(self)
+        ListTablesBuilder::new(self.clone())
     }
 
     pub(crate) fn url(&self) -> &Url {
@@ -51,10 +52,6 @@ impl TableServiceClient {
         self.storage_client.storage_account_client()
     }
 
-    pub(crate) fn http_client(&self) -> &dyn azure_core::HttpClient {
-        self.storage_client.http_client()
-    }
-
     pub(crate) fn prepare_request(
         &self,
         url: Url,
@@ -63,13 +60,19 @@ impl TableServiceClient {
     ) -> azure_core::Result<Request> {
         self.storage_client
             .storage_account_client()
-            .prepare_request(
-                url,
-                method,
-                azure_storage::core::clients::ServiceType::Table,
-                request_body,
-            )
+            .prepare_request(url, method, ServiceType::Table, request_body)
             .context(ErrorKind::Other, "failed to prepare request")
+    }
+
+    pub(crate) async fn send(
+        &self,
+        context: &mut Context,
+        request: &mut Request,
+    ) -> azure_core::Result<Response> {
+        self.storage_client
+            .storage_account_client()
+            .send(context, request, ServiceType::Table)
+            .await
     }
 }
 

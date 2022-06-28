@@ -1,7 +1,7 @@
 use crate::TransactionOperation;
 use uuid::Uuid;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Transaction {
     batch_uuid: Uuid,
     change_set_uuid: Uuid,

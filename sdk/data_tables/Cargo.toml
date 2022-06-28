@@ -29,6 +29,7 @@ url = "2.2"
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }
+env_logger = "0.9"
 
 [features]
 default = ["enable_reqwest"]

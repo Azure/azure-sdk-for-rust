@@ -4,6 +4,7 @@ use std::ops::Range as StdRange;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Continuation {
     String(String),
+    Paired(String, Option<String>),
     Range(StdRange<u64>),
 }
 
@@ -16,6 +17,12 @@ impl From<NextMarker> for Continuation {
 impl From<&str> for Continuation {
     fn from(value: &str) -> Self {
         Continuation::String(value.to_string())
+    }
+}
+
+impl From<(String, Option<String>)> for Continuation {
+    fn from(value: (String, Option<String>)) -> Self {
+        Continuation::Paired(value.0, value.1)
     }
 }
 
@@ -41,8 +48,8 @@ impl Continuation {
     pub fn as_string(&self) -> String {
         match self {
             Self::String(c) => c.clone(),
-            Self::Range(_) => {
-                panic!("unable to convert Continuation::Range to string")
+            _ => {
+                panic!("unsupported coontinuation type")
             }
         }
     }

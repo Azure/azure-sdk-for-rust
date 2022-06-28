@@ -1,10 +1,82 @@
+use crate::prelude::*;
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
-    CollectedResponse, Etag, StatusCode,
+    prelude::*,
+    CollectedResponse, Context, Etag, Method, StatusCode,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::{TryFrom, TryInto};
 use url::Url;
+
+#[derive(Debug, Clone)]
+pub struct SubmitTransactionBuilder {
+    partition_key_client: PartitionKeyClient,
+    transaction: Transaction,
+    timeout: Option<Timeout>,
+    context: Context,
+}
+
+impl SubmitTransactionBuilder {
+    pub(crate) fn new(partition_key_client: PartitionKeyClient, transaction: Transaction) -> Self {
+        Self {
+            partition_key_client,
+            transaction,
+            timeout: None,
+            context: Context::new(),
+        }
+    }
+
+    setters! {
+        timeout: Timeout => Some(timeout),
+        context: Context => context,
+    }
+
+    pub fn into_future(mut self) -> FutureResponse {
+        Box::pin(async move {
+            let mut url = self.partition_key_client.table_client().url().to_owned();
+            url.path_segments_mut()
+                .map_err(|()| Error::message(ErrorKind::Other, "invalid table URL"))?
+                .pop()
+                .push("$batch");
+
+            self.timeout.append_to_url_query(&mut url);
+
+            let request_body = Some(self.transaction.to_string()?.into());
+
+            let mut request =
+                self.partition_key_client
+                    .prepare_request(url, Method::POST, request_body)?;
+
+            request.insert_header(
+                "Content-Type",
+                &format!(
+                    "multipart/mixed; boundary=batch_{}",
+                    self.transaction.batch_uuid().hyphenated()
+                ),
+            );
+
+            let response = self
+                .partition_key_client
+                .send(&mut self.context, &mut request)
+                .await?;
+
+            let collected_response = CollectedResponse::from_response(response).await?;
+            collected_response.try_into()
+        })
+    }
+}
+
+pub type FutureResponse =
+    futures::future::BoxFuture<'static, azure_core::Result<SubmitTransactionResponse>>;
+
+#[cfg(feature = "into_future")]
+impl std::future::IntoFuture for SubmitTransactionBuilder {
+    type IntoFuture = FutureResponse;
+    type Output = <FutureResponse as std::future::Future>::Output;
+    fn into_future(self) -> Self::IntoFuture {
+        Self::into_future(self)
+    }
+}
 
 #[derive(Debug, Clone, Default)]
 pub struct OperationResponse {
