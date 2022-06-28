@@ -72,6 +72,7 @@ impl SetPropertiesBuilder {
         content_language: BlobContentLanguage => Some(content_language),
         content_disposition: BlobContentDisposition => Some(content_disposition),
         content_md5: BlobContentMD5 => Some(content_md5),
+        context: Context => context,
     }
 
     pub fn into_future(mut self) -> Response {
