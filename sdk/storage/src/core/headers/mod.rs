@@ -1,8 +1,8 @@
 use crate::{ConsistencyCRC64, ConsistencyMD5};
-use azure_core::error::{Error, ErrorKind, ResultExt};
+use azure_core::error::Error;
 use azure_core::headers::{
-    self, client_request_id_from_headers_optional, date_from_headers, request_id_from_headers,
-    server_from_headers, version_from_headers, HeaderName, Headers,
+    client_request_id_from_headers_optional, date_from_headers, request_id_from_headers,
+    server_from_headers, version_from_headers, HeaderName, Headers, CONTENT_MD5,
 };
 use azure_core::RequestId;
 use chrono::{DateTime, Utc};
@@ -36,45 +36,23 @@ pub const COPY_ID: HeaderName = HeaderName::from_static("x-ms-copy-id");
 pub const RENAME_SOURCE: HeaderName = HeaderName::from_static("x-ms-rename-source");
 
 pub fn content_crc64_from_headers(headers: &Headers) -> azure_core::Result<ConsistencyCRC64> {
-    content_crc64_from_headers_optional(headers)?.ok_or_else(|| {
-        Error::with_message(ErrorKind::DataConversion, || {
-            format!("header not found: {:?}", CONTENT_CRC64)
-        })
-    })
+    headers.get_as(&CONTENT_CRC64)
 }
 
 pub fn content_crc64_from_headers_optional(
     headers: &Headers,
 ) -> azure_core::Result<Option<ConsistencyCRC64>> {
-    headers
-        .get_optional_str(&CONTENT_CRC64)
-        .map(|content_crc64| {
-            ConsistencyCRC64::decode(content_crc64).with_context(ErrorKind::DataConversion, || {
-                format!("failed to decode content_crc64 from headers: {content_crc64}")
-            })
-        })
-        .transpose()
+    headers.get_optional_as(&CONTENT_CRC64)
 }
 
 pub fn content_md5_from_headers(headers: &Headers) -> azure_core::Result<ConsistencyMD5> {
-    content_md5_from_headers_optional(headers)?.ok_or_else(|| {
-        Error::with_message(ErrorKind::DataConversion, || {
-            format!("header not found: {:?}", headers::CONTENT_MD5)
-        })
-    })
+    headers.get_as(&CONTENT_MD5)
 }
 
 pub fn content_md5_from_headers_optional(
     headers: &Headers,
 ) -> azure_core::Result<Option<ConsistencyMD5>> {
-    headers
-        .get_optional_str(&headers::CONTENT_MD5)
-        .map(|content_md5| {
-            ConsistencyMD5::decode(content_md5).with_context(ErrorKind::DataConversion, || {
-                format!("failed to decode content_md5 from headers: {content_md5}")
-            })
-        })
-        .transpose()
+    headers.get_optional_as(&CONTENT_MD5)
 }
 
 pub fn consistency_from_headers(

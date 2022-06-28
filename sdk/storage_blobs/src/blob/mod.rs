@@ -31,7 +31,7 @@ use std::collections::HashMap;
 
 #[cfg(feature = "azurite_workaround")]
 fn get_creation_time(h: &Headers) -> azure_core::Result<Option<DateTime<Utc>>> {
-    if let Some(creation_time) = h.get_as_str(&headers::CREATION_TIME) {
+    if let Some(creation_time) = h.get_optional_str(&headers::CREATION_TIME) {
         // Check that the creation time is valid
         let creation_time =
             DateTime::parse_from_rfc2822(creation_time).map_kind(ErrorKind::DataConversion)?;
@@ -211,30 +211,15 @@ impl Blob {
             .to_string();
 
         let content_length = h.get_as(&headers::CONTENT_LENGTH)?;
-
-        let last_modified = h.get_str(&headers::LAST_MODIFIED)?;
-        let last_modified = from_azure_time(last_modified)?;
-
-        let etag = h.get_str(&headers::ETAG)?.into();
-
+        let last_modified = from_azure_time(h.get_str(&headers::LAST_MODIFIED)?)?;
+        let etag = h.get_as(&headers::ETAG)?;
         let blob_sequence_number = h.get_optional_as(&headers::BLOB_SEQUENCE_NUMBER)?;
         let blob_type = h.get_as(&headers::BLOB_TYPE)?;
         let access_tier = h.get_optional_as(&headers::BLOB_ACCESS_TIER)?;
         let content_encoding = h.get_optional_string(&headers::CONTENT_ENCODING);
         let content_language = h.get_optional_string(&headers::CONTENT_LANGUAGE);
-
-        let content_md5 = h
-            .get_optional_str(&headers::CONTENT_MD5)
-            .map(|header| ConsistencyMD5::decode(header.as_bytes()))
-            .transpose()
-            .map_kind(ErrorKind::DataConversion)?;
-
-        let content_crc64 = h
-            .get_optional_str(&azure_storage::headers::CONTENT_CRC64)
-            .map(|header| ConsistencyCRC64::decode(header.as_bytes()))
-            .transpose()
-            .map_kind(ErrorKind::DataConversion)?;
-
+        let content_md5 = h.get_optional_as(&headers::CONTENT_MD5)?;
+        let content_crc64 = h.get_optional_as(&azure_storage::headers::CONTENT_CRC64)?;
         let cache_control = h.get_optional_string(&headers::CACHE_CONTROL);
         let content_disposition = h.get_optional_string(&headers::CONTENT_DISPOSITION);
         let lease_status = h.get_as(&headers::LEASE_STATUS)?;

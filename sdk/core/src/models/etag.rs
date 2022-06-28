@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::fmt;
+use std::{fmt, str::FromStr};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Etag(String);
@@ -16,6 +16,13 @@ where
 impl AsRef<str> for Etag {
     fn as_ref(&self) -> &str {
         &self.0
+    }
+}
+
+impl FromStr for Etag {
+    type Err = crate::error::Error;
+    fn from_str(s: &str) -> crate::Result<Self> {
+        Ok(Self(s.into()))
     }
 }
 
