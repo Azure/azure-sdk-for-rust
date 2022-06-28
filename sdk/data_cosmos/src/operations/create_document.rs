@@ -64,7 +64,7 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
                 Some(s) => s,
                 None => serialize_partition_key(&document.partition_key())?,
             };
-            let mut request = self.client.docs_request(azure_core::Method::POST);
+            let mut request = self.client.docs_request(azure_core::Method::Post);
 
             add_as_partition_key_header_serialized(&partition_key, &mut request);
             request.insert_headers(&self.if_match_condition);
@@ -141,7 +141,7 @@ impl CreateDocumentResponse {
         let body = collect_pinned_stream(pinned_stream).await?;
 
         Ok(CreateDocumentResponse {
-            is_update: status_code == StatusCode::OK,
+            is_update: status_code == StatusCode::Ok,
 
             last_state_change: last_state_change_from_headers(&headers)?,
             etag: etag_from_headers(&headers)?,

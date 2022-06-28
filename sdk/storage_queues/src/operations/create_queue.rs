@@ -36,7 +36,7 @@ impl CreateQueueBuilder {
             let mut request =
                 self.queue_client
                     .storage_client()
-                    .prepare_request(url, Method::PUT, None)?;
+                    .prepare_request(url, Method::Put, None)?;
 
             if let Some(metadata) = &self.metadata {
                 for m in metadata.iter() {

@@ -36,7 +36,7 @@ impl<'a> CreateTableBuilder<'a> {
 
         let mut request = self.table_client.prepare_request(
             url,
-            Method::POST,
+            Method::Post,
             Some(bytes::Bytes::from(request_body_serialized)),
         )?;
         request.add_optional_header(&self.client_request_id);

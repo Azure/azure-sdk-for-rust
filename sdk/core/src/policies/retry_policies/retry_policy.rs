@@ -24,12 +24,12 @@ pub trait RetryPolicy {
 ///
 /// On all other 4xx and 5xx status codes no retry is attempted.
 const RETRY_STATUSES: &[StatusCode] = &[
-    StatusCode::REQUEST_TIMEOUT,
-    StatusCode::TOO_MANY_REQUESTS,
-    StatusCode::INTERNAL_SERVER_ERROR,
-    StatusCode::BAD_GATEWAY,
-    StatusCode::SERVICE_UNAVAILABLE,
-    StatusCode::GATEWAY_TIMEOUT,
+    StatusCode::RequestTimeout,
+    StatusCode::TooManyRequests,
+    StatusCode::InternalServerError,
+    StatusCode::BadGateway,
+    StatusCode::ServiceUnavailable,
+    StatusCode::GatewayTimeout,
 ];
 
 #[async_trait::async_trait]
@@ -48,7 +48,7 @@ where
 
         loop {
             let error = match next[0].send(ctx, request, &next[1..]).await {
-                Ok(response) if (200..400).contains(&response.status().as_u16()) => {
+                Ok(response) if (200..400).contains(&u16::from(response.status())) => {
                     log::trace!(
                         "Succesful response. Request={:?} response={:?}",
                         request,
@@ -59,12 +59,16 @@ where
                 }
                 Ok(response) => {
                     // Error status code
-                    let code = response.status().as_u16();
+                    let code = response.status() as u16;
 
                     let http_error = HttpError::new(response).await;
                     // status code should already be parsed as valid from the underlying HTTP
                     // implementations.
-                    let status = StatusCode::from_u16(code).expect("invalid status code");
+                    let status = StatusCode::try_from(code).map_err(|_| {
+                        Error::with_message(ErrorKind::DataConversion, || {
+                            format!("invalid status code '{code}'")
+                        })
+                    })?;
                     let error = Error::full(
                         ErrorKind::http_response(
                             code,

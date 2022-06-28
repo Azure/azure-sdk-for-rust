@@ -84,7 +84,7 @@ impl QueryDocumentsBuilder {
                         this.client.database_client().database_name(),
                         this.client.collection_name()
                     ),
-                    Method::POST,
+                    Method::Post,
                 );
 
                 // signal that this is a query

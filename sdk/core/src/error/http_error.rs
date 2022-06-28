@@ -26,7 +26,7 @@ impl HttpError {
         let body = response.into_body().await;
         error_code = error_code.or_else(|| get_error_code_from_body(&body));
         HttpError {
-            status: status.as_u16(),
+            status: status as u16,
             headers,
             error_code,
             body,

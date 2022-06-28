@@ -49,7 +49,7 @@ impl ClearPageBuilder {
 
             let mut request =
                 self.blob_client
-                    .prepare_request(url, azure_core::Method::PUT, None)?;
+                    .prepare_request(url, azure_core::Method::Put, None)?;
 
             request.insert_header(PAGE_WRITE, "clear");
             request.insert_header(BLOB_TYPE, "PageBlob");

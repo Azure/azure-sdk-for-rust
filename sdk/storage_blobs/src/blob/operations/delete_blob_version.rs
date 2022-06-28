@@ -41,7 +41,7 @@ impl DeleteBlobVersionBuilder {
 
             let mut request =
                 self.blob_client
-                    .prepare_request(url, azure_core::Method::DELETE, None)?;
+                    .prepare_request(url, azure_core::Method::Delete, None)?;
             request.add_optional_header(&self.lease_id);
 
             let response = self

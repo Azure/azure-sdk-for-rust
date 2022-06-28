@@ -30,7 +30,7 @@ impl GetDatabaseBuilder {
 
     pub fn into_future(self) -> GetDatabase {
         Box::pin(async move {
-            let mut request = self.client.database_request(azure_core::Method::GET);
+            let mut request = self.client.database_request(azure_core::Method::Get);
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);
             }

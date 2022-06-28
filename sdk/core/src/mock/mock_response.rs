@@ -70,7 +70,8 @@ impl<'de> Deserialize<'de> for MockResponse {
             headers.insert(name, value);
         }
         let body = Bytes::from(base64::decode(r.body).map_err(Error::custom)?);
-        let status = StatusCode::from_u16(r.status).map_err(Error::custom)?;
+        let status = StatusCode::try_from(r.status)
+            .map_err(|_| Error::custom(format!("invalid status code {}", r.status)))?;
 
         Ok(Self::new(status, headers, body))
     }
@@ -85,7 +86,7 @@ impl Serialize for MockResponse {
         for (h, v) in self.headers.iter() {
             headers.insert(h.as_str().into(), v.as_str().into());
         }
-        let status = self.status.as_u16();
+        let status = self.status as u16;
         let body = base64::encode(&self.body as &[u8]);
         let s = SerializedMockResponse {
             status,

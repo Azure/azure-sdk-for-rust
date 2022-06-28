@@ -89,7 +89,7 @@ fn string_to_sign(
         .unwrap_or_default();
     format!(
         "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}{}",
-        http_method.as_str(),
+        http_method.as_ref(),
         add_if_exists(http_headers, &headers::CONTENT_ENCODING),
         add_if_exists(http_headers, &headers::CONTENT_LANGUAGE),
         cl,

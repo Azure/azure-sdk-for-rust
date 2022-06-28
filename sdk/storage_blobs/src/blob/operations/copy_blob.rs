@@ -68,7 +68,7 @@ impl CopyBlobBuilder {
             self.timeout.append_to_url_query(&mut url);
             let mut request =
                 self.blob_client
-                    .prepare_request(url, azure_core::Method::PUT, None)?;
+                    .prepare_request(url, azure_core::Method::Put, None)?;
             request.insert_header(COPY_SOURCE, self.source_url.as_str().to_owned());
             if let Some(metadata) = &self.metadata {
                 for m in metadata.iter() {

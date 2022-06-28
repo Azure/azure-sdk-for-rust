@@ -68,7 +68,7 @@ impl ListQueuesBuilder {
                 let mut request =
                     this.service_client
                         .storage_client
-                        .prepare_request(url, Method::GET, None)?;
+                        .prepare_request(url, Method::Get, None)?;
 
                 let response = this
                     .service_client

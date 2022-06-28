@@ -37,7 +37,7 @@ impl GetMetadataBuilder {
             self.blob_versioning.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = self.blob_client.prepare_request(url, Method::GET, None)?;
+            let mut request = self.blob_client.prepare_request(url, Method::Get, None)?;
             request.add_optional_header(&self.lease_id);
 
             let response = self

@@ -46,8 +46,8 @@ impl<'a> InsertOrReplaceOrMergeEntityBuilder<'a> {
         let mut request = self.entity_client.prepare_request(
             url,
             match self.operation {
-                Operation::InsertOrMerge => crate::MERGE.to_owned(),
-                Operation::InsertOrReplace => Method::PUT,
+                Operation::InsertOrMerge => Method::Merge,
+                Operation::InsertOrReplace => Method::Put,
             },
             Some(bytes::Bytes::from(request_body_serialized)),
         )?;
@@ -75,8 +75,8 @@ impl<'a> InsertOrReplaceOrMergeEntityBuilder<'a> {
         let mut request = Request::new(
             url.clone(),
             match self.operation {
-                Operation::InsertOrMerge => crate::MERGE.to_owned(),
-                Operation::InsertOrReplace => Method::PUT,
+                Operation::InsertOrMerge => Method::Merge,
+                Operation::InsertOrReplace => Method::Put,
             },
         );
         request.add_optional_header(&self.client_request_id);

@@ -329,13 +329,13 @@ impl ToTokens for AuthCode {
 
 fn verb_to_tokens(verb: &WebVerb) -> TokenStream {
     match verb {
-        WebVerb::Get => quote! { http::Method::GET },
-        WebVerb::Post => quote! { http::Method::POST },
-        WebVerb::Put => quote! { http::Method::PUT },
-        WebVerb::Patch => quote! { http::Method::PATCH },
-        WebVerb::Delete => quote! { http::Method::DELETE },
-        WebVerb::Options => quote! { http::Method::OPTIONS },
-        WebVerb::Head => quote! { http::Method::HEAD },
+        WebVerb::Get => quote! { azure_core::Method::Get },
+        WebVerb::Post => quote! { azure_core::Method::Post },
+        WebVerb::Put => quote! { azure_core::Method::Put },
+        WebVerb::Patch => quote! { azure_core::Method::Patch },
+        WebVerb::Delete => quote! { azure_core::Method::Delete },
+        WebVerb::Options => quote! { azure_core::Method::Option },
+        WebVerb::Head => quote! { azure_core::Method::Head },
     }
 }
 
@@ -620,7 +620,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                     match tp {
                         Some(_) => {
                             match_status.extend(quote! {
-                                http::StatusCode::#status_code_name => {
+                                azure_core::StatusCode::#status_code_name => {
                                     let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                     #rsp_value
                                     Ok(rsp_value)
@@ -629,7 +629,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                         }
                         None => {
                             match_status.extend(quote! {
-                                http::StatusCode::#status_code_name => {
+                                azure_core::StatusCode::#status_code_name => {
                                     Ok(())
                                 }
                             });
@@ -639,7 +639,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                     match tp {
                         Some(_) => {
                             match_status.extend(quote! {
-                                http::StatusCode::#status_code_name => {
+                                azure_core::StatusCode::#status_code_name => {
                                     let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                     #rsp_value
                                     Ok(Response::#response_type_name(rsp_value))
@@ -648,7 +648,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                         }
                         None => {
                             match_status.extend(quote! {
-                                http::StatusCode::#status_code_name => {
+                                azure_core::StatusCode::#status_code_name => {
                                     Ok(Response::#response_type_name)
                                 }
                             });
@@ -661,7 +661,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     }
     match_status.extend(quote! {
         status_code => {
-            Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse { status: status_code.as_u16(), error_code: None }))
+            Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse { status: status_code as u16, error_code: None }))
         }
     });
 
