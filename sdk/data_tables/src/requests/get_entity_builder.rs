@@ -33,9 +33,7 @@ impl<'a> GetEntityBuilder<'a> {
 
         self.select.append_to_url_query(&mut url);
 
-        let mut request = self
-            .entity_client
-            .prepare_request(url.as_str(), Method::GET, None)?;
+        let mut request = self.entity_client.prepare_request(url, Method::GET, None)?;
         request.add_optional_header(&self.client_request_id);
         request.insert_header("Accept", "application/json;odata=fullmetadata");
 

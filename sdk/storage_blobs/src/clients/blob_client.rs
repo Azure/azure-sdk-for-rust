@@ -216,7 +216,7 @@ impl BlobClient {
 
     pub(crate) fn prepare_request(
         &self,
-        url: &str,
+        url: Url,
         method: Method,
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {

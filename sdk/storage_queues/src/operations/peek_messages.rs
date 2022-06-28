@@ -38,11 +38,10 @@ impl PeekMessagesBuilder {
             self.number_of_messages.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = self.queue_client.storage_client().prepare_request(
-                url.as_str(),
-                Method::GET,
-                None,
-            )?;
+            let mut request =
+                self.queue_client
+                    .storage_client()
+                    .prepare_request(url, Method::GET, None)?;
 
             let response = self
                 .queue_client

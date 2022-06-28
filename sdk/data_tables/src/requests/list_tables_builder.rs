@@ -46,9 +46,9 @@ impl<'a> ListTablesBuilder<'a> {
         self.continuation_next_table_name
             .append_to_url_query(&mut url);
 
-        let mut request =
-            self.table_service_client
-                .prepare_request(url.as_str(), Method::GET, None)?;
+        let mut request = self
+            .table_service_client
+            .prepare_request(url, Method::GET, None)?;
         request.add_optional_header(&self.client_request_id);
         request.insert_header("Accept", "application/json;odata=fullmetadata");
 

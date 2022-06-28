@@ -42,7 +42,7 @@ impl<'a> SubmitTransactionBuilder<'a> {
         let payload = batch.to_string()?;
 
         let mut request = self.partition_key_client.prepare_request(
-            url.as_str(),
+            url,
             Method::POST,
             Some(bytes::Bytes::from(payload)),
         )?;

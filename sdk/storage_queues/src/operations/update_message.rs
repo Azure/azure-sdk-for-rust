@@ -53,7 +53,7 @@ impl UpdateMessageBuilder {
             );
 
             let mut request = self.pop_receipt_client.storage_client().prepare_request(
-                url.as_str(),
+                url,
                 Method::PUT,
                 Some(message.into()),
             )?;

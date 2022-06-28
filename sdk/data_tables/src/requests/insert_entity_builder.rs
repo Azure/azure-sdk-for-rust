@@ -47,7 +47,7 @@ impl<'a> InsertEntityBuilder<'a> {
         let request_body_serialized = serde_json::to_string(entity)?;
 
         let mut request = self.table_client.prepare_request(
-            url.as_str(),
+            url,
             Method::POST,
             Some(bytes::Bytes::from(request_body_serialized)),
         )?;

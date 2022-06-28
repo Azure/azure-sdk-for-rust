@@ -38,7 +38,7 @@ impl<'a> DeleteEntityBuilder<'a> {
 
         let mut request = self
             .entity_client
-            .prepare_request(url.as_str(), Method::DELETE, None)?;
+            .prepare_request(url, Method::DELETE, None)?;
         request.add_optional_header(&self.client_request_id);
         request.add_mandatory_header(&self.if_match);
 

@@ -184,14 +184,10 @@ impl StorageAccountClient {
         let key = key.into();
         let storage_credentials = StorageCredentials::Key(account.clone(), key.clone());
         let pipeline = new_pipeline_from_options(StorageOptions::new(), storage_credentials);
-        let blob_storage_url =
-            Url::parse(&format!("{}{}", blob_storage_url.as_str(), account)).unwrap();
-        let table_storage_url =
-            Url::parse(&format!("{}{}", table_storage_url.as_str(), account)).unwrap();
-        let queue_storage_url =
-            Url::parse(&format!("{}{}", queue_storage_url.as_str(), account)).unwrap();
-        let filesystem_url =
-            Url::parse(&format!("{}{}", filesystem_url.as_str(), account)).unwrap();
+        let blob_storage_url = Url::parse(&format!("{}{}", blob_storage_url, account)).unwrap();
+        let table_storage_url = Url::parse(&format!("{}{}", table_storage_url, account)).unwrap();
+        let queue_storage_url = Url::parse(&format!("{}{}", queue_storage_url, account)).unwrap();
+        let filesystem_url = Url::parse(&format!("{}{}", filesystem_url, account)).unwrap();
 
         Arc::new(Self {
             blob_storage_url,

@@ -1,5 +1,5 @@
 use crate::{blob::operations::*, prelude::*};
-use azure_core::{prelude::*, Context, Method, Request, Response};
+use azure_core::{prelude::*, Context, Method, Request, Response, Url};
 use azure_storage::core::prelude::*;
 use bytes::Bytes;
 use std::sync::Arc;
@@ -68,7 +68,7 @@ impl BlobLeaseClient {
 
     pub(crate) fn prepare_request(
         &self,
-        url: &str,
+        url: Url,
         method: Method,
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {

@@ -33,9 +33,9 @@ impl DeleteBuilder {
 
             url.query_pairs_mut().append_pair("restype", "container");
 
-            let mut request =
-                self.container_client
-                    .prepare_request(url.as_str(), Method::DELETE, None)?;
+            let mut request = self
+                .container_client
+                .prepare_request(url, Method::DELETE, None)?;
             request.add_optional_header(&self.lease_id);
 
             let _response = self
