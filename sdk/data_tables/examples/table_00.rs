@@ -70,10 +70,10 @@ async fn main() -> azure_core::Result<()> {
         .submit_transaction(transaction)
         .into_future()
         .await?;
-    println!("response = {:?}\n", response);
+    println!("submit transaction response = {:?}\n", response);
 
     let response = entity_client.delete().into_future().await?;
-    println!("response = {:?}\n", response);
+    println!("delete entity response = {:?}\n", response);
 
     table_client
         .insert(&entity)?
@@ -83,16 +83,17 @@ async fn main() -> azure_core::Result<()> {
 
     // Get an entity from the table
     let response = entity_client.get().into_future().await?;
-    println!("response = {:?}\n", response);
+    println!("get entity response = {:?}\n", response);
 
     let mut entity: MyEntity = response.entity;
     entity.city = "Rome".to_owned();
 
-    table_client
+    let response = table_client
         .insert(&entity)?
         .return_entity(true)
         .into_future::<MyEntity>()
         .await?;
+    println!("insert entity response = {:?}\n", response);
 
     let entity_client = table_client
         .partition_key_client(&entity.city)
@@ -103,7 +104,7 @@ async fn main() -> azure_core::Result<()> {
         .update(&entity, response.etag.into())?
         .into_future()
         .await?;
-    println!("response = {:?}\n", response);
+    println!("update with etag: response = {:?}\n", response);
 
     // now we perform an upsert
     entity.name = "Carl".to_owned();
@@ -111,11 +112,11 @@ async fn main() -> azure_core::Result<()> {
         .insert_or_replace(&entity)?
         .into_future()
         .await?;
-    println!("response = {:?}\n", response);
+    println!("insert_or_replace response = {:?}\n", response);
 
     let mut stream = table_service.list().top(2).into_stream();
     while let Some(response) = stream.next().await {
-        println!("response = {:?}\n", response);
+        println!("stream response list tables = {:?}\n", response);
     }
 
     let mut stream = table_client
@@ -125,11 +126,11 @@ async fn main() -> azure_core::Result<()> {
         .into_stream::<MyEntity>();
 
     while let Some(response) = stream.next().await {
-        println!("response = {:?}\n", response);
+        println!("stream response query entries = {:?}\n", response);
     }
 
     let response = table_client.delete().into_future().await?;
-    println!("response = {:?}\n", response);
+    println!("delete table response = {:?}\n", response);
 
     Ok(())
 }
