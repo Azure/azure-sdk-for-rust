@@ -358,8 +358,9 @@ pub struct DataLakeStoreAccountListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DataLakeStoreAccountListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DataLakeStoreAccountListResult {
@@ -614,8 +615,9 @@ pub struct FirewallRuleListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for FirewallRuleListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl FirewallRuleListResult {
@@ -844,8 +846,9 @@ pub struct TrustedIdProviderListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for TrustedIdProviderListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl TrustedIdProviderListResult {
@@ -1140,7 +1143,8 @@ pub struct UsageListResult {
     pub value: Vec<Usage>,
 }
 impl azure_core::Continuable for UsageListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1189,8 +1193,9 @@ pub struct VirtualNetworkRuleListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VirtualNetworkRuleListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl VirtualNetworkRuleListResult {

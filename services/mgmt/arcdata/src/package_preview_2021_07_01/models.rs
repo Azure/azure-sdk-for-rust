@@ -147,7 +147,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorResponseBody>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -454,8 +455,9 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationListResult {
@@ -472,8 +474,9 @@ pub struct PageOfDataControllerResource {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PageOfDataControllerResource {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PageOfDataControllerResource {
@@ -543,8 +546,9 @@ pub struct PostgresInstanceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PostgresInstanceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PostgresInstanceListResult {
@@ -701,8 +705,9 @@ pub struct SqlManagedInstanceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SqlManagedInstanceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SqlManagedInstanceListResult {
@@ -850,8 +855,9 @@ pub struct SqlServerInstanceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SqlServerInstanceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SqlServerInstanceListResult {

@@ -122,8 +122,9 @@ pub struct AppRoleAssignmentListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for AppRoleAssignmentListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl AppRoleAssignmentListResult {
@@ -400,8 +401,9 @@ pub struct ApplicationListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for ApplicationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl ApplicationListResult {
@@ -486,8 +488,9 @@ pub struct DirectoryObjectListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for DirectoryObjectListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl DirectoryObjectListResult {
@@ -528,7 +531,8 @@ pub struct DomainListResult {
     pub value: Vec<Domain>,
 }
 impl azure_core::Continuable for DomainListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -575,7 +579,8 @@ pub struct GraphError {
     pub odata_error: Option<OdataError>,
 }
 impl azure_core::Continuable for GraphError {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -655,7 +660,8 @@ pub struct GroupGetMemberGroupsResult {
     pub value: Vec<String>,
 }
 impl azure_core::Continuable for GroupGetMemberGroupsResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -675,8 +681,9 @@ pub struct GroupListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for GroupListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl GroupListResult {
@@ -782,7 +789,8 @@ pub struct KeyCredentialListResult {
     pub value: Vec<KeyCredential>,
 }
 impl azure_core::Continuable for KeyCredentialListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -921,8 +929,9 @@ pub struct OAuth2PermissionGrantListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for OAuth2PermissionGrantListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl OAuth2PermissionGrantListResult {
@@ -1015,7 +1024,8 @@ pub struct PasswordCredentialListResult {
     pub value: Vec<PasswordCredential>,
 }
 impl azure_core::Continuable for PasswordCredentialListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1280,8 +1290,9 @@ pub struct ServicePrincipalListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for ServicePrincipalListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl ServicePrincipalListResult {
@@ -1553,7 +1564,8 @@ pub struct UserGetMemberGroupsResult {
     pub value: Vec<String>,
 }
 impl azure_core::Continuable for UserGetMemberGroupsResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1573,8 +1585,9 @@ pub struct UserListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for UserListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl UserListResult {

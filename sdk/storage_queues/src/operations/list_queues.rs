@@ -37,7 +37,7 @@ impl ListQueuesBuilder {
     }
 
     pub fn into_stream(self) -> Pageable<ListQueuesResponse, Error> {
-        let make_request = move |continuation: Option<Continuation>| {
+        let make_request = move |continuation: Option<NextMarker>| {
             let mut this = self.clone();
             async move {
                 let mut url = this
@@ -51,9 +51,8 @@ impl ListQueuesBuilder {
 
                 this.prefix.append_to_url_query(&mut url);
 
-                if let Some(continuation) = continuation {
-                    url.query_pairs_mut()
-                        .append_pair("marker", &continuation.as_string());
+                if let Some(next_marker) = continuation {
+                    next_marker.append_to_url_query(&mut url);
                 }
 
                 this.max_results.append_to_url_query(&mut url);
@@ -98,8 +97,9 @@ pub struct ListQueuesResponse {
 }
 
 impl Continuable for ListQueuesResponse {
-    fn continuation(&self) -> Option<Continuation> {
-        self.next_marker.clone().map(Continuation::from)
+    type Continuation = NextMarker;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_marker.clone()
     }
 }
 

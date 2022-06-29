@@ -41,7 +41,7 @@ impl ListFileSystemsBuilder {
     }
 
     pub fn into_stream(self) -> ListFileSystems {
-        let make_request = move |continuation: Option<Continuation>| {
+        let make_request = move |continuation: Option<NextMarker>| {
             let this = self.clone();
             let ctx = self.context.clone().unwrap_or_default();
 
@@ -53,8 +53,7 @@ impl ListFileSystemsBuilder {
                 this.timeout.append_to_url_query(&mut url);
 
                 if let Some(c) = continuation {
-                    let nm: NextMarker = c.into();
-                    nm.append_to_url_query_as_continuation(&mut url);
+                    c.append_to_url_query_as_continuation(&mut url);
                 } else {
                     this.next_marker.append_to_url_query(&mut url);
                 };
@@ -99,8 +98,9 @@ impl ListFileSystemsResponse {
 }
 
 impl Continuable for ListFileSystemsResponse {
-    fn continuation(&self) -> Option<Continuation> {
-        self.next_marker.clone().map(Continuation::from)
+    type Continuation = NextMarker;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_marker.clone()
     }
 }
 

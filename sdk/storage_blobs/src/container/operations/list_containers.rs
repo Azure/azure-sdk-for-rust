@@ -43,7 +43,7 @@ impl ListContainersBuilder {
     }
 
     pub fn into_stream(self) -> Pageable<ListContainersResponse, Error> {
-        let make_request = move |continuation: Option<Continuation>| {
+        let make_request = move |continuation: Option<NextMarker>| {
             let this = self.clone();
             let mut ctx = self.context.clone();
             async move {
@@ -58,9 +58,8 @@ impl ListContainersBuilder {
 
                 this.prefix.append_to_url_query(&mut url);
 
-                if let Some(continuation) = continuation {
-                    url.query_pairs_mut()
-                        .append_pair("marker", &continuation.as_string());
+                if let Some(next_marker) = continuation {
+                    next_marker.append_to_url_query(&mut url);
                 }
 
                 if let Some(include) = match (this.include_metadata, this.include_deleted) {
@@ -122,7 +121,8 @@ impl ListContainersResponse {
 }
 
 impl Continuable for ListContainersResponse {
-    fn continuation(&self) -> Option<Continuation> {
-        self.next_marker.clone().map(Continuation::from)
+    type Continuation = NextMarker;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_marker.clone().map(NextMarker::from)
     }
 }

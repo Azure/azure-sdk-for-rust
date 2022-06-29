@@ -518,7 +518,8 @@ pub struct CassandraKeyspaceListResult {
     pub value: Vec<CassandraKeyspaceGetResults>,
 }
 impl azure_core::Continuable for CassandraKeyspaceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -633,7 +634,8 @@ pub struct CassandraTableListResult {
     pub value: Vec<CassandraTableGetResults>,
 }
 impl azure_core::Continuable for CassandraTableListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -686,7 +688,8 @@ pub struct CloudError {
     pub error: Option<ErrorResponse>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2004,7 +2007,8 @@ pub struct DatabaseAccountsListResult {
     pub value: Vec<DatabaseAccountGetResults>,
 }
 impl azure_core::Continuable for DatabaseAccountsListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2039,7 +2043,8 @@ pub struct ErrorResponse {
     pub message: Option<String>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2172,7 +2177,8 @@ pub struct GremlinDatabaseListResult {
     pub value: Vec<GremlinDatabaseGetResults>,
 }
 impl azure_core::Continuable for GremlinDatabaseListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2257,7 +2263,8 @@ pub struct GremlinGraphListResult {
     pub value: Vec<GremlinGraphGetResults>,
 }
 impl azure_core::Continuable for GremlinGraphListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2528,7 +2535,8 @@ pub struct ListClusters {
     pub value: Vec<ClusterResource>,
 }
 impl azure_core::Continuable for ListClusters {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2545,7 +2553,8 @@ pub struct ListDataCenters {
     pub value: Vec<DataCenterResource>,
 }
 impl azure_core::Continuable for ListDataCenters {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2603,7 +2612,8 @@ pub struct LocationListResult {
     pub value: Vec<LocationGetResult>,
 }
 impl azure_core::Continuable for LocationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -3009,7 +3019,8 @@ pub struct MetricDefinitionsListResult {
     pub value: Vec<MetricDefinition>,
 }
 impl azure_core::Continuable for MetricDefinitionsListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -3026,7 +3037,8 @@ pub struct MetricListResult {
     pub value: Vec<Metric>,
 }
 impl azure_core::Continuable for MetricListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -3142,7 +3154,8 @@ pub struct MongoDbCollectionListResult {
     pub value: Vec<MongoDbCollectionGetResults>,
 }
 impl azure_core::Continuable for MongoDbCollectionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -3241,7 +3254,8 @@ pub struct MongoDbDatabaseListResult {
     pub value: Vec<MongoDbDatabaseGetResults>,
 }
 impl azure_core::Continuable for MongoDbDatabaseListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -3357,7 +3371,8 @@ pub struct NotebookWorkspaceListResult {
     pub value: Vec<NotebookWorkspace>,
 }
 impl azure_core::Continuable for NotebookWorkspaceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -3431,8 +3446,9 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationListResult {
@@ -3520,7 +3536,8 @@ pub struct PartitionMetricListResult {
     pub value: Vec<PartitionMetric>,
 }
 impl azure_core::Continuable for PartitionMetricListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -3554,7 +3571,8 @@ pub struct PartitionUsagesResult {
     pub value: Vec<PartitionUsage>,
 }
 impl azure_core::Continuable for PartitionUsagesResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -3599,7 +3617,8 @@ pub struct PercentileMetricListResult {
     pub value: Vec<PercentileMetric>,
 }
 impl azure_core::Continuable for PercentileMetricListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -3712,7 +3731,8 @@ pub struct PrivateEndpointConnectionListResult {
     pub value: Vec<PrivateEndpointConnection>,
 }
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -3776,7 +3796,8 @@ pub struct PrivateLinkResourceListResult {
     pub value: Vec<PrivateLinkResource>,
 }
 impl azure_core::Continuable for PrivateLinkResourceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -3955,7 +3976,8 @@ pub struct RestorableDatabaseAccountsListResult {
     pub value: Vec<RestorableDatabaseAccountGetResult>,
 }
 impl azure_core::Continuable for RestorableDatabaseAccountsListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -4053,7 +4075,8 @@ pub struct RestorableMongodbCollectionsListResult {
     pub value: Vec<RestorableMongodbCollectionGetResult>,
 }
 impl azure_core::Continuable for RestorableMongodbCollectionsListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -4130,7 +4153,8 @@ pub struct RestorableMongodbDatabasesListResult {
     pub value: Vec<RestorableMongodbDatabaseGetResult>,
 }
 impl azure_core::Continuable for RestorableMongodbDatabasesListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -4147,7 +4171,8 @@ pub struct RestorableMongodbResourcesListResult {
     pub value: Vec<DatabaseRestoreResource>,
 }
 impl azure_core::Continuable for RestorableMongodbResourcesListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -4250,7 +4275,8 @@ pub struct RestorableSqlContainersListResult {
     pub value: Vec<RestorableSqlContainerGetResult>,
 }
 impl azure_core::Continuable for RestorableSqlContainersListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -4361,7 +4387,8 @@ pub struct RestorableSqlDatabasesListResult {
     pub value: Vec<RestorableSqlDatabaseGetResult>,
 }
 impl azure_core::Continuable for RestorableSqlDatabasesListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -4378,7 +4405,8 @@ pub struct RestorableSqlResourcesListResult {
     pub value: Vec<DatabaseRestoreResource>,
 }
 impl azure_core::Continuable for RestorableSqlResourcesListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -4585,7 +4613,8 @@ pub struct SqlContainerListResult {
     pub value: Vec<SqlContainerGetResults>,
 }
 impl azure_core::Continuable for SqlContainerListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -4722,7 +4751,8 @@ pub struct SqlDatabaseListResult {
     pub value: Vec<SqlDatabaseGetResults>,
 }
 impl azure_core::Continuable for SqlDatabaseListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -4776,7 +4806,8 @@ pub struct SqlRoleAssignmentListResult {
     pub value: Vec<SqlRoleAssignmentGetResults>,
 }
 impl azure_core::Continuable for SqlRoleAssignmentListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -4837,7 +4868,8 @@ pub struct SqlRoleDefinitionListResult {
     pub value: Vec<SqlRoleDefinitionGetResults>,
 }
 impl azure_core::Continuable for SqlRoleDefinitionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -4939,7 +4971,8 @@ pub struct SqlStoredProcedureListResult {
     pub value: Vec<SqlStoredProcedureGetResults>,
 }
 impl azure_core::Continuable for SqlStoredProcedureListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -5025,7 +5058,8 @@ pub struct SqlTriggerListResult {
     pub value: Vec<SqlTriggerGetResults>,
 }
 impl azure_core::Continuable for SqlTriggerListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -5205,7 +5239,8 @@ pub struct SqlUserDefinedFunctionListResult {
     pub value: Vec<SqlUserDefinedFunctionGetResults>,
 }
 impl azure_core::Continuable for SqlUserDefinedFunctionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -5293,7 +5328,8 @@ pub struct TableListResult {
     pub value: Vec<TableGetResults>,
 }
 impl azure_core::Continuable for TableListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -5512,7 +5548,8 @@ pub struct UsagesResult {
     pub value: Vec<Usage>,
 }
 impl azure_core::Continuable for UsagesResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

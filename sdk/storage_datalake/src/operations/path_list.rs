@@ -52,7 +52,7 @@ impl ListPathsBuilder {
     }
 
     pub fn into_stream(self) -> ListPaths {
-        let make_request = move |continuation: Option<Continuation>| {
+        let make_request = move |continuation: Option<NextMarker>| {
             let this = self.clone();
             let ctx = self.context.clone();
 
@@ -65,9 +65,8 @@ impl ListPathsBuilder {
                 this.timeout.append_to_url_query(&mut url);
                 this.upn.append_to_url_query(&mut url);
 
-                if let Some(c) = continuation {
-                    let nm: NextMarker = c.into();
-                    nm.append_to_url_query_as_continuation(&mut url);
+                if let Some(next_marker) = continuation {
+                    next_marker.append_to_url_query_as_continuation(&mut url);
                 } else {
                     this.continuation.append_to_url_query(&mut url);
                 };
@@ -112,8 +111,9 @@ impl ListPathsResponse {
 }
 
 impl Continuable for ListPathsResponse {
-    fn continuation(&self) -> Option<Continuation> {
-        self.continuation.clone().map(Continuation::from)
+    type Continuation = NextMarker;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.continuation.clone()
     }
 }
 

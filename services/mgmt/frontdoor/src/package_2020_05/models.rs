@@ -864,7 +864,8 @@ pub struct ErrorResponse {
     pub message: Option<String>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -901,8 +902,9 @@ pub struct ExperimentList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ExperimentList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ExperimentList {
@@ -1196,8 +1198,9 @@ pub struct FrontDoorListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for FrontDoorListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl FrontDoorListResult {
@@ -1562,8 +1565,9 @@ pub struct FrontendEndpointsListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for FrontendEndpointsListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl FrontendEndpointsListResult {
@@ -2303,8 +2307,9 @@ pub struct ManagedRuleSetDefinitionList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ManagedRuleSetDefinitionList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ManagedRuleSetDefinitionList {
@@ -2667,8 +2672,9 @@ pub struct PreconfiguredEndpointList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PreconfiguredEndpointList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PreconfiguredEndpointList {
@@ -2775,8 +2781,9 @@ pub struct ProfileList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ProfileList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ProfileList {
@@ -3317,8 +3324,9 @@ pub struct RulesEngineListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RulesEngineListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl RulesEngineListResult {
@@ -3841,8 +3849,9 @@ pub struct WebApplicationFirewallPolicyList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WebApplicationFirewallPolicyList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WebApplicationFirewallPolicyList {

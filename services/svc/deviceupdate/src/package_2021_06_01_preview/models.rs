@@ -105,8 +105,9 @@ pub struct DeploymentDeviceStatesList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DeploymentDeviceStatesList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DeploymentDeviceStatesList {
@@ -215,8 +216,9 @@ pub struct DeploymentsList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DeploymentsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DeploymentsList {
@@ -312,8 +314,9 @@ pub struct DeviceClassesList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DeviceClassesList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DeviceClassesList {
@@ -423,8 +426,9 @@ pub struct DeviceOperationsList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DeviceOperationsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DeviceOperationsList {
@@ -504,8 +508,9 @@ pub struct DeviceTagsList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DeviceTagsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DeviceTagsList {
@@ -541,8 +546,9 @@ pub struct DevicesList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DevicesList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DevicesList {
@@ -589,7 +595,8 @@ pub struct ErrorResponse {
     pub error: Error,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -717,8 +724,9 @@ pub struct GroupsList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for GroupsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl GroupsList {
@@ -987,8 +995,9 @@ pub struct LogCollectionOperationList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for LogCollectionOperationList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl LogCollectionOperationList {
@@ -1243,8 +1252,9 @@ pub struct StringsList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for StringsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl StringsList {
@@ -1277,8 +1287,9 @@ pub struct UpdatableDevicesList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for UpdatableDevicesList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl UpdatableDevicesList {
@@ -1465,8 +1476,9 @@ pub struct UpdateIdsList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for UpdateIdsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl UpdateIdsList {
@@ -1484,8 +1496,9 @@ pub struct UpdateList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for UpdateList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl UpdateList {
@@ -1548,8 +1561,9 @@ pub struct UpdateOperationsList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for UpdateOperationsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl UpdateOperationsList {

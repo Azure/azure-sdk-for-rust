@@ -68,7 +68,7 @@ impl ListUsersBuilder {
 
 pub type ListUsers = Pageable<ListUsersResponse, azure_core::error::Error>;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct ListUsersResponse {
     pub users: Vec<User>,
     pub rid: String,
@@ -76,7 +76,7 @@ pub struct ListUsersResponse {
     pub charge: f64,
     pub activity_id: uuid::Uuid,
     pub session_token: SessionToken,
-    pub continuation_token: Option<String>,
+    pub continuation_token: Option<Continuation>,
 }
 
 impl ListUsersResponse {
@@ -119,7 +119,8 @@ impl IntoIterator for ListUsersResponse {
 }
 
 impl Continuable for ListUsersResponse {
-    fn continuation(&self) -> Option<Continuation> {
-        self.continuation_token.clone().map(Continuation::from)
+    type Continuation = Continuation;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.continuation_token.clone()
     }
 }

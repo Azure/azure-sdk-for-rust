@@ -69,8 +69,9 @@ pub struct AvailableProviderOperations {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AvailableProviderOperations {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AvailableProviderOperations {
@@ -137,7 +138,8 @@ pub struct DataManagerList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DataManagerList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -188,8 +190,9 @@ pub struct DataServiceList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DataServiceList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DataServiceList {
@@ -267,8 +270,9 @@ pub struct DataStoreList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DataStoreList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DataStoreList {
@@ -342,8 +346,9 @@ pub struct DataStoreTypeList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DataStoreTypeList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DataStoreTypeList {
@@ -542,8 +547,9 @@ pub struct JobDefinitionList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for JobDefinitionList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl JobDefinitionList {
@@ -735,8 +741,9 @@ pub struct JobList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for JobList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl JobList {
@@ -884,8 +891,9 @@ pub struct PublicKeyList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PublicKeyList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PublicKeyList {

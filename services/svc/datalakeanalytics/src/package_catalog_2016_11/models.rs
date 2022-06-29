@@ -304,7 +304,8 @@ pub struct AclList {
     pub value: Vec<Acl>,
 }
 impl azure_core::Continuable for AclList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -603,7 +604,8 @@ pub struct USqlAssemblyList {
     pub value: Vec<USqlAssemblyClr>,
 }
 impl azure_core::Continuable for USqlAssemblyList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -636,7 +638,8 @@ pub struct USqlCredentialList {
     pub value: Vec<USqlCredential>,
 }
 impl azure_core::Continuable for USqlCredentialList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -669,7 +672,8 @@ pub struct USqlDatabaseList {
     pub value: Vec<USqlDatabase>,
 }
 impl azure_core::Continuable for USqlDatabaseList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -750,7 +754,8 @@ pub struct USqlExternalDataSourceList {
     pub value: Vec<USqlExternalDataSource>,
 }
 impl azure_core::Continuable for USqlExternalDataSourceList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -831,7 +836,8 @@ pub struct USqlPackageList {
     pub value: Vec<USqlPackage>,
 }
 impl azure_core::Continuable for USqlPackageList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -873,7 +879,8 @@ pub struct USqlProcedureList {
     pub value: Vec<USqlProcedure>,
 }
 impl azure_core::Continuable for USqlProcedureList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -909,7 +916,8 @@ pub struct USqlSchemaList {
     pub value: Vec<USqlSchema>,
 }
 impl azure_core::Continuable for USqlSchemaList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1034,7 +1042,8 @@ pub struct USqlTableFragmentList {
     pub value: Vec<USqlTableFragment>,
 }
 impl azure_core::Continuable for USqlTableFragmentList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1053,7 +1062,8 @@ pub struct USqlTableList {
     pub value: Vec<USqlTable>,
 }
 impl azure_core::Continuable for USqlTableList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1104,7 +1114,8 @@ pub struct USqlTablePartitionList {
     pub value: Vec<USqlTablePartition>,
 }
 impl azure_core::Continuable for USqlTablePartitionList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1197,7 +1208,8 @@ pub struct USqlTableStatisticsList {
     pub value: Vec<USqlTableStatistics>,
 }
 impl azure_core::Continuable for USqlTableStatisticsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1230,7 +1242,8 @@ pub struct USqlTableTypeList {
     pub value: Vec<USqlTableType>,
 }
 impl azure_core::Continuable for USqlTableTypeList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1272,7 +1285,8 @@ pub struct USqlTableValuedFunctionList {
     pub value: Vec<USqlTableValuedFunction>,
 }
 impl azure_core::Continuable for USqlTableValuedFunctionList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1347,7 +1361,8 @@ pub struct USqlTypeList {
     pub value: Vec<USqlType>,
 }
 impl azure_core::Continuable for USqlTypeList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1389,7 +1404,8 @@ pub struct USqlViewList {
     pub value: Vec<USqlView>,
 }
 impl azure_core::Continuable for USqlViewList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

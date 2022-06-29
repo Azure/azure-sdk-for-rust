@@ -2,8 +2,6 @@ use futures::stream::unfold;
 use futures::Stream;
 use pin_project::pin_project;
 
-use crate::prelude::Continuation;
-
 macro_rules! r#try {
     ($expr:expr $(,)?) => {
         match $expr {
@@ -29,11 +27,13 @@ impl<T, E> Pageable<T, E>
 where
     T: Continuable + Send + Sync,
 {
-    pub fn new<F>(make_request: impl Fn(Option<Continuation>) -> F + Clone + 'static + Send) -> Self
+    pub fn new<F>(
+        make_request: impl Fn(Option<T::Continuation>) -> F + Clone + 'static + Send,
+    ) -> Self
     where
         F: std::future::Future<Output = Result<T, E>> + Send + 'static,
     {
-        let stream = unfold(State::Init, move |state: State| {
+        let stream = unfold(State::Init, move |state: State<T::Continuation>| {
             let make_request = make_request.clone();
             async move {
                 let response = match state {
@@ -84,12 +84,13 @@ impl<T, O> std::fmt::Debug for Pageable<T, O> {
 
 /// A type that can yield an optional continuation token
 pub trait Continuable {
-    fn continuation(&self) -> Option<Continuation>;
+    type Continuation: Send + 'static;
+    fn continuation(&self) -> Option<Self::Continuation>;
 }
 
 #[derive(Debug, Clone, PartialEq)]
-enum State {
+enum State<T> {
     Init,
-    Continuation(Continuation),
+    Continuation(T),
     Done,
 }

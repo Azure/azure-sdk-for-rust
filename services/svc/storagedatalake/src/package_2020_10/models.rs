@@ -197,7 +197,8 @@ pub struct FileSystemList {
     pub filesystems: Vec<FileSystem>,
 }
 impl azure_core::Continuable for FileSystemList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -227,8 +228,9 @@ pub struct ListBlobsHierarchySegmentResponse {
     pub next_marker: Option<String>,
 }
 impl azure_core::Continuable for ListBlobsHierarchySegmentResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_marker.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_marker.clone()
     }
 }
 impl ListBlobsHierarchySegmentResponse {
@@ -282,7 +284,8 @@ pub struct PathList {
     pub paths: Vec<Path>,
 }
 impl azure_core::Continuable for PathList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -314,7 +317,8 @@ pub struct StorageError {
     pub error: Option<storage_error::Error>,
 }
 impl azure_core::Continuable for StorageError {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

@@ -59,7 +59,7 @@ impl ListDatabasesBuilder {
 
 pub type ListDatabases = Pageable<ListDatabasesResponse, azure_core::error::Error>;
 
-#[derive(Clone, PartialEq, PartialOrd, Debug)]
+#[derive(Clone, Debug)]
 pub struct ListDatabasesResponse {
     pub rid: String,
     pub databases: Vec<Database>,
@@ -72,7 +72,7 @@ pub struct ListDatabasesResponse {
     pub resource_usage: Vec<ResourceQuota>,
     pub schema_version: String,
     pub service_version: String,
-    pub continuation_token: Option<String>,
+    pub continuation_token: Option<Continuation>,
     pub gateway_version: String,
 }
 
@@ -112,8 +112,9 @@ impl ListDatabasesResponse {
 }
 
 impl Continuable for ListDatabasesResponse {
-    fn continuation(&self) -> Option<Continuation> {
-        self.continuation_token.clone().map(Continuation::from)
+    type Continuation = Continuation;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.continuation_token.clone()
     }
 }
 

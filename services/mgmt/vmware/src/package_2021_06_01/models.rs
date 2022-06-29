@@ -42,8 +42,9 @@ pub struct AddonList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AddonList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AddonList {
@@ -243,7 +244,8 @@ pub struct CloudError {
     pub error: Option<ErrorResponse>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -277,8 +279,9 @@ pub struct CloudLinkList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CloudLinkList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl CloudLinkList {
@@ -378,8 +381,9 @@ pub struct ClusterList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ClusterList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ClusterList {
@@ -511,8 +515,9 @@ pub struct DatastoreList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DatastoreList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DatastoreList {
@@ -743,8 +748,9 @@ pub struct ExpressRouteAuthorizationList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ExpressRouteAuthorizationList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ExpressRouteAuthorizationList {
@@ -837,8 +843,9 @@ pub struct GlobalReachConnectionList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for GlobalReachConnectionList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl GlobalReachConnectionList {
@@ -976,8 +983,9 @@ pub struct HcxEnterpriseSiteList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for HcxEnterpriseSiteList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl HcxEnterpriseSiteList {
@@ -1293,8 +1301,9 @@ pub struct OperationList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationList {
@@ -1366,8 +1375,9 @@ pub struct PrivateCloudList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PrivateCloudList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PrivateCloudList {
@@ -1699,8 +1709,9 @@ pub struct ScriptCmdletsList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ScriptCmdletsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ScriptCmdletsList {
@@ -1908,8 +1919,9 @@ pub struct ScriptExecutionsList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ScriptExecutionsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ScriptExecutionsList {
@@ -1957,8 +1969,9 @@ pub struct ScriptPackagesList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ScriptPackagesList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ScriptPackagesList {
@@ -2386,8 +2399,9 @@ pub struct WorkloadNetworkDhcpList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkloadNetworkDhcpList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WorkloadNetworkDhcpList {
@@ -2624,8 +2638,9 @@ pub struct WorkloadNetworkDnsServicesList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkloadNetworkDnsServicesList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WorkloadNetworkDnsServicesList {
@@ -2734,8 +2749,9 @@ pub struct WorkloadNetworkDnsZonesList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkloadNetworkDnsZonesList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WorkloadNetworkDnsZonesList {
@@ -2768,8 +2784,9 @@ pub struct WorkloadNetworkGatewayList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkloadNetworkGatewayList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WorkloadNetworkGatewayList {
@@ -2817,8 +2834,9 @@ pub struct WorkloadNetworkPortMirroringList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkloadNetworkPortMirroringList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WorkloadNetworkPortMirroringList {
@@ -3066,8 +3084,9 @@ pub struct WorkloadNetworkPublicIPsList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkloadNetworkPublicIPsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WorkloadNetworkPublicIPsList {
@@ -3239,8 +3258,9 @@ pub struct WorkloadNetworkSegmentsList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkloadNetworkSegmentsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WorkloadNetworkSegmentsList {
@@ -3379,8 +3399,9 @@ pub struct WorkloadNetworkVmGroupsList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkloadNetworkVmGroupsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WorkloadNetworkVmGroupsList {
@@ -3467,8 +3488,9 @@ pub struct WorkloadNetworkVirtualMachinesList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkloadNetworkVirtualMachinesList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WorkloadNetworkVirtualMachinesList {

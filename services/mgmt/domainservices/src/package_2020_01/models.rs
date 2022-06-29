@@ -12,7 +12,8 @@ pub struct CloudError {
     pub error: Option<CloudErrorBody>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -322,8 +323,9 @@ pub struct DomainServiceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DomainServiceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DomainServiceListResult {
@@ -792,8 +794,9 @@ pub struct OperationEntityListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationEntityListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationEntityListResult {
@@ -826,8 +829,9 @@ pub struct OuContainerListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OuContainerListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OuContainerListResult {

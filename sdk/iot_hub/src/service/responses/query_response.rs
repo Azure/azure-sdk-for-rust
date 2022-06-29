@@ -1,5 +1,6 @@
 use azure_core::error::Error;
 use azure_core::headers::{self, continuation_token_from_headers_optional};
+use azure_core::prelude::Continuation;
 use serde_json::Value;
 
 /// The response for a query invocation
@@ -7,7 +8,7 @@ pub struct QueryResponse {
     /// The result of the query
     pub result: Value,
     /// The continuation token for the next result of the query
-    pub continuation_token: Option<String>,
+    pub continuation_token: Option<Continuation>,
     /// The type of the item in the result
     pub item_type: String,
 }

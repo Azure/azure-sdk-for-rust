@@ -13,8 +13,9 @@ pub struct AccountListSupportedImagesResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for AccountListSupportedImagesResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl AccountListSupportedImagesResult {
@@ -41,8 +42,9 @@ pub struct ApplicationListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for ApplicationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl ApplicationListResult {
@@ -259,7 +261,8 @@ pub struct BatchError {
     pub values: Vec<BatchErrorDetail>,
 }
 impl azure_core::Continuable for BatchError {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -396,8 +399,9 @@ pub struct CertificateListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for CertificateListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl CertificateListResult {
@@ -550,8 +554,9 @@ pub struct CloudJobListPreparationAndReleaseTaskStatusResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for CloudJobListPreparationAndReleaseTaskStatusResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl CloudJobListPreparationAndReleaseTaskStatusResult {
@@ -567,8 +572,9 @@ pub struct CloudJobListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for CloudJobListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl CloudJobListResult {
@@ -635,8 +641,9 @@ pub struct CloudJobScheduleListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for CloudJobScheduleListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl CloudJobScheduleListResult {
@@ -777,8 +784,9 @@ pub struct CloudPoolListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for CloudPoolListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl CloudPoolListResult {
@@ -894,8 +902,9 @@ pub struct CloudTaskListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for CloudTaskListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl CloudTaskListResult {
@@ -1104,8 +1113,9 @@ pub struct ComputeNodeListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for ComputeNodeListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl ComputeNodeListResult {
@@ -2653,8 +2663,9 @@ pub struct NodeFileListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for NodeFileListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl NodeFileListResult {
@@ -2993,8 +3004,9 @@ pub struct PoolListUsageMetricsResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for PoolListUsageMetricsResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl PoolListUsageMetricsResult {
@@ -3029,8 +3041,9 @@ pub struct PoolNodeCountsListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for PoolNodeCountsListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl PoolNodeCountsListResult {

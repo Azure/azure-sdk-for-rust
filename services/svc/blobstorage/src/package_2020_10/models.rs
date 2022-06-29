@@ -1097,8 +1097,9 @@ pub struct ListBlobsFlatSegmentResponse {
     pub next_marker: Option<String>,
 }
 impl azure_core::Continuable for ListBlobsFlatSegmentResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_marker.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_marker.clone()
     }
 }
 impl ListBlobsFlatSegmentResponse {
@@ -1135,8 +1136,9 @@ pub struct ListBlobsHierarchySegmentResponse {
     pub next_marker: Option<String>,
 }
 impl azure_core::Continuable for ListBlobsHierarchySegmentResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_marker.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_marker.clone()
     }
 }
 impl ListBlobsHierarchySegmentResponse {
@@ -1170,8 +1172,9 @@ pub struct ListContainersSegmentResponse {
     pub next_marker: Option<String>,
 }
 impl azure_core::Continuable for ListContainersSegmentResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_marker.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_marker.clone()
     }
 }
 impl ListContainersSegmentResponse {
@@ -1260,8 +1263,9 @@ pub struct PageList {
     pub next_marker: Option<String>,
 }
 impl azure_core::Continuable for PageList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_marker.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_marker.clone()
     }
 }
 impl PageList {
@@ -1518,7 +1522,8 @@ pub struct StorageError {
     pub message: Option<String>,
 }
 impl azure_core::Continuable for StorageError {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

@@ -72,7 +72,7 @@ impl ListStoredProceduresBuilder {
 
 pub type ListStoredProcedures = Pageable<ListStoredProceduresResponse, azure_core::error::Error>;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct ListStoredProceduresResponse {
     pub stored_procedures: Vec<StoredProcedure>,
     pub charge: f64,
@@ -82,7 +82,7 @@ pub struct ListStoredProceduresResponse {
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
     pub gateway_version: String,
-    pub continuation_token: Option<String>,
+    pub continuation_token: Option<Continuation>,
 }
 
 impl ListStoredProceduresResponse {
@@ -113,7 +113,8 @@ impl ListStoredProceduresResponse {
 }
 
 impl Continuable for ListStoredProceduresResponse {
-    fn continuation(&self) -> Option<Continuation> {
-        self.continuation_token.clone().map(Continuation::from)
+    type Continuation = Continuation;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.continuation_token.clone()
     }
 }

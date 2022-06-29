@@ -121,7 +121,7 @@ pub struct ListDocumentsResponse<T> {
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
     pub date: DateTime<Utc>,
-    pub continuation_token: Option<String>,
+    pub continuation_token: Option<Continuation>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -192,8 +192,9 @@ where
 }
 
 impl<T> Continuable for ListDocumentsResponse<T> {
-    fn continuation(&self) -> Option<Continuation> {
-        self.continuation_token.clone().map(Continuation::from)
+    type Continuation = Continuation;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.continuation_token.clone()
     }
 }
 

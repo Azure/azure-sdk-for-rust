@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let response = service_client
         .query()
         .max_item_count(1)
-        .continuation(token.as_str())
+        .continuation(token)
         .execute(query)
         .await?;
 

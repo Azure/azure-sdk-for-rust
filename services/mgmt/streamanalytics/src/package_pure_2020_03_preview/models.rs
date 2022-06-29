@@ -53,8 +53,9 @@ pub struct ClusterJobListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ClusterJobListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ClusterJobListResult {
@@ -73,8 +74,9 @@ pub struct ClusterListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ClusterListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ClusterListResult {
@@ -208,7 +210,8 @@ pub struct Error {
     pub error: Option<error::Error>,
 }
 impl azure_core::Continuable for Error {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -340,8 +343,9 @@ pub struct PrivateEndpointListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PrivateEndpointListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PrivateEndpointListResult {

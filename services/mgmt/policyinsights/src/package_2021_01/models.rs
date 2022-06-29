@@ -50,8 +50,9 @@ pub struct AttestationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AttestationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AttestationListResult {
@@ -318,7 +319,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDefinition>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -746,8 +748,9 @@ pub struct PolicyEventsQueryResults {
     pub value: Vec<PolicyEvent>,
 }
 impl azure_core::Continuable for PolicyEventsQueryResults {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl PolicyEventsQueryResults {
@@ -802,8 +805,9 @@ pub struct PolicyMetadataCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PolicyMetadataCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PolicyMetadataCollection {
@@ -1004,8 +1008,9 @@ pub struct PolicyStatesQueryResults {
     pub value: Vec<PolicyState>,
 }
 impl azure_core::Continuable for PolicyStatesQueryResults {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl PolicyStatesQueryResults {
@@ -1048,8 +1053,9 @@ pub struct PolicyTrackedResourcesQueryResults {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PolicyTrackedResourcesQueryResults {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PolicyTrackedResourcesQueryResults {
@@ -1065,7 +1071,8 @@ pub struct QueryFailure {
     pub error: Option<query_failure::Error>,
 }
 impl azure_core::Continuable for QueryFailure {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1172,8 +1179,9 @@ pub struct RemediationDeploymentsListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RemediationDeploymentsListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl RemediationDeploymentsListResult {
@@ -1204,8 +1212,9 @@ pub struct RemediationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RemediationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl RemediationListResult {
