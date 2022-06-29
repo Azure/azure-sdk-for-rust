@@ -59,28 +59,6 @@ impl TransactionBuilder {
         Ok(self)
     }
 
-    fn entity_operation<RK: Into<String>, E: Serialize>(
-        mut self,
-        row_key: RK,
-        entity: E,
-        method: Method,
-        match_condition: Option<IfMatchCondition>,
-    ) -> azure_core::Result<Self> {
-        let body = serde_json::to_string(&entity)?;
-        let partition_key_client = Arc::new(self.partition_key_client.clone());
-        let entity_client = partition_key_client.entity_client(row_key)?;
-        let url = entity_client.url();
-
-        let mut request = Request::new(url.clone(), method);
-        request.insert_header(ACCEPT, "application/json;odata=fullmetadata");
-        request.insert_header(CONTENT_TYPE, "application/json");
-        request.set_body(body);
-        request.add_optional_header(&match_condition);
-
-        self.transaction.add(TransactionOperation::new(request));
-        Ok(self)
-    }
-
     /// Update an existing entity in a table. The Update Entity operation
     /// replaces the entire entity and can be used to remove properties.
     ///
@@ -187,6 +165,28 @@ impl TransactionBuilder {
             let collected_response = CollectedResponse::from_response(response).await?;
             collected_response.try_into()
         })
+    }
+
+    fn entity_operation<RK: Into<String>, E: Serialize>(
+        mut self,
+        row_key: RK,
+        entity: E,
+        method: Method,
+        match_condition: Option<IfMatchCondition>,
+    ) -> azure_core::Result<Self> {
+        let body = serde_json::to_string(&entity)?;
+        let partition_key_client = Arc::new(self.partition_key_client.clone());
+        let entity_client = partition_key_client.entity_client(row_key)?;
+        let url = entity_client.url();
+
+        let mut request = Request::new(url.clone(), method);
+        request.insert_header(ACCEPT, "application/json;odata=fullmetadata");
+        request.insert_header(CONTENT_TYPE, "application/json");
+        request.set_body(body);
+        request.add_optional_header(&match_condition);
+
+        self.transaction.add(TransactionOperation::new(request));
+        Ok(self)
     }
 }
 
