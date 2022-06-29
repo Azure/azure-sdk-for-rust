@@ -1,11 +1,17 @@
 use crate::{headers, Header};
 
 #[derive(Clone, Debug)]
-pub struct Continuation(String);
+pub struct Continuation(std::borrow::Cow<'static, str>);
 
 impl From<String> for Continuation {
     fn from(s: String) -> Self {
-        Self(s)
+        Self(s.into())
+    }
+}
+
+impl From<&'static str> for Continuation {
+    fn from(s: &'static str) -> Self {
+        Self(s.into())
     }
 }
 
@@ -15,6 +21,6 @@ impl Header for Continuation {
     }
 
     fn value(&self) -> headers::HeaderValue {
-        self.0.clone().into()
+        self.0.clone().into_owned().into()
     }
 }
