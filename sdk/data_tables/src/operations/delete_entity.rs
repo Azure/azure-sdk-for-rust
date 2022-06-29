@@ -1,8 +1,5 @@
-use crate::{
-    prelude::{IfMatchCondition, *},
-    TransactionOperation,
-};
-use azure_core::{error::Error, headers::Headers, prelude::*, Context, Method, Request, Response};
+use crate::{prelude::*, IfMatchCondition};
+use azure_core::{error::Error, headers::Headers, prelude::*, Context, Method, Response};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::{TryFrom, TryInto};
 
@@ -50,18 +47,6 @@ impl DeleteEntityBuilder {
 
             response.try_into()
         })
-    }
-
-    pub fn to_transaction_operation(&self) -> azure_core::Result<TransactionOperation> {
-        let url = self.entity_client.url();
-
-        let mut request = Request::new(url.clone(), Method::Delete);
-        request.insert_header("Accept", "application/json;odata=minimalmetadata");
-        request.insert_header("If-Match", "*");
-
-        request.set_body("");
-
-        Ok(TransactionOperation::new(request))
     }
 }
 

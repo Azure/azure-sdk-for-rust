@@ -1,4 +1,5 @@
-use azure_data_tables::prelude::*;
+use azure_core::StatusCode;
+use azure_data_tables::{operations::InsertEntityResponse, prelude::*};
 use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
 use serde::{Deserialize, Serialize};
@@ -36,68 +37,61 @@ async fn main() -> azure_core::Result<()> {
         .table_service_client()?;
 
     let table_client = table_service.table_client(table_name);
-    println!("creating table");
-    let response = table_client.create().into_future().await?;
-    println!("response = {:?}\n", response);
+    table_client.create().into_future().await?;
 
-    let mut entity = MyEntity {
-        city: "Milan".to_owned(),
+    let base_city = "Milan".to_string();
+
+    let entity1 = MyEntity {
+        city: base_city.clone(),
         name: "Francesco".to_owned(),
-        surname: "Cogno".to_owned(),
+        surname: "A".to_owned(),
+    };
+    let entity2 = MyEntity {
+        city: base_city.clone(),
+        name: "Francesco".to_owned(),
+        surname: "B".to_owned(),
+    };
+    let entity3 = MyEntity {
+        city: base_city.clone(),
+        name: "Francesco".to_owned(),
+        surname: "C".to_owned(),
+    };
+    let entity4 = MyEntity {
+        city: base_city.clone(),
+        name: "Francesco".to_owned(),
+        surname: "D".to_owned(),
     };
 
-    let partition_key_client = table_client.partition_key_client(&entity.city);
+    let response: InsertEntityResponse<MyEntity> =
+        table_client.insert(&entity1)?.into_future().await?;
+    println!("insert entity1 response = {:?}\n", response);
 
-    let mut transaction = Transaction::default();
-
-    transaction.add(table_client.insert(&entity)?.to_transaction_operation()?);
-
-    entity.surname = "Doe".to_owned();
-    transaction.add(table_client.insert(&entity)?.to_transaction_operation()?);
-
-    entity.surname = "Karl".to_owned();
-    transaction.add(table_client.insert(&entity)?.to_transaction_operation()?);
-
-    entity.surname = "Potter".to_owned();
-    let entity_client = partition_key_client.entity_client(&entity.surname)?;
-    transaction.add(
-        entity_client
-            .insert_or_replace(&entity)?
-            .to_transaction_operation()?,
-    );
+    let partition_key_client = table_client.partition_key_client(&entity1.city);
 
     let response = partition_key_client
-        .submit_transaction(transaction)
+        .transaction()
+        .delete(&entity1.surname)?
+        .insert(&entity2)?
+        .insert_or_replace(&entity3.surname, &entity3, IfMatchCondition::Any)?
+        .insert_or_merge(&entity4.surname, &entity4, IfMatchCondition::Any)?
         .into_future()
         .await?;
-    println!("submit transaction response = {:?}\n", response);
 
-    let response = entity_client.delete().into_future().await?;
-    println!("delete entity response = {:?}\n", response);
+    // check all the events in the transaction completed successfully.
+    assert!(response.operation_responses.iter().all(|r| {
+        [StatusCode::Ok, StatusCode::NoContent, StatusCode::Created].contains(&r.status_code)
+    }));
 
-    table_client
-        .insert(&entity)?
-        .return_entity(false)
-        .into_future::<MyEntity>()
-        .await?;
+    let entity_client = partition_key_client.entity_client(&entity2.surname)?;
 
     // Get an entity from the table
     let response = entity_client.get().into_future().await?;
-    println!("get entity response = {:?}\n", response);
-
     let mut entity: MyEntity = response.entity;
-    entity.city = "Rome".to_owned();
-
-    let response = table_client
-        .insert(&entity)?
-        .return_entity(true)
-        .into_future::<MyEntity>()
-        .await?;
-    println!("insert entity response = {:?}\n", response);
 
     let entity_client = table_client
         .partition_key_client(&entity.city)
         .entity_client(&entity.surname)?;
+
     // update the name passing the Etag received from the previous call.
     entity.name = "Ryan".to_owned();
     let response = entity_client
@@ -105,6 +99,9 @@ async fn main() -> azure_core::Result<()> {
         .into_future()
         .await?;
     println!("update with etag: response = {:?}\n", response);
+
+    let response = entity_client.delete().into_future().await?;
+    println!("delete entity response = {:?}\n", response);
 
     // now we perform an upsert
     entity.name = "Carl".to_owned();
@@ -129,8 +126,6 @@ async fn main() -> azure_core::Result<()> {
         println!("stream response query entries = {:?}\n", response);
     }
 
-    let response = table_client.delete().into_future().await?;
-    println!("delete table response = {:?}\n", response);
-
+    table_client.delete().into_future().await?;
     Ok(())
 }

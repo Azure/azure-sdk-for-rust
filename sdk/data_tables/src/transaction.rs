@@ -1,25 +1,23 @@
-use crate::TransactionOperation;
+use crate::transaction_operation::TransactionOperation;
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
-pub struct Transaction {
+pub(crate) struct Transaction {
     batch_uuid: Uuid,
     change_set_uuid: Uuid,
     transaction_operations: Vec<TransactionOperation>,
 }
 
-impl Default for Transaction {
-    fn default() -> Self {
+impl Transaction {
+    pub(crate) fn new() -> Self {
         Self {
             batch_uuid: Uuid::new_v4(),
             change_set_uuid: Uuid::new_v4(),
             transaction_operations: Vec::new(),
         }
     }
-}
 
-impl Transaction {
-    pub fn add(&mut self, transaction_operation: TransactionOperation) -> &mut Self {
+    pub(crate) fn add(&mut self, transaction_operation: TransactionOperation) -> &mut Self {
         self.transaction_operations.push(transaction_operation);
         self
     }

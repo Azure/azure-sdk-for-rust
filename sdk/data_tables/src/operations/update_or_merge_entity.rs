@@ -1,5 +1,5 @@
-use crate::{operations::*, prelude::*, IfMatchCondition, TransactionOperation};
-use azure_core::{headers::*, prelude::*, CollectedResponse, Context, Method, Request};
+use crate::{operations::*, prelude::*, IfMatchCondition};
+use azure_core::{headers::*, prelude::*, CollectedResponse, Context, Method};
 use bytes::Bytes;
 use std::convert::TryInto;
 
@@ -62,24 +62,6 @@ impl UpdateOrMergeEntityBuilder {
             let collected_response = CollectedResponse::from_response(response).await?;
             collected_response.try_into()
         })
-    }
-
-    pub fn to_transaction_operation(self) -> azure_core::Result<TransactionOperation> {
-        let url = self.entity_client.url();
-
-        let mut request = Request::new(
-            url.clone(),
-            match self.operation {
-                UpdateOperation::Merge => Method::Merge,
-                UpdateOperation::Update => Method::Put,
-            },
-        );
-        request.insert_header(ACCEPT, "application/json;odata=fullmetadata");
-        request.insert_header(CONTENT_TYPE, "application/json");
-        request.add_mandatory_header(&self.if_match_condition);
-        request.set_body(self.body);
-
-        Ok(TransactionOperation::new(request))
     }
 }
 

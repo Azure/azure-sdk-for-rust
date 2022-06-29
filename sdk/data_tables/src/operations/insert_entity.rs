@@ -1,9 +1,9 @@
-use crate::{operations::*, prelude::*, TransactionOperation};
+use crate::{operations::*, prelude::*};
 use azure_core::{
     error::{Error, ErrorKind},
     headers::*,
     prelude::*,
-    CollectedResponse, Context, Method, Request,
+    CollectedResponse, Context, Method,
 };
 use bytes::Bytes;
 use serde::de::DeserializeOwned;
@@ -68,21 +68,6 @@ where
 
             collected_response.try_into()
         })
-    }
-
-    pub fn to_transaction_operation(self) -> azure_core::Result<TransactionOperation> {
-        let mut url = self.table_client.url().to_owned();
-        url.path_segments_mut()
-            .map_err(|()| Error::message(ErrorKind::Other, "invalid table URL"))?
-            .pop()
-            .push(self.table_client.table_name());
-
-        let mut request = Request::new(url, Method::Post);
-        request.insert_header(ACCEPT, "application/json;odata=fullmetadata");
-        request.insert_header(CONTENT_TYPE, "application/json");
-        request.set_body(self.body);
-
-        Ok(TransactionOperation::new(request))
     }
 }
 

@@ -1,27 +1,32 @@
-use crate::prelude::*;
+use crate::{
+    prelude::*, transaction::Transaction, transaction_operation::TransactionOperation,
+    IfMatchCondition,
+};
 use azure_core::{
     error::{Error, ErrorKind},
     headers::*,
     prelude::*,
-    CollectedResponse, Context, Etag, Method, StatusCode,
+    CollectedResponse, Context, Etag, Method, Request, StatusCode,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
+use serde::Serialize;
 use std::convert::{TryFrom, TryInto};
+use std::sync::Arc;
 use url::Url;
 
 #[derive(Debug, Clone)]
-pub struct SubmitTransactionBuilder {
+pub struct TransactionBuilder {
     partition_key_client: PartitionKeyClient,
     transaction: Transaction,
     timeout: Option<Timeout>,
     context: Context,
 }
 
-impl SubmitTransactionBuilder {
-    pub(crate) fn new(partition_key_client: PartitionKeyClient, transaction: Transaction) -> Self {
+impl TransactionBuilder {
+    pub(crate) fn new(partition_key_client: PartitionKeyClient) -> Self {
         Self {
             partition_key_client,
-            transaction,
+            transaction: Transaction::new(),
             timeout: None,
             context: Context::new(),
         }
@@ -30,6 +35,120 @@ impl SubmitTransactionBuilder {
     setters! {
         timeout: Timeout => Some(timeout),
         context: Context => context,
+    }
+
+    /// Insert a new entity into a table
+    ///
+    /// Ref: https://docs.microsoft.com/en-us/rest/api/storageservices/insert-entity
+    pub fn insert<E: Serialize>(mut self, entity: E) -> azure_core::Result<Self> {
+        let body = serde_json::to_string(&entity)?;
+
+        let mut url = self.partition_key_client.table_client().url().to_owned();
+        url.path_segments_mut()
+            .map_err(|()| Error::message(ErrorKind::Other, "invalid table URL"))?
+            .pop()
+            .push(self.partition_key_client.table_client().table_name());
+
+        let mut request = Request::new(url, Method::Post);
+        request.insert_header(ACCEPT, "application/json;odata=fullmetadata");
+        request.insert_header(CONTENT_TYPE, "application/json");
+        request.set_body(body);
+
+        self.transaction.add(TransactionOperation::new(request));
+
+        Ok(self)
+    }
+
+    fn entity_operation<RK: Into<String>, E: Serialize>(
+        mut self,
+        row_key: RK,
+        entity: E,
+        method: Method,
+        match_condition: Option<IfMatchCondition>,
+    ) -> azure_core::Result<Self> {
+        let body = serde_json::to_string(&entity)?;
+        let partition_key_client = Arc::new(self.partition_key_client.clone());
+        let entity_client = partition_key_client.entity_client(row_key)?;
+        let url = entity_client.url();
+
+        let mut request = Request::new(url.clone(), method);
+        request.insert_header(ACCEPT, "application/json;odata=fullmetadata");
+        request.insert_header(CONTENT_TYPE, "application/json");
+        request.set_body(body);
+        request.add_optional_header(&match_condition);
+
+        self.transaction.add(TransactionOperation::new(request));
+        Ok(self)
+    }
+
+    /// Update an existing entity in a table. The Update Entity operation
+    /// replaces the entire entity and can be used to remove properties.
+    ///
+    /// Ref: https://docs.microsoft.com/en-us/rest/api/storageservices/update-entity2
+    pub fn update<RK: Into<String>, E: Serialize>(
+        self,
+        row_key: RK,
+        entity: E,
+    ) -> azure_core::Result<Self> {
+        self.entity_operation(row_key, entity, Method::Put, None)
+    }
+
+    /// Replaces an existing entity or inserts a new entity if it does not exist
+    /// in the table. Because this operation can insert or update an entity, it
+    /// is also known as an upsert operation.
+    ///
+    /// Ref: https://docs.microsoft.com/en-us/rest/api/storageservices/insert-or-replace-entity
+    pub fn insert_or_replace<RK: Into<String>, E: Serialize>(
+        self,
+        row_key: RK,
+        entity: E,
+        if_match_condition: IfMatchCondition,
+    ) -> azure_core::Result<Self> {
+        self.entity_operation(row_key, entity, Method::Put, Some(if_match_condition))
+    }
+
+    /// Update an existing entity by updating the entity's properties. This
+    /// operation does not replace the existing entity, as the Update Entity
+    /// operation does.
+    ///
+    /// ref: https://docs.microsoft.com/en-us/rest/api/storageservices/merge-entity
+    pub fn merge<RK: Into<String>, E: Serialize>(
+        self,
+        row_key: RK,
+        entity: E,
+    ) -> azure_core::Result<Self> {
+        self.entity_operation(row_key, entity, Method::Merge, None)
+    }
+
+    /// Update an existing entity or inserts a new entity if it does not exist
+    /// in the table. Because this operation can insert or update an entity, it
+    /// is also known as an upsert operation.
+    ///
+    /// ref: https://docs.microsoft.com/en-us/rest/api/storageservices/insert-or-merge-entity
+    pub fn insert_or_merge<RK: Into<String>, E: Serialize>(
+        self,
+        row_key: RK,
+        entity: E,
+        if_match_condition: IfMatchCondition,
+    ) -> azure_core::Result<Self> {
+        self.entity_operation(row_key, entity, Method::Merge, Some(if_match_condition))
+    }
+
+    /// Delete an existing entity in a table.
+    ///
+    /// ref: https://docs.microsoft.com/en-us/rest/api/storageservices/delete-entity1
+    pub fn delete<RK: Into<String>>(mut self, row_key: RK) -> azure_core::Result<Self> {
+        let partition_key_client = Arc::new(self.partition_key_client.clone());
+        let entity_client = partition_key_client.entity_client(row_key)?;
+        let url = entity_client.url();
+
+        let mut request = Request::new(url.clone(), Method::Delete);
+        request.insert_header(ACCEPT, "application/json;odata=minimalmetadata");
+        request.insert_header(IF_MATCH, "*");
+        request.set_body("");
+
+        self.transaction.add(TransactionOperation::new(request));
+        Ok(self)
     }
 
     pub fn into_future(mut self) -> FutureResponse {
