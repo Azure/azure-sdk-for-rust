@@ -205,7 +205,8 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

@@ -26,8 +26,9 @@ pub struct AndroidMamPolicyCollection {
     pub nextlink: Option<String>,
 }
 impl azure_core::Continuable for AndroidMamPolicyCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.nextlink.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.nextlink.clone()
     }
 }
 impl AndroidMamPolicyCollection {
@@ -102,8 +103,9 @@ pub struct ApplicationCollection {
     pub nextlink: Option<String>,
 }
 impl azure_core::Continuable for ApplicationCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.nextlink.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.nextlink.clone()
     }
 }
 impl ApplicationCollection {
@@ -166,8 +168,9 @@ pub struct DeviceCollection {
     pub nextlink: Option<String>,
 }
 impl azure_core::Continuable for DeviceCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.nextlink.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.nextlink.clone()
     }
 }
 impl DeviceCollection {
@@ -204,7 +207,8 @@ pub struct Error {
     pub message: String,
 }
 impl azure_core::Continuable for Error {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -235,8 +239,9 @@ pub struct FlaggedEnrolledAppCollection {
     pub nextlink: Option<String>,
 }
 impl azure_core::Continuable for FlaggedEnrolledAppCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.nextlink.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.nextlink.clone()
     }
 }
 impl FlaggedEnrolledAppCollection {
@@ -296,8 +301,9 @@ pub struct FlaggedUserCollection {
     pub nextlink: Option<String>,
 }
 impl azure_core::Continuable for FlaggedUserCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.nextlink.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.nextlink.clone()
     }
 }
 impl FlaggedUserCollection {
@@ -348,8 +354,9 @@ pub struct GroupsCollection {
     pub nextlink: Option<String>,
 }
 impl azure_core::Continuable for GroupsCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.nextlink.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.nextlink.clone()
     }
 }
 impl GroupsCollection {
@@ -365,8 +372,9 @@ pub struct IosmamPolicyCollection {
     pub nextlink: Option<String>,
 }
 impl azure_core::Continuable for IosmamPolicyCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.nextlink.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.nextlink.clone()
     }
 }
 impl IosmamPolicyCollection {
@@ -395,8 +403,9 @@ pub struct LocationCollection {
     pub nextlink: Option<String>,
 }
 impl azure_core::Continuable for LocationCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.nextlink.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.nextlink.clone()
     }
 }
 impl LocationCollection {
@@ -651,8 +660,9 @@ pub struct OperationResultCollection {
     pub nextlink: Option<String>,
 }
 impl azure_core::Continuable for OperationResultCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.nextlink.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.nextlink.clone()
     }
 }
 impl OperationResultCollection {
@@ -716,7 +726,8 @@ pub struct StatusesDefault {
     pub properties: Option<StatusesProperties>,
 }
 impl azure_core::Continuable for StatusesDefault {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

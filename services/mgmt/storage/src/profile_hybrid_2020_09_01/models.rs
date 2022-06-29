@@ -750,8 +750,9 @@ pub struct EncryptionScopeListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for EncryptionScopeListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl EncryptionScopeListResult {
@@ -982,7 +983,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorResponseBody>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1167,7 +1169,8 @@ pub struct ListBlobInventoryPolicy {
     pub value: Vec<BlobInventoryPolicy>,
 }
 impl azure_core::Continuable for ListBlobInventoryPolicy {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1533,7 +1536,8 @@ pub struct ObjectReplicationPolicies {
     pub value: Vec<ObjectReplicationPolicy>,
 }
 impl azure_core::Continuable for ObjectReplicationPolicies {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1680,7 +1684,8 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1735,7 +1740,8 @@ pub struct PrivateEndpointConnectionListResult {
     pub value: Vec<PrivateEndpointConnection>,
 }
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2664,8 +2670,9 @@ pub struct StorageAccountListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for StorageAccountListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl StorageAccountListResult {
@@ -3249,7 +3256,8 @@ pub struct StorageSkuListResult {
     pub value: Vec<SkuInformation>,
 }
 impl azure_core::Continuable for StorageSkuListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -3341,7 +3349,8 @@ pub struct UsageListResult {
     pub value: Vec<Usage>,
 }
 impl azure_core::Continuable for UsageListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

@@ -68,8 +68,9 @@ pub struct DatadogAgreementResourceListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DatadogAgreementResourceListResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DatadogAgreementResourceListResponse {
@@ -112,8 +113,9 @@ pub struct DatadogApiKeyListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DatadogApiKeyListResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DatadogApiKeyListResponse {
@@ -151,8 +153,9 @@ pub struct DatadogHostListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DatadogHostListResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DatadogHostListResponse {
@@ -250,8 +253,9 @@ pub struct DatadogMonitorResourceListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DatadogMonitorResourceListResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DatadogMonitorResourceListResponse {
@@ -368,8 +372,9 @@ pub struct DatadogSingleSignOnResourceListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DatadogSingleSignOnResourceListResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DatadogSingleSignOnResourceListResponse {
@@ -487,8 +492,9 @@ pub struct LinkedResourceListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for LinkedResourceListResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl LinkedResourceListResponse {
@@ -682,8 +688,9 @@ pub struct MonitoredResourceListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MonitoredResourceListResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl MonitoredResourceListResponse {
@@ -765,8 +772,9 @@ pub struct MonitoringTagRulesListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MonitoringTagRulesListResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl MonitoringTagRulesListResponse {
@@ -823,8 +831,9 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationListResult {
@@ -906,7 +915,8 @@ pub struct ResourceProviderDefaultErrorResponse {
     pub error: Option<ErrorResponseBody>,
 }
 impl azure_core::Continuable for ResourceProviderDefaultErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

@@ -183,8 +183,9 @@ pub struct DiskPoolListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DiskPoolListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DiskPoolListResult {
@@ -339,8 +340,9 @@ pub struct DiskPoolZoneListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DiskPoolZoneListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DiskPoolZoneListResult {
@@ -392,7 +394,8 @@ pub struct Error {
     pub error: Option<ErrorResponse>,
 }
 impl azure_core::Continuable for Error {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -549,8 +552,9 @@ pub struct IscsiTargetList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for IscsiTargetList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl IscsiTargetList {
@@ -719,8 +723,9 @@ pub struct OutboundEnvironmentEndpointList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OutboundEnvironmentEndpointList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OutboundEnvironmentEndpointList {
@@ -862,8 +867,9 @@ pub struct ResourceSkuListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResourceSkuListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ResourceSkuListResult {
@@ -1001,7 +1007,8 @@ pub struct StoragePoolOperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for StoragePoolOperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

@@ -213,7 +213,7 @@ pub mod legacy_peerings {
                 self
             }
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -222,7 +222,7 @@ pub mod legacy_peerings {
                             &this.subscription_id
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -242,9 +242,6 @@ pub mod legacy_peerings {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -305,13 +302,13 @@ pub mod operations {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url =
                             azure_core::Url::parse(&format!("{}/providers/Microsoft.Peering/operations", this.client.endpoint(),))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -331,9 +328,6 @@ pub mod operations {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -580,7 +574,7 @@ pub mod peer_asns {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -589,7 +583,7 @@ pub mod peer_asns {
                             &this.subscription_id
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -609,9 +603,6 @@ pub mod peer_asns {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -677,7 +668,7 @@ pub mod peering_locations {
                 self
             }
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -686,7 +677,7 @@ pub mod peering_locations {
                             &this.subscription_id
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -706,9 +697,6 @@ pub mod peering_locations {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -1003,7 +991,7 @@ pub mod registered_asns {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -1014,7 +1002,7 @@ pub mod registered_asns {
                             &this.peering_name
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -1034,9 +1022,6 @@ pub mod registered_asns {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -1324,7 +1309,7 @@ pub mod registered_prefixes {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -1335,7 +1320,7 @@ pub mod registered_prefixes {
                             &this.peering_name
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -1355,9 +1340,6 @@ pub mod registered_prefixes {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -1705,7 +1687,7 @@ pub mod peerings {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -1715,7 +1697,7 @@ pub mod peerings {
                             &this.resource_group_name
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -1735,9 +1717,6 @@ pub mod peerings {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -1783,7 +1762,7 @@ pub mod peerings {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -1792,7 +1771,7 @@ pub mod peerings {
                             &this.subscription_id
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -1812,9 +1791,6 @@ pub mod peerings {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -1911,7 +1887,7 @@ pub mod received_routes {
                 self
             }
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -1922,7 +1898,7 @@ pub mod received_routes {
                             &this.peering_name
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -1942,9 +1918,6 @@ pub mod received_routes {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -2021,7 +1994,7 @@ pub mod peering_service_countries {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -2030,7 +2003,7 @@ pub mod peering_service_countries {
                             &this.subscription_id
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -2050,9 +2023,6 @@ pub mod peering_service_countries {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -2116,7 +2086,7 @@ pub mod peering_service_locations {
                 self
             }
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -2125,7 +2095,7 @@ pub mod peering_service_locations {
                             &this.subscription_id
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -2145,9 +2115,6 @@ pub mod peering_service_locations {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -2453,7 +2420,7 @@ pub mod prefixes {
                 self
             }
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -2464,7 +2431,7 @@ pub mod prefixes {
                             &this.peering_service_name
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -2484,9 +2451,6 @@ pub mod prefixes {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -2547,7 +2511,7 @@ pub mod peering_service_providers {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -2556,7 +2520,7 @@ pub mod peering_service_providers {
                             &this.subscription_id
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -2576,9 +2540,6 @@ pub mod peering_service_providers {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -2926,7 +2887,7 @@ pub mod peering_services {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -2936,7 +2897,7 @@ pub mod peering_services {
                             &this.resource_group_name
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -2956,9 +2917,6 @@ pub mod peering_services {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -3004,7 +2962,7 @@ pub mod peering_services {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -3013,7 +2971,7 @@ pub mod peering_services {
                             &this.subscription_id
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -3033,9 +2991,6 @@ pub mod peering_services {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);

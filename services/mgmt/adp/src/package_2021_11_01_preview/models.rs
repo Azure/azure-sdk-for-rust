@@ -91,8 +91,9 @@ pub struct AccountList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AccountList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AccountList {
@@ -359,8 +360,9 @@ pub struct DataPoolList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DataPoolList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DataPoolList {
@@ -449,7 +451,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDefinition>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -517,8 +520,9 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationListResult {

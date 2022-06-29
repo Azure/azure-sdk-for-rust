@@ -71,7 +71,8 @@ pub struct ErrorResponse {
     pub error: Error,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -231,7 +232,8 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

@@ -759,8 +759,9 @@ pub struct PaginatedOperationalizationClustersList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PaginatedOperationalizationClustersList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PaginatedOperationalizationClustersList {

@@ -141,7 +141,7 @@ pub mod skus {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -150,7 +150,7 @@ pub mod skus {
                             &this.subscription_id
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -170,9 +170,6 @@ pub mod skus {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -347,7 +344,7 @@ pub mod test_base_accounts {
                 self
             }
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -356,7 +353,7 @@ pub mod test_base_accounts {
                             &this.subscription_id
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -376,9 +373,6 @@ pub mod test_base_accounts {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -433,7 +427,7 @@ pub mod test_base_accounts {
                 self
             }
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -443,7 +437,7 @@ pub mod test_base_accounts {
                             &this.resource_group_name
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -463,9 +457,6 @@ pub mod test_base_accounts {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -950,7 +941,7 @@ pub mod usage {
                 self
             }
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -961,7 +952,7 @@ pub mod usage {
                             &this.test_base_account_name
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -981,9 +972,6 @@ pub mod usage {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -1071,7 +1059,7 @@ pub mod available_os {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -1082,7 +1070,7 @@ pub mod available_os {
                             &this.test_base_account_name
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -1102,9 +1090,6 @@ pub mod available_os {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -1242,7 +1227,7 @@ pub mod flighting_rings {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -1253,7 +1238,7 @@ pub mod flighting_rings {
                             &this.test_base_account_name
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -1273,9 +1258,6 @@ pub mod flighting_rings {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -1411,7 +1393,7 @@ pub mod test_types {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -1422,7 +1404,7 @@ pub mod test_types {
                             &this.test_base_account_name
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -1442,9 +1424,6 @@ pub mod test_types {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -1659,7 +1638,7 @@ pub mod packages {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -1670,7 +1649,7 @@ pub mod packages {
                             &this.test_base_account_name
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -1690,9 +1669,6 @@ pub mod packages {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -2123,7 +2099,7 @@ pub mod test_summaries {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -2134,7 +2110,7 @@ pub mod test_summaries {
                             &this.test_base_account_name
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -2154,9 +2130,6 @@ pub mod test_summaries {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -2340,12 +2313,12 @@ pub mod test_results {
                 self
             }
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.TestBase/testBaseAccounts/{}/packages/{}/testResults" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . test_base_account_name , & this . package_name)) ? ;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -2365,9 +2338,6 @@ pub mod test_results {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -2608,7 +2578,7 @@ pub mod os_updates {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -2620,7 +2590,7 @@ pub mod os_updates {
                             &this.package_name
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -2640,9 +2610,6 @@ pub mod os_updates {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -2815,12 +2782,12 @@ pub mod favorite_processes {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.TestBase/testBaseAccounts/{}/packages/{}/favoriteProcesses" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . test_base_account_name , & this . package_name)) ? ;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -2840,9 +2807,6 @@ pub mod favorite_processes {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -3218,7 +3182,7 @@ pub mod email_events {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -3229,7 +3193,7 @@ pub mod email_events {
                             &this.test_base_account_name
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -3249,9 +3213,6 @@ pub mod email_events {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -3419,7 +3380,7 @@ pub mod customer_events {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url = azure_core::Url::parse(&format!(
@@ -3430,7 +3391,7 @@ pub mod customer_events {
                             &this.test_base_account_name
                         ))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -3450,9 +3411,6 @@ pub mod customer_events {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -3684,13 +3642,13 @@ pub mod operations {
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<azure_core::prelude::Continuation>| {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
                         let mut url =
                             azure_core::Url::parse(&format!("{}/providers/Microsoft.TestBase/operations", this.client.endpoint(),))?;
                         let rsp = match continuation {
-                            Some(azure_core::prelude::Continuation::String(value)) => {
+                            Some(value) => {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
@@ -3710,9 +3668,6 @@ pub mod operations {
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
-                            }
-                            Some(azure_core::prelude::Continuation::Range(_)) => {
-                                panic!("unexpected continuation type");
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);

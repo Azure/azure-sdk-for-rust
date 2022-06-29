@@ -113,7 +113,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -774,8 +775,9 @@ pub struct ListUsagesResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ListUsagesResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ListUsagesResult {
@@ -919,8 +921,9 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationListResult {
@@ -988,8 +991,9 @@ pub struct PagedImages {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PagedImages {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PagedImages {
@@ -1008,8 +1012,9 @@ pub struct PagedLabPlans {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PagedLabPlans {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PagedLabPlans {
@@ -1028,8 +1033,9 @@ pub struct PagedLabServicesSkus {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PagedLabServicesSkus {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PagedLabServicesSkus {
@@ -1048,8 +1054,9 @@ pub struct PagedLabs {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PagedLabs {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PagedLabs {
@@ -1068,8 +1075,9 @@ pub struct PagedSchedules {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PagedSchedules {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PagedSchedules {
@@ -1088,8 +1096,9 @@ pub struct PagedUsers {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PagedUsers {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PagedUsers {
@@ -1108,8 +1117,9 @@ pub struct PagedVirtualMachines {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PagedVirtualMachines {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PagedVirtualMachines {

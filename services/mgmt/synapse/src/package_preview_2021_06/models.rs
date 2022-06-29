@@ -128,8 +128,9 @@ pub struct AzureAdOnlyAuthenticationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AzureAdOnlyAuthenticationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AzureAdOnlyAuthenticationListResult {
@@ -255,8 +256,9 @@ pub struct BigDataPoolResourceInfoListResult {
     pub value: Vec<BigDataPoolResourceInfo>,
 }
 impl azure_core::Continuable for BigDataPoolResourceInfoListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl BigDataPoolResourceInfoListResult {
@@ -673,7 +675,8 @@ pub struct DataMaskingRuleListResult {
     pub value: Vec<DataMaskingRule>,
 }
 impl azure_core::Continuable for DataMaskingRuleListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -820,8 +823,9 @@ pub struct DedicatedSqLminimalTlsSettingsListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DedicatedSqLminimalTlsSettingsListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DedicatedSqLminimalTlsSettingsListResult {
@@ -905,8 +909,9 @@ pub struct EncryptionProtectorListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for EncryptionProtectorListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl EncryptionProtectorListResult {
@@ -1121,7 +1126,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1155,8 +1161,9 @@ pub struct ExtendedServerBlobAuditingPolicyListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ExtendedServerBlobAuditingPolicyListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ExtendedServerBlobAuditingPolicyListResult {
@@ -1247,8 +1254,9 @@ pub struct ExtendedSqlPoolBlobAuditingPolicyListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ExtendedSqlPoolBlobAuditingPolicyListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ExtendedSqlPoolBlobAuditingPolicyListResult {
@@ -1346,7 +1354,8 @@ pub struct GeoBackupPolicyListResult {
     pub value: Vec<GeoBackupPolicy>,
 }
 impl azure_core::Continuable for GeoBackupPolicyListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1617,8 +1626,9 @@ pub struct IntegrationRuntimeListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for IntegrationRuntimeListResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl IntegrationRuntimeListResponse {
@@ -2152,8 +2162,9 @@ pub struct IpFirewallRuleInfoListResult {
     pub value: Vec<IpFirewallRuleInfo>,
 }
 impl azure_core::Continuable for IpFirewallRuleInfoListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl IpFirewallRuleInfoListResult {
@@ -2265,8 +2276,9 @@ pub struct KeyInfoListResult {
     pub value: Vec<Key>,
 }
 impl azure_core::Continuable for KeyInfoListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl KeyInfoListResult {
@@ -2329,8 +2341,9 @@ pub struct LibraryListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for LibraryListResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl LibraryListResponse {
@@ -2470,8 +2483,9 @@ pub struct ListSqlPoolSecurityAlertPolicies {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ListSqlPoolSecurityAlertPolicies {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ListSqlPoolSecurityAlertPolicies {
@@ -3221,8 +3235,9 @@ pub struct PrivateEndpointConnectionForPrivateLinkHubResourceCollectionResponse 
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PrivateEndpointConnectionForPrivateLinkHubResourceCollectionResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PrivateEndpointConnectionForPrivateLinkHubResourceCollectionResponse {
@@ -3241,8 +3256,9 @@ pub struct PrivateEndpointConnectionList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PrivateEndpointConnectionList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PrivateEndpointConnectionList {
@@ -3296,8 +3312,9 @@ pub struct PrivateLinkHubInfoListResult {
     pub value: Vec<PrivateLinkHub>,
 }
 impl azure_core::Continuable for PrivateLinkHubInfoListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PrivateLinkHubInfoListResult {
@@ -3357,8 +3374,9 @@ pub struct PrivateLinkResourceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PrivateLinkResourceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PrivateLinkResourceListResult {
@@ -3568,8 +3586,9 @@ pub struct RecoverableSqlPoolListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RecoverableSqlPoolListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl RecoverableSqlPoolListResult {
@@ -3653,8 +3672,9 @@ pub struct ReplicationLinkListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ReplicationLinkListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ReplicationLinkListResult {
@@ -3820,7 +3840,8 @@ pub struct RestorableDroppedSqlPoolListResult {
     pub value: Vec<RestorableDroppedSqlPool>,
 }
 impl azure_core::Continuable for RestorableDroppedSqlPoolListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -3890,8 +3911,9 @@ pub struct RestorePointListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RestorePointListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl RestorePointListResult {
@@ -4348,8 +4370,9 @@ pub struct SensitivityLabelListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SensitivityLabelListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SensitivityLabelListResult {
@@ -4488,8 +4511,9 @@ pub struct ServerBlobAuditingPolicyListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ServerBlobAuditingPolicyListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ServerBlobAuditingPolicyListResult {
@@ -4576,8 +4600,9 @@ pub struct ServerSecurityAlertPolicyListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ServerSecurityAlertPolicyListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ServerSecurityAlertPolicyListResult {
@@ -4676,8 +4701,9 @@ pub struct ServerUsageListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ServerUsageListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ServerUsageListResult {
@@ -4710,8 +4736,9 @@ pub struct ServerVulnerabilityAssessmentListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ServerVulnerabilityAssessmentListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ServerVulnerabilityAssessmentListResult {
@@ -4867,8 +4894,9 @@ pub struct SparkConfigurationListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SparkConfigurationListResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SparkConfigurationListResponse {
@@ -4941,8 +4969,9 @@ pub struct SqlPoolBlobAuditingPolicyListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SqlPoolBlobAuditingPolicyListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SqlPoolBlobAuditingPolicyListResult {
@@ -5011,8 +5040,9 @@ pub struct SqlPoolBlobAuditingPolicySqlPoolOperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SqlPoolBlobAuditingPolicySqlPoolOperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SqlPoolBlobAuditingPolicySqlPoolOperationListResult {
@@ -5045,8 +5075,9 @@ pub struct SqlPoolColumnListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SqlPoolColumnListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SqlPoolColumnListResult {
@@ -5268,8 +5299,9 @@ pub struct SqlPoolInfoListResult {
     pub value: Vec<SqlPool>,
 }
 impl azure_core::Continuable for SqlPoolInfoListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SqlPoolInfoListResult {
@@ -5558,8 +5590,9 @@ pub struct SqlPoolSchemaListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SqlPoolSchemaListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SqlPoolSchemaListResult {
@@ -5603,8 +5636,9 @@ pub struct SqlPoolTableListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SqlPoolTableListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SqlPoolTableListResult {
@@ -5652,8 +5686,9 @@ pub struct SqlPoolUsageListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SqlPoolUsageListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SqlPoolUsageListResult {
@@ -5686,8 +5721,9 @@ pub struct SqlPoolVulnerabilityAssessmentListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SqlPoolVulnerabilityAssessmentListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SqlPoolVulnerabilityAssessmentListResult {
@@ -6214,8 +6250,9 @@ pub struct TransparentDataEncryptionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for TransparentDataEncryptionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl TransparentDataEncryptionListResult {
@@ -6364,8 +6401,9 @@ pub struct VulnerabilityAssessmentScanRecordListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VulnerabilityAssessmentScanRecordListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl VulnerabilityAssessmentScanRecordListResult {
@@ -6512,8 +6550,9 @@ pub struct WorkloadClassifierListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkloadClassifierListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WorkloadClassifierListResult {
@@ -6580,8 +6619,9 @@ pub struct WorkloadGroupListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkloadGroupListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WorkloadGroupListResult {
@@ -6669,8 +6709,9 @@ pub struct WorkspaceInfoListResult {
     pub value: Vec<Workspace>,
 }
 impl azure_core::Continuable for WorkspaceInfoListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WorkspaceInfoListResult {

@@ -50,8 +50,9 @@ pub struct EnabledResourceTypesListResult {
     pub value: Vec<EnabledResourceType>,
 }
 impl azure_core::Continuable for EnabledResourceTypesListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl EnabledResourceTypesListResult {
@@ -106,7 +107,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -285,8 +287,9 @@ pub struct CustomLocationListResult {
     pub value: Vec<CustomLocation>,
 }
 impl azure_core::Continuable for CustomLocationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl CustomLocationListResult {
@@ -346,8 +349,9 @@ pub struct CustomLocationOperationsList {
     pub value: Vec<CustomLocationOperation>,
 }
 impl azure_core::Continuable for CustomLocationOperationsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl CustomLocationOperationsList {
@@ -522,8 +526,9 @@ pub struct ResourceSyncRuleListResult {
     pub value: Vec<ResourceSyncRule>,
 }
 impl azure_core::Continuable for ResourceSyncRuleListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ResourceSyncRuleListResult {

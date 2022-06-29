@@ -132,8 +132,9 @@ pub struct AgreementListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AgreementListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AgreementListResult {
@@ -337,8 +338,9 @@ pub struct BillingAccountListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for BillingAccountListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl BillingAccountListResult {
@@ -543,8 +545,9 @@ pub struct BillingPermissionsListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for BillingPermissionsListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl BillingPermissionsListResult {
@@ -637,8 +640,9 @@ pub struct BillingProfileListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for BillingProfileListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl BillingProfileListResult {
@@ -1102,8 +1106,9 @@ pub struct BillingRoleAssignmentListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for BillingRoleAssignmentListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl BillingRoleAssignmentListResult {
@@ -1175,8 +1180,9 @@ pub struct BillingRoleDefinitionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for BillingRoleDefinitionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl BillingRoleDefinitionListResult {
@@ -1333,8 +1339,9 @@ pub struct BillingSubscriptionsListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for BillingSubscriptionsListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl BillingSubscriptionsListResult {
@@ -1370,8 +1377,9 @@ pub struct CustomerListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CustomerListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl CustomerListResult {
@@ -1773,7 +1781,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetails>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1826,8 +1835,9 @@ pub struct InstructionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for InstructionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl InstructionListResult {
@@ -1888,8 +1898,9 @@ pub struct InvoiceListResult {
     pub total_count: Option<f64>,
 }
 impl azure_core::Continuable for InvoiceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl InvoiceListResult {
@@ -2141,8 +2152,9 @@ pub struct InvoiceSectionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for InvoiceSectionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl InvoiceSectionListResult {
@@ -2161,8 +2173,9 @@ pub struct InvoiceSectionListWithCreateSubPermissionResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for InvoiceSectionListWithCreateSubPermissionResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl InvoiceSectionListWithCreateSubPermissionResult {
@@ -2467,8 +2480,9 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationListResult {
@@ -2502,7 +2516,8 @@ pub struct OperationsErrorResponse {
     pub error: Option<OperationsErrorDetails>,
 }
 impl azure_core::Continuable for OperationsErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -3043,8 +3058,9 @@ pub struct ProductsListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ProductsListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ProductsListResult {
@@ -3139,8 +3155,9 @@ pub struct PromotionList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PromotionList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PromotionList {
@@ -3408,8 +3425,9 @@ pub struct ReservationsListResult {
     pub summary: Option<ReservationSummary>,
 }
 impl azure_core::Continuable for ReservationsListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ReservationsListResult {
@@ -3616,8 +3634,9 @@ pub struct TransactionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for TransactionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl TransactionListResult {

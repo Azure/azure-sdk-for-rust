@@ -18,7 +18,8 @@ pub struct ErrorResponse {
     pub details: Option<String>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -52,8 +53,9 @@ pub struct MetadataEntityListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MetadataEntityListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl MetadataEntityListResult {
@@ -308,8 +310,9 @@ pub struct AvailabilityStatusListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AvailabilityStatusListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AvailabilityStatusListResult {
@@ -364,8 +367,9 @@ pub struct EmergingIssueListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for EmergingIssueListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl EmergingIssueListResult {
@@ -723,8 +727,9 @@ pub struct Events {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for Events {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl Events {
@@ -790,8 +795,9 @@ pub struct ImpactedResourceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ImpactedResourceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ImpactedResourceListResult {

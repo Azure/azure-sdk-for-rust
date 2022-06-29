@@ -86,8 +86,9 @@ pub struct AvailabilitySetListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AvailabilitySetListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AvailabilitySetListResult {
@@ -214,8 +215,9 @@ pub struct CloudListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CloudListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl CloudListResult {
@@ -279,7 +281,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDefinition>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -601,8 +604,9 @@ pub struct InventoryItemsList {
     pub value: Vec<InventoryItem>,
 }
 impl azure_core::Continuable for InventoryItemsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl InventoryItemsList {
@@ -901,8 +905,9 @@ pub struct ResourceProviderOperationList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResourceProviderOperationList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ResourceProviderOperationList {
@@ -1039,8 +1044,9 @@ pub struct VmmServerListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VmmServerListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl VmmServerListResult {
@@ -1344,8 +1350,9 @@ pub struct VirtualMachineListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VirtualMachineListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl VirtualMachineListResult {
@@ -1502,8 +1509,9 @@ pub struct VirtualMachineTemplateListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VirtualMachineTemplateListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl VirtualMachineTemplateListResult {
@@ -1792,8 +1800,9 @@ pub struct VirtualNetworkListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VirtualNetworkListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl VirtualNetworkListResult {

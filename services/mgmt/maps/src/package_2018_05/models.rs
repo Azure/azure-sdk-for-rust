@@ -21,7 +21,8 @@ pub struct Error {
     pub details: Vec<serde_json::Value>,
 }
 impl azure_core::Continuable for Error {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -122,7 +123,8 @@ pub struct MapsAccounts {
     pub value: Vec<MapsAccount>,
 }
 impl azure_core::Continuable for MapsAccounts {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -211,7 +213,8 @@ pub struct MapsOperations {
     pub value: Vec<serde_json::Value>,
 }
 impl azure_core::Continuable for MapsOperations {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

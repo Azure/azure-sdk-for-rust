@@ -324,7 +324,8 @@ pub mod guest_configuration_assignments {
             NoContent204,
         }
         impl azure_core::Continuable for Response {
-            fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+            type Continuation = String;
+            fn continuation(&self) -> Option<Self::Continuation> {
                 match self {
                     Self::Ok200(x) => x.continuation(),
                     Self::NoContent204 => None,
@@ -386,7 +387,8 @@ pub mod guest_configuration_assignments {
             NoContent204,
         }
         impl azure_core::Continuable for Response {
-            fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+            type Continuation = String;
+            fn continuation(&self) -> Option<Self::Continuation> {
                 match self {
                     Self::Ok200(x) => x.continuation(),
                     Self::NoContent204 => None,

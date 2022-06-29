@@ -108,7 +108,8 @@ pub struct CloudError {
     pub error: Option<CloudErrorBody>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -189,7 +190,8 @@ pub struct ListQueryKeysResult {
     pub value: Vec<QueryKey>,
 }
 impl azure_core::Continuable for ListQueryKeysResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -277,7 +279,8 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -315,7 +318,8 @@ pub struct PrivateEndpointConnectionListResult {
     pub value: Vec<PrivateEndpointConnection>,
 }
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -430,7 +434,8 @@ pub struct PrivateLinkResourcesResult {
     pub value: Vec<PrivateLinkResource>,
 }
 impl azure_core::Continuable for PrivateLinkResourcesResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -506,7 +511,8 @@ pub struct SearchServiceListResult {
     pub value: Vec<SearchService>,
 }
 impl azure_core::Continuable for SearchServiceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

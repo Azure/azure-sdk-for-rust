@@ -54,7 +54,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDefinition>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -74,8 +75,9 @@ pub struct FeatureOperationsListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for FeatureOperationsListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl FeatureOperationsListResult {
@@ -163,8 +165,9 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationListResult {
@@ -356,8 +359,9 @@ pub struct SubscriptionFeatureRegistrationList {
     pub value: Vec<SubscriptionFeatureRegistration>,
 }
 impl azure_core::Continuable for SubscriptionFeatureRegistrationList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SubscriptionFeatureRegistrationList {

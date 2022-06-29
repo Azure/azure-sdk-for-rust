@@ -355,8 +355,9 @@ pub struct AmlComputeNodesInformation {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AmlComputeNodesInformation {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AmlComputeNodesInformation {
@@ -649,7 +650,8 @@ pub struct AmlOperationListResult {
     pub value: Vec<AmlOperation>,
 }
 impl azure_core::Continuable for AmlOperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1128,8 +1130,9 @@ pub struct BatchDeploymentTrackedResourceArmPaginatedResult {
     pub value: Vec<BatchDeploymentTrackedResource>,
 }
 impl azure_core::Continuable for BatchDeploymentTrackedResourceArmPaginatedResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl BatchDeploymentTrackedResourceArmPaginatedResult {
@@ -1208,8 +1211,9 @@ pub struct BatchEndpointTrackedResourceArmPaginatedResult {
     pub value: Vec<BatchEndpointTrackedResource>,
 }
 impl azure_core::Continuable for BatchEndpointTrackedResourceArmPaginatedResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl BatchEndpointTrackedResourceArmPaginatedResult {
@@ -1667,8 +1671,9 @@ pub struct CodeContainerResourceArmPaginatedResult {
     pub value: Vec<CodeContainerResource>,
 }
 impl azure_core::Continuable for CodeContainerResourceArmPaginatedResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl CodeContainerResourceArmPaginatedResult {
@@ -1717,8 +1722,9 @@ pub struct CodeVersionResourceArmPaginatedResult {
     pub value: Vec<CodeVersionResource>,
 }
 impl azure_core::Continuable for CodeVersionResourceArmPaginatedResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl CodeVersionResourceArmPaginatedResult {
@@ -1841,8 +1847,9 @@ pub struct ComponentContainerResourceArmPaginatedResult {
     pub value: Vec<ComponentContainerResource>,
 }
 impl azure_core::Continuable for ComponentContainerResourceArmPaginatedResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ComponentContainerResourceArmPaginatedResult {
@@ -1891,8 +1898,9 @@ pub struct ComponentVersionResourceArmPaginatedResult {
     pub value: Vec<ComponentVersionResource>,
 }
 impl azure_core::Continuable for ComponentVersionResourceArmPaginatedResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ComponentVersionResourceArmPaginatedResult {
@@ -3409,8 +3417,9 @@ pub struct DataContainerResourceArmPaginatedResult {
     pub value: Vec<DataContainerResource>,
 }
 impl azure_core::Continuable for DataContainerResourceArmPaginatedResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DataContainerResourceArmPaginatedResult {
@@ -3600,8 +3609,9 @@ pub struct DataVersionBaseResourceArmPaginatedResult {
     pub value: Vec<DataVersionBaseResource>,
 }
 impl azure_core::Continuable for DataVersionBaseResourceArmPaginatedResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DataVersionBaseResourceArmPaginatedResult {
@@ -3742,8 +3752,9 @@ pub struct DatastoreResourceArmPaginatedResult {
     pub value: Vec<DatastoreResource>,
 }
 impl azure_core::Continuable for DatastoreResourceArmPaginatedResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DatastoreResourceArmPaginatedResult {
@@ -4517,8 +4528,9 @@ pub struct EnvironmentContainerResourceArmPaginatedResult {
     pub value: Vec<EnvironmentContainerResource>,
 }
 impl azure_core::Continuable for EnvironmentContainerResourceArmPaginatedResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl EnvironmentContainerResourceArmPaginatedResult {
@@ -4618,8 +4630,9 @@ pub struct EnvironmentVersionResourceArmPaginatedResult {
     pub value: Vec<EnvironmentVersionResource>,
 }
 impl azure_core::Continuable for EnvironmentVersionResourceArmPaginatedResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl EnvironmentVersionResourceArmPaginatedResult {
@@ -4674,7 +4687,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -6270,8 +6284,9 @@ pub struct JobBaseResourceArmPaginatedResult {
     pub value: Vec<JobBaseResource>,
 }
 impl azure_core::Continuable for JobBaseResourceArmPaginatedResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl JobBaseResourceArmPaginatedResult {
@@ -6854,8 +6869,9 @@ pub struct ListAmlUserFeatureResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ListAmlUserFeatureResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ListAmlUserFeatureResult {
@@ -6896,8 +6912,9 @@ pub struct ListUsagesResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ListUsagesResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ListUsagesResult {
@@ -6972,8 +6989,9 @@ pub struct ListWorkspaceQuotas {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ListWorkspaceQuotas {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ListWorkspaceQuotas {
@@ -7269,8 +7287,9 @@ pub struct ModelContainerResourceArmPaginatedResult {
     pub value: Vec<ModelContainerResource>,
 }
 impl azure_core::Continuable for ModelContainerResourceArmPaginatedResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ModelContainerResourceArmPaginatedResult {
@@ -7411,8 +7430,9 @@ pub struct ModelVersionResourceArmPaginatedResult {
     pub value: Vec<ModelVersionResource>,
 }
 impl azure_core::Continuable for ModelVersionResourceArmPaginatedResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ModelVersionResourceArmPaginatedResult {
@@ -7791,8 +7811,9 @@ pub struct OnlineDeploymentTrackedResourceArmPaginatedResult {
     pub value: Vec<OnlineDeploymentTrackedResource>,
 }
 impl azure_core::Continuable for OnlineDeploymentTrackedResourceArmPaginatedResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OnlineDeploymentTrackedResourceArmPaginatedResult {
@@ -7871,8 +7892,9 @@ pub struct OnlineEndpointTrackedResourceArmPaginatedResult {
     pub value: Vec<OnlineEndpointTrackedResource>,
 }
 impl azure_core::Continuable for OnlineEndpointTrackedResourceArmPaginatedResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OnlineEndpointTrackedResourceArmPaginatedResult {
@@ -8055,8 +8077,9 @@ pub struct PaginatedComputeResourcesList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PaginatedComputeResourcesList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PaginatedComputeResourcesList {
@@ -8075,7 +8098,8 @@ pub struct PaginatedWorkspaceConnectionsList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PaginatedWorkspaceConnectionsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -8556,7 +8580,8 @@ pub struct PrivateEndpointConnectionListResult {
     pub value: Vec<PrivateEndpointConnection>,
 }
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -10053,8 +10078,9 @@ pub struct SkuResourceArmPaginatedResult {
     pub value: Vec<SkuResource>,
 }
 impl azure_core::Continuable for SkuResourceArmPaginatedResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SkuResourceArmPaginatedResult {
@@ -11766,8 +11792,9 @@ pub struct WorkspaceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkspaceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WorkspaceListResult {

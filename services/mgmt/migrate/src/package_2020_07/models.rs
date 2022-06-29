@@ -101,7 +101,8 @@ pub struct AvailableOperations {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AvailableOperations {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -133,7 +134,8 @@ pub struct CloudError {
     pub error: Option<CloudErrorBody>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -343,8 +345,9 @@ pub struct HyperVClusterCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for HyperVClusterCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl HyperVClusterCollection {
@@ -447,8 +450,9 @@ pub struct HyperVHostCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for HyperVHostCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl HyperVHostCollection {
@@ -515,8 +519,9 @@ pub struct HyperVJobCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for HyperVJobCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl HyperVJobCollection {
@@ -556,8 +561,9 @@ pub struct HyperVMachineCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for HyperVMachineCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl HyperVMachineCollection {
@@ -748,8 +754,9 @@ pub struct HyperVRunAsAccountCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for HyperVRunAsAccountCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl HyperVRunAsAccountCollection {
@@ -820,8 +827,9 @@ pub struct HyperVSitesResultList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for HyperVSitesResultList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl HyperVSitesResultList {
@@ -1036,8 +1044,9 @@ pub struct MasterSiteList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MasterSiteList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl MasterSiteList {
@@ -1622,8 +1631,9 @@ pub struct SiteHealthSummaryCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SiteHealthSummaryCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SiteHealthSummaryCollection {
@@ -1742,8 +1752,9 @@ pub struct VCenterCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VCenterCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl VCenterCollection {
@@ -1797,8 +1808,9 @@ pub struct VmWareSitesResultList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VmWareSitesResultList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl VmWareSitesResultList {
@@ -1931,8 +1943,9 @@ pub struct VMwareJobCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VMwareJobCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl VMwareJobCollection {
@@ -1972,8 +1985,9 @@ pub struct VMwareMachineCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VMwareMachineCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl VMwareMachineCollection {
@@ -2157,8 +2171,9 @@ pub struct VMwareRunAsAccountCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VMwareRunAsAccountCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl VMwareRunAsAccountCollection {

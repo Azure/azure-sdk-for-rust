@@ -66,7 +66,8 @@ pub struct CloudError {
     pub error: Option<CloudErrorBody>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -124,7 +125,8 @@ pub struct FirewallRuleListResult {
     pub value: Vec<FirewallRule>,
 }
 impl azure_core::Continuable for FirewallRuleListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -317,7 +319,8 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -419,7 +422,8 @@ pub struct RoleListResult {
     pub value: Vec<Role>,
 }
 impl azure_core::Continuable for RoleListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -467,8 +471,9 @@ pub struct ServerConfigurationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ServerConfigurationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ServerConfigurationListResult {
@@ -602,8 +607,9 @@ pub struct ServerGroupConfigurationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ServerGroupConfigurationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ServerGroupConfigurationListResult {
@@ -710,8 +716,9 @@ pub struct ServerGroupListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ServerGroupListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ServerGroupListResult {
@@ -967,7 +974,8 @@ pub struct ServerGroupServerListResult {
     pub value: Vec<ServerGroupServer>,
 }
 impl azure_core::Continuable for ServerGroupServerListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

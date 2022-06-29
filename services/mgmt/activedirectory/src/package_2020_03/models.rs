@@ -66,7 +66,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDefinition>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -112,8 +113,9 @@ pub struct PrivateEndpointConnectionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PrivateEndpointConnectionListResult {
@@ -247,8 +249,9 @@ pub struct PrivateLinkResourceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PrivateLinkResourceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PrivateLinkResourceListResult {
@@ -376,8 +379,9 @@ pub struct PrivateLinkPolicyListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PrivateLinkPolicyListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PrivateLinkPolicyListResult {

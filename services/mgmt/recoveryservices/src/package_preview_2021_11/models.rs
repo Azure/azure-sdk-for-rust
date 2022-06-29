@@ -120,8 +120,9 @@ pub struct ClientDiscoveryResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ClientDiscoveryResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ClientDiscoveryResponse {
@@ -158,7 +159,8 @@ pub struct CloudError {
     pub error: Option<Error>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -576,8 +578,9 @@ pub struct PrivateLinkResources {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PrivateLinkResources {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PrivateLinkResources {
@@ -745,7 +748,8 @@ pub struct ReplicationUsageList {
     pub value: Vec<ReplicationUsage>,
 }
 impl azure_core::Continuable for ReplicationUsageList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1211,8 +1215,9 @@ pub struct VaultList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VaultList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl VaultList {
@@ -1590,7 +1595,8 @@ pub struct VaultUsageList {
     pub value: Vec<VaultUsage>,
 }
 impl azure_core::Continuable for VaultUsageList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
