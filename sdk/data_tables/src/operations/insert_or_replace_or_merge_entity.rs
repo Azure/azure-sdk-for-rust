@@ -1,5 +1,5 @@
 use crate::{operations::*, prelude::*, TransactionOperation};
-use azure_core::{prelude::*, CollectedResponse, Method, Request};
+use azure_core::{headers::*, prelude::*, CollectedResponse, Method, Request};
 use bytes::Bytes;
 use std::convert::TryInto;
 
@@ -38,15 +38,18 @@ impl InsertOrReplaceOrMergeEntityBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = self.entity_client.prepare_request(
+            let mut headers = Headers::new();
+            headers.insert(CONTENT_TYPE, "application/json");
+
+            let mut request = self.entity_client.finalize_request(
                 url,
                 match self.operation {
-                    InsertOperation::InsertOrMerge => crate::MERGE.to_owned(),
-                    InsertOperation::InsertOrReplace => Method::PUT,
+                    InsertOperation::InsertOrMerge => Method::Merge,
+                    InsertOperation::InsertOrReplace => Method::Put,
                 },
+                headers,
                 Some(self.body),
             )?;
-            request.insert_header("Content-Type", "application/json");
 
             let response = self
                 .entity_client
@@ -65,12 +68,12 @@ impl InsertOrReplaceOrMergeEntityBuilder {
         let mut request = Request::new(
             url.clone(),
             match self.operation {
-                InsertOperation::InsertOrMerge => crate::MERGE.to_owned(),
-                InsertOperation::InsertOrReplace => Method::PUT,
+                InsertOperation::InsertOrMerge => Method::Merge,
+                InsertOperation::InsertOrReplace => Method::Put,
             },
         );
-        request.insert_header("Accept", "application/json;odata=fullmetadata");
-        request.insert_header("Content-Type", "application/json");
+        request.insert_header(ACCEPT, "application/json;odata=fullmetadata");
+        request.insert_header(CONTENT_TYPE, "application/json");
         request.set_body(self.body);
 
         Ok(TransactionOperation::new(request))

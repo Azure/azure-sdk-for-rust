@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use azure_core::{
-    error::Error, headers::HeaderName, prelude::*, AppendToUrlQuery, CollectedResponse, Context,
-    Method, Pageable,
+    error::Error, headers::*, prelude::*, AppendToUrlQuery, CollectedResponse, Context, Method,
+    Pageable,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::{TryFrom, TryInto};
@@ -54,10 +54,12 @@ impl ListTablesBuilder {
                     None => {}
                 }
 
+                let mut headers = Headers::new();
+                headers.insert(ACCEPT, "application/json;odata=fullmetadata");
+
                 let mut request =
                     this.table_service_client
-                        .prepare_request(url, Method::GET, None)?;
-                request.insert_header("Accept", "application/json;odata=fullmetadata");
+                        .finalize_request(url, Method::Get, headers, None)?;
 
                 let response = this
                     .table_service_client

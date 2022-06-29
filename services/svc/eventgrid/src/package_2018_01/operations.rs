@@ -110,7 +110,7 @@ pub mod publish_event_grid_events {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}?overload=EventGridEvent", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, http::Method::POST);
+                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -126,9 +126,9 @@ pub mod publish_event_grid_events {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(()),
+                        azure_core::StatusCode::Ok => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code.as_u16(),
+                            status: status_code as u16,
                             error_code: None,
                         })),
                     }
@@ -156,7 +156,7 @@ pub mod publish_cloud_event_events {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}?overload=cloudEvent", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, http::Method::POST);
+                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -175,9 +175,9 @@ pub mod publish_cloud_event_events {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(()),
+                        azure_core::StatusCode::Ok => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code.as_u16(),
+                            status: status_code as u16,
                             error_code: None,
                         })),
                     }
@@ -200,7 +200,7 @@ pub mod publish_custom_event_events {
                 let this = self.clone();
                 async move {
                     let url = azure_core::Url::parse(&format!("{}?overload=customEvent", this.client.endpoint(),))?;
-                    let mut req = azure_core::Request::new(url, http::Method::POST);
+                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                     req.insert_header(
@@ -216,9 +216,9 @@ pub mod publish_custom_event_events {
                     let rsp = this.client.send(&mut req).await?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(()),
+                        azure_core::StatusCode::Ok => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code.as_u16(),
+                            status: status_code as u16,
                             error_code: None,
                         })),
                     }

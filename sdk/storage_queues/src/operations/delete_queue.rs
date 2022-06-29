@@ -1,5 +1,7 @@
 use crate::clients::QueueClient;
-use azure_core::{error::Error, prelude::*, Context, Method, Response as AzureResponse};
+use azure_core::{
+    error::Error, headers::Headers, prelude::*, Context, Method, Response as AzureResponse,
+};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
@@ -30,10 +32,12 @@ impl DeleteQueueBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request =
-                self.queue_client
-                    .storage_client()
-                    .prepare_request(url, Method::DELETE, None)?;
+            let mut request = self.queue_client.storage_client().finalize_request(
+                url,
+                Method::Delete,
+                Headers::new(),
+                None,
+            )?;
 
             let response = self
                 .queue_client

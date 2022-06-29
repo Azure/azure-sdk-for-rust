@@ -1,5 +1,7 @@
 use crate::{QueueServiceClient, QueueServiceProperties};
-use azure_core::{collect_pinned_stream, prelude::*, Context, Method, Response as AzureResponse};
+use azure_core::{
+    collect_pinned_stream, headers::Headers, prelude::*, Context, Method, Response as AzureResponse,
+};
 use azure_storage::core::{headers::CommonStorageResponseHeaders, xml::read_xml};
 use std::convert::TryInto;
 
@@ -38,10 +40,12 @@ impl GetQueueServicePropertiesBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request =
-                self.service_client
-                    .storage_client
-                    .prepare_request(url, Method::GET, None)?;
+            let mut request = self.service_client.storage_client.finalize_request(
+                url,
+                Method::Get,
+                Headers::new(),
+                None,
+            )?;
 
             let response = self
                 .service_client

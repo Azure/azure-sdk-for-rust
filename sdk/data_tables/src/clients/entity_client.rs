@@ -1,6 +1,7 @@
-use crate::{operations::*, prelude::*, IfMatchCondition};
+use crate::{operations::*, prelude::*};
 use azure_core::{
     error::{Error, ErrorKind},
+    headers::Headers,
     Context, Method, Request, Response,
 };
 use bytes::Bytes;
@@ -124,14 +125,15 @@ impl EntityClient {
         &self.url
     }
 
-    pub(crate) fn prepare_request(
+    pub(crate) fn finalize_request(
         &self,
         url: Url,
         method: Method,
+        headers: Headers,
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
         self.partition_key_client
-            .prepare_request(url, method, request_body)
+            .finalize_request(url, method, headers, request_body)
     }
 
     pub(crate) async fn send(

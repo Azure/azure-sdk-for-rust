@@ -55,7 +55,7 @@ impl GetFileBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = Request::new(url, azure_core::Method::GET);
+            let mut request = Request::new(url, azure_core::Method::Get);
 
             let requested_range = self.range.unwrap_or_else(|| Range::new(0, u64::MAX));
             request.insert_headers(&requested_range);

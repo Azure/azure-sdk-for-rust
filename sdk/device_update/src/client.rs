@@ -98,9 +98,9 @@ impl DeviceUpdateClient {
             .bearer_auth(self.get_token().await?.token.secret());
 
         if let Some(body) = json_body {
-            req = req.header("Content-Type", "application/json").body(body);
+            req = req.header("content-type", "application/json").body(body);
         } else {
-            req = req.header("Content-Length", 0);
+            req = req.header("content-length", 0);
         }
 
         let resp = req.send().await.with_context(ErrorKind::Io, || {
@@ -130,7 +130,7 @@ impl DeviceUpdateClient {
         let resp = reqwest::Client::new()
             .delete(&uri)
             .bearer_auth(self.get_token().await?.token.secret())
-            .header("Content-Type", "application/json")
+            .header("content-type", "application/json")
             .send()
             .await
             .with_context(ErrorKind::Io, || {

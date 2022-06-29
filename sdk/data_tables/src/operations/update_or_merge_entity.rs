@@ -1,5 +1,5 @@
 use crate::{operations::*, prelude::*, IfMatchCondition, TransactionOperation};
-use azure_core::{prelude::*, CollectedResponse, Context, Method, Request};
+use azure_core::{headers::*, prelude::*, CollectedResponse, Context, Method, Request};
 use bytes::Bytes;
 use std::convert::TryInto;
 
@@ -40,16 +40,19 @@ impl UpdateOrMergeEntityBuilder {
         Box::pin(async move {
             let url = self.entity_client.url().clone();
 
-            let mut request = self.entity_client.prepare_request(
+            let mut headers = Headers::new();
+            headers.insert(CONTENT_TYPE, "application/json");
+            headers.add(self.if_match_condition);
+
+            let mut request = self.entity_client.finalize_request(
                 url,
                 match self.operation {
-                    UpdateOperation::Merge => crate::MERGE.to_owned(),
-                    UpdateOperation::Update => Method::PUT,
+                    UpdateOperation::Merge => Method::Merge,
+                    UpdateOperation::Update => Method::Put,
                 },
+                headers,
                 Some(self.body),
             )?;
-            request.insert_header("Content-Type", "application/json");
-            request.add_mandatory_header(&self.if_match_condition);
 
             let response = self
                 .entity_client
@@ -67,12 +70,12 @@ impl UpdateOrMergeEntityBuilder {
         let mut request = Request::new(
             url.clone(),
             match self.operation {
-                UpdateOperation::Merge => crate::MERGE.to_owned(),
-                UpdateOperation::Update => Method::PUT,
+                UpdateOperation::Merge => Method::Merge,
+                UpdateOperation::Update => Method::Put,
             },
         );
-        request.insert_header("Accept", "application/json;odata=fullmetadata");
-        request.insert_header("Content-Type", "application/json");
+        request.insert_header(ACCEPT, "application/json;odata=fullmetadata");
+        request.insert_header(CONTENT_TYPE, "application/json");
         request.add_mandatory_header(&self.if_match_condition);
         request.set_body(self.body);
 

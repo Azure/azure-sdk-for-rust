@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use azure_core::{
     error::{Error, ErrorKind},
+    headers::*,
     Context, Method, Response,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
@@ -32,10 +33,12 @@ impl DeleteTableBuilder {
                 .pop()
                 .push(&format!("Tables('{}')", self.table_client.table_name()));
 
-            let mut request = self
-                .table_client
-                .prepare_request(url, Method::DELETE, None)?;
-            request.insert_header("Accept", "application/json");
+            let mut headers = Headers::new();
+            headers.insert(ACCEPT, "application/json");
+
+            let mut request =
+                self.table_client
+                    .finalize_request(url, Method::Delete, headers, None)?;
 
             let response = self
                 .table_client

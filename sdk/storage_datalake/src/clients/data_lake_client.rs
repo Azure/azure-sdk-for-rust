@@ -110,7 +110,7 @@ impl DataLakeClient {
         FileSystemClient::new(self, file_system_name.into())
     }
 
-    // pub(crate) fn prepare_request(
+    // pub(crate) fn finalize_request(
     //     &self,
     //     url: Url,
     //     http_method: azure_core::Method,

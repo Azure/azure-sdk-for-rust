@@ -42,12 +42,15 @@ impl<'a> PutBlockBuilder {
             self.block_id.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("comp", "block");
 
-            let mut request = self.blob_client.prepare_request(
+            let mut headers = Headers::new();
+            headers.add(self.lease_id);
+
+            let mut request = self.blob_client.finalize_request(
                 url,
-                azure_core::Method::PUT,
+                azure_core::Method::Put,
+                headers,
                 Some(self.body.clone()),
             )?;
-            request.add_optional_header(&self.lease_id);
 
             let response = self
                 .blob_client

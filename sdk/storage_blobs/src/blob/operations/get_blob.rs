@@ -48,25 +48,29 @@ impl GetBlobBuilder {
                 let mut url = this.blob_client.url_with_segments(None)?;
 
                 let range = match continuation {
-                    Some(Continuation::String(_)) => {
-                        panic!("unexpected contination type")
-                    }
                     Some(Continuation::Range(range)) => range.into(),
                     None => initial_range(this.chunk_size, this.range),
+                    Some(_) => {
+                        panic!("unexpected contination type")
+                    }
                 };
 
                 this.blob_versioning.append_to_url_query(&mut url);
                 this.timeout.append_to_url_query(&mut url);
 
-                let mut request =
-                    this.blob_client
-                        .prepare_request(url, azure_core::Method::GET, None)?;
-
+                let mut headers = Headers::new();
                 for (name, value) in range.as_headers() {
-                    request.insert_header(name, value);
+                    headers.insert(name, value);
                 }
 
-                request.add_optional_header(&this.lease_id);
+                headers.add(this.lease_id);
+
+                let mut request = this.blob_client.finalize_request(
+                    url,
+                    azure_core::Method::Get,
+                    headers,
+                    None,
+                )?;
 
                 let response = this.blob_client.send(&mut ctx, &mut request).await?;
 

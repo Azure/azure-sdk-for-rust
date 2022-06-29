@@ -182,7 +182,7 @@ impl CosmosOptions {
     /// Create new options with a given transaction name
     pub fn new_with_transaction_name(name: String) -> Self {
         Self {
-            options: ClientOptions::new_with_transaction_name(name.into()),
+            options: ClientOptions::new_with_transaction_name(name),
         }
     }
 }

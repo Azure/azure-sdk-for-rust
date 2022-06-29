@@ -1,6 +1,7 @@
 use crate::{operations::*, prelude::*, TransactionOperation};
 use azure_core::{
     error::{Error, ErrorKind},
+    headers::*,
     prelude::*,
     CollectedResponse, Context, Method, Request,
 };
@@ -47,12 +48,14 @@ impl InsertEntityBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
+            let mut headers = Headers::new();
+            headers.add(self.return_entity);
+            headers.insert(ACCEPT, "application/json;odata=fullmetadata");
+            headers.insert(CONTENT_TYPE, "application/json");
+
             let mut request =
                 self.table_client
-                    .prepare_request(url, Method::POST, Some(self.body))?;
-            request.add_mandatory_header(&self.return_entity);
-            request.insert_header("Accept", "application/json;odata=fullmetadata");
-            request.insert_header("Content-Type", "application/json");
+                    .finalize_request(url, Method::Post, headers, Some(self.body))?;
 
             let response = self
                 .table_client
@@ -72,9 +75,9 @@ impl InsertEntityBuilder {
             .pop()
             .push(self.table_client.table_name());
 
-        let mut request = Request::new(url, Method::POST);
-        request.insert_header("Accept", "application/json;odata=fullmetadata");
-        request.insert_header("Content-Type", "application/json");
+        let mut request = Request::new(url, Method::Post);
+        request.insert_header(ACCEPT, "application/json;odata=fullmetadata");
+        request.insert_header(CONTENT_TYPE, "application/json");
         request.set_body(self.body);
 
         Ok(TransactionOperation::new(request))

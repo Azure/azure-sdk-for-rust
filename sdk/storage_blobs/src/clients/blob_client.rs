@@ -2,6 +2,7 @@ use crate::{blob::operations::*, prelude::*, BA512Range};
 use azure_core::Method;
 use azure_core::{
     error::{Error, ErrorKind},
+    headers::Headers,
     prelude::*,
     Request, Response,
 };
@@ -91,6 +92,14 @@ impl BlobClient {
 
     pub fn get_properties(&self) -> GetPropertiesBuilder {
         GetPropertiesBuilder::new(self.clone())
+    }
+
+    /// Creates a builder for setting blob properties.
+    ///
+    /// Several properties are cleared from the blob if not passed.
+    /// Consider calling `set_from_blob_properties` with existing blob properties.
+    pub fn set_properties(&self) -> SetPropertiesBuilder {
+        SetPropertiesBuilder::new(self.clone())
     }
 
     pub fn get_metadata(&self) -> GetMetadataBuilder {
@@ -214,14 +223,15 @@ impl BlobClient {
         Ok(url)
     }
 
-    pub(crate) fn prepare_request(
+    pub(crate) fn finalize_request(
         &self,
         url: Url,
         method: Method,
+        headers: Headers,
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
         self.container_client
-            .prepare_request(url, method, request_body)
+            .finalize_request(url, method, headers, request_body)
     }
 
     pub(crate) async fn send(

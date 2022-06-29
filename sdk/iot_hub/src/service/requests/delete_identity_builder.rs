@@ -38,7 +38,7 @@ impl<'a> DeleteIdentityBuilder<'a> {
             ),
         };
 
-        let mut request = self.service_client.prepare_request(&uri, Method::DELETE)?;
+        let mut request = self.service_client.finalize_request(&uri, Method::Delete)?;
         request.insert_header(headers::IF_MATCH, format!("\"{}\"", &self.if_match));
 
         request.set_body(azure_core::EMPTY_BODY);

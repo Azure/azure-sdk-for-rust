@@ -1,5 +1,5 @@
 use crate::{clients::TableServiceClient, operations::*};
-use azure_core::{Context, Method, Request, Response, Url};
+use azure_core::{headers::Headers, Context, Method, Request, Response, Url};
 use azure_storage::core::clients::StorageAccountClient;
 use bytes::Bytes;
 use serde::Serialize;
@@ -69,14 +69,15 @@ impl TableClient {
         self.table_service_client.send(context, request).await
     }
 
-    pub(crate) fn prepare_request(
+    pub(crate) fn finalize_request(
         &self,
         url: Url,
         method: Method,
+        headers: Headers,
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
         self.table_service_client
-            .prepare_request(url, method, request_body)
+            .finalize_request(url, method, headers, request_body)
     }
 }
 

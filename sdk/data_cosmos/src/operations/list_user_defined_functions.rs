@@ -48,7 +48,7 @@ impl ListUserDefinedFunctionsBuilder {
                         this.client.database_client().database_name(),
                         this.client.collection_name()
                     ),
-                    azure_core::Method::GET,
+                    azure_core::Method::Get,
                 );
 
                 request.insert_headers(&this.if_match_condition);

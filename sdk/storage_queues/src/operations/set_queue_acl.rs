@@ -1,5 +1,5 @@
 use crate::{clients::QueueClient, QueueStoredAccessPolicy};
-use azure_core::{error::Error, prelude::*, Method, Response as AzureResponse};
+use azure_core::{error::Error, headers::Headers, prelude::*, Method, Response as AzureResponse};
 use azure_storage::{core::headers::CommonStorageResponseHeaders, StoredAccessPolicyList};
 use std::convert::TryInto;
 
@@ -45,9 +45,10 @@ impl SetQueueACLBuilder {
                 qapl.to_xml()
             };
 
-            let mut request = self.queue_client.storage_client().prepare_request(
+            let mut request = self.queue_client.storage_client().finalize_request(
                 url,
-                Method::PUT,
+                Method::Put,
+                Headers::new(),
                 Some(xml_body.into()),
             )?;
 

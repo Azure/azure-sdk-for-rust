@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use azure_core::{
-    error::{Error, ErrorKind, ResultExt},
+    error::{Error, ErrorKind},
+    headers::*,
     prelude::*,
     CollectedResponse, Context, Etag, Method, StatusCode,
 };
@@ -43,17 +44,21 @@ impl SubmitTransactionBuilder {
 
             let request_body = Some(self.transaction.to_string()?.into());
 
-            let mut request =
-                self.partition_key_client
-                    .prepare_request(url, Method::POST, request_body)?;
-
-            request.insert_header(
-                "Content-Type",
+            let mut headers = Headers::new();
+            headers.insert(
+                CONTENT_TYPE,
                 &format!(
                     "multipart/mixed; boundary=batch_{}",
                     self.transaction.batch_uuid().hyphenated()
                 ),
             );
+
+            let mut request = self.partition_key_client.finalize_request(
+                url,
+                Method::Get,
+                headers,
+                request_body,
+            )?;
 
             let response = self
                 .partition_key_client
@@ -78,12 +83,23 @@ impl std::future::IntoFuture for SubmitTransactionBuilder {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct OperationResponse {
     pub status_code: StatusCode,
     pub location: Option<Url>,
     pub data_service_id: Option<String>,
     pub etag: Option<Etag>,
+}
+
+impl Default for OperationResponse {
+    fn default() -> Self {
+        Self {
+            status_code: StatusCode::Ok,
+            location: None,
+            data_service_id: None,
+            etag: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -120,7 +136,11 @@ impl TryFrom<CollectedResponse> for SubmitTransactionResponse {
                         })
                     })?;
                     operation_response.status_code =
-                        StatusCode::from_u16(status_code).map_kind(ErrorKind::DataConversion)?;
+                        StatusCode::try_from(status_code).map_err(|_| {
+                            Error::with_message(ErrorKind::DataConversion, || {
+                                format!("invalid status code {status_code}")
+                            })
+                        })?;
                 } else if line.starts_with("Location:") {
                     operation_response.location = Some(
                         line.split_whitespace()

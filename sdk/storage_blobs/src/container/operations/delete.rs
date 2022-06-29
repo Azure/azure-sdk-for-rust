@@ -1,6 +1,5 @@
 use crate::prelude::*;
-use azure_core::prelude::*;
-use azure_core::Method;
+use azure_core::{headers::Headers, prelude::*, Method};
 
 #[derive(Debug, Clone)]
 pub struct DeleteBuilder {
@@ -33,10 +32,12 @@ impl DeleteBuilder {
 
             url.query_pairs_mut().append_pair("restype", "container");
 
-            let mut request = self
-                .container_client
-                .prepare_request(url, Method::DELETE, None)?;
-            request.add_optional_header(&self.lease_id);
+            let mut headers = Headers::new();
+            headers.add(self.lease_id);
+
+            let mut request =
+                self.container_client
+                    .finalize_request(url, Method::Delete, headers, None)?;
 
             let _response = self
                 .container_client

@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use azure_core::{
-    collect_pinned_stream, headers::etag_from_headers, AppendToUrlQuery, Context, Etag, Method,
-    Response,
+    collect_pinned_stream, headers::*, AppendToUrlQuery, Context, Etag, Method, Response,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use serde::de::DeserializeOwned;
@@ -37,8 +36,12 @@ impl GetEntityBuilder {
 
             self.select.append_to_url_query(&mut url);
 
-            let mut request = self.entity_client.prepare_request(url, Method::GET, None)?;
-            request.insert_header("Accept", "application/json;odata=fullmetadata");
+            let mut headers = Headers::new();
+            headers.insert(ACCEPT, "application/json;odata=fullmetadata");
+
+            let mut request =
+                self.entity_client
+                    .finalize_request(url, Method::Get, headers, None)?;
 
             let response = self
                 .entity_client

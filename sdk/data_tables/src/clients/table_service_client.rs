@@ -1,6 +1,7 @@
 use crate::operations::ListTablesBuilder;
 use azure_core::{
     error::{ErrorKind, ResultExt},
+    headers::Headers,
     Context, Method, Request, Response,
 };
 use azure_storage::core::clients::{ServiceType, StorageAccountClient, StorageClient};
@@ -52,15 +53,16 @@ impl TableServiceClient {
         self.storage_client.storage_account_client()
     }
 
-    pub(crate) fn prepare_request(
+    pub(crate) fn finalize_request(
         &self,
         url: Url,
         method: Method,
+        headers: Headers,
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
         self.storage_client
             .storage_account_client()
-            .prepare_request(url, method, ServiceType::Table, request_body)
+            .finalize_request(url, method, headers, ServiceType::Table, request_body)
             .context(ErrorKind::Other, "failed to prepare request")
     }
 

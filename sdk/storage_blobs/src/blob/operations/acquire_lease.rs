@@ -1,12 +1,5 @@
 use crate::prelude::*;
-use azure_core::{
-    headers::{
-        date_from_headers, etag_from_headers, last_modified_from_headers, lease_id_from_headers,
-        request_id_from_headers, LEASE_ACTION,
-    },
-    prelude::*,
-    RequestId,
-};
+use azure_core::{headers::*, prelude::*, RequestId};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
@@ -44,13 +37,15 @@ impl AcquireLeaseBuilder {
             url.query_pairs_mut().append_pair("comp", "lease");
             self.timeout.append_to_url_query(&mut url);
 
+            let mut headers = Headers::new();
+            headers.insert(LEASE_ACTION, "acquire");
+            headers.add(self.lease_duration);
+            headers.add(self.proposed_lease_id);
+            headers.add(self.lease_id);
+
             let mut request =
                 self.blob_client
-                    .prepare_request(url, azure_core::Method::PUT, None)?;
-            request.insert_header(LEASE_ACTION, "acquire");
-            request.add_mandatory_header(&self.lease_duration);
-            request.add_optional_header(&self.proposed_lease_id);
-            request.add_optional_header(&self.lease_id);
+                    .finalize_request(url, azure_core::Method::Put, headers, None)?;
 
             let response = self
                 .blob_client

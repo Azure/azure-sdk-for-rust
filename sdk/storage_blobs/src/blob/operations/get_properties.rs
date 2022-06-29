@@ -35,10 +35,12 @@ impl GetPropertiesBuilder {
             self.timeout.append_to_url_query(&mut url);
             self.blob_versioning.append_to_url_query(&mut url);
 
+            let mut headers = Headers::new();
+            headers.add(self.lease_id);
+
             let mut request =
                 self.blob_client
-                    .prepare_request(url, azure_core::Method::HEAD, None)?;
-            request.add_optional_header(&self.lease_id);
+                    .finalize_request(url, azure_core::Method::Head, headers, None)?;
 
             let response = self
                 .blob_client

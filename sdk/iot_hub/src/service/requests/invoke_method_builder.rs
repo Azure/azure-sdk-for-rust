@@ -74,7 +74,7 @@ impl<'a> InvokeMethodBuilder<'a> {
             ),
         };
 
-        let mut request = self.iot_hub_service.prepare_request(&uri, Method::POST)?;
+        let mut request = self.iot_hub_service.finalize_request(&uri, Method::Post)?;
         let method = InvokeMethodBody {
             connect_timeout_in_seconds: self.connect_time_out,
             method_name: &self.method_name,

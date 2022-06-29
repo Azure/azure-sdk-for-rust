@@ -30,7 +30,7 @@ impl DeleteUserDefinedFunctionBuilder {
 
     pub fn into_future(self) -> DeleteUserDefinedFunction {
         Box::pin(async move {
-            let mut request = self.client.udf_request(azure_core::Method::DELETE);
+            let mut request = self.client.udf_request(azure_core::Method::Delete);
 
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);

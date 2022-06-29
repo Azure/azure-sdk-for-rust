@@ -385,7 +385,7 @@ impl ServiceClient {
             self,
             device_id.into(),
             Some(module_id.into()),
-            Method::PATCH,
+            Method::Patch,
         )
     }
 
@@ -412,7 +412,7 @@ impl ServiceClient {
         S: Into<String>,
         T: Into<String>,
     {
-        UpdateOrReplaceTwinBuilder::new(self, device_id.into(), Some(module_id.into()), Method::PUT)
+        UpdateOrReplaceTwinBuilder::new(self, device_id.into(), Some(module_id.into()), Method::Put)
     }
 
     /// Update the device twin of a given device
@@ -436,7 +436,7 @@ impl ServiceClient {
     where
         S: Into<String>,
     {
-        UpdateOrReplaceTwinBuilder::new(self, device_id.into(), None, Method::PATCH)
+        UpdateOrReplaceTwinBuilder::new(self, device_id.into(), None, Method::Patch)
     }
 
     /// Replace the device twin of a given device
@@ -460,7 +460,7 @@ impl ServiceClient {
     where
         S: Into<String>,
     {
-        UpdateOrReplaceTwinBuilder::new(self, device_id.into(), None, Method::PUT)
+        UpdateOrReplaceTwinBuilder::new(self, device_id.into(), None, Method::Put)
     }
 
     /// Get the identity of a given device
@@ -802,7 +802,11 @@ impl ServiceClient {
     }
 
     /// Prepares a request that can be used by any request builders.
-    pub(crate) fn prepare_request(&self, uri: &str, method: Method) -> azure_core::Result<Request> {
+    pub(crate) fn finalize_request(
+        &self,
+        uri: &str,
+        method: Method,
+    ) -> azure_core::Result<Request> {
         let mut request = Request::new(Url::parse(uri)?, method);
         request.insert_header(headers::AUTHORIZATION, &self.sas_token);
         request.insert_header(headers::CONTENT_TYPE, content_type::APPLICATION_JSON);
@@ -871,7 +875,7 @@ mod tests {
         let builder = service_client.update_module_twin("deviceid", "moduleid");
         assert_eq!(builder.device_id, "deviceid".to_string());
         assert_eq!(builder.module_id, Some("moduleid".to_string()));
-        assert_eq!(builder.method, azure_core::Method::PATCH);
+        assert_eq!(builder.method, azure_core::Method::Patch);
 
         Ok(())
     }
@@ -888,7 +892,7 @@ mod tests {
         let builder = service_client.replace_module_twin("deviceid", "moduleid");
         assert_eq!(builder.device_id, "deviceid".to_string());
         assert_eq!(builder.module_id, Some("moduleid".to_string()));
-        assert_eq!(builder.method, azure_core::Method::PUT);
+        assert_eq!(builder.method, azure_core::Method::Put);
 
         Ok(())
     }
@@ -905,7 +909,7 @@ mod tests {
         let builder = service_client.update_device_twin("deviceid");
         assert_eq!(builder.device_id, "deviceid".to_string());
         assert_eq!(builder.module_id, None);
-        assert_eq!(builder.method, azure_core::Method::PATCH);
+        assert_eq!(builder.method, azure_core::Method::Patch);
 
         Ok(())
     }
@@ -922,7 +926,7 @@ mod tests {
         let builder = service_client.replace_device_twin("deviceid");
         assert_eq!(builder.device_id, "deviceid".to_string());
         assert_eq!(builder.module_id, None);
-        assert_eq!(builder.method, azure_core::Method::PUT);
+        assert_eq!(builder.method, azure_core::Method::Put);
 
         Ok(())
     }

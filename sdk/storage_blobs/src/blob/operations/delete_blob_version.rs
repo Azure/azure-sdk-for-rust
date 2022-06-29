@@ -1,5 +1,5 @@
 use crate::{blob::operations::DeleteBlobResponse, prelude::*};
-use azure_core::prelude::*;
+use azure_core::{headers::Headers, prelude::*};
 
 #[derive(Debug, Clone)]
 pub struct DeleteBlobVersionBuilder {
@@ -39,10 +39,15 @@ impl DeleteBlobVersionBuilder {
                 url.query_pairs_mut().append_pair("deletetype", "permanent");
             }
 
-            let mut request =
-                self.blob_client
-                    .prepare_request(url, azure_core::Method::DELETE, None)?;
-            request.add_optional_header(&self.lease_id);
+            let mut headers = Headers::new();
+            headers.add(self.lease_id);
+
+            let mut request = self.blob_client.finalize_request(
+                url,
+                azure_core::Method::Delete,
+                headers,
+                None,
+            )?;
 
             let response = self
                 .blob_client

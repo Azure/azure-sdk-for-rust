@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use azure_core::{
     error::{Error, ErrorKind},
-    headers::HeaderName,
+    headers::*,
     prelude::*,
     AppendToUrlQuery, CollectedResponse, Context, Method, Pageable,
 };
@@ -69,8 +69,12 @@ impl QueryEntityBuilder {
                     }
                 }
 
-                let mut request = this.table_client.prepare_request(url, Method::GET, None)?;
-                request.insert_header("Accept", "application/json;odata=fullmetadata");
+                let mut headers = Headers::new();
+                headers.insert(ACCEPT, "application/json;odata=fullmetadata");
+
+                let mut request =
+                    this.table_client
+                        .finalize_request(url, Method::Get, headers, None)?;
 
                 let response = this.table_client.send(&mut ctx, &mut request).await?;
 

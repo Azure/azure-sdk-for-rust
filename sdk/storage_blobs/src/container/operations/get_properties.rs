@@ -38,10 +38,12 @@ impl GetPropertiesBuilder {
             let mut url = self.container_client.url_with_segments(None)?;
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = self
-                .container_client
-                .prepare_request(url, Method::HEAD, None)?;
-            request.add_optional_header(&self.lease_id);
+            let mut headers = Headers::new();
+            headers.add(self.lease_id);
+
+            let mut request =
+                self.container_client
+                    .finalize_request(url, Method::Head, headers, None)?;
 
             let response = self
                 .container_client
