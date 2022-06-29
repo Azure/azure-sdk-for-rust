@@ -34,7 +34,7 @@ impl ListTablesBuilder {
     }
 
     pub fn into_stream(self) -> Pageable<ListTablesResponse, Error> {
-        let make_request = move |continuation: Option<Continuation>| {
+        let make_request = move |continuation: Option<String>| {
             let this = self.clone();
             let mut ctx = self.context.clone();
             async move {
@@ -44,14 +44,9 @@ impl ListTablesBuilder {
                 this.select.append_to_url_query(&mut url);
                 this.top.append_to_url_query(&mut url);
 
-                match continuation {
-                    Some(Continuation::String(value)) => {
-                        url.query_pairs_mut().append_pair("NextTableName", &value);
-                    }
-                    Some(_) => {
-                        panic!("unsupported Continuation type");
-                    }
-                    None => {}
+                if let Some(continuation) = continuation {
+                    url.query_pairs_mut()
+                        .append_pair("NextTableName", &continuation);
                 }
 
                 let mut headers = Headers::new();
@@ -83,10 +78,10 @@ pub struct ListTablesResponse {
 }
 
 impl Continuable for ListTablesResponse {
-    fn continuation(&self) -> Option<Continuation> {
-        self.continuation_next_table_name
-            .clone()
-            .map(Continuation::from)
+    type Continuation = String;
+
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.continuation_next_table_name.clone()
     }
 }
 

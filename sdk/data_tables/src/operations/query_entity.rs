@@ -40,7 +40,7 @@ impl QueryEntityBuilder {
     where
         E: DeserializeOwned + Send + Sync,
     {
-        let make_request = move |continuation: Option<Continuation>| {
+        let make_request = move |continuation: Option<(String, Option<String>)>| {
             let this = self.clone();
             let mut ctx = self.context.clone();
             async move {
@@ -54,18 +54,12 @@ impl QueryEntityBuilder {
                 this.select.append_to_url_query(&mut url);
                 this.top.append_to_url_query(&mut url);
 
-                match continuation {
-                    Some(Continuation::Paired(partition_key, row_key)) => {
-                        url.query_pairs_mut()
-                            .append_pair("NextPartitionKey", &partition_key);
+                if let Some((partition_key, row_key)) = continuation {
+                    url.query_pairs_mut()
+                        .append_pair("NextPartitionKey", &partition_key);
 
-                        if let Some(row_key) = row_key {
-                            url.query_pairs_mut().append_pair("NextRowKey", &row_key);
-                        }
-                    }
-                    None => {}
-                    _ => {
-                        panic!("only Continuation::Tuple is supported");
+                    if let Some(row_key) = row_key {
+                        url.query_pairs_mut().append_pair("NextRowKey", &row_key);
                     }
                 }
 
@@ -102,10 +96,12 @@ impl<E> Continuable for QueryEntityResponse<E>
 where
     E: DeserializeOwned + Send + Sync,
 {
-    fn continuation(&self) -> Option<Continuation> {
+    type Continuation = (String, Option<String>);
+
+    fn continuation(&self) -> Option<Self::Continuation> {
         self.next_partition_key
             .clone()
-            .map(|partition_key| Continuation::Paired(partition_key, self.next_row_key.clone()))
+            .map(|partition_key| (partition_key, self.next_row_key.clone()))
     }
 }
 
