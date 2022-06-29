@@ -55,7 +55,7 @@ impl SubmitTransactionBuilder {
 
             let mut request = self.partition_key_client.finalize_request(
                 url,
-                Method::Get,
+                Method::Post,
                 headers,
                 request_body,
             )?;
