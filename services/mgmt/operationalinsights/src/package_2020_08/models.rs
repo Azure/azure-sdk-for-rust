@@ -135,8 +135,9 @@ pub struct ClusterListResult {
     pub value: Vec<Cluster>,
 }
 impl azure_core::Continuable for ClusterListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ClusterListResult {
@@ -338,7 +339,8 @@ pub struct DataExportListResult {
     pub value: Vec<DataExport>,
 }
 impl azure_core::Continuable for DataExportListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -545,8 +547,9 @@ pub struct DataSourceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DataSourceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DataSourceListResult {
@@ -675,7 +678,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -761,7 +765,8 @@ pub struct LinkedServiceListResult {
     pub value: Vec<LinkedService>,
 }
 impl azure_core::Continuable for LinkedServiceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -840,7 +845,8 @@ pub struct LinkedStorageAccountsListResult {
     pub value: Vec<LinkedStorageAccountsResource>,
 }
 impl azure_core::Continuable for LinkedStorageAccountsListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1009,8 +1015,9 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationListResult {
@@ -1440,8 +1447,9 @@ pub struct StorageInsightListResult {
     pub odata_next_link: Option<String>,
 }
 impl azure_core::Continuable for StorageInsightListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.odata_next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.odata_next_link.clone()
     }
 }
 impl StorageInsightListResult {
@@ -1565,7 +1573,8 @@ pub struct TablesListResult {
     pub value: Vec<Table>,
 }
 impl azure_core::Continuable for TablesListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1737,7 +1746,8 @@ pub struct WorkspaceListManagementGroupsResult {
     pub value: Vec<ManagementGroup>,
 }
 impl azure_core::Continuable for WorkspaceListManagementGroupsResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1754,7 +1764,8 @@ pub struct WorkspaceListResult {
     pub value: Vec<Workspace>,
 }
 impl azure_core::Continuable for WorkspaceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1771,7 +1782,8 @@ pub struct WorkspaceListUsagesResult {
     pub value: Vec<UsageMetric>,
 }
 impl azure_core::Continuable for WorkspaceListUsagesResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

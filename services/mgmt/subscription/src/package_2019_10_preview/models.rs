@@ -102,7 +102,8 @@ pub struct LocationListResult {
     pub value: Vec<Location>,
 }
 impl azure_core::Continuable for LocationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -528,8 +529,9 @@ pub struct SubscriptionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SubscriptionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SubscriptionListResult {
@@ -603,11 +605,12 @@ pub struct TenantListResult {
     pub next_link: String,
 }
 impl azure_core::Continuable for TenantListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         if self.next_link.is_empty() {
             None
         } else {
-            Some(azure_core::prelude::Continuation::from(self.next_link.clone()))
+            Some(self.next_link.clone())
         }
     }
 }

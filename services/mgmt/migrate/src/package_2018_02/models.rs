@@ -1032,7 +1032,8 @@ pub struct AssessedMachineResultList {
     pub value: Vec<AssessedMachine>,
 }
 impl azure_core::Continuable for AssessedMachineResultList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2015,7 +2016,8 @@ pub struct AssessmentResultList {
     pub value: Vec<Assessment>,
 }
 impl azure_core::Continuable for AssessmentResultList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2083,7 +2085,8 @@ pub struct CloudError {
     pub error: Option<CloudErrorBody>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2205,7 +2208,8 @@ pub struct GroupResultList {
     pub value: Vec<Group>,
 }
 impl azure_core::Continuable for GroupResultList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2347,7 +2351,8 @@ pub struct MachineResultList {
     pub value: Vec<Machine>,
 }
 impl azure_core::Continuable for MachineResultList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2418,7 +2423,8 @@ pub struct OperationResultList {
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationResultList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2614,7 +2620,8 @@ pub struct ProjectResultList {
     pub value: Vec<Project>,
 }
 impl azure_core::Continuable for ProjectResultList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

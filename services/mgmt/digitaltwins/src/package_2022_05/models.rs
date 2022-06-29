@@ -295,8 +295,9 @@ pub struct DigitalTwinsDescriptionListResult {
     pub value: Vec<DigitalTwinsDescription>,
 }
 impl azure_core::Continuable for DigitalTwinsDescriptionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DigitalTwinsDescriptionListResult {
@@ -331,8 +332,9 @@ pub struct DigitalTwinsEndpointResourceListResult {
     pub value: Vec<DigitalTwinsEndpointResource>,
 }
 impl azure_core::Continuable for DigitalTwinsEndpointResourceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DigitalTwinsEndpointResourceListResult {
@@ -823,7 +825,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDefinition>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1023,8 +1026,9 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationListResult {
@@ -1251,8 +1255,9 @@ pub struct TimeSeriesDatabaseConnectionListResult {
     pub value: Vec<TimeSeriesDatabaseConnection>,
 }
 impl azure_core::Continuable for TimeSeriesDatabaseConnectionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl TimeSeriesDatabaseConnectionListResult {

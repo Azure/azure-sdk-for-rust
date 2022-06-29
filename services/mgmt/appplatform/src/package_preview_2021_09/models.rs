@@ -35,8 +35,9 @@ pub struct AppResourceCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AppResourceCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AppResourceCollection {
@@ -144,8 +145,9 @@ pub struct AvailableOperations {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AvailableOperations {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AvailableOperations {
@@ -206,8 +208,9 @@ pub struct BindingResourceCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for BindingResourceCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl BindingResourceCollection {
@@ -315,8 +318,9 @@ pub struct CertificateResourceCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CertificateResourceCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl CertificateResourceCollection {
@@ -332,7 +336,8 @@ pub struct CloudError {
     pub error: Option<CloudErrorBody>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -737,8 +742,9 @@ pub struct CustomDomainResourceCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CustomDomainResourceCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl CustomDomainResourceCollection {
@@ -907,8 +913,9 @@ pub struct DeploymentResourceCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DeploymentResourceCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DeploymentResourceCollection {
@@ -1928,8 +1935,9 @@ pub struct ResourceSkuCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResourceSkuCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ResourceSkuCollection {
@@ -2126,8 +2134,9 @@ pub struct ServiceResourceList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ServiceResourceList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ServiceResourceList {
@@ -2334,8 +2343,9 @@ pub struct StorageResourceCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for StorageResourceCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl StorageResourceCollection {

@@ -69,8 +69,9 @@ pub struct CommitmentAssociationListResult {
     pub value: Vec<CommitmentAssociation>,
 }
 impl azure_core::Continuable for CommitmentAssociationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl CommitmentAssociationListResult {
@@ -132,8 +133,9 @@ pub struct CommitmentPlanListResult {
     pub value: Vec<CommitmentPlan>,
 }
 impl azure_core::Continuable for CommitmentPlanListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl CommitmentPlanListResult {
@@ -251,7 +253,8 @@ pub struct OperationEntityListResult {
     pub value: Vec<OperationEntity>,
 }
 impl azure_core::Continuable for OperationEntityListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -322,8 +325,9 @@ pub struct PlanUsageHistoryListResult {
     pub value: Vec<PlanUsageHistory>,
 }
 impl azure_core::Continuable for PlanUsageHistoryListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PlanUsageHistoryListResult {
@@ -481,7 +485,8 @@ pub struct SkuListResult {
     pub value: Vec<CatalogSku>,
 }
 impl azure_core::Continuable for SkuListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

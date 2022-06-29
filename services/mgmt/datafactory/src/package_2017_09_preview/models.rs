@@ -104,8 +104,9 @@ pub struct ActivityRunsListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ActivityRunsListResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ActivityRunsListResponse {
@@ -193,8 +194,9 @@ pub struct DatasetListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DatasetListResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DatasetListResponse {
@@ -263,7 +265,8 @@ pub struct ErrorResponse {
     pub details: Vec<ErrorResponse>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -356,8 +359,9 @@ pub struct FactoryListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for FactoryListResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl FactoryListResponse {
@@ -553,8 +557,9 @@ pub struct IntegrationRuntimeListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for IntegrationRuntimeListResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl IntegrationRuntimeListResponse {
@@ -908,8 +913,9 @@ pub struct LinkedServiceListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for LinkedServiceListResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl LinkedServiceListResponse {
@@ -1237,8 +1243,9 @@ pub struct PipelineListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PipelineListResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PipelineListResponse {
@@ -1838,8 +1845,9 @@ pub struct TriggerListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for TriggerListResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl TriggerListResponse {
@@ -1963,8 +1971,9 @@ pub struct TriggerRunListResponse {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for TriggerRunListResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl TriggerRunListResponse {

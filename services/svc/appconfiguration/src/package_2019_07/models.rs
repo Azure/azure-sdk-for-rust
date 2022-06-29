@@ -24,7 +24,8 @@ pub struct Error {
     pub status: Option<i64>,
 }
 impl azure_core::Continuable for Error {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -54,8 +55,9 @@ pub struct KeyListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for KeyListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl KeyListResult {
@@ -98,8 +100,9 @@ pub struct KeyValueListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for KeyValueListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl KeyValueListResult {
@@ -128,8 +131,9 @@ pub struct LabelListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for LabelListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl LabelListResult {

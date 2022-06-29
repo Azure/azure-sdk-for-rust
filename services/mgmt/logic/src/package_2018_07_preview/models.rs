@@ -447,7 +447,8 @@ pub struct AssemblyCollection {
     pub value: Vec<AssemblyDefinition>,
 }
 impl azure_core::Continuable for AssemblyCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -556,7 +557,8 @@ pub struct BatchConfigurationCollection {
     pub value: Vec<BatchConfiguration>,
 }
 impl azure_core::Continuable for BatchConfigurationCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1604,7 +1606,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorProperties>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1659,7 +1662,8 @@ pub struct ExpressionTraces {
     pub inputs: Vec<ExpressionRoot>,
 }
 impl azure_core::Continuable for ExpressionTraces {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1799,8 +1803,9 @@ pub struct IntegrationAccountAgreementListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for IntegrationAccountAgreementListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl IntegrationAccountAgreementListResult {
@@ -1886,8 +1891,9 @@ pub struct IntegrationAccountCertificateListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for IntegrationAccountCertificateListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl IntegrationAccountCertificateListResult {
@@ -1930,8 +1936,9 @@ pub struct IntegrationAccountListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for IntegrationAccountListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl IntegrationAccountListResult {
@@ -1977,8 +1984,9 @@ pub struct IntegrationAccountMapListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for IntegrationAccountMapListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl IntegrationAccountMapListResult {
@@ -2080,8 +2088,9 @@ pub struct IntegrationAccountPartnerListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for IntegrationAccountPartnerListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl IntegrationAccountPartnerListResult {
@@ -2162,8 +2171,9 @@ pub struct IntegrationAccountSchemaListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for IntegrationAccountSchemaListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl IntegrationAccountSchemaListResult {
@@ -2259,8 +2269,9 @@ pub struct IntegrationAccountSessionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for IntegrationAccountSessionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl IntegrationAccountSessionListResult {
@@ -2435,7 +2446,8 @@ pub struct KeyVaultKeyCollection {
     pub skip_token: Option<String>,
 }
 impl azure_core::Continuable for KeyVaultKeyCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2653,8 +2665,9 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationListResult {
@@ -2974,8 +2987,9 @@ pub struct RequestHistoryListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RequestHistoryListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl RequestHistoryListResult {
@@ -3582,8 +3596,9 @@ pub struct WorkflowListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkflowListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WorkflowListResult {
@@ -3788,8 +3803,9 @@ pub struct WorkflowRunActionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkflowRunActionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WorkflowRunActionListResult {
@@ -3859,7 +3875,8 @@ pub struct WorkflowRunActionRepetitionDefinitionCollection {
     pub value: Vec<WorkflowRunActionRepetitionDefinition>,
 }
 impl azure_core::Continuable for WorkflowRunActionRepetitionDefinitionCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -3904,8 +3921,9 @@ pub struct WorkflowRunListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkflowRunListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WorkflowRunListResult {
@@ -4204,8 +4222,9 @@ pub struct WorkflowTriggerHistoryListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkflowTriggerHistoryListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WorkflowTriggerHistoryListResult {
@@ -4288,8 +4307,9 @@ pub struct WorkflowTriggerListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkflowTriggerListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WorkflowTriggerListResult {
@@ -4449,8 +4469,9 @@ pub struct WorkflowVersionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WorkflowVersionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WorkflowVersionListResult {

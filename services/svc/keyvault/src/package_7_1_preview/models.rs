@@ -304,8 +304,9 @@ pub struct CertificateIssuerListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CertificateIssuerListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl CertificateIssuerListResult {
@@ -391,8 +392,9 @@ pub struct CertificateListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CertificateListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl CertificateListResult {
@@ -611,8 +613,9 @@ pub struct DeletedCertificateListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DeletedCertificateListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DeletedCertificateListResult {
@@ -671,8 +674,9 @@ pub struct DeletedKeyListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DeletedKeyListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DeletedKeyListResult {
@@ -731,8 +735,9 @@ pub struct DeletedSasDefinitionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DeletedSasDefinitionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DeletedSasDefinitionListResult {
@@ -791,8 +796,9 @@ pub struct DeletedSecretListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DeletedSecretListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DeletedSecretListResult {
@@ -851,8 +857,9 @@ pub struct DeletedStorageListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DeletedStorageListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DeletedStorageListResult {
@@ -1388,8 +1395,9 @@ pub struct KeyListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for KeyListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl KeyListResult {
@@ -1706,7 +1714,8 @@ pub struct KeyVaultError {
     pub error: Option<Error>,
 }
 impl azure_core::Continuable for KeyVaultError {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2113,8 +2122,9 @@ pub struct SasDefinitionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SasDefinitionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SasDefinitionListResult {
@@ -2330,8 +2340,9 @@ pub struct SecretListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SecretListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SecretListResult {
@@ -2621,8 +2632,9 @@ pub struct StorageListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for StorageListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl StorageListResult {

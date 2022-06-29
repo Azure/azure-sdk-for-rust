@@ -29,8 +29,9 @@ pub struct AccessPolicyEntityCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AccessPolicyEntityCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AccessPolicyEntityCollection {
@@ -379,8 +380,9 @@ pub struct EdgeModuleEntityCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for EdgeModuleEntityCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl EdgeModuleEntityCollection {
@@ -649,7 +651,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -814,8 +817,9 @@ pub struct LivePipelineCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for LivePipelineCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl LivePipelineCollection {
@@ -1472,8 +1476,9 @@ pub struct PipelineJobCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PipelineJobCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PipelineJobCollection {
@@ -1751,8 +1756,9 @@ pub struct PipelineTopologyCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PipelineTopologyCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PipelineTopologyCollection {
@@ -3105,8 +3111,9 @@ pub struct VideoEntityCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VideoEntityCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl VideoEntityCollection {

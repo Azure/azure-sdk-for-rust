@@ -624,7 +624,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -986,8 +987,9 @@ pub struct MonitorListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MonitorListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl MonitorListResult {
@@ -1370,8 +1372,9 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationListResult {
@@ -1685,8 +1688,9 @@ pub struct ProviderInstanceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ProviderInstanceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ProviderInstanceListResult {
@@ -1892,8 +1896,9 @@ pub struct SapApplicationServerInstanceList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SapApplicationServerInstanceList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SapApplicationServerInstanceList {
@@ -2012,8 +2017,9 @@ pub struct SapCentralInstanceList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SapCentralInstanceList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SapCentralInstanceList {
@@ -2126,8 +2132,9 @@ pub struct SapDatabaseInstanceList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SapDatabaseInstanceList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SapDatabaseInstanceList {
@@ -2580,8 +2587,9 @@ pub struct SapVirtualInstanceList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SapVirtualInstanceList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SapVirtualInstanceList {
@@ -3272,8 +3280,9 @@ pub struct SkusListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SkusListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SkusListResult {
@@ -4503,8 +4512,9 @@ pub struct PhpWorkloadResourceList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PhpWorkloadResourceList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PhpWorkloadResourceList {
@@ -4873,8 +4883,9 @@ pub struct WordpressInstanceResourceList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for WordpressInstanceResourceList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl WordpressInstanceResourceList {

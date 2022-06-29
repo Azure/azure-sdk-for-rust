@@ -56,7 +56,8 @@ pub struct AccountList {
     pub value: Vec<Account>,
 }
 impl azure_core::Continuable for AccountList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -155,7 +156,8 @@ pub struct ConfigurationProfileAssignmentList {
     pub value: Vec<ConfigurationProfileAssignment>,
 }
 impl azure_core::Continuable for ConfigurationProfileAssignmentList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -442,7 +444,8 @@ pub struct ConfigurationProfilePreferenceList {
     pub value: Vec<ConfigurationProfilePreference>,
 }
 impl azure_core::Continuable for ConfigurationProfilePreferenceList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -548,7 +551,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -622,7 +626,8 @@ pub struct OperationList {
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

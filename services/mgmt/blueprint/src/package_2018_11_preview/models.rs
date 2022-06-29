@@ -76,8 +76,9 @@ pub struct ArtifactList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ArtifactList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ArtifactList {
@@ -186,8 +187,9 @@ pub struct AssignmentList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AssignmentList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AssignmentList {
@@ -280,8 +282,9 @@ pub struct AssignmentOperationList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AssignmentOperationList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AssignmentOperationList {
@@ -496,8 +499,9 @@ pub struct BlueprintList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for BlueprintList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl BlueprintList {
@@ -574,7 +578,8 @@ pub struct CloudError {
     pub error: Option<ErrorResponse>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -873,8 +878,9 @@ pub struct PublishedBlueprintList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PublishedBlueprintList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PublishedBlueprintList {

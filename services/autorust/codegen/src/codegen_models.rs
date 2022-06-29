@@ -705,11 +705,12 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
                 if *is_required {
                     continuable = quote! {
                         impl azure_core::Continuable for #struct_name_code {
-                            fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+                            type Continuation = String;
+                            fn continuation(&self) -> Option<Self::Continuation> {
                                 if self.#field_name.is_empty() {
                                     None
                                 } else {
-                                    Some(azure_core::prelude::Continuation::from(self.#field_name.clone()))
+                                    Some(self.#field_name.clone())
                                 }
                             }
                         }
@@ -717,8 +718,9 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
                 } else {
                     continuable = quote! {
                         impl azure_core::Continuable for #struct_name_code {
-                            fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-                                self.#field_name.clone().map(azure_core::prelude::Continuation::from)
+                            type Continuation = String;
+                            fn continuation(&self) -> Option<Self::Continuation> {
+                                self.#field_name.clone()
                             }
                         }
                     };
@@ -730,7 +732,8 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
                 // adding a Continuable that always returns None.
                 continuable = quote! {
                     impl azure_core::Continuable for #struct_name_code {
-                        fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+                        type Continuation = String;
+                        fn continuation(&self) -> Option<Self::Continuation> {
                             None
                         }
                     }
@@ -744,7 +747,8 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
             // Handle that by // adding a Continuable that always returns None.
             continuable = quote! {
                 impl azure_core::Continuable for #struct_name_code {
-                    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+                    type Continuation = String;
+                    fn continuation(&self) -> Option<Self::Continuation> {
                         None
                     }
                 }

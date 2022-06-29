@@ -181,7 +181,8 @@ pub struct CognitiveServicesAccountListResult {
     pub value: Vec<CognitiveServicesAccount>,
 }
 impl azure_core::Continuable for CognitiveServicesAccountListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -259,7 +260,8 @@ pub struct Error {
     pub error: Option<ErrorBody>,
 }
 impl azure_core::Continuable for Error {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

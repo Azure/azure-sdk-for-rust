@@ -99,8 +99,9 @@ pub struct AccessReviewContactedReviewerListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AccessReviewContactedReviewerListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AccessReviewContactedReviewerListResult {
@@ -222,8 +223,9 @@ pub struct AccessReviewDecisionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AccessReviewDecisionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AccessReviewDecisionListResult {
@@ -567,8 +569,9 @@ pub struct AccessReviewHistoryDefinitionInstanceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AccessReviewHistoryDefinitionInstanceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AccessReviewHistoryDefinitionInstanceListResult {
@@ -587,8 +590,9 @@ pub struct AccessReviewHistoryDefinitionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AccessReviewHistoryDefinitionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AccessReviewHistoryDefinitionListResult {
@@ -824,8 +828,9 @@ pub struct AccessReviewInstanceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AccessReviewInstanceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AccessReviewInstanceListResult {
@@ -1185,8 +1190,9 @@ pub struct AccessReviewScheduleDefinitionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AccessReviewScheduleDefinitionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AccessReviewScheduleDefinitionListResult {
@@ -1540,7 +1546,8 @@ pub struct ErrorDefinition {
     pub error: Option<ErrorDefinitionProperties>,
 }
 impl azure_core::Continuable for ErrorDefinition {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1617,8 +1624,9 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationListResult {

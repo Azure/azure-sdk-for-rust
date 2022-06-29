@@ -12,7 +12,8 @@ pub struct ErrorDetails {
     pub error: Option<ErrorDetailsInternal>,
 }
 impl azure_core::Continuable for ErrorDetails {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -92,8 +93,9 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationListResult {
@@ -211,8 +213,9 @@ pub struct PrivateEndpointConnectionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PrivateEndpointConnectionListResult {
@@ -418,8 +421,9 @@ pub struct PrivateLinkServicesForEdmUploadDescriptionListResult {
     pub value: Vec<PrivateLinkServicesForEdmUploadDescription>,
 }
 impl azure_core::Continuable for PrivateLinkServicesForEdmUploadDescriptionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PrivateLinkServicesForEdmUploadDescriptionListResult {
@@ -455,8 +459,9 @@ pub struct PrivateLinkServicesForM365ComplianceCenterDescriptionListResult {
     pub value: Vec<PrivateLinkServicesForM365ComplianceCenterDescription>,
 }
 impl azure_core::Continuable for PrivateLinkServicesForM365ComplianceCenterDescriptionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PrivateLinkServicesForM365ComplianceCenterDescriptionListResult {
@@ -492,8 +497,9 @@ pub struct PrivateLinkServicesForM365SecurityCenterDescriptionListResult {
     pub value: Vec<PrivateLinkServicesForM365SecurityCenterDescription>,
 }
 impl azure_core::Continuable for PrivateLinkServicesForM365SecurityCenterDescriptionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PrivateLinkServicesForM365SecurityCenterDescriptionListResult {
@@ -529,8 +535,9 @@ pub struct PrivateLinkServicesForMipPolicySyncDescriptionListResult {
     pub value: Vec<PrivateLinkServicesForMipPolicySyncDescription>,
 }
 impl azure_core::Continuable for PrivateLinkServicesForMipPolicySyncDescriptionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PrivateLinkServicesForMipPolicySyncDescriptionListResult {
@@ -566,8 +573,9 @@ pub struct PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult 
     pub value: Vec<PrivateLinkServicesForO365ManagementActivityApiDescription>,
 }
 impl azure_core::Continuable for PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult {
@@ -603,8 +611,9 @@ pub struct PrivateLinkServicesForSccPowershellDescriptionListResult {
     pub value: Vec<PrivateLinkServicesForSccPowershellDescription>,
 }
 impl azure_core::Continuable for PrivateLinkServicesForSccPowershellDescriptionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PrivateLinkServicesForSccPowershellDescriptionListResult {

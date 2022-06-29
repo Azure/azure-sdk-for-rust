@@ -117,8 +117,9 @@ pub struct AddressResourceList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AddressResourceList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AddressResourceList {
@@ -444,8 +445,9 @@ pub struct Configurations {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for Configurations {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl Configurations {
@@ -860,7 +862,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1391,8 +1394,9 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationListResult {
@@ -1686,8 +1690,9 @@ pub struct OrderItemResourceList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OrderItemResourceList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OrderItemResourceList {
@@ -1777,8 +1782,9 @@ pub struct OrderResourceList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OrderResourceList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OrderResourceList {
@@ -1917,8 +1923,9 @@ pub struct ProductFamilies {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ProductFamilies {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ProductFamilies {
@@ -1937,8 +1944,9 @@ pub struct ProductFamiliesMetadata {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ProductFamiliesMetadata {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ProductFamiliesMetadata {

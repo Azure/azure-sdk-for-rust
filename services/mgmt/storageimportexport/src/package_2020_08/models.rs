@@ -216,7 +216,8 @@ pub struct ErrorResponse {
     pub error: Option<error_response::Error>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -293,7 +294,8 @@ pub struct GetBitLockerKeysResponse {
     pub value: Vec<DriveBitLockerKey>,
 }
 impl azure_core::Continuable for GetBitLockerKeysResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -474,8 +476,9 @@ pub struct ListJobsResponse {
     pub value: Vec<JobResponse>,
 }
 impl azure_core::Continuable for ListJobsResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ListJobsResponse {
@@ -491,7 +494,8 @@ pub struct ListOperationsResponse {
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for ListOperationsResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -574,7 +578,8 @@ pub struct LocationsResponse {
     pub value: Vec<Location>,
 }
 impl azure_core::Continuable for LocationsResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

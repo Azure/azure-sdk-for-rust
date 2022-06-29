@@ -394,7 +394,8 @@ pub struct AzureBackupJobResourceList {
     pub value: Vec<AzureBackupJobResource>,
 }
 impl azure_core::Continuable for AzureBackupJobResourceList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -471,7 +472,8 @@ pub struct AzureBackupRecoveryPointResourceList {
     pub value: Vec<AzureBackupRecoveryPointResource>,
 }
 impl azure_core::Continuable for AzureBackupRecoveryPointResourceList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -821,7 +823,8 @@ pub struct BackupInstanceResourceList {
     pub value: Vec<BackupInstanceResource>,
 }
 impl azure_core::Continuable for BackupInstanceResourceList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1028,7 +1031,8 @@ pub struct BackupVaultResourceList {
     pub value: Vec<BackupVaultResource>,
 }
 impl azure_core::Continuable for BackupVaultResourceList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1078,7 +1082,8 @@ pub struct BaseBackupPolicyResourceList {
     pub value: Vec<BaseBackupPolicyResource>,
 }
 impl azure_core::Continuable for BaseBackupPolicyResourceList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1206,8 +1211,9 @@ pub struct ClientDiscoveryResponse {
     pub value: Vec<ClientDiscoveryValueForSingleApi>,
 }
 impl azure_core::Continuable for ClientDiscoveryResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ClientDiscoveryResponse {
@@ -1247,7 +1253,8 @@ pub struct CloudError {
     pub error: Option<Error>,
 }
 impl azure_core::Continuable for CloudError {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1550,8 +1557,9 @@ pub struct DppBaseResourceList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DppBaseResourceList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DppBaseResourceList {
@@ -2444,7 +2452,8 @@ pub struct ResourceGuardResourceList {
     pub value: Vec<ResourceGuardResource>,
 }
 impl azure_core::Continuable for ResourceGuardResourceList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

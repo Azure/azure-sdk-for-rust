@@ -1,5 +1,6 @@
 use super::*;
 use crate::error::{Error, ErrorKind};
+use crate::prelude::Continuation;
 use crate::request_options::LeaseId;
 use crate::{RequestId, SessionToken};
 use chrono::{DateTime, FixedOffset, Utc};
@@ -68,8 +69,10 @@ pub fn utc_date_from_rfc2822(date: &str) -> crate::Result<DateTime<Utc>> {
 
 pub fn continuation_token_from_headers_optional(
     headers: &Headers,
-) -> crate::Result<Option<String>> {
-    Ok(headers.get_optional_string(&CONTINUATION))
+) -> crate::Result<Option<Continuation>> {
+    Ok(headers
+        .get_optional_string(&CONTINUATION)
+        .map(Continuation::from))
 }
 
 pub fn sku_name_from_headers(headers: &Headers) -> crate::Result<String> {

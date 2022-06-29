@@ -145,8 +145,9 @@ pub struct AuthConfigCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AuthConfigCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AuthConfigCollection {
@@ -180,8 +181,9 @@ pub struct AvailableOperations {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AvailableOperations {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AvailableOperations {
@@ -501,8 +503,9 @@ pub struct CertificateCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CertificateCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl CertificateCollection {
@@ -818,8 +821,9 @@ pub struct ContainerAppCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ContainerAppCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ContainerAppCollection {
@@ -1333,8 +1337,9 @@ pub struct DaprComponentsCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DaprComponentsCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl DaprComponentsCollection {
@@ -1394,7 +1399,8 @@ pub struct DefaultErrorResponse {
     pub error: Option<default_error_response::Error>,
 }
 impl azure_core::Continuable for DefaultErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1997,8 +2003,9 @@ pub struct ManagedEnvironmentsCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ManagedEnvironmentsCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ManagedEnvironmentsCollection {
@@ -2517,8 +2524,9 @@ pub struct RevisionCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RevisionCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl RevisionCollection {
@@ -2698,8 +2706,9 @@ pub struct SourceControlCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for SourceControlCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SourceControlCollection {

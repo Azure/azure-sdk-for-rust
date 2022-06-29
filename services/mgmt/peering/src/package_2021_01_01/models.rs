@@ -184,8 +184,9 @@ pub struct CdnPeeringPrefixListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for CdnPeeringPrefixListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl CdnPeeringPrefixListResult {
@@ -520,7 +521,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -688,8 +690,9 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationListResult {
@@ -722,8 +725,9 @@ pub struct PeerAsnListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PeerAsnListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PeerAsnListResult {
@@ -895,8 +899,9 @@ pub struct PeeringListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PeeringListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PeeringListResult {
@@ -972,8 +977,9 @@ pub struct PeeringLocationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PeeringLocationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PeeringLocationListResult {
@@ -1224,8 +1230,9 @@ pub struct PeeringReceivedRouteListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PeeringReceivedRouteListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PeeringReceivedRouteListResult {
@@ -1258,8 +1265,9 @@ pub struct PeeringRegisteredAsnListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PeeringRegisteredAsnListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PeeringRegisteredAsnListResult {
@@ -1354,8 +1362,9 @@ pub struct PeeringRegisteredPrefixListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PeeringRegisteredPrefixListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PeeringRegisteredPrefixListResult {
@@ -1528,8 +1537,9 @@ pub struct PeeringServiceCountryListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PeeringServiceCountryListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PeeringServiceCountryListResult {
@@ -1548,8 +1558,9 @@ pub struct PeeringServiceListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PeeringServiceListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PeeringServiceListResult {
@@ -1582,8 +1593,9 @@ pub struct PeeringServiceLocationListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PeeringServiceLocationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PeeringServiceLocationListResult {
@@ -1658,8 +1670,9 @@ pub struct PeeringServicePrefixListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PeeringServicePrefixListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PeeringServicePrefixListResult {
@@ -1920,8 +1933,9 @@ pub struct PeeringServiceProviderListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PeeringServiceProviderListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PeeringServiceProviderListResult {

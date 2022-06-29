@@ -42,8 +42,9 @@ pub struct AddsConfiguration {
     pub continuation_token: Option<String>,
 }
 impl azure_core::Continuable for AddsConfiguration {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AddsConfiguration {
@@ -193,8 +194,9 @@ pub struct AddsServiceMembers {
     pub continuation_token: Option<String>,
 }
 impl azure_core::Continuable for AddsServiceMembers {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AddsServiceMembers {
@@ -424,7 +426,8 @@ pub struct AlertFeedbacks {
     pub value: Vec<AlertFeedback>,
 }
 impl azure_core::Continuable for AlertFeedbacks {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -450,8 +453,9 @@ pub struct Alerts {
     pub continuation_token: Option<String>,
 }
 impl azure_core::Continuable for Alerts {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl Alerts {
@@ -1023,7 +1027,8 @@ pub struct Connectors {
     pub value: Vec<Connector>,
 }
 impl azure_core::Continuable for Connectors {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1058,7 +1063,8 @@ pub struct Credentials {
     pub value: Vec<Credential>,
 }
 impl azure_core::Continuable for Credentials {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1075,7 +1081,8 @@ pub struct DataFreshnessDetails {
     pub value: Vec<Item>,
 }
 impl azure_core::Continuable for DataFreshnessDetails {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1183,8 +1190,9 @@ pub struct Dimensions {
     pub continuation_token: Option<String>,
 }
 impl azure_core::Continuable for Dimensions {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl Dimensions {
@@ -1236,7 +1244,8 @@ pub struct ErrorCounts {
     pub value: Vec<ErrorCount>,
 }
 impl azure_core::Continuable for ErrorCounts {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1277,7 +1286,8 @@ pub struct ErrorReportUsersEntries {
     pub value: Vec<ErrorReportUsersEntry>,
 }
 impl azure_core::Continuable for ErrorReportUsersEntries {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1480,8 +1490,9 @@ pub struct ExportStatuses {
     pub continuation_token: Option<String>,
 }
 impl azure_core::Continuable for ExportStatuses {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ExportStatuses {
@@ -1569,7 +1580,8 @@ pub struct GlobalConfigurations {
     pub value: Vec<GlobalConfiguration>,
 }
 impl azure_core::Continuable for GlobalConfigurations {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1735,8 +1747,9 @@ pub struct IpAddressAggregates {
     pub continuation_token: Option<String>,
 }
 impl azure_core::Continuable for IpAddressAggregates {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl IpAddressAggregates {
@@ -1949,7 +1962,8 @@ pub struct Items {
     pub value: Vec<Item>,
 }
 impl azure_core::Continuable for Items {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2041,7 +2055,8 @@ pub struct MergedExportErrors {
     pub value: Vec<MergedExportError>,
 }
 impl azure_core::Continuable for MergedExportErrors {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2127,8 +2142,9 @@ pub struct MetricMetadataList {
     pub continuation_token: Option<String>,
 }
 impl azure_core::Continuable for MetricMetadataList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl MetricMetadataList {
@@ -2183,8 +2199,9 @@ pub struct Metrics {
     pub continuation_token: Option<String>,
 }
 impl azure_core::Continuable for Metrics {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl Metrics {
@@ -2311,8 +2328,9 @@ pub struct OperationListResponse {
     pub continuation_token: Option<String>,
 }
 impl azure_core::Continuable for OperationListResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationListResponse {
@@ -2490,7 +2508,8 @@ pub struct ReplicationDetailsList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ReplicationDetailsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2555,7 +2574,8 @@ pub struct ReplicationSummaryList {
     pub value: Vec<ReplicationSummary>,
 }
 impl azure_core::Continuable for ReplicationSummaryList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2611,7 +2631,8 @@ pub struct RiskyIpBlobUris {
     pub value: Vec<RiskyIpBlobUri>,
 }
 impl azure_core::Continuable for RiskyIpBlobUris {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -2858,8 +2879,9 @@ pub struct ServiceMembers {
     pub continuation_token: Option<String>,
 }
 impl azure_core::Continuable for ServiceMembers {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ServiceMembers {
@@ -2973,8 +2995,9 @@ pub struct Services {
     pub continuation_token: Option<String>,
 }
 impl azure_core::Continuable for Services {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl Services {

@@ -84,7 +84,8 @@ pub struct ExceptionResponse {
     pub error: Option<ServiceError>,
 }
 impl azure_core::Continuable for ExceptionResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -226,8 +227,9 @@ pub struct OperationList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for OperationList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationList {
@@ -260,8 +262,9 @@ pub struct QuotaLimits {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for QuotaLimits {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl QuotaLimits {
@@ -346,8 +349,9 @@ pub struct QuotaRequestDetailsList {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for QuotaRequestDetailsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl QuotaRequestDetailsList {
@@ -608,8 +612,9 @@ pub struct UsagesLimits {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for UsagesLimits {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl UsagesLimits {

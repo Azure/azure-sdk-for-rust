@@ -51,7 +51,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetail>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -86,8 +87,9 @@ pub struct PermissionGetResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for PermissionGetResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl PermissionGetResult {
@@ -157,8 +159,9 @@ pub struct ProviderOperationsMetadataListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ProviderOperationsMetadataListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ProviderOperationsMetadataListResult {
@@ -239,8 +242,9 @@ pub struct RoleAssignmentListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RoleAssignmentListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl RoleAssignmentListResult {
@@ -328,8 +332,9 @@ pub struct RoleDefinitionListResult {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RoleDefinitionListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl RoleDefinitionListResult {

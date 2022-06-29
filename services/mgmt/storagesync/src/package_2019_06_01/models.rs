@@ -88,7 +88,8 @@ pub struct CloudEndpointArray {
     pub value: Vec<CloudEndpoint>,
 }
 impl azure_core::Continuable for CloudEndpointArray {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -257,8 +258,9 @@ pub struct OperationEntityListResult {
     pub value: Vec<OperationEntity>,
 }
 impl azure_core::Continuable for OperationEntityListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationEntityListResult {
@@ -450,7 +452,8 @@ pub struct RegisteredServerArray {
     pub value: Vec<RegisteredServer>,
 }
 impl azure_core::Continuable for RegisteredServerArray {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -644,7 +647,8 @@ pub struct ServerEndpointArray {
     pub value: Vec<ServerEndpoint>,
 }
 impl azure_core::Continuable for ServerEndpointArray {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1034,7 +1038,8 @@ pub struct StorageSyncError {
     pub innererror: Option<StorageSyncApiError>,
 }
 impl azure_core::Continuable for StorageSyncError {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1086,7 +1091,8 @@ pub struct StorageSyncServiceArray {
     pub value: Vec<StorageSyncService>,
 }
 impl azure_core::Continuable for StorageSyncServiceArray {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1247,7 +1253,8 @@ pub struct SyncGroupArray {
     pub value: Vec<SyncGroup>,
 }
 impl azure_core::Continuable for SyncGroupArray {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1413,7 +1420,8 @@ pub struct WorkflowArray {
     pub value: Vec<Workflow>,
 }
 impl azure_core::Continuable for WorkflowArray {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }

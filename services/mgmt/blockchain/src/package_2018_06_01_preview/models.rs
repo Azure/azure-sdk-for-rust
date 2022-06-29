@@ -59,8 +59,9 @@ pub struct BlockchainMemberCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for BlockchainMemberCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl BlockchainMemberCollection {
@@ -361,8 +362,9 @@ pub struct ConsortiumMemberCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ConsortiumMemberCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ConsortiumMemberCollection {
@@ -531,8 +533,9 @@ pub struct ResourceProviderOperationCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ResourceProviderOperationCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ResourceProviderOperationCollection {
@@ -669,8 +672,9 @@ pub struct TransactionNodeCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for TransactionNodeCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl TransactionNodeCollection {

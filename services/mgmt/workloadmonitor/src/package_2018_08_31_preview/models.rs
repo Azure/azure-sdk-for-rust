@@ -185,8 +185,9 @@ pub struct ComponentsCollection {
     pub value: Vec<Component>,
 }
 impl azure_core::Continuable for ComponentsCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ComponentsCollection {
@@ -226,7 +227,8 @@ pub struct ErrorResponse {
     pub details: Vec<ErrorFieldContract>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -562,8 +564,9 @@ pub struct MonitorInstancesCollection {
     pub value: Vec<MonitorInstance>,
 }
 impl azure_core::Continuable for MonitorInstancesCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl MonitorInstancesCollection {
@@ -710,8 +713,9 @@ pub struct MonitorsCollection {
     pub value: Vec<Monitor>,
 }
 impl azure_core::Continuable for MonitorsCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl MonitorsCollection {
@@ -758,8 +762,9 @@ pub struct NotificationSettingsCollection {
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for NotificationSettingsCollection {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl NotificationSettingsCollection {
@@ -796,8 +801,9 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationListResult {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationListResult {

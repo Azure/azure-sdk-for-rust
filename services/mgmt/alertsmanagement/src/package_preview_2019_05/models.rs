@@ -174,8 +174,9 @@ pub struct ActionRulesList {
     pub value: Vec<ActionRule>,
 }
 impl azure_core::Continuable for ActionRulesList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl ActionRulesList {
@@ -719,8 +720,9 @@ pub struct AlertsList {
     pub value: Vec<Alert>,
 }
 impl azure_core::Continuable for AlertsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl AlertsList {
@@ -862,7 +864,8 @@ pub struct ErrorResponse {
     pub error: Option<ErrorResponseBody>,
 }
 impl azure_core::Continuable for ErrorResponse {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
@@ -1241,8 +1244,9 @@ pub struct OperationsList {
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl OperationsList {
@@ -1499,8 +1503,9 @@ pub struct SmartGroupsList {
     pub value: Vec<SmartGroup>,
 }
 impl azure_core::Continuable for SmartGroupsList {
-    fn continuation(&self) -> Option<azure_core::prelude::Continuation> {
-        self.next_link.clone().map(azure_core::prelude::Continuation::from)
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
     }
 }
 impl SmartGroupsList {
