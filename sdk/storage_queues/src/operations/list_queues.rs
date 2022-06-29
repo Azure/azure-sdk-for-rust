@@ -1,6 +1,6 @@
 use crate::QueueServiceClient;
 use azure_core::{
-    collect_pinned_stream, error::Error, prelude::*, Context, Method, Pageable,
+    collect_pinned_stream, error::Error, headers::Headers, prelude::*, Context, Method, Pageable,
     Response as AzureResponse,
 };
 use azure_storage::{core::headers::CommonStorageResponseHeaders, xml::read_xml};
@@ -65,10 +65,12 @@ impl ListQueuesBuilder {
                 this.timeout.append_to_url_query(&mut url);
                 AppendToUrlQuery::append_to_url_query(&this.timeout, &mut url);
 
-                let mut request =
-                    this.service_client
-                        .storage_client
-                        .prepare_request(url, Method::Get, None)?;
+                let mut request = this.service_client.storage_client.finalize_request(
+                    url,
+                    Method::Get,
+                    Headers::new(),
+                    None,
+                )?;
 
                 let response = this
                     .service_client

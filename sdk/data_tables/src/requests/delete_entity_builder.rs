@@ -3,8 +3,7 @@ use crate::{
     responses::*,
     TransactionOperation,
 };
-use azure_core::Method;
-use azure_core::{prelude::*, Request};
+use azure_core::{headers::*, prelude::*, Method, Request};
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -36,11 +35,13 @@ impl<'a> DeleteEntityBuilder<'a> {
 
         self.timeout.append_to_url_query(&mut url);
 
-        let mut request = self
+        let mut headers = Headers::new();
+        headers.add(self.client_request_id.clone());
+        headers.add(self.if_match.clone());
+
+        let request = self
             .entity_client
-            .prepare_request(url, Method::Delete, None)?;
-        request.add_optional_header(&self.client_request_id);
-        request.add_mandatory_header(&self.if_match);
+            .finalize_request(url, Method::Delete, headers, None)?;
 
         let response = self
             .entity_client
@@ -56,9 +57,8 @@ impl<'a> DeleteEntityBuilder<'a> {
 
         let mut request = Request::new(url.clone(), Method::Delete);
         request.add_optional_header(&self.client_request_id);
-        request.insert_header("Accept", "application/json;odata=minimalmetadata");
-        request.insert_header("If-Match", "*");
-
+        request.insert_header(ACCEPT, "application/json;odata=minimalmetadata");
+        request.insert_header(IF_MATCH, "*");
         request.set_body("");
 
         Ok(TransactionOperation::new(request))

@@ -96,7 +96,7 @@ impl<'a> ApplyOnEdgeDeviceBuilder<'a> {
             self.service_client.iot_hub_name, self.device_id, API_VERSION
         );
 
-        let mut request = self.service_client.prepare_request(&uri, Method::Post)?;
+        let mut request = self.service_client.finalize_request(&uri, Method::Post)?;
         let body = ApplyOnEdgeDeviceBody {
             device_content: self.device_content,
             module_content: self.module_content,

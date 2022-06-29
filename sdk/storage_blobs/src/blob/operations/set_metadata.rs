@@ -37,13 +37,17 @@ impl SetMetadataBuilder {
             url.query_pairs_mut().append_pair("comp", "metadata");
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = self.blob_client.prepare_request(url, Method::Put, None)?;
-            request.add_optional_header(&self.lease_id);
+            let mut headers = Headers::new();
+            headers.add(self.lease_id);
             if let Some(metadata) = &self.metadata {
                 for m in metadata.iter() {
-                    request.add_mandatory_header(&m);
+                    headers.add(m);
                 }
             }
+
+            let mut request = self
+                .blob_client
+                .finalize_request(url, Method::Put, headers, None)?;
 
             let response = self
                 .blob_client

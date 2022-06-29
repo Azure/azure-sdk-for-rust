@@ -35,12 +35,14 @@ impl BreakLeaseBuilder {
             url.query_pairs_mut().append_pair("comp", "lease");
             self.timeout.append_to_url_query(&mut url);
 
+            let mut headers = Headers::new();
+            headers.insert(LEASE_ACTION, "break");
+            headers.add(self.lease_break_period);
+            headers.add(self.lease_id);
+
             let mut request =
                 self.blob_client
-                    .prepare_request(url, azure_core::Method::Put, None)?;
-            request.insert_header(LEASE_ACTION, "break");
-            request.add_optional_header(&self.lease_break_period);
-            request.add_optional_header(&self.lease_id);
+                    .finalize_request(url, azure_core::Method::Put, headers, None)?;
 
             let response = self
                 .blob_client

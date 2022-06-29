@@ -1,8 +1,9 @@
 use crate::{prelude::*, responses::*};
-use azure_core::Method;
 use azure_core::{
     error::{Error, ErrorKind},
+    headers::*,
     prelude::*,
+    Method,
 };
 use std::convert::TryInto;
 
@@ -41,19 +42,22 @@ impl<'a> SubmitTransactionBuilder<'a> {
 
         let payload = batch.to_string()?;
 
-        let mut request = self.partition_key_client.prepare_request(
-            url,
-            Method::Post,
-            Some(bytes::Bytes::from(payload)),
-        )?;
-        request.add_optional_header(&self.client_request_id);
-        request.insert_header(
-            "Content-Type",
+        let mut headers = Headers::new();
+        headers.add(self.client_request_id.clone());
+        headers.insert(
+            CONTENT_TYPE,
             &format!(
                 "multipart/mixed; boundary=batch_{}",
                 batch.batch_uuid().hyphenated()
             ),
         );
+
+        let request = self.partition_key_client.finalize_request(
+            url,
+            Method::Post,
+            headers,
+            Some(bytes::Bytes::from(payload)),
+        )?;
 
         let response = self
             .partition_key_client

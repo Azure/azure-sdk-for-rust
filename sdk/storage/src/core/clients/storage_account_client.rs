@@ -410,10 +410,11 @@ impl StorageAccountClient {
         &self.storage_credentials
     }
 
-    pub fn prepare_request(
+    pub fn finalize_request(
         &self,
         url: Url,
         method: Method,
+        headers: Headers,
         service_type: ServiceType,
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
@@ -421,6 +422,9 @@ impl StorageAccountClient {
         let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
         let mut request = Request::new(url, method);
+        for (k, v) in headers {
+            request.insert_header(k, v);
+        }
 
         // if we have a SAS token (in form of query pairs), let's add it to the url here
         if let StorageCredentials::SASToken(query_pairs) = &self.storage_credentials {
@@ -501,9 +505,10 @@ impl StorageAccountClient {
         &self,
         http_method: azure_core::Method,
     ) -> azure_core::Result<Request> {
-        self.prepare_request(
+        self.finalize_request(
             self.blob_storage_url().clone(),
             http_method,
+            Headers::new(),
             ServiceType::Blob,
             None,
         )

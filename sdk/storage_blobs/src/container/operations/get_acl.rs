@@ -2,13 +2,12 @@ use crate::{
     container::{public_access_from_header, PublicAccess},
     prelude::*,
 };
-use azure_core::Method;
 use azure_core::{
     collect_pinned_stream,
     error::{ErrorKind, ResultExt},
-    headers,
+    headers::*,
     prelude::*,
-    RequestId, Response,
+    Method, RequestId, Response,
 };
 use azure_storage::core::StoredAccessPolicyList;
 use chrono::{DateTime, FixedOffset};
@@ -43,10 +42,12 @@ impl GetACLBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = self
-                .container_client
-                .prepare_request(url, Method::Get, None)?;
-            request.add_optional_header(&self.lease_id);
+            let mut headers = Headers::new();
+            headers.add(self.lease_id);
+
+            let mut request =
+                self.container_client
+                    .finalize_request(url, Method::Get, headers, None)?;
 
             let response = self
                 .container_client
@@ -76,15 +77,15 @@ impl GetACLResponse {
         // todo: parse SAS policies
         let public_access = public_access_from_header(&headers)?;
 
-        let etag = headers.get_string(&headers::ETAG)?;
+        let etag = headers.get_string(&ETAG)?;
 
-        let last_modified = headers.get_str(&headers::LAST_MODIFIED)?;
+        let last_modified = headers.get_str(&LAST_MODIFIED)?;
         let last_modified =
             DateTime::parse_from_rfc2822(last_modified).map_kind(ErrorKind::DataConversion)?;
 
-        let request_id = headers.get_as(&headers::REQUEST_ID)?;
+        let request_id = headers.get_as(&REQUEST_ID)?;
 
-        let date = headers.get_str(&headers::DATE)?;
+        let date = headers.get_str(&DATE)?;
         let date = DateTime::parse_from_rfc2822(date).map_kind(ErrorKind::DataConversion)?;
 
         let stored_access_policy_list = StoredAccessPolicyList::from_xml(&body)?;

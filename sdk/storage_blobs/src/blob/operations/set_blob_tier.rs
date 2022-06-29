@@ -40,11 +40,13 @@ impl SetBlobTierBuilder {
             self.blob_versioning.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
+            let mut headers = Headers::new();
+            headers.add(self.access_tier);
+            headers.add(self.rehydrate_priority);
+
             let mut request =
                 self.blob_client
-                    .prepare_request(url, azure_core::Method::Put, None)?;
-            request.add_mandatory_header(&self.access_tier);
-            request.add_optional_header(&self.rehydrate_priority);
+                    .finalize_request(url, azure_core::Method::Put, headers, None)?;
 
             let response = self
                 .blob_client

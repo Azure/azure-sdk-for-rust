@@ -1,5 +1,7 @@
 use crate::clients::QueueClient;
-use azure_core::{error::Error, prelude::*, Context, Method, Response as AzureResponse};
+use azure_core::{
+    error::Error, headers::Headers, prelude::*, Context, Method, Response as AzureResponse,
+};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
@@ -33,10 +35,12 @@ impl SetQueueMetadataBuilder {
             url.query_pairs_mut().append_pair("comp", "metadata");
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request =
-                self.queue_client
-                    .storage_client()
-                    .prepare_request(url, Method::Put, None)?;
+            let mut request = self.queue_client.storage_client().finalize_request(
+                url,
+                Method::Put,
+                Headers::new(),
+                None,
+            )?;
             for m in self.metadata.iter() {
                 request.add_mandatory_header(&m);
             }

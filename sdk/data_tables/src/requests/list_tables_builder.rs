@@ -1,6 +1,5 @@
 use crate::{prelude::*, responses::*, ContinuationNextTableName};
-use azure_core::Method;
-use azure_core::{prelude::*, AppendToUrlQuery};
+use azure_core::{headers::*, prelude::*, AppendToUrlQuery, Method};
 use futures::stream::{unfold, Stream};
 use std::convert::TryInto;
 
@@ -46,11 +45,13 @@ impl<'a> ListTablesBuilder<'a> {
         self.continuation_next_table_name
             .append_to_url_query(&mut url);
 
-        let mut request = self
-            .table_service_client
-            .prepare_request(url, Method::Get, None)?;
-        request.add_optional_header(&self.client_request_id);
-        request.insert_header("Accept", "application/json;odata=fullmetadata");
+        let mut headers = Headers::new();
+        headers.add(self.client_request_id.clone());
+        headers.insert(ACCEPT, "application/json;odata=fullmetadata");
+
+        let request =
+            self.table_service_client
+                .finalize_request(url, Method::Get, headers, None)?;
 
         let response = self
             .table_service_client

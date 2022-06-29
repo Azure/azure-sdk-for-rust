@@ -51,12 +51,12 @@ pub trait Header {
 }
 
 /// A collection of headers
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Default)]
 pub struct Headers(std::collections::HashMap<HeaderName, HeaderValue>);
 
 impl Headers {
-    pub(crate) fn new() -> Self {
-        Self(Default::default())
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /// Get a header value as a String or error if it is not found
@@ -140,6 +140,16 @@ impl Headers {
         self.0.insert(key.into(), value.into());
     }
 
+    /// Add headers to the headers collection
+    pub fn add<H>(&mut self, header: H)
+    where
+        H: AsHeaders,
+    {
+        for (key, value) in header.as_headers() {
+            self.insert(key, value);
+        }
+    }
+
     /// Iterate over all the header name/value pairs
     pub fn iter(&self) -> impl Iterator<Item = (&HeaderName, &HeaderValue)> {
         self.0.iter()
@@ -171,6 +181,18 @@ impl HeaderName {
         Self(std::borrow::Cow::Borrowed(s))
     }
 
+    fn from_cow<C>(c: C) -> Self
+    where
+        C: Into<std::borrow::Cow<'static, str>>,
+    {
+        let c = c.into();
+        assert!(
+            c.chars().all(|c| c.is_lowercase() || !c.is_alphabetic()),
+            "header names must be lowercase: {c}"
+        );
+        Self(c)
+    }
+
     pub fn as_str(&self) -> &str {
         self.0.as_ref()
     }
@@ -178,13 +200,13 @@ impl HeaderName {
 
 impl From<&'static str> for HeaderName {
     fn from(s: &'static str) -> Self {
-        Self::from_static(s)
+        Self::from_cow(s)
     }
 }
 
 impl From<String> for HeaderName {
     fn from(s: String) -> Self {
-        Self(std::borrow::Cow::Owned(s))
+        Self::from_cow(s.to_lowercase())
     }
 }
 
@@ -197,6 +219,13 @@ impl HeaderValue {
         Self(std::borrow::Cow::Borrowed(s))
     }
 
+    fn from_cow<C>(c: C) -> Self
+    where
+        C: Into<std::borrow::Cow<'static, str>>,
+    {
+        Self(c.into())
+    }
+
     pub fn as_str(&self) -> &str {
         self.0.as_ref()
     }
@@ -204,19 +233,19 @@ impl HeaderValue {
 
 impl From<&'static str> for HeaderValue {
     fn from(s: &'static str) -> Self {
-        Self::from_static(s)
+        Self::from_cow(s)
     }
 }
 
 impl From<String> for HeaderValue {
     fn from(s: String) -> Self {
-        Self(std::borrow::Cow::Owned(s))
+        Self::from_cow(s)
     }
 }
 
 impl From<&String> for HeaderValue {
     fn from(s: &String) -> Self {
-        Self(std::borrow::Cow::Owned(s.clone()))
+        s.clone().into()
     }
 }
 
@@ -295,6 +324,7 @@ pub const MS_RANGE: HeaderName = HeaderName::from_static("x-ms-range");
 pub const NAMESPACE_ENABLED: HeaderName = HeaderName::from_static("x-ms-namespace-enabled");
 pub const PAGE_WRITE: HeaderName = HeaderName::from_static("x-ms-page-write");
 pub const PROPERTIES: HeaderName = HeaderName::from_static("x-ms-properties");
+pub const PREFER: HeaderName = HeaderName::from_static("prefer");
 pub const PROPOSED_LEASE_ID: HeaderName = HeaderName::from_static("x-ms-proposed-lease-id");
 pub const RANGE: HeaderName = HeaderName::from_static("range");
 pub const RANGE_GET_CONTENT_CRC64: HeaderName =

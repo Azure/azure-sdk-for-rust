@@ -1,6 +1,5 @@
 use crate::{prelude::*, responses::*};
-use azure_core::prelude::*;
-use azure_core::Method;
+use azure_core::{headers::*, prelude::*, Method};
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
@@ -34,15 +33,18 @@ impl<'a> CreateTableBuilder<'a> {
             table_name: self.table_client.table_name(),
         })?;
 
-        let mut request = self.table_client.prepare_request(
+        let mut headers = Headers::new();
+        headers.add(self.client_request_id.clone());
+        headers.insert(ACCEPT, "application/json;odata=fullmetadata");
+        headers.insert(CONTENT_TYPE, "application/json");
+        headers.insert(PREFER, "return-content");
+
+        let request = self.table_client.finalize_request(
             url,
             Method::Post,
+            headers,
             Some(bytes::Bytes::from(request_body_serialized)),
         )?;
-        request.add_optional_header(&self.client_request_id);
-        request.insert_header("Accept", "application/json;odata=fullmetadata");
-        request.insert_header("Content-Type", "application/json");
-        request.insert_header("Prefer", "return-content");
 
         let response = self
             .table_client

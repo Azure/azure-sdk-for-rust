@@ -1,7 +1,9 @@
 use crate::requests::ListTablesBuilder;
-use azure_core::error::{ErrorKind, ResultExt};
-use azure_core::Method;
-use azure_core::Request;
+use azure_core::{
+    error::{ErrorKind, ResultExt},
+    headers::Headers,
+    Method, Request,
+};
 use azure_storage::core::clients::{StorageAccountClient, StorageClient};
 use bytes::Bytes;
 use std::sync::Arc;
@@ -55,17 +57,19 @@ impl TableServiceClient {
         self.storage_client.http_client()
     }
 
-    pub(crate) fn prepare_request(
+    pub(crate) fn finalize_request(
         &self,
         url: Url,
         method: Method,
+        headers: Headers,
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
         self.storage_client
             .storage_account_client()
-            .prepare_request(
+            .finalize_request(
                 url,
                 method,
+                headers,
                 azure_storage::core::clients::ServiceType::Table,
                 request_body,
             )

@@ -1,5 +1,7 @@
 use crate::{clients::QueueClient, prelude::*, PopReceipt};
-use azure_core::{collect_pinned_stream, prelude::*, Context, Method, Response as AzureResponse};
+use azure_core::{
+    collect_pinned_stream, headers::Headers, prelude::*, Context, Method, Response as AzureResponse,
+};
 use azure_storage::core::{headers::CommonStorageResponseHeaders, xml::read_xml};
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
@@ -40,10 +42,12 @@ impl GetMessagesBuilder {
             self.number_of_messages.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request =
-                self.queue_client
-                    .storage_client()
-                    .prepare_request(url, Method::Get, None)?;
+            let mut request = self.queue_client.storage_client().finalize_request(
+                url,
+                Method::Get,
+                Headers::new(),
+                None,
+            )?;
 
             let response = self
                 .queue_client

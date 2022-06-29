@@ -1,6 +1,6 @@
 use crate::{container::public_access_from_header, prelude::*};
 use azure_core::Method;
-use azure_core::{headers::AsHeaders, prelude::*};
+use azure_core::{headers::*, prelude::*};
 use azure_storage::core::StoredAccessPolicyList;
 use bytes::Bytes;
 
@@ -44,13 +44,18 @@ impl SetACLBuilder {
 
             let xml = self.stored_access_policy_list.map(|xml| xml.to_xml());
 
-            let mut request =
-                self.container_client
-                    .prepare_request(url, Method::Put, xml.map(Bytes::from))?;
+            let mut headers = Headers::new();
             for (name, value) in self.public_access.as_headers() {
-                request.insert_header(name, value);
+                headers.insert(name, value);
             }
-            request.add_optional_header(&self.lease_id);
+            headers.add(self.lease_id);
+
+            let mut request = self.container_client.finalize_request(
+                url,
+                Method::Put,
+                headers,
+                xml.map(Bytes::from),
+            )?;
 
             let response = self
                 .container_client

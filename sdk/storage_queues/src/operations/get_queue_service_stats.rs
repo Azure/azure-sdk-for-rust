@@ -2,6 +2,7 @@ use crate::QueueServiceClient;
 use azure_core::{
     collect_pinned_stream,
     error::{ErrorKind, ResultExt},
+    headers::Headers,
     prelude::*,
     Method, Response as AzureResponse,
 };
@@ -44,10 +45,12 @@ impl GetQueueServiceStatsBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request =
-                self.service_client
-                    .storage_client
-                    .prepare_request(url, Method::Get, None)?;
+            let mut request = self.service_client.storage_client.finalize_request(
+                url,
+                Method::Get,
+                Headers::new(),
+                None,
+            )?;
 
             let response = self
                 .service_client

@@ -1,6 +1,7 @@
 use crate::{QueueServiceClient, QueueServiceProperties};
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
+    headers::Headers,
     prelude::*,
     Context, Method, Response as AzureResponse,
 };
@@ -49,9 +50,10 @@ impl SetQueueServicePropertiesBuilder {
             let xml_body =
                 serde_xml_rs::to_string(&self.properties).map_kind(ErrorKind::DataConversion)?;
 
-            let mut request = self.service_client.storage_client.prepare_request(
+            let mut request = self.service_client.storage_client.finalize_request(
                 url,
                 Method::Put,
+                Headers::new(),
                 Some(xml_body.into()),
             )?;
 

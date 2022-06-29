@@ -1,9 +1,5 @@
 use crate::prelude::*;
-use azure_core::{
-    headers::{LEASE_ACTION, *},
-    prelude::*,
-    RequestId,
-};
+use azure_core::{headers::*, prelude::*, RequestId};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
@@ -23,7 +19,6 @@ impl ReleaseLeaseBuilder {
     }
 
     setters! {
-
         timeout: Timeout => Some(timeout),
     }
 
@@ -34,11 +29,16 @@ impl ReleaseLeaseBuilder {
             url.query_pairs_mut().append_pair("comp", "lease");
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request =
-                self.blob_lease_client
-                    .prepare_request(url, azure_core::Method::Put, None)?;
-            request.insert_header(LEASE_ACTION, "release");
-            request.add_mandatory_header(self.blob_lease_client.lease_id());
+            let mut headers = Headers::new();
+            headers.insert(LEASE_ACTION, "release");
+            headers.add(self.blob_lease_client.lease_id());
+
+            let mut request = self.blob_lease_client.finalize_request(
+                url,
+                azure_core::Method::Put,
+                headers,
+                None,
+            )?;
 
             let response = self
                 .blob_lease_client

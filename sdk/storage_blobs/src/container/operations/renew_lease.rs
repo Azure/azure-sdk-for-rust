@@ -1,6 +1,6 @@
 use crate::{container::operations::AcquireLeaseResponse, prelude::*};
 use azure_core::Method;
-use azure_core::{headers::LEASE_ACTION, prelude::*};
+use azure_core::{headers::*, prelude::*};
 
 pub type RenewLeaseResponse = AcquireLeaseResponse;
 
@@ -34,11 +34,13 @@ impl RenewLeaseBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
+            let mut headers = Headers::new();
+            headers.insert(LEASE_ACTION, "renew");
+            headers.add(self.container_lease_client.lease_id());
+
             let mut request =
                 self.container_lease_client
-                    .prepare_request(url, Method::Put, None)?;
-            request.insert_header(LEASE_ACTION, "renew");
-            request.add_mandatory_header(self.container_lease_client.lease_id());
+                    .finalize_request(url, Method::Put, headers, None)?;
 
             let response = self
                 .container_lease_client

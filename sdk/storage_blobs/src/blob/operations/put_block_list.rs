@@ -68,22 +68,27 @@ impl PutBlockListBuilder {
                 base64::encode(hash.0)
             };
 
-            let mut request =
-                self.blob_client
-                    .prepare_request(url, azure_core::Method::Put, Some(body_bytes))?;
-            request.insert_header("Content-MD5", &md5);
-            request.add_optional_header(&self.content_type);
-            request.add_optional_header(&self.content_encoding);
-            request.add_optional_header(&self.content_language);
-            request.add_optional_header(&self.content_disposition);
-            request.add_optional_header(&self.content_md5);
+            let mut headers = Headers::new();
+            headers.insert("Content-MD5", &md5);
+            headers.add(self.content_type);
+            headers.add(self.content_encoding);
+            headers.add(self.content_language);
+            headers.add(self.content_disposition);
+            headers.add(self.content_md5);
             if let Some(metadata) = &self.metadata {
                 for m in metadata.iter() {
-                    request.add_mandatory_header(&m);
+                    headers.add(m);
                 }
             }
-            request.add_optional_header(&self.access_tier);
-            request.add_optional_header(&self.lease_id);
+            headers.add(self.access_tier);
+            headers.add(self.lease_id);
+
+            let mut request = self.blob_client.finalize_request(
+                url,
+                azure_core::Method::Put,
+                headers,
+                Some(body_bytes),
+            )?;
 
             let response = self
                 .blob_client

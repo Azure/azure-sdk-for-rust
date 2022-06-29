@@ -3,7 +3,7 @@ use azure_core::Method;
 use azure_core::{
     collect_pinned_stream,
     error::Error,
-    headers::{date_from_headers, request_id_from_headers},
+    headers::{date_from_headers, request_id_from_headers, Headers},
     prelude::*,
     Pageable, RequestId, Response as AzureResponse,
 };
@@ -112,9 +112,12 @@ impl ListBlobsBuilder {
 
                 this.timeout.append_to_url_query(&mut url);
 
-                let mut request = this
-                    .container_client
-                    .prepare_request(url, Method::Get, None)?;
+                let mut request = this.container_client.finalize_request(
+                    url,
+                    Method::Get,
+                    Headers::new(),
+                    None,
+                )?;
 
                 let response = this.container_client.send(&mut ctx, &mut request).await?;
 
