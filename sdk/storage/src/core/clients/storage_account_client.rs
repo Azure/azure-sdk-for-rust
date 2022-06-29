@@ -429,7 +429,15 @@ impl StorageAccountClient {
         // if we have a SAS token (in form of query pairs), let's add it to the url here
         if let StorageCredentials::SASToken(query_pairs) = &self.storage_credentials {
             for (k, v) in query_pairs {
-                request.url_mut().query_pairs_mut().append_pair(k, v);
+                // TODO: this is a temporary fix so that we don't double add SAS tokens
+                // This can be removed when all Storage SDKs have been moved to the pipeline architecture
+                if !request
+                    .url()
+                    .query_pairs()
+                    .any(|(existing, _)| &*existing == k)
+                {
+                    request.url_mut().query_pairs_mut().append_pair(k, v);
+                }
             }
         }
 
