@@ -61,10 +61,21 @@ async fn main() -> azure_core::Result<()> {
         name: "Francesco".to_owned(),
         surname: "D".to_owned(),
     };
+    let entity5 = MyEntity {
+        city: base_city.clone(),
+        name: "Francesco".to_owned(),
+        surname: "E".to_owned(),
+    };
+    let entity6 = MyEntity {
+        city: base_city.clone(),
+        name: "Francesco".to_owned(),
+        surname: "F".to_owned(),
+    };
 
-    let response: InsertEntityResponse<MyEntity> =
-        table_client.insert(&entity1)?.into_future().await?;
-    println!("insert entity1 response = {:?}\n", response);
+    // these are used later
+    for entity in [&entity1, &entity5, &entity6] {
+        let _: InsertEntityResponse<MyEntity> = table_client.insert(entity)?.into_future().await?;
+    }
 
     let partition_key_client = table_client.partition_key_client(&entity1.city);
 
@@ -72,8 +83,10 @@ async fn main() -> azure_core::Result<()> {
         .transaction()
         .delete(&entity1.surname)?
         .insert(&entity2)?
-        .insert_or_replace(&entity3.surname, &entity3, IfMatchCondition::Any)?
-        .insert_or_merge(&entity4.surname, &entity4, IfMatchCondition::Any)?
+        .update(&entity3.surname, &entity3)?
+        .merge(&entity4.surname, &entity4)?
+        .insert_or_replace(&entity5.surname, &entity5, IfMatchCondition::Any)?
+        .insert_or_merge(&entity6.surname, &entity6, IfMatchCondition::Any)?
         .into_future()
         .await?;
 
