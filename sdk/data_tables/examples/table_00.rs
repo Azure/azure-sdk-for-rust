@@ -124,19 +124,29 @@ async fn main() -> azure_core::Result<()> {
         .await?;
     println!("insert_or_replace response = {:?}\n", response);
 
-    let mut stream = table_service.list().top(2).into_stream();
+    let mut stream = table_service.list().into_stream();
     while let Some(response) = stream.next().await {
-        println!("stream response list tables = {:?}\n", response);
+        let response = response?;
+        let names = response
+            .tables
+            .into_iter()
+            .map(|x| x.name)
+            .collect::<Vec<_>>()
+            .join(", ");
+        println!("table names: {names}");
     }
 
     let mut stream = table_client
         .query()
-        .filter("Name eq 'Carl'")
+        .filter("name eq 'Carl'")
         .top(2)
         .into_stream::<MyEntity>();
 
     while let Some(response) = stream.next().await {
-        println!("stream response query entries = {:?}\n", response);
+        let response = response?;
+        for entity in response.entities {
+            println!("{:?}", entity);
+        }
     }
 
     table_client.delete().into_future().await?;
