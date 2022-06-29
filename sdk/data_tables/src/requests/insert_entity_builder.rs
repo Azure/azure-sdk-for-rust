@@ -53,7 +53,7 @@ impl<'a> InsertEntityBuilder<'a> {
         headers.insert(ACCEPT, "application/json;odata=fullmetadata");
         headers.insert(CONTENT_TYPE, "application/json");
 
-        let request = self.table_client.prepare_request(
+        let request = self.table_client.finalize_request(
             url,
             Method::Post,
             headers,

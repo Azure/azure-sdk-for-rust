@@ -38,7 +38,7 @@ impl<'a> DeleteTableBuilder<'a> {
 
         let request = self
             .table_client
-            .prepare_request(url, Method::Delete, headers, None)?;
+            .finalize_request(url, Method::Delete, headers, None)?;
 
         let response = self
             .table_client

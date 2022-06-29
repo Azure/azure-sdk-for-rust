@@ -85,7 +85,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         let resp = reqwest::Client::new()
             .put(&uri)
             .bearer_auth(self.token.as_ref().unwrap().token.secret())
-            .header("Content-Type", "application/json")
+            .header("content-type", "application/json")
             .body(body)
             .send()
             .await
@@ -108,9 +108,9 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
             .bearer_auth(self.token.as_ref().unwrap().token.secret());
 
         if let Some(body) = json_body {
-            req = req.header("Content-Type", "application/json").body(body);
+            req = req.header("content-type", "application/json").body(body);
         } else {
-            req = req.header("Content-Length", 0);
+            req = req.header("content-length", 0);
         }
 
         let resp = req.send().await.with_context(ErrorKind::Io, || {
@@ -146,7 +146,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         let resp = reqwest::Client::new()
             .patch(&uri)
             .bearer_auth(self.token.as_ref().unwrap().token.secret())
-            .header("Content-Type", "application/json")
+            .header("content-type", "application/json")
             .body(body)
             .send()
             .await
@@ -177,7 +177,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         let resp = reqwest::Client::new()
             .delete(&uri)
             .bearer_auth(self.token.as_ref().unwrap().token.secret())
-            .header("Content-Type", "application/json")
+            .header("content-type", "application/json")
             .send()
             .await
             .unwrap();
@@ -267,7 +267,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
         let resp = reqwest::Client::new()
             .put(&uri)
             .bearer_auth(self.token.as_ref().unwrap().token.secret())
-            .header("Content-Type", "application/json")
+            .header("content-type", "application/json")
             .body(body)
             .send()
             .await
@@ -290,7 +290,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
             .bearer_auth(self.token.as_ref().unwrap().token.secret());
 
         if let Some(body) = json_body {
-            req = req.header("Content-Type", "application/json").body(body);
+            req = req.header("content-type", "application/json").body(body);
         } else {
             req = req.header("Content-Length", 0);
         }
@@ -330,7 +330,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
         let resp = reqwest::Client::new()
             .patch(&uri)
             .bearer_auth(self.token.as_ref().unwrap().token.secret())
-            .header("Content-Type", "application/json")
+            .header("content-type", "application/json")
             .body(body)
             .send()
             .await
@@ -363,7 +363,7 @@ impl<'a, T: TokenCredential> CertificateClient<'a, T> {
         let resp = reqwest::Client::new()
             .delete(&uri)
             .bearer_auth(self.token.as_ref().unwrap().token.secret())
-            .header("Content-Type", "application/json")
+            .header("content-type", "application/json")
             .send()
             .await
             .unwrap();

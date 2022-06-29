@@ -38,7 +38,7 @@ impl<'a> GetEntityBuilder<'a> {
 
         let request = self
             .entity_client
-            .prepare_request(url, Method::Get, headers, None)?;
+            .finalize_request(url, Method::Get, headers, None)?;
 
         let response = self
             .entity_client

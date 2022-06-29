@@ -40,7 +40,7 @@ impl GetPropertiesBuilder {
 
             let mut request =
                 self.blob_client
-                    .prepare_request(url, azure_core::Method::Head, headers, None)?;
+                    .finalize_request(url, azure_core::Method::Head, headers, None)?;
 
             let response = self
                 .blob_client

@@ -116,7 +116,7 @@ impl ContainerClient {
             .await
     }
 
-    pub(crate) fn prepare_request(
+    pub(crate) fn finalize_request(
         &self,
         url: Url,
         method: Method,
@@ -124,7 +124,7 @@ impl ContainerClient {
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
         self.storage_client
-            .prepare_request(url, method, headers, request_body)
+            .finalize_request(url, method, headers, request_body)
     }
 
     pub fn shared_access_signature(

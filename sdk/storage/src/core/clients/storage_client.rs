@@ -70,14 +70,14 @@ impl StorageClient {
         FindBlobsByTagsBuilder::new(self.clone())
     }
 
-    pub fn prepare_request(
+    pub fn finalize_request(
         &self,
         url: Url,
         method: Method,
         headers: Headers,
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
-        self.storage_account_client.prepare_request(
+        self.storage_account_client.finalize_request(
             url,
             method,
             headers,

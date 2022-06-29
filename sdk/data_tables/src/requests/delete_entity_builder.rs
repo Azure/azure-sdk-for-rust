@@ -41,7 +41,7 @@ impl<'a> DeleteEntityBuilder<'a> {
 
         let request = self
             .entity_client
-            .prepare_request(url, Method::Delete, headers, None)?;
+            .finalize_request(url, Method::Delete, headers, None)?;
 
         let response = self
             .entity_client

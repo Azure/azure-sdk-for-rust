@@ -46,7 +46,7 @@ impl<'a> InsertOrReplaceOrMergeEntityBuilder<'a> {
         headers.add(self.client_request_id.clone());
         headers.insert(CONTENT_TYPE, "application/json");
 
-        let request = self.entity_client.prepare_request(
+        let request = self.entity_client.finalize_request(
             url,
             match self.operation {
                 Operation::InsertOrMerge => Method::Merge,

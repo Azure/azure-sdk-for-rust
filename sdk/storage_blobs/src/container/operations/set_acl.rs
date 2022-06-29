@@ -50,7 +50,7 @@ impl SetACLBuilder {
             }
             headers.add(self.lease_id);
 
-            let mut request = self.container_client.prepare_request(
+            let mut request = self.container_client.finalize_request(
                 url,
                 Method::Put,
                 headers,

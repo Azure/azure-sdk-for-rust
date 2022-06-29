@@ -49,9 +49,9 @@ impl<'a> ListTablesBuilder<'a> {
         headers.add(self.client_request_id.clone());
         headers.insert(ACCEPT, "application/json;odata=fullmetadata");
 
-        let request = self
-            .table_service_client
-            .prepare_request(url, Method::Get, headers, None)?;
+        let request =
+            self.table_service_client
+                .finalize_request(url, Method::Get, headers, None)?;
 
         let response = self
             .table_service_client

@@ -40,7 +40,7 @@ impl RenewLeaseBuilder {
 
             let mut request =
                 self.container_lease_client
-                    .prepare_request(url, Method::Put, headers, None)?;
+                    .finalize_request(url, Method::Put, headers, None)?;
 
             let response = self
                 .container_lease_client

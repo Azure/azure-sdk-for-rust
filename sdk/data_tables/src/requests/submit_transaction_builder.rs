@@ -52,7 +52,7 @@ impl<'a> SubmitTransactionBuilder<'a> {
             ),
         );
 
-        let request = self.partition_key_client.prepare_request(
+        let request = self.partition_key_client.finalize_request(
             url,
             Method::Post,
             headers,

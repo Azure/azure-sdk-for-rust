@@ -63,7 +63,7 @@ impl TableClient {
         self.table_service_client.http_client()
     }
 
-    pub(crate) fn prepare_request(
+    pub(crate) fn finalize_request(
         &self,
         url: Url,
         method: Method,
@@ -71,7 +71,7 @@ impl TableClient {
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
         self.table_service_client
-            .prepare_request(url, method, headers, request_body)
+            .finalize_request(url, method, headers, request_body)
     }
 }
 

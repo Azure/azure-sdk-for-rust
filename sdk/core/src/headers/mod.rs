@@ -51,12 +51,12 @@ pub trait Header {
 }
 
 /// A collection of headers
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Default)]
 pub struct Headers(std::collections::HashMap<HeaderName, HeaderValue>);
 
 impl Headers {
     pub fn new() -> Self {
-        Self(Default::default())
+        Self::default()
     }
 
     /// Get a header value as a String or error if it is not found
@@ -140,6 +140,7 @@ impl Headers {
         self.0.insert(key.into(), value.into());
     }
 
+    /// Add headers to the headers collection
     pub fn add<H>(&mut self, header: H)
     where
         H: AsHeaders,
@@ -152,12 +153,6 @@ impl Headers {
     /// Iterate over all the header name/value pairs
     pub fn iter(&self) -> impl Iterator<Item = (&HeaderName, &HeaderValue)> {
         self.0.iter()
-    }
-}
-
-impl Default for Headers {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

@@ -57,7 +57,7 @@ impl TableServiceClient {
         self.storage_client.http_client()
     }
 
-    pub(crate) fn prepare_request(
+    pub(crate) fn finalize_request(
         &self,
         url: Url,
         method: Method,
@@ -66,7 +66,7 @@ impl TableServiceClient {
     ) -> azure_core::Result<Request> {
         self.storage_client
             .storage_account_client()
-            .prepare_request(
+            .finalize_request(
                 url,
                 method,
                 headers,

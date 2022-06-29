@@ -42,7 +42,7 @@ impl GetMessagesBuilder {
             self.number_of_messages.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = self.queue_client.storage_client().prepare_request(
+            let mut request = self.queue_client.storage_client().finalize_request(
                 url,
                 Method::Get,
                 Headers::new(),

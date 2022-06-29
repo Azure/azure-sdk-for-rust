@@ -74,7 +74,7 @@ impl ListContainersBuilder {
                 this.max_results.append_to_url_query(&mut url);
                 this.timeout.append_to_url_query(&mut url);
 
-                let mut request = this.client.storage_client.prepare_request(
+                let mut request = this.client.storage_client.finalize_request(
                     url,
                     Method::Get,
                     Headers::new(),

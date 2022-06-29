@@ -32,7 +32,7 @@ impl DeleteQueueBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = self.queue_client.storage_client().prepare_request(
+            let mut request = self.queue_client.storage_client().finalize_request(
                 url,
                 Method::Delete,
                 Headers::new(),

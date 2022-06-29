@@ -15,7 +15,7 @@ pub use self::client::Client;
 const DEFAULT_SAS_DURATION: i64 = 1;
 
 /// Prepares an HTTP request
-fn prepare_request(
+fn finalize_request(
     url: &str,
     method: azure_core::Method,
     body: Option<String>,
@@ -90,7 +90,7 @@ async fn send_message(
         namespace, queue
     );
 
-    let req = prepare_request(
+    let req = finalize_request(
         &url,
         Method::Post,
         Some(msg.to_string()),
@@ -118,7 +118,7 @@ async fn receive_and_delete_message(
         namespace, queue
     );
 
-    let req = prepare_request(&url, Method::Delete, None, policy_name, signing_key)?;
+    let req = finalize_request(&url, Method::Delete, None, policy_name, signing_key)?;
 
     http_client
         .as_ref()
@@ -144,7 +144,7 @@ async fn peek_lock_message(
 ) -> azure_core::Result<CollectedResponse> {
     let url = craft_peek_lock_url(namespace, queue, lock_expiry)?;
 
-    let req = prepare_request(url.as_ref(), Method::Post, None, policy_name, signing_key)?;
+    let req = finalize_request(url.as_ref(), Method::Post, None, policy_name, signing_key)?;
 
     http_client
         .as_ref()
@@ -166,7 +166,7 @@ async fn peek_lock_message2(
 ) -> azure_core::Result<PeekLockResponse> {
     let url = craft_peek_lock_url(namespace, queue, lock_expiry)?;
 
-    let req = prepare_request(url.as_ref(), Method::Post, None, policy_name, signing_key)?;
+    let req = finalize_request(url.as_ref(), Method::Post, None, policy_name, signing_key)?;
 
     let res = http_client.execute_request(&req).await?;
 
@@ -210,7 +210,7 @@ impl PeekLockResponse {
 
     /// Delete message in the lock
     pub async fn delete_message(&self) -> azure_core::Result<CollectedResponse> {
-        let req = prepare_request(
+        let req = finalize_request(
             &self.lock_location.clone(),
             Method::Delete,
             None,
@@ -226,7 +226,7 @@ impl PeekLockResponse {
 
     /// Unlock a message in the lock
     pub async fn unlock_message(&self) -> Result<(), Error> {
-        let req = prepare_request(
+        let req = finalize_request(
             &self.lock_location.clone(),
             Method::Put,
             None,
@@ -243,7 +243,7 @@ impl PeekLockResponse {
 
     /// Renew a message's lock
     pub async fn renew_message_lock(&self) -> Result<(), Error> {
-        let req = prepare_request(
+        let req = finalize_request(
             &self.lock_location.clone(),
             Method::Post,
             None,

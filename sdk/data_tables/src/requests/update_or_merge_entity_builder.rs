@@ -50,7 +50,7 @@ impl<'a> UpdateOrMergeEntityBuilder<'a> {
         headers.insert(CONTENT_TYPE, "application/json");
         headers.add(if_match_condition.clone());
 
-        let request = self.entity_client.prepare_request(
+        let request = self.entity_client.finalize_request(
             url,
             match self.operation {
                 Operation::Merge => Method::Merge,
@@ -88,8 +88,8 @@ impl<'a> UpdateOrMergeEntityBuilder<'a> {
         );
         request.add_optional_header(&self.client_request_id);
         request.add_mandatory_header(if_match_condition);
-        request.insert_header("Accept", "application/json;odata=fullmetadata");
-        request.insert_header("Content-Type", "application/json");
+        request.insert_header(ACCEPT, "application/json;odata=fullmetadata");
+        request.insert_header(CONTENT_TYPE, "application/json");
 
         request.set_body(serde_json::to_vec(entity)?);
 

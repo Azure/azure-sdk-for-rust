@@ -51,7 +51,7 @@ impl PartitionKeyClient {
         self.table_client.http_client()
     }
 
-    pub(crate) fn prepare_request(
+    pub(crate) fn finalize_request(
         &self,
         url: Url,
         method: Method,
@@ -59,7 +59,7 @@ impl PartitionKeyClient {
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
         self.table_client
-            .prepare_request(url, method, headers, request_body)
+            .finalize_request(url, method, headers, request_body)
     }
 }
 

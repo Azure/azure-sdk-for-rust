@@ -66,7 +66,7 @@ impl BlobLeaseClient {
         RenewLeaseBuilder::new(self.clone())
     }
 
-    pub(crate) fn prepare_request(
+    pub(crate) fn finalize_request(
         &self,
         url: Url,
         method: Method,
@@ -74,7 +74,7 @@ impl BlobLeaseClient {
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
         self.blob_client
-            .prepare_request(url, method, headers, request_body)
+            .finalize_request(url, method, headers, request_body)
     }
 
     pub(crate) async fn send(

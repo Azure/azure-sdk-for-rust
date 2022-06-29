@@ -50,7 +50,7 @@ impl CreateBuilder {
 
             let mut request =
                 self.container_client
-                    .prepare_request(url, Method::Put, headers, None)?;
+                    .finalize_request(url, Method::Put, headers, None)?;
 
             let _response = self
                 .container_client

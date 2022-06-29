@@ -39,7 +39,7 @@ impl<'a> CreateTableBuilder<'a> {
         headers.insert(CONTENT_TYPE, "application/json");
         headers.insert(PREFER, "return-content");
 
-        let request = self.table_client.prepare_request(
+        let request = self.table_client.finalize_request(
             url,
             Method::Post,
             headers,

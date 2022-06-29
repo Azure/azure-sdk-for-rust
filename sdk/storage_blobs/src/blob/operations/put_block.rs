@@ -45,7 +45,7 @@ impl<'a> PutBlockBuilder {
             let mut headers = Headers::new();
             headers.add(self.lease_id);
 
-            let mut request = self.blob_client.prepare_request(
+            let mut request = self.blob_client.finalize_request(
                 url,
                 azure_core::Method::Put,
                 headers,

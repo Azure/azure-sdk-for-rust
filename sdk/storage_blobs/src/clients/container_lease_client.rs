@@ -57,7 +57,7 @@ impl ContainerLeaseClient {
         RenewLeaseBuilder::new(self.clone())
     }
 
-    pub(crate) fn prepare_request(
+    pub(crate) fn finalize_request(
         &self,
         url: Url,
         method: Method,
@@ -65,7 +65,7 @@ impl ContainerLeaseClient {
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
         self.container_client
-            .prepare_request(url, method, headers, request_body)
+            .finalize_request(url, method, headers, request_body)
     }
 
     pub(crate) async fn send(

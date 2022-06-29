@@ -85,7 +85,7 @@ impl CopyBlobBuilder {
 
             let mut request =
                 self.blob_client
-                    .prepare_request(url, azure_core::Method::Put, headers, None)?;
+                    .finalize_request(url, azure_core::Method::Put, headers, None)?;
 
             let response = self
                 .blob_client

@@ -93,7 +93,7 @@ impl SetPropertiesBuilder {
 
             let mut request = self
                 .blob_client
-                .prepare_request(url, Method::Put, headers, None)?;
+                .finalize_request(url, Method::Put, headers, None)?;
 
             let response = self
                 .blob_client

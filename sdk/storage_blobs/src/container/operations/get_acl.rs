@@ -47,7 +47,7 @@ impl GetACLBuilder {
 
             let mut request =
                 self.container_client
-                    .prepare_request(url, Method::Get, headers, None)?;
+                    .finalize_request(url, Method::Get, headers, None)?;
 
             let response = self
                 .container_client

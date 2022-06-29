@@ -32,7 +32,7 @@ impl DeleteMessageBuilder {
 
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = self.pop_receipt_client.storage_client().prepare_request(
+            let mut request = self.pop_receipt_client.storage_client().finalize_request(
                 url,
                 Method::Delete,
                 Headers::new(),

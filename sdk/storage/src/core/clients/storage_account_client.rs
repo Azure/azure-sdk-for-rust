@@ -410,7 +410,7 @@ impl StorageAccountClient {
         &self.storage_credentials
     }
 
-    pub fn prepare_request(
+    pub fn finalize_request(
         &self,
         url: Url,
         method: Method,
@@ -505,7 +505,7 @@ impl StorageAccountClient {
         &self,
         http_method: azure_core::Method,
     ) -> azure_core::Result<Request> {
-        self.prepare_request(
+        self.finalize_request(
             self.blob_storage_url().clone(),
             http_method,
             Headers::new(),

@@ -43,7 +43,7 @@ impl GetPropertiesBuilder {
 
             let mut request =
                 self.container_client
-                    .prepare_request(url, Method::Head, headers, None)?;
+                    .finalize_request(url, Method::Head, headers, None)?;
 
             let response = self
                 .container_client

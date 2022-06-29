@@ -65,7 +65,7 @@ impl GetBlobBuilder {
 
                 headers.add(this.lease_id);
 
-                let mut request = this.blob_client.prepare_request(
+                let mut request = this.blob_client.finalize_request(
                     url,
                     azure_core::Method::Get,
                     headers,
