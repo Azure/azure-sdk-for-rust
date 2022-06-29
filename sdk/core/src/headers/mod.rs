@@ -181,6 +181,18 @@ impl HeaderName {
         Self(std::borrow::Cow::Borrowed(s))
     }
 
+    fn from_cow<C>(c: C) -> Self
+    where
+        C: Into<std::borrow::Cow<'static, str>>,
+    {
+        let c = c.into();
+        assert!(
+            c.chars().all(|c| c.is_lowercase() || !c.is_alphabetic()),
+            "header names must be lowercase: {c}"
+        );
+        Self(c)
+    }
+
     pub fn as_str(&self) -> &str {
         self.0.as_ref()
     }
@@ -188,14 +200,13 @@ impl HeaderName {
 
 impl From<&'static str> for HeaderName {
     fn from(s: &'static str) -> Self {
-        assert_eq!(s.to_lowercase(), s, "header names must be lower-case");
-        Self::from_static(s)
+        Self::from_cow(s)
     }
 }
 
 impl From<String> for HeaderName {
     fn from(s: String) -> Self {
-        Self(std::borrow::Cow::Owned(s.to_lowercase()))
+        Self::from_cow(s.to_lowercase())
     }
 }
 
@@ -208,6 +219,13 @@ impl HeaderValue {
         Self(std::borrow::Cow::Borrowed(s))
     }
 
+    fn from_cow<C>(c: C) -> Self
+    where
+        C: Into<std::borrow::Cow<'static, str>>,
+    {
+        Self(c.into())
+    }
+
     pub fn as_str(&self) -> &str {
         self.0.as_ref()
     }
@@ -215,13 +233,13 @@ impl HeaderValue {
 
 impl From<&'static str> for HeaderValue {
     fn from(s: &'static str) -> Self {
-        Self::from_static(s)
+        Self::from_cow(s)
     }
 }
 
 impl From<String> for HeaderValue {
     fn from(s: String) -> Self {
-        Self(std::borrow::Cow::Owned(s))
+        Self::from_cow(s)
     }
 }
 
