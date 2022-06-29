@@ -5,7 +5,7 @@ use azure_core::{
     Context, Method, Request, Response,
 };
 use bytes::Bytes;
-use serde::Serialize;
+use serde::{de::DeserializeOwned, Serialize};
 use std::sync::Arc;
 use url::Url;
 
@@ -61,7 +61,7 @@ impl EntityClient {
         &self.row_key
     }
 
-    pub fn get(&self) -> GetEntityBuilder {
+    pub fn get<T: DeserializeOwned + Send>(&self) -> GetEntityBuilder<T> {
         GetEntityBuilder::new(self.clone())
     }
 

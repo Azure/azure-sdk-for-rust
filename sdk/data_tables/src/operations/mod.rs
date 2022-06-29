@@ -60,19 +60,19 @@ impl TryFrom<CollectedResponse> for OperationOnEntityResponse {
 }
 
 #[derive(Debug, Clone)]
-pub struct InsertEntityResponse<E>
+pub struct InsertEntityResponse<T>
 where
-    E: DeserializeOwned,
+    T: DeserializeOwned + Send,
 {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub etag: Etag,
     pub location: Option<Url>,
-    pub entity_with_metadata: Option<EntityWithMetadata<E>>,
+    pub entity_with_metadata: Option<EntityWithMetadata<T>>,
 }
 
-impl<E> TryFrom<CollectedResponse> for InsertEntityResponse<E>
+impl<T> TryFrom<CollectedResponse> for InsertEntityResponse<T>
 where
-    E: DeserializeOwned,
+    T: DeserializeOwned + Send,
 {
     type Error = Error;
 

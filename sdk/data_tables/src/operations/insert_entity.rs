@@ -6,19 +6,23 @@ use azure_core::{
     CollectedResponse, Context, Method, Request,
 };
 use bytes::Bytes;
-use serde::{de::DeserializeOwned, Serialize};
-use std::convert::TryInto;
+use serde::de::DeserializeOwned;
+use std::{convert::TryInto, marker::PhantomData};
 
 #[derive(Debug, Clone)]
-pub struct InsertEntityBuilder {
+pub struct InsertEntityBuilder<T> {
     table_client: TableClient,
     body: Bytes,
     return_entity: ReturnEntity,
     timeout: Option<Timeout>,
     context: Context,
+    _entity: PhantomData<T>,
 }
 
-impl InsertEntityBuilder {
+impl<T> InsertEntityBuilder<T>
+where
+    T: DeserializeOwned + Send,
+{
     pub(crate) fn new(table_client: TableClient, body: Bytes) -> Self {
         Self {
             table_client,
@@ -26,6 +30,7 @@ impl InsertEntityBuilder {
             return_entity: false.into(),
             timeout: None,
             context: Context::new(),
+            _entity: PhantomData,
         }
     }
 
@@ -35,10 +40,7 @@ impl InsertEntityBuilder {
         context: Context => context,
     }
 
-    pub fn into_future<E>(mut self) -> FutureResponse<E>
-    where
-        E: Serialize + DeserializeOwned,
-    {
+    pub fn into_future(mut self) -> FutureResponse<T> {
         Box::pin(async move {
             let mut url = self.table_client.url().to_owned();
             url.path_segments_mut()
@@ -84,13 +86,13 @@ impl InsertEntityBuilder {
     }
 }
 
-pub type FutureResponse<E> =
-    futures::future::BoxFuture<'static, azure_core::Result<InsertEntityResponse<E>>>;
+pub type FutureResponse<T> =
+    futures::future::BoxFuture<'static, azure_core::Result<InsertEntityResponse<T>>>;
 
 #[cfg(feature = "into_future")]
-impl std::future::IntoFuture for InsertEntityBuilder {
-    type IntoFuture = FutureResponse;
-    type Output = <FutureResponse as std::future::Future>::Output;
+impl<T: DeserializeOwned + Send> std::future::IntoFuture for InsertEntityBuilder<T> {
+    type IntoFuture = FutureResponse<T>;
+    type Output = <FutureResponse<T> as std::future::Future>::Output;
     fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }

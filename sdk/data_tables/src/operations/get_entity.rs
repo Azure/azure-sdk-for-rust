@@ -4,21 +4,23 @@ use azure_core::{
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use serde::de::DeserializeOwned;
-use std::convert::TryInto;
+use std::{convert::TryInto, marker::PhantomData};
 
 #[derive(Debug, Clone)]
-pub struct GetEntityBuilder {
+pub struct GetEntityBuilder<T> {
     entity_client: EntityClient,
     select: Option<Select>,
     context: Context,
+    _entity: PhantomData<T>,
 }
 
-impl GetEntityBuilder {
+impl<T: DeserializeOwned + Send> GetEntityBuilder<T> {
     pub(crate) fn new(entity_client: EntityClient) -> Self {
         Self {
             entity_client,
             select: None,
             context: Context::new(),
+            _entity: PhantomData,
         }
     }
 
@@ -27,10 +29,7 @@ impl GetEntityBuilder {
         context: Context => context,
     }
 
-    pub fn into_future<E>(mut self) -> FutureResponse<E>
-    where
-        E: DeserializeOwned,
-    {
+    pub fn into_future(mut self) -> FutureResponse<T> {
         Box::pin(async move {
             let mut url = self.entity_client.url().to_owned();
 
@@ -53,46 +52,46 @@ impl GetEntityBuilder {
     }
 }
 
-pub type FutureResponse<E> =
-    futures::future::BoxFuture<'static, azure_core::Result<GetEntityResponse<E>>>;
+pub type FutureResponse<T> =
+    futures::future::BoxFuture<'static, azure_core::Result<GetEntityResponse<T>>>;
 
 #[cfg(feature = "into_future")]
-impl std::future::IntoFuture for GetEntityBuilder {
-    type IntoFuture = FutureResponse<E>;
-    type Output = <FutureResponse<E> as std::future::Future>::Output;
+impl<T: DeserializeOwned + Send> std::future::IntoFuture for GetEntityBuilder<T> {
+    type IntoFuture = FutureResponse<T>;
+    type Output = <FutureResponse<T> as std::future::Future>::Output;
     fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct GetEntityResponse<E>
+pub struct GetEntityResponse<T>
 where
-    E: DeserializeOwned,
+    T: DeserializeOwned,
 {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub metadata: String,
-    pub entity: E,
+    pub entity: T,
     pub etag: Etag,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-struct GetEntityResponseInternal<E> {
+struct GetEntityResponseInternal<T> {
     #[serde(rename = "odata.metadata")]
     pub metadata: String,
     #[serde(flatten)]
-    pub value: E,
+    pub value: T,
 }
 
-impl<E> GetEntityResponse<E>
+impl<T> GetEntityResponse<T>
 where
-    E: DeserializeOwned,
+    T: DeserializeOwned,
 {
     async fn try_from(response: Response) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
         let body = collect_pinned_stream(body).await?;
 
-        let get_entity_response_internal: GetEntityResponseInternal<E> =
+        let get_entity_response_internal: GetEntityResponseInternal<T> =
             serde_json::from_slice(&body)?;
 
         Ok(GetEntityResponse {

@@ -2,7 +2,7 @@ use crate::{clients::TableServiceClient, operations::*};
 use azure_core::{headers::Headers, Context, Method, Request, Response, Url};
 use azure_storage::core::clients::StorageAccountClient;
 use bytes::Bytes;
-use serde::Serialize;
+use serde::{de::DeserializeOwned, Serialize};
 use std::sync::Arc;
 
 pub trait AsTableClient<S: Into<String>> {
@@ -48,7 +48,10 @@ impl TableClient {
         DeleteTableBuilder::new(self.clone())
     }
 
-    pub fn insert<E: Serialize>(&self, entity: E) -> azure_core::Result<InsertEntityBuilder> {
+    pub fn insert<E: Serialize, R: DeserializeOwned + Send>(
+        &self,
+        entity: E,
+    ) -> azure_core::Result<InsertEntityBuilder<R>> {
         let body = serde_json::to_string(&entity)?.into();
         Ok(InsertEntityBuilder::new(self.clone(), body))
     }
