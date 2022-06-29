@@ -62,7 +62,7 @@ impl ListBlobsBuilder {
     }
 
     pub fn into_stream(self) -> Pageable<ListBlobsResponse, Error> {
-        let make_request = move |continuation: Option<Continuation>| {
+        let make_request = move |continuation: Option<NextMarker>| {
             let this = self.clone();
             let mut ctx = self.context.clone();
             async move {
@@ -71,9 +71,8 @@ impl ListBlobsBuilder {
                 url.query_pairs_mut().append_pair("restype", "container");
                 url.query_pairs_mut().append_pair("comp", "list");
 
-                if let Some(continuation) = continuation {
-                    url.query_pairs_mut()
-                        .append_pair("marker", &continuation.as_string());
+                if let Some(next_marker) = continuation {
+                    next_marker.append_to_url_query(&mut url);
                 }
 
                 this.prefix.append_to_url_query(&mut url);
@@ -187,8 +186,9 @@ impl ListBlobsResponse {
 }
 
 impl Continuable for ListBlobsResponse {
-    fn continuation(&self) -> Option<Continuation> {
-        self.next_marker.clone().map(Continuation::from)
+    type Continuation = NextMarker;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_marker.clone().map(NextMarker::from)
     }
 }
 

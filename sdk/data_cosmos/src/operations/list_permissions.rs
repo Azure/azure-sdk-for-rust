@@ -67,7 +67,7 @@ impl ListPermissionsBuilder {
 
 pub type ListPermissions = Pageable<ListPermissionsResponse, azure_core::error::Error>;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct ListPermissionsResponse {
     pub permissions: Vec<Permission>,
     pub charge: f64,
@@ -75,7 +75,7 @@ pub struct ListPermissionsResponse {
     pub session_token: String,
     pub content_path: String,
     pub alt_content_path: String,
-    pub continuation_token: Option<String>,
+    pub continuation_token: Option<Continuation>,
 }
 
 impl ListPermissionsResponse {
@@ -107,7 +107,8 @@ impl ListPermissionsResponse {
 }
 
 impl Continuable for ListPermissionsResponse {
-    fn continuation(&self) -> Option<Continuation> {
-        self.continuation_token.clone().map(Continuation::from)
+    type Continuation = Continuation;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.continuation_token.clone()
     }
 }

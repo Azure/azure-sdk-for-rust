@@ -41,17 +41,14 @@ impl GetBlobBuilder {
     }
 
     pub fn into_stream(self) -> Pageable<GetBlobResponse, Error> {
-        let make_request = move |continuation: Option<Continuation>| {
+        let make_request = move |continuation: Option<Range>| {
             let this = self.clone();
             let mut ctx = self.context.clone();
             async move {
                 let mut url = this.blob_client.url_with_segments(None)?;
 
                 let range = match continuation {
-                    Some(Continuation::String(_)) => {
-                        panic!("unexpected contination type")
-                    }
-                    Some(Continuation::Range(range)) => range.into(),
+                    Some(range) => range,
                     None => initial_range(this.chunk_size, this.range),
                 };
 
@@ -112,8 +109,9 @@ impl GetBlobResponse {
 }
 
 impl Continuable for GetBlobResponse {
-    fn continuation(&self) -> Option<Continuation> {
-        self.remaining_range.map(Continuation::from)
+    type Continuation = Range;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.remaining_range
     }
 }
 

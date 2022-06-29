@@ -74,14 +74,14 @@ impl ListTriggersBuilder {
 /// The future returned by calling `into_future` on the builder.
 pub type ListTriggers = Pageable<ListTriggersResponse, azure_core::error::Error>;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct ListTriggersResponse {
     pub rid: String,
     pub triggers: Vec<Trigger>,
     pub content_location: String,
     pub server: String,
     pub last_state_change: DateTime<Utc>,
-    pub continuation_token: Option<String>,
+    pub continuation_token: Option<Continuation>,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
     pub lsn: u64,
@@ -149,7 +149,8 @@ impl ListTriggersResponse {
 }
 
 impl Continuable for ListTriggersResponse {
-    fn continuation(&self) -> Option<Continuation> {
-        self.continuation_token.clone().map(Continuation::from)
+    type Continuation = Continuation;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.continuation_token.clone()
     }
 }

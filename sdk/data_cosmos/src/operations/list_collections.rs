@@ -60,7 +60,7 @@ impl ListCollectionsBuilder {
 
 pub type ListCollections = Pageable<ListCollectionsResponse, azure_core::error::Error>;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct ListCollectionsResponse {
     pub rid: String,
     pub collections: Vec<Collection>,
@@ -76,7 +76,7 @@ pub struct ListCollectionsResponse {
     pub activity_id: uuid::Uuid,
     pub session_token: String,
     pub gateway_version: String,
-    pub continuation_token: Option<String>,
+    pub continuation_token: Option<Continuation>,
 }
 
 impl ListCollectionsResponse {
@@ -116,7 +116,8 @@ impl ListCollectionsResponse {
 }
 
 impl Continuable for ListCollectionsResponse {
-    fn continuation(&self) -> Option<Continuation> {
-        self.continuation_token.clone().map(Continuation::from)
+    type Continuation = Continuation;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.continuation_token.clone()
     }
 }

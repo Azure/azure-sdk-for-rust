@@ -174,7 +174,7 @@ pub enum QueryResult<T> {
     Raw(T),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct QueryDocumentsResponse<T> {
     pub query_response_meta: QueryResponseMeta,
     pub results: Vec<QueryResult<T>>,
@@ -201,7 +201,7 @@ pub struct QueryDocumentsResponse<T> {
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
     pub date: DateTime<Utc>,
-    pub continuation_token: Option<String>,
+    pub continuation_token: Option<Continuation>,
 }
 
 impl<T> QueryDocumentsResponse<T> {
@@ -280,7 +280,7 @@ where
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct QueryDocumentsResponseRaw<T> {
     pub query_response_meta: QueryResponseMeta,
     pub results: Vec<T>,
@@ -308,7 +308,7 @@ pub struct QueryDocumentsResponseRaw<T> {
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
     pub date: DateTime<Utc>,
-    pub continuation_token: Option<String>,
+    pub continuation_token: Option<Continuation>,
 }
 
 impl<T> std::convert::From<QueryDocumentsResponse<T>> for QueryDocumentsResponseRaw<T> {
@@ -352,7 +352,7 @@ impl<T> std::convert::From<QueryDocumentsResponse<T>> for QueryDocumentsResponse
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct QueryDocumentsResponseDocuments<T> {
     pub query_response_meta: QueryResponseMeta,
     pub results: Vec<DocumentQueryResult<T>>,
@@ -380,7 +380,7 @@ pub struct QueryDocumentsResponseDocuments<T> {
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
     pub date: DateTime<Utc>,
-    pub continuation_token: Option<String>,
+    pub continuation_token: Option<Continuation>,
 }
 
 impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsResponseDocuments<T> {
@@ -430,8 +430,10 @@ impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsRespo
         })
     }
 }
+
 impl<T> Continuable for QueryDocumentsResponse<T> {
-    fn continuation(&self) -> Option<Continuation> {
-        self.continuation_token.clone().map(Continuation::from)
+    type Continuation = Continuation;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.continuation_token.clone()
     }
 }

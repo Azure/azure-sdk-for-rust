@@ -52,7 +52,7 @@ impl ListPathsBuilder {
     }
 
     pub fn into_stream(self) -> ListPaths {
-        let make_request = move |continuation: Option<Continuation>| {
+        let make_request = move |continuation: Option<NextMarker>| {
             let this = self.clone();
             let ctx = self.context.clone();
 
@@ -112,8 +112,9 @@ impl ListPathsResponse {
 }
 
 impl Continuable for ListPathsResponse {
-    fn continuation(&self) -> Option<Continuation> {
-        self.continuation.clone().map(Continuation::from)
+    type Continuation = NextMarker;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.continuation.clone()
     }
 }
 
