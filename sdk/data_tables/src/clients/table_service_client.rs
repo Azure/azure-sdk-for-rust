@@ -1,9 +1,5 @@
 use crate::operations::ListTablesBuilder;
-use azure_core::{
-    error::{ErrorKind, ResultExt},
-    headers::Headers,
-    Context, Method, Request, Response,
-};
+use azure_core::{headers::Headers, Context, Method, Request, Response};
 use azure_storage::core::clients::{ServiceType, StorageClient};
 use bytes::Bytes;
 use std::sync::Arc;
@@ -58,8 +54,7 @@ impl TableServiceClient {
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
         self.storage_client
-            .finalize_request(url, method, headers, ServiceType::Table, request_body)
-            .context(ErrorKind::Other, "failed to prepare request")
+            .finalize_request(url, method, headers, request_body)
     }
 
     pub(crate) async fn send(

@@ -15,8 +15,7 @@ async fn main() -> azure_core::Result<()> {
 
     let http_client = azure_core::new_http_client();
     let storage_client =
-        StorageClient::new_connection_string(http_client.clone(), &connection_string)?
-            .storage_client();
+        StorageClient::new_connection_string(http_client.clone(), &connection_string)?;
     let container_client = storage_client.container_client(&container_name);
     let blob_service = storage_client.blob_service_client();
 

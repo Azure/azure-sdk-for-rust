@@ -24,7 +24,6 @@ async fn main() -> azure_core::Result<()> {
 
     let http_client = azure_core::new_http_client();
     let storage_client = StorageClient::new_access_key(http_client.clone(), &account, &access_key);
-    let storage_client = storage_client.storage_client();
     let blob_client = storage_client
         .container_client(&destination_container)
         .blob_client(&destination_blob);

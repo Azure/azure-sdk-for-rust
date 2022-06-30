@@ -1,9 +1,7 @@
 use crate::authorization_policy::AuthorizationPolicy;
 use crate::operations::*;
+use crate::shared_access_signature::account_sas::AccountSharedAccessSignatureBuilder;
 use crate::ConnectionString;
-use crate::{
-    hmac::sign, shared_access_signature::account_sas::AccountSharedAccessSignatureBuilder,
-};
 use azure_core::Method;
 use azure_core::{
     auth::TokenCredential,
@@ -23,8 +21,6 @@ pub const EMULATOR_ACCOUNT: &str = "devstoreaccount1";
 /// https://docs.microsoft.com/azure/storage/common/storage-use-azurite#well-known-storage-account-and-key
 pub const EMULATOR_ACCOUNT_KEY: &str =
     "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
-
-pub const STORAGE_TOKEN_SCOPE: &str = "https://storage.azure.com/";
 
 const AZURE_VERSION: HeaderValue = HeaderValue::from_static("2019-12-12");
 
@@ -416,7 +412,6 @@ impl StorageClient {
         url: Url,
         method: Method,
         headers: Headers,
-        service_type: ServiceType,
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
         let dt = chrono::Utc::now();
@@ -427,21 +422,6 @@ impl StorageClient {
             request.insert_header(k, v);
         }
 
-        // if we have a SAS token (in form of query pairs), let's add it to the url here
-        if let StorageCredentials::SASToken(query_pairs) = &self.storage_credentials {
-            for (k, v) in query_pairs {
-                // TODO: this is a temporary fix so that we don't double add SAS tokens
-                // This can be removed when all Storage SDKs have been moved to the pipeline architecture
-                if !request
-                    .url()
-                    .query_pairs()
-                    .any(|(existing, _)| &*existing == k)
-                {
-                    request.url_mut().query_pairs_mut().append_pair(k, v);
-                }
-            }
-        }
-
         // let's add content length to avoid "chunking" errors.
         match request_body {
             Some(ref b) => request.insert_header(CONTENT_LENGTH, b.len().to_string()),
@@ -450,40 +430,6 @@ impl StorageClient {
 
         request.insert_header(MS_DATE, time);
         request.insert_header(VERSION, AZURE_VERSION);
-
-        // We sign the request only if it is not already signed (with the signature of an
-        // SAS token for example)
-        match &self.storage_credentials {
-            StorageCredentials::Key(account, key) => {
-                if !request.url().query_pairs().any(|(k, _)| k == "sig") {
-                    let auth = generate_authorization(
-                        request.headers(),
-                        request.url(),
-                        request.method(),
-                        account,
-                        key,
-                        service_type,
-                    );
-                    request.insert_header(AUTHORIZATION, auth);
-                }
-            }
-            StorageCredentials::SASToken(_query_pairs) => {
-                // no headers to add here, the authentication is in the URL
-            }
-            StorageCredentials::BearerToken(token) => {
-                request.insert_header(AUTHORIZATION, format!("Bearer {}", token))
-            }
-            StorageCredentials::TokenCredential(token_credential) => {
-                let bearer_token_future = token_credential.get_token(STORAGE_TOKEN_SCOPE);
-                let bearer_token = futures::executor::block_on(bearer_token_future)
-                    .context(ErrorKind::Credential, "failed to get bearer token")?;
-
-                request.insert_header(
-                    AUTHORIZATION,
-                    format!("Bearer {}", bearer_token.token.secret()),
-                )
-            }
-        };
 
         if let Some(request_body) = request_body {
             request.set_body(request_body);
@@ -518,7 +464,6 @@ impl StorageClient {
             self.blob_storage_url().clone(),
             http_method,
             Headers::new(),
-            ServiceType::Blob,
             None,
         )
     }
@@ -570,175 +515,6 @@ impl StorageClient {
         }
         Ok(url)
     }
-}
-
-fn generate_authorization(
-    headers: &Headers,
-    url: &url::Url,
-    method: &Method,
-    account: &str,
-    key: &str,
-    service_type: ServiceType,
-) -> String {
-    let str_to_sign = string_to_sign(headers, url, method, account, service_type);
-    let auth = sign(&str_to_sign, key).unwrap();
-    format!("SharedKey {}:{}", account, auth)
-}
-
-fn add_if_exists<'a>(headers: &'a Headers, key: &HeaderName) -> &'a str {
-    headers.get_optional_str(key).unwrap_or_default()
-}
-
-fn string_to_sign(
-    headers: &Headers,
-    url: &url::Url,
-    method: &Method,
-    account: &str,
-    service_type: ServiceType,
-) -> String {
-    match service_type {
-        ServiceType::Table => {
-            format!(
-                "{}\n{}\n{}\n{}\n{}",
-                method.as_ref(),
-                add_if_exists(headers, &CONTENT_MD5),
-                add_if_exists(headers, &CONTENT_TYPE),
-                add_if_exists(headers, &MS_DATE),
-                canonicalized_resource_table(account, url)
-            )
-        }
-        _ => {
-            // content length must only be specified if != 0
-            // this is valid from 2015-02-21
-            let cl = headers
-                .get_optional_str(&CONTENT_LENGTH)
-                .filter(|&s| s != "0")
-                .unwrap_or_default();
-            format!(
-                "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}{}",
-                method.as_ref(),
-                add_if_exists(headers, &CONTENT_ENCODING),
-                add_if_exists(headers, &CONTENT_LANGUAGE),
-                cl,
-                add_if_exists(headers, &CONTENT_MD5),
-                add_if_exists(headers, &CONTENT_TYPE),
-                add_if_exists(headers, &DATE),
-                add_if_exists(headers, &IF_MODIFIED_SINCE),
-                add_if_exists(headers, &IF_MATCH),
-                add_if_exists(headers, &IF_NONE_MATCH),
-                add_if_exists(headers, &IF_UNMODIFIED_SINCE),
-                add_if_exists(headers, &RANGE),
-                canonicalize_header(headers),
-                canonicalized_resource(account, url)
-            )
-        }
-    }
-
-    // expected
-    // GET\n /*HTTP Verb*/
-    // \n    /*Content-Encoding*/
-    // \n    /*Content-Language*/
-    // \n    /*Content-Length (include value when zero)*/
-    // \n    /*Content-MD5*/
-    // \n    /*Content-Type*/
-    // \n    /*Date*/
-    // \n    /*If-Modified-Since */
-    // \n    /*If-Match*/
-    // \n    /*If-None-Match*/
-    // \n    /*If-Unmodified-Since*/
-    // \n    /*Range*/
-    // x-ms-date:Sun, 11 Oct 2009 21:49:13 GMT\nx-ms-version:2009-09-19\n
-    //                                  /*CanonicalizedHeaders*/
-    // /myaccount /mycontainer\ncomp:metadata\nrestype:container\ntimeout:20
-    //                                  /*CanonicalizedResource*/
-    //
-    //
-}
-
-fn canonicalize_header(headers: &Headers) -> String {
-    let mut v_headers = headers
-        .iter()
-        .filter(|(name, _value)| name.as_str().starts_with("x-ms"))
-        .collect::<Vec<_>>();
-    v_headers.sort_unstable_by_key(|(name, _value)| name.as_str());
-
-    let mut can = String::new();
-
-    for (name, value) in v_headers {
-        can = can + name.as_str() + ":" + value.as_str() + "\n";
-    }
-    can
-}
-
-// For table
-fn canonicalized_resource_table(account: &str, u: &url::Url) -> String {
-    format!("/{}{}", account, u.path())
-}
-
-fn canonicalized_resource(account: &str, u: &url::Url) -> String {
-    let mut can_res: String = String::new();
-    can_res += "/";
-    can_res += account;
-
-    let paths = u.path_segments().unwrap();
-
-    for p in paths {
-        can_res.push('/');
-        can_res.push_str(p);
-    }
-    can_res += "\n";
-
-    // query parameters
-    let query_pairs = u.query_pairs(); //.into_owned();
-    {
-        let mut qps = Vec::new();
-        {
-            for (q, _p) in query_pairs {
-                trace!("adding to qps {:?}", q);
-
-                // add only once
-                if !(qps.iter().any(|x: &String| x == q.as_ref())) {
-                    qps.push(q.into_owned());
-                }
-            }
-        }
-
-        qps.sort();
-
-        for qparam in qps {
-            // find correct parameter
-            let ret = lexy_sort(&query_pairs, &qparam);
-
-            // debug!("adding to can_res {:?}", ret);
-
-            can_res = can_res + &qparam.to_lowercase() + ":";
-
-            for (i, item) in ret.iter().enumerate() {
-                if i > 0 {
-                    can_res += ","
-                }
-                can_res += item;
-            }
-
-            can_res += "\n";
-        }
-    };
-
-    can_res[0..can_res.len() - 1].to_owned()
-}
-
-fn lexy_sort<'a>(
-    vec: &'a url::form_urlencoded::Parse,
-    query_param: &str,
-) -> Vec<std::borrow::Cow<'a, str>> {
-    let mut v_values = Vec::new();
-
-    for item in vec.filter(|x| x.0 == *query_param) {
-        v_values.push(item.1)
-    }
-    v_values.sort();
-
-    v_values
 }
 
 fn get_endpoint_uri(

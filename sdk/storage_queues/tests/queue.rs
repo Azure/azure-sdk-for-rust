@@ -24,7 +24,7 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
 
     println!("creating queue {}", queue_name);
 
-    let queue = storage_client.storage_client().queue_client(queue_name);
+    let queue = storage_client.queue_client(queue_name);
 
     // this step is optional but here we show
     // how to add metadata to a new queue.

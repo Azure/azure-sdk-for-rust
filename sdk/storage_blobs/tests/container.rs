@@ -7,7 +7,7 @@ use std::{sync::Arc, time::Duration};
 async fn lease() {
     let container_name: &'static str = "azuresdkrustetoets2";
 
-    let storage = initialize().storage_client();
+    let storage = initialize();
     let container = storage.container_client(container_name);
 
     container
@@ -35,7 +35,7 @@ async fn lease() {
 async fn break_lease() {
     let container_name: &'static str = "azuresdkrustetoets3";
 
-    let storage = initialize().storage_client();
+    let storage = initialize();
     let container = storage.container_client(container_name);
 
     container

@@ -31,7 +31,7 @@ async fn main() -> azure_core::Result<()> {
 
     let storage_client = StorageClient::new_access_key(http_client.clone(), &account, &access_key);
 
-    let table_service = storage_client.storage_client().table_service_client()?;
+    let table_service = storage_client.table_service_client()?;
 
     let table_client = table_service.table_client(table_name);
     table_client.create().into_future().await?;

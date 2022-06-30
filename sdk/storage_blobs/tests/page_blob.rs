@@ -12,7 +12,7 @@ async fn put_page_blob() {
     let blob_name: &'static str = "page_blob.txt";
     let container_name: &'static str = "rust-upload-test";
 
-    let storage = initialize().storage_client();
+    let storage = initialize();
     let blob_service = storage.blob_service_client();
     let container = storage.container_client(container_name);
     let blob = container.blob_client(blob_name);

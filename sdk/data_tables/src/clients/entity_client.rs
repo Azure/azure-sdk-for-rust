@@ -32,7 +32,7 @@ impl EntityClient {
         row_key: RK,
     ) -> azure_core::Result<Arc<Self>> {
         let row_key = row_key.into();
-        let mut url = partition_key_client.table_storage_url().to_owned();
+        let mut url = partition_key_client.storage_client().table_storage_url().to_owned();
         url.path_segments_mut()
             .map_err(|_e| {
                 Error::message(
