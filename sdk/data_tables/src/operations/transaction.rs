@@ -194,7 +194,7 @@ pub type FutureResponse =
     futures::future::BoxFuture<'static, azure_core::Result<SubmitTransactionResponse>>;
 
 #[cfg(feature = "into_future")]
-impl std::future::IntoFuture for SubmitTransactionBuilder {
+impl std::future::IntoFuture for TransactionBuilder {
     type IntoFuture = FutureResponse;
     type Output = <FutureResponse as std::future::Future>::Output;
     fn into_future(self) -> Self::IntoFuture {
