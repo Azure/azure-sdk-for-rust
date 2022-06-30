@@ -17,9 +17,7 @@ async fn main() -> azure_core::Result<()> {
     let access_key =
         std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
-    let http_client = azure_core::new_http_client();
-
-    let storage_client = StorageClient::new_access_key(http_client.clone(), &account, &access_key);
+    let storage_client = StorageClient::new_access_key(&account, &access_key);
     let blob_service_client = storage_client.blob_service_client();
 
     let response = blob_service_client

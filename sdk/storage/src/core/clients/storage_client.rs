@@ -7,7 +7,7 @@ use azure_core::{
     auth::TokenCredential,
     error::{Error, ErrorKind, ResultExt},
     headers::*,
-    ClientOptions, Context, HttpClient, Pipeline, Request, Response,
+    ClientOptions, Context, Pipeline, Request, Response,
 };
 use bytes::Bytes;
 use std::sync::Arc;
@@ -55,7 +55,6 @@ pub enum ServiceType {
 #[derive(Clone, Debug)]
 pub struct StorageClient {
     storage_credentials: StorageCredentials,
-    http_client: Arc<dyn HttpClient>,
     blob_storage_url: Url,
     table_storage_url: Url,
     queue_storage_url: Url,
@@ -65,32 +64,8 @@ pub struct StorageClient {
     pipeline: Pipeline,
 }
 
-fn get_sas_token_parms(sas_token: &str) -> azure_core::Result<Vec<(String, String)>> {
-    // Any base url will do: we just need to parse the SAS token
-    // to get its query pairs.
-    let base_url = Url::parse("https://blob.core.windows.net").unwrap();
-
-    let url = Url::options().base_url(Some(&base_url));
-
-    // this code handles the leading ?
-    // we support both with or without
-    let url = if sas_token.starts_with('?') {
-        url.parse(sas_token)
-    } else {
-        url.parse(&format!("?{}", sas_token))
-    }
-    .with_context(ErrorKind::DataConversion, || {
-        format!("failed to parse SAS token: {sas_token}")
-    })?;
-
-    Ok(url
-        .query_pairs()
-        .map(|p| (String::from(p.0), String::from(p.1)))
-        .collect())
-}
-
 impl StorageClient {
-    pub fn new_access_key<A, K>(http_client: Arc<dyn HttpClient>, account: A, key: K) -> Arc<Self>
+    pub fn new_access_key<A, K>(account: A, key: K) -> Arc<Self>
     where
         A: Into<String>,
         K: Into<String>,
@@ -113,7 +88,6 @@ impl StorageClient {
             .unwrap(),
             filesystem_url: get_endpoint_uri(None, &account, "dfs").unwrap(),
             storage_credentials,
-            http_client,
             account,
             pipeline,
         })
@@ -121,14 +95,12 @@ impl StorageClient {
 
     /// Create a new client for customized emulator endpoints.
     pub fn new_emulator(
-        http_client: Arc<dyn HttpClient>,
         blob_storage_url: &Url,
         table_storage_url: &Url,
         queue_storage_url: &Url,
         filesystem_url: &Url,
     ) -> Arc<Self> {
         Self::new_emulator_with_account(
-            http_client,
             blob_storage_url,
             table_storage_url,
             queue_storage_url,
@@ -140,13 +112,11 @@ impl StorageClient {
 
     /// Create a new client using the default HttpClient and the default emulator endpoints.
     pub fn new_emulator_default() -> Arc<Self> {
-        let http_client = azure_core::new_http_client();
         let blob_storage_url = Url::parse("http://127.0.0.1:10000").unwrap();
         let queue_storage_url = Url::parse("http://127.0.0.1:10001").unwrap();
         let table_storage_url = Url::parse("http://127.0.0.1:10002").unwrap();
         let filesystem_url = Url::parse("http://127.0.0.1:10004").unwrap();
         Self::new_emulator(
-            http_client,
             &blob_storage_url,
             &table_storage_url,
             &queue_storage_url,
@@ -155,7 +125,6 @@ impl StorageClient {
     }
 
     pub fn new_emulator_with_account<A, K>(
-        http_client: Arc<dyn HttpClient>,
         blob_storage_url: &Url,
         table_storage_url: &Url,
         queue_storage_url: &Url,
@@ -183,17 +152,12 @@ impl StorageClient {
             queue_storage_secondary_url: queue_storage_url,
             filesystem_url,
             storage_credentials: StorageCredentials::Key(account.clone(), key),
-            http_client,
             account,
             pipeline,
         })
     }
 
-    pub fn new_sas_token<A, S>(
-        http_client: Arc<dyn HttpClient>,
-        account: A,
-        sas_token: S,
-    ) -> azure_core::Result<Arc<Self>>
+    pub fn new_sas_token<A, S>(account: A, sas_token: S) -> azure_core::Result<Arc<Self>>
     where
         A: Into<String>,
         S: AsRef<str>,
@@ -216,17 +180,12 @@ impl StorageClient {
             )?,
             filesystem_url: get_endpoint_uri(None, &account, "dfs")?,
             storage_credentials,
-            http_client,
             account,
             pipeline,
         }))
     }
 
-    pub fn new_bearer_token<A, BT>(
-        http_client: Arc<dyn HttpClient>,
-        account: A,
-        bearer_token: BT,
-    ) -> Arc<Self>
+    pub fn new_bearer_token<A, BT>(account: A, bearer_token: BT) -> Arc<Self>
     where
         A: Into<String>,
         BT: Into<String>,
@@ -249,14 +208,12 @@ impl StorageClient {
             .unwrap(),
             filesystem_url: get_endpoint_uri(None, &account, "dfs").unwrap(),
             storage_credentials,
-            http_client,
             account,
             pipeline,
         })
     }
 
     pub fn new_token_credential<A>(
-        http_client: Arc<dyn HttpClient>,
         account: A,
         token_credential: Arc<dyn TokenCredential>,
     ) -> Arc<Self>
@@ -280,16 +237,12 @@ impl StorageClient {
             .unwrap(),
             filesystem_url: get_endpoint_uri(None, &account, "dfs").unwrap(),
             storage_credentials,
-            http_client,
             account,
             pipeline,
         })
     }
 
-    pub fn new_connection_string(
-        http_client: Arc<dyn HttpClient>,
-        connection_string: &str,
-    ) -> azure_core::Result<Arc<Self>> {
+    pub fn new_connection_string(connection_string: &str) -> azure_core::Result<Arc<Self>> {
         match ConnectionString::new(connection_string)? {
             ConnectionString {
                 account_name: Some(account),
@@ -315,7 +268,6 @@ impl StorageClient {
                     queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
                     queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
                     filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
-                    http_client,
                     account: account.to_string(),
                     pipeline
                 }))
@@ -339,7 +291,6 @@ impl StorageClient {
                     queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
                     queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
                     filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
-                    http_client,
                     account: account.to_string(),
                     pipeline
             }))},
@@ -362,7 +313,6 @@ impl StorageClient {
                 queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
                 queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
                 filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
-                http_client,
                 account: account.to_string(),
                 pipeline
             }))
@@ -373,10 +323,6 @@ impl StorageClient {
                 ))
             }
         }
-    }
-
-    pub fn http_client(&self) -> &dyn HttpClient {
-        self.http_client.as_ref()
     }
 
     pub fn blob_storage_url(&self) -> &Url {
@@ -515,6 +461,30 @@ impl StorageClient {
         }
         Ok(url)
     }
+}
+
+fn get_sas_token_parms(sas_token: &str) -> azure_core::Result<Vec<(String, String)>> {
+    // Any base url will do: we just need to parse the SAS token
+    // to get its query pairs.
+    let base_url = Url::parse("https://blob.core.windows.net").unwrap();
+
+    let url = Url::options().base_url(Some(&base_url));
+
+    // this code handles the leading ?
+    // we support both with or without
+    let url = if sas_token.starts_with('?') {
+        url.parse(sas_token)
+    } else {
+        url.parse(&format!("?{}", sas_token))
+    }
+    .with_context(ErrorKind::DataConversion, || {
+        format!("failed to parse SAS token: {sas_token}")
+    })?;
+
+    Ok(url
+        .query_pairs()
+        .map(|p| (String::from(p.0), String::from(p.1)))
+        .collect())
 }
 
 fn get_endpoint_uri(

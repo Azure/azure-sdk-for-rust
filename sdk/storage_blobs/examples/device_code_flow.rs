@@ -72,7 +72,6 @@ async fn main() -> azure_core::Result<()> {
     // using the access token.
 
     let storage_client = StorageClient::new_bearer_token(
-        http_client.clone(),
         &storage_account_name,
         authorization.access_token().secret(),
     );

@@ -16,9 +16,7 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("Please pass the queue name as first parameter");
 
-    let http_client = azure_core::new_http_client();
-
-    let storage_account = StorageClient::new_access_key(http_client.clone(), &account, &access_key);
+    let storage_account = StorageClient::new_access_key(&account, &access_key);
 
     let queue = storage_account.queue_client(queue_name);
 

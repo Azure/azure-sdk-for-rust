@@ -71,7 +71,5 @@ fn initialize() -> Arc<StorageClient> {
     let access_key =
         std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
-    let http_client = azure_core::new_http_client();
-
-    StorageClient::new_access_key(http_client.clone(), &account, &access_key)
+    StorageClient::new_access_key(&account, &access_key)
 }
