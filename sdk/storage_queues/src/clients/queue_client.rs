@@ -27,32 +27,6 @@ impl QueueClient {
         }
     }
 
-    pub(crate) async fn send(
-        &self,
-        context: &mut Context,
-        request: &mut Request,
-    ) -> azure_core::Result<Response> {
-        self.storage_client
-            .send(context, request, ServiceType::Queue)
-            .await
-    }
-
-    pub(crate) fn storage_client(&self) -> &StorageClient {
-        &self.storage_client
-    }
-
-    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
-    where
-        I: IntoIterator<Item = &'a str>,
-    {
-        self.storage_client
-            .queue_url_with_segments(Some(self.queue_name.as_str()).into_iter().chain(segments))
-    }
-
-    pub fn queue_name(&self) -> &str {
-        &self.queue_name
-    }
-
     /// Creates the queue.
     pub fn create(&self) -> CreateQueueBuilder {
         CreateQueueBuilder::new(self.clone())
@@ -123,12 +97,35 @@ impl QueueClient {
         ClearMessagesBuilder::new(self.clone())
     }
 
-    /// Pass a valid `PopReceipt` to a `QueueClient`
-    /// to obtain a `PopReceiptClient` back. The `PopReceiptClient`
-    /// can then delete or update the message
-    /// referenced by the passed `PopReceipt`.
+    /// Turn into a `PopReceiptClient`.
     pub fn pop_receipt_client(&self, pop_receipt: impl Into<PopReceipt>) -> PopReceiptClient {
-        PopReceiptClient::new(self.clone(), pop_receipt)
+        PopReceiptClient::new(self.clone(), pop_receipt.into())
+    }
+
+    pub fn queue_name(&self) -> &str {
+        &self.queue_name
+    }
+
+    pub(crate) async fn send(
+        &self,
+        context: &mut Context,
+        request: &mut Request,
+    ) -> azure_core::Result<Response> {
+        self.storage_client
+            .send(context, request, ServiceType::Queue)
+            .await
+    }
+
+    pub(crate) fn storage_client(&self) -> &StorageClient {
+        &self.storage_client
+    }
+
+    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
+    where
+        I: IntoIterator<Item = &'a str>,
+    {
+        self.storage_client
+            .queue_url_with_segments(Some(self.queue_name.as_str()).into_iter().chain(segments))
     }
 }
 

@@ -9,11 +9,31 @@ pub struct PopReceiptClient {
 }
 
 impl PopReceiptClient {
-    pub(crate) fn new(queue_client: QueueClient, pop_receipt: impl Into<PopReceipt>) -> Self {
+    pub(crate) fn new(queue_client: QueueClient, pop_receipt: PopReceipt) -> Self {
         Self {
             queue_client,
-            pop_receipt: pop_receipt.into(),
+            pop_receipt,
         }
+    }
+
+    /// Updates the message.
+    ///
+    /// The message must not have been made visible again
+    /// or this call would fail.
+    pub fn update(
+        &self,
+        body: impl Into<String>,
+        visibility_timeout: impl Into<VisibilityTimeout>,
+    ) -> UpdateMessageBuilder {
+        UpdateMessageBuilder::new(self.clone(), body.into(), visibility_timeout.into())
+    }
+
+    /// Deletes the message.
+    ///
+    /// The message must not have been made visible again
+    /// or this call would fail.
+    pub fn delete(&self) -> DeleteMessageBuilder {
+        DeleteMessageBuilder::new(self.clone())
     }
 
     pub(crate) async fn send(
@@ -39,25 +59,5 @@ impl PopReceiptClient {
             .append_pair("popreceipt", self.pop_receipt.pop_receipt());
 
         Ok(url)
-    }
-
-    /// Updates the message.
-    ///
-    /// The message must not have been made visible again
-    /// or this call would fail.
-    pub fn update(
-        &self,
-        body: impl Into<String>,
-        visibility_timeout: impl Into<VisibilityTimeout>,
-    ) -> UpdateMessageBuilder {
-        UpdateMessageBuilder::new(self.clone(), body.into(), visibility_timeout.into())
-    }
-
-    /// Deletes the message.
-    ///
-    /// The message must not have been made visible again
-    /// or this call would fail.
-    pub fn delete(&self) -> DeleteMessageBuilder {
-        DeleteMessageBuilder::new(self.clone())
     }
 }
