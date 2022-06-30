@@ -71,12 +71,11 @@ async fn main() -> azure_core::Result<()> {
     // this example we are creating an Azure Storage client
     // using the access token.
 
-    let storage_account_client = StorageAccountClient::new_bearer_token(
-        http_client.clone(),
+    let storage_client = StorageClient::new_bearer_token(
         &storage_account_name,
         authorization.access_token().secret(),
     );
-    let blob_service_client = storage_account_client.blob_service_client();
+    let blob_service_client = storage_client.blob_service_client();
 
     // now we enumerate the containers in the
     // specified storage account.

@@ -39,10 +39,7 @@ impl FindBlobsByTagsBuilder {
     // TODO: Make this a stream instead of a `Future`
     pub fn into_future(mut self) -> FindBlobsByTags {
         Box::pin(async move {
-            let mut request = self
-                .client
-                .storage_account_client()
-                .blob_storage_request(azure_core::Method::Get)?;
+            let mut request = self.client.blob_storage_request(azure_core::Method::Get)?;
 
             self.timeout.append_to_url_query(request.url_mut());
             request
@@ -56,7 +53,6 @@ impl FindBlobsByTagsBuilder {
 
             let response = self
                 .client
-                .storage_account_client()
                 .send(&mut self.context, &mut request, ServiceType::Blob)
                 .await?;
 

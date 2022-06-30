@@ -1,34 +1,20 @@
 use crate::{operations::*, prelude::*};
 use azure_core::{headers::Headers, Context, Method, Request, Response, Url};
-use azure_storage::core::clients::StorageAccountClient;
+use azure_storage::core::clients::StorageClient;
 use bytes::Bytes;
-use std::sync::Arc;
-
-pub trait AsPartitionKeyClient<PK: Into<String>> {
-    fn partition_key_client(&self, partition_key: PK) -> Arc<PartitionKeyClient>;
-}
-
-impl<PK: Into<String>> AsPartitionKeyClient<PK> for Arc<TableClient> {
-    fn partition_key_client(&self, partition_key: PK) -> Arc<PartitionKeyClient> {
-        PartitionKeyClient::new(self.clone(), partition_key)
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct PartitionKeyClient {
-    table_client: Arc<TableClient>,
+    table_client: TableClient,
     partition_key: String,
 }
 
 impl PartitionKeyClient {
-    pub(crate) fn new<PK: Into<String>>(
-        table_client: Arc<TableClient>,
-        partition_key: PK,
-    ) -> Arc<Self> {
-        Arc::new(Self {
+    pub(crate) fn new<PK: Into<String>>(table_client: TableClient, partition_key: PK) -> Self {
+        Self {
             table_client,
             partition_key: partition_key.into(),
-        })
+        }
     }
 
     pub fn transaction(&self) -> TransactionBuilder {
@@ -39,12 +25,16 @@ impl PartitionKeyClient {
         &self.partition_key
     }
 
+    pub fn entity_client<RK: Into<String>>(&self, row_key: RK) -> azure_core::Result<EntityClient> {
+        EntityClient::new(self.clone(), row_key)
+    }
+
     pub(crate) fn table_client(&self) -> &TableClient {
         &self.table_client
     }
 
-    pub(crate) fn storage_account_client(&self) -> &StorageAccountClient {
-        self.table_client.storage_account_client()
+    pub(crate) fn storage_client(&self) -> &StorageClient {
+        self.table_client.storage_client()
     }
 
     pub(crate) fn finalize_request(
@@ -86,8 +76,8 @@ mod integration_tests {
         pub surname: String,
     }
 
-    fn get_emulator_client() -> Arc<TableServiceClient> {
-        let storage_account = StorageAccountClient::new_emulator_default().storage_client();
+    fn get_emulator_client() -> TableServiceClient {
+        let storage_account = StorageClient::new_emulator_default();
         storage_account
             .table_service_client()
             .expect("a table service client")

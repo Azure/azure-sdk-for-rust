@@ -6,34 +6,23 @@ use azure_core::{
 };
 use bytes::Bytes;
 use serde::{de::DeserializeOwned, Serialize};
-use std::sync::Arc;
 use url::Url;
-
-pub trait AsEntityClient<RK: Into<String>> {
-    fn entity_client(&self, row_key: RK) -> azure_core::Result<Arc<EntityClient>>;
-}
-
-impl<RK: Into<String>> AsEntityClient<RK> for Arc<PartitionKeyClient> {
-    fn entity_client(&self, row_key: RK) -> azure_core::Result<Arc<EntityClient>> {
-        EntityClient::new(self.clone(), row_key)
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct EntityClient {
-    partition_key_client: Arc<PartitionKeyClient>,
+    partition_key_client: PartitionKeyClient,
     row_key: String,
     url: Url,
 }
 
 impl EntityClient {
     pub(crate) fn new<RK: Into<String>>(
-        partition_key_client: Arc<PartitionKeyClient>,
+        partition_key_client: PartitionKeyClient,
         row_key: RK,
-    ) -> azure_core::Result<Arc<Self>> {
+    ) -> azure_core::Result<Self> {
         let row_key = row_key.into();
         let mut url = partition_key_client
-            .storage_account_client()
+            .storage_client()
             .table_storage_url()
             .to_owned();
         url.path_segments_mut()
@@ -50,11 +39,11 @@ impl EntityClient {
                 &row_key
             ));
 
-        Ok(Arc::new(Self {
+        Ok(Self {
             partition_key_client,
             row_key,
             url,
-        }))
+        })
     }
 
     pub fn row_key(&self) -> &str {
@@ -172,8 +161,8 @@ mod integration_tests {
         pub country: String,
     }
 
-    fn get_emulator_client() -> Arc<TableServiceClient> {
-        let storage_account = StorageAccountClient::new_emulator_default().storage_client();
+    fn get_emulator_client() -> TableServiceClient {
+        let storage_account = StorageClient::new_emulator_default();
         storage_account
             .table_service_client()
             .expect("a table service client")

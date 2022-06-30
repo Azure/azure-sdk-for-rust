@@ -14,7 +14,6 @@ use chrono::{FixedOffset, Utc};
 use futures::StreamExt;
 use std::{
     ops::{Add, Deref},
-    sync::Arc,
     time::Duration,
 };
 use url::Url;
@@ -24,7 +23,7 @@ use uuid::Uuid;
 async fn create_and_delete_container() -> azure_core::Result<()> {
     let container_name = format!("create-{}", Uuid::new_v4().to_string());
 
-    let storage_client = initialize().storage_client();
+    let storage_client = initialize();
     let blob_service = storage_client.blob_service_client();
     let container = storage_client.container_client(&container_name);
 
@@ -114,7 +113,7 @@ async fn put_and_get_block_list() {
     let container_name = format!("sdkrust{}", u);
     let name = "asd - ()krustputblock.txt";
 
-    let storage = initialize().storage_client();
+    let storage = initialize();
     let container = storage.container_client(&container_name);
     let blob = container.blob_client(name);
 
@@ -204,7 +203,7 @@ async fn put_and_get_block_list() {
 
 #[tokio::test]
 async fn list_containers() {
-    let storage = initialize().storage_client();
+    let storage = initialize();
     let blob_service = storage.blob_service_client();
     trace!("running list_containers");
 
@@ -225,7 +224,7 @@ async fn put_block_blob() {
     let container_name: &'static str = "rust-upload-test";
     let data = Bytes::from_static(b"abcdef");
 
-    let storage = initialize().storage_client();
+    let storage = initialize();
     let blob_service = storage.blob_service_client();
     let container = storage.container_client(container_name);
     let blob = container.blob_client(blob_name);
@@ -269,7 +268,7 @@ async fn copy_blob() -> azure_core::Result<()> {
     let container_name = format!("copy-blob-{}", Uuid::new_v4().to_string());
     let data = Bytes::from_static(b"abcdef");
 
-    let storage = initialize().storage_client();
+    let storage = initialize();
     let blob_service = storage.blob_service_client();
     let container = storage.container_client(&container_name);
     let blob = container.blob_client(blob_name);
@@ -333,7 +332,7 @@ async fn put_block_blob_and_get_properties() -> azure_core::Result<()> {
     let container_name = format!("properties-{}", Uuid::new_v4().to_string());
     let data = Bytes::from_static(b"abcdef");
 
-    let storage = initialize().storage_client();
+    let storage = initialize();
     let blob_service = storage.blob_service_client();
     let container = storage.container_client(&container_name);
     let blob = container.blob_client(blob_name);
@@ -385,7 +384,7 @@ async fn set_blobtier() {
     let container_name: &'static str = "rust-set-blobtier-test";
     let data = Bytes::from_static(b"abcdef");
 
-    let storage = initialize().storage_client();
+    let storage = initialize();
     let blob_service = storage.blob_service_client();
     let container = storage.container_client(container_name);
     let blob = container.blob_client(blob_name);
@@ -485,10 +484,7 @@ async fn set_blobtier() {
 #[allow(dead_code)]
 fn send_check() {
     let client = initialize();
-    let blob = client
-        .storage_client()
-        .container_client("a")
-        .blob_client("b");
+    let blob = client.container_client("a").blob_client("b");
 
     let _ = requires_send_future(blob.acquire_lease(Duration::from_secs(10)).into_future());
     let _ = requires_send_future(
@@ -497,13 +493,11 @@ fn send_check() {
     );
 }
 
-fn initialize() -> Arc<StorageAccountClient> {
+fn initialize() -> StorageClient {
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
     let access_key =
         std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
-    let http_client = azure_core::new_http_client();
-
-    StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key)
+    StorageClient::new_access_key(&account, &access_key)
 }

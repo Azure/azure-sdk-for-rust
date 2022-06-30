@@ -1,4 +1,4 @@
-use crate::{container::operations::*, prelude::PublicAccess};
+use crate::{clients::*, container::operations::*, prelude::PublicAccess};
 use azure_core::{
     error::{Error, ErrorKind},
     headers::Headers,
@@ -7,45 +7,36 @@ use azure_core::{
 };
 use azure_core::{Method, Url};
 use azure_storage::{
-    core::clients::{
-        AsStorageClient, ServiceType, StorageAccountClient, StorageClient, StorageCredentials,
-    },
+    core::clients::{ServiceType, StorageClient, StorageCredentials},
     shared_access_signature::{
         service_sas::{BlobSharedAccessSignatureBuilder, BlobSignedResource, SetResources},
         SasToken,
     },
 };
 use bytes::Bytes;
-use std::sync::Arc;
 
 pub trait AsContainerClient<CN: Into<String>> {
-    fn container_client(&self, container_name: CN) -> Arc<ContainerClient>;
+    fn container_client(&self, container_name: CN) -> ContainerClient;
 }
 
-impl<CN: Into<String>> AsContainerClient<CN> for Arc<StorageClient> {
-    fn container_client(&self, container_name: CN) -> Arc<ContainerClient> {
+impl<CN: Into<String>> AsContainerClient<CN> for StorageClient {
+    fn container_client(&self, container_name: CN) -> ContainerClient {
         ContainerClient::new(self.clone(), container_name.into())
-    }
-}
-
-impl<CN: Into<String>> AsContainerClient<CN> for Arc<StorageAccountClient> {
-    fn container_client(&self, container_name: CN) -> Arc<ContainerClient> {
-        self.storage_client().container_client(container_name)
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct ContainerClient {
-    storage_client: Arc<StorageClient>,
+    storage_client: StorageClient,
     container_name: String,
 }
 
 impl ContainerClient {
-    pub(crate) fn new(storage_client: Arc<StorageClient>, container_name: String) -> Arc<Self> {
-        Arc::new(Self {
+    pub(crate) fn new(storage_client: StorageClient, container_name: String) -> Self {
+        Self {
             storage_client,
             container_name,
-        })
+        }
     }
 
     pub fn container_name(&self) -> &str {
@@ -53,11 +44,7 @@ impl ContainerClient {
     }
 
     pub(crate) fn storage_client(&self) -> &StorageClient {
-        self.storage_client.as_ref()
-    }
-
-    pub(crate) fn storage_account_client(&self) -> &StorageAccountClient {
-        self.storage_client.storage_account_client()
+        &self.storage_client
     }
 
     pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
@@ -106,6 +93,14 @@ impl ContainerClient {
         BreakLeaseBuilder::new(self.clone())
     }
 
+    pub fn container_lease_client(&self, lease_id: LeaseId) -> ContainerLeaseClient {
+        ContainerLeaseClient::new(self.clone(), lease_id)
+    }
+
+    pub fn blob_client<BN: Into<String>>(&self, blob_name: BN) -> BlobClient {
+        BlobClient::new(self.clone(), blob_name.into())
+    }
+
     pub(crate) async fn send(
         &self,
         context: &mut Context,
@@ -132,11 +127,11 @@ impl ContainerClient {
     ) -> azure_core::Result<BlobSharedAccessSignatureBuilder<(), SetResources, ()>> {
         let canonicalized_resource = format!(
             "/blob/{}/{}",
-            self.storage_account_client().account(),
+            self.storage_client().account(),
             self.container_name(),
         );
 
-        match self.storage_account_client().storage_credentials() {
+        match self.storage_client().storage_credentials() {
             StorageCredentials::Key(ref _account, ref key) => Ok(
                 BlobSharedAccessSignatureBuilder::new(key.to_string(), canonicalized_resource)
                     .with_resources(BlobSignedResource::Container),
@@ -163,8 +158,8 @@ mod integration_tests {
     use super::*;
     use crate::{blob::clients::AsBlobClient, core::prelude::*};
 
-    fn get_emulator_client(container_name: &str) -> Arc<ContainerClient> {
-        let storage_account = StorageAccountClient::new_emulator_default().storage_client();
+    fn get_emulator_client(container_name: &str) -> ContainerClient {
+        let storage_account = StorageClient::new_emulator_default();
 
         storage_account.container_client(container_name)
     }

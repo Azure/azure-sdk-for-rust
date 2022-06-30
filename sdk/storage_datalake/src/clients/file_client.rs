@@ -29,13 +29,10 @@ impl PathClient for FileClient {
 }
 
 impl FileClient {
-    pub(crate) fn new<P>(file_system_client: FileSystemClient, path: P) -> Self
-    where
-        P: Into<String>,
-    {
+    pub(crate) fn new(file_system_client: FileSystemClient, path: String) -> Self {
         Self {
             file_system_client,
-            file_path: path.into(),
+            file_path: path,
         }
     }
 

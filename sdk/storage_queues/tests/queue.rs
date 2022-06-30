@@ -16,18 +16,13 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
 
     let queue_name = format!("sdk-{}", Uuid::new_v4());
 
-    let http_client = azure_core::new_http_client();
+    let storage_client = StorageClient::new_access_key(&account, &access_key);
 
-    let storage_account_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key);
-
-    let queue_service_client = storage_account_client.queue_service_client();
+    let queue_service_client = storage_client.queue_service_client();
 
     println!("creating queue {}", queue_name);
 
-    let queue = storage_account_client
-        .storage_client()
-        .queue_client(queue_name);
+    let queue = storage_client.queue_client(queue_name);
 
     // this step is optional but here we show
     // how to add metadata to a new queue.

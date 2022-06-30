@@ -1,34 +1,26 @@
 use crate::{operations::*, QueueServiceProperties};
 use azure_core::{Context, Request, Response};
-use azure_storage::core::clients::{
-    AsStorageClient, ServiceType, StorageAccountClient, StorageClient,
-};
-use std::{fmt::Debug, sync::Arc};
+use azure_storage::core::clients::{ServiceType, StorageClient};
+use std::fmt::Debug;
 
 pub trait AsQueueServiceClient {
-    fn queue_service_client(&self) -> Arc<QueueServiceClient>;
+    fn queue_service_client(&self) -> QueueServiceClient;
 }
 
-impl AsQueueServiceClient for Arc<StorageClient> {
-    fn queue_service_client(&self) -> Arc<QueueServiceClient> {
+impl AsQueueServiceClient for StorageClient {
+    fn queue_service_client(&self) -> QueueServiceClient {
         QueueServiceClient::new(self.clone())
-    }
-}
-
-impl AsQueueServiceClient for Arc<StorageAccountClient> {
-    fn queue_service_client(&self) -> Arc<QueueServiceClient> {
-        self.storage_client().queue_service_client()
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct QueueServiceClient {
-    pub(crate) storage_client: Arc<StorageClient>,
+    pub(crate) storage_client: StorageClient,
 }
 
 impl QueueServiceClient {
-    pub(crate) fn new(storage_client: Arc<StorageClient>) -> Arc<Self> {
-        Arc::new(Self { storage_client })
+    pub(crate) fn new(storage_client: StorageClient) -> Self {
+        Self { storage_client }
     }
 
     pub fn list_queues(&self) -> ListQueuesBuilder {

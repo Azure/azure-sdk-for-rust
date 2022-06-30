@@ -43,7 +43,6 @@ impl ListQueuesBuilder {
                 let mut url = this
                     .service_client
                     .storage_client
-                    .storage_account_client()
                     .queue_storage_url()
                     .to_owned();
 

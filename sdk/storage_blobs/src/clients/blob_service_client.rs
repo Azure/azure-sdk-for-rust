@@ -1,34 +1,25 @@
 use crate::container::operations::ListContainersBuilder;
 use azure_core::{Context, Request, Response};
-use azure_storage::core::clients::{
-    AsStorageClient, ServiceType, StorageAccountClient, StorageClient,
-};
-use std::sync::Arc;
+use azure_storage::core::clients::{ServiceType, StorageClient};
 
 pub trait AsBlobServiceClient {
-    fn blob_service_client(&self) -> Arc<BlobServiceClient>;
+    fn blob_service_client(&self) -> BlobServiceClient;
 }
 
-impl AsBlobServiceClient for Arc<StorageClient> {
-    fn blob_service_client(&self) -> Arc<BlobServiceClient> {
+impl AsBlobServiceClient for StorageClient {
+    fn blob_service_client(&self) -> BlobServiceClient {
         BlobServiceClient::new(self.clone())
-    }
-}
-
-impl AsBlobServiceClient for Arc<StorageAccountClient> {
-    fn blob_service_client(&self) -> Arc<BlobServiceClient> {
-        self.storage_client().blob_service_client()
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct BlobServiceClient {
-    pub(crate) storage_client: Arc<StorageClient>,
+    pub(crate) storage_client: StorageClient,
 }
 
 impl BlobServiceClient {
-    pub(crate) fn new(storage_client: Arc<StorageClient>) -> Arc<Self> {
-        Arc::new(Self { storage_client })
+    pub(crate) fn new(storage_client: StorageClient) -> Self {
+        Self { storage_client }
     }
 
     pub fn list_containers(&self) -> ListContainersBuilder {

@@ -1,42 +1,39 @@
 use crate::{operations::*, prelude::*};
 use azure_core::{Context, Request, Response};
 use azure_storage::core::clients::StorageClient;
-use std::sync::Arc;
-
-pub trait AsPopReceiptClient {
-    /// Implement this trait to convert the calling client into a
-    /// `PopReceiptClient`. This trait is used to make sure the
-    /// returned client is wrapped in an `Arc` to avoid
-    /// unnecessary copying while keeping the clients
-    /// type signature simple (without lifetimes).
-    fn pop_receipt_client(&self, pop_receipt: impl Into<PopReceipt>) -> Arc<PopReceiptClient>;
-}
-
-impl AsPopReceiptClient for Arc<QueueClient> {
-    /// Pass a valid `PopReceipt` to a `QueueClient`
-    /// to obtain a `PopReceiptClient` back. The `PopReceiptClient`
-    /// can then delete or update the message
-    /// referenced by the passed `PopReceipt`.
-    fn pop_receipt_client(&self, pop_receipt: impl Into<PopReceipt>) -> Arc<PopReceiptClient> {
-        PopReceiptClient::new(self.clone(), pop_receipt)
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct PopReceiptClient {
-    queue_client: Arc<QueueClient>,
+    queue_client: QueueClient,
     pop_receipt: PopReceipt,
 }
 
 impl PopReceiptClient {
-    pub(crate) fn new(
-        queue_client: Arc<QueueClient>,
-        pop_receipt: impl Into<PopReceipt>,
-    ) -> Arc<Self> {
-        Arc::new(Self {
+    pub(crate) fn new(queue_client: QueueClient, pop_receipt: PopReceipt) -> Self {
+        Self {
             queue_client,
-            pop_receipt: pop_receipt.into(),
-        })
+            pop_receipt,
+        }
+    }
+
+    /// Updates the message.
+    ///
+    /// The message must not have been made visible again
+    /// or this call would fail.
+    pub fn update(
+        &self,
+        body: impl Into<String>,
+        visibility_timeout: impl Into<VisibilityTimeout>,
+    ) -> UpdateMessageBuilder {
+        UpdateMessageBuilder::new(self.clone(), body.into(), visibility_timeout.into())
+    }
+
+    /// Deletes the message.
+    ///
+    /// The message must not have been made visible again
+    /// or this call would fail.
+    pub fn delete(&self) -> DeleteMessageBuilder {
+        DeleteMessageBuilder::new(self.clone())
     }
 
     pub(crate) async fn send(
@@ -62,25 +59,5 @@ impl PopReceiptClient {
             .append_pair("popreceipt", self.pop_receipt.pop_receipt());
 
         Ok(url)
-    }
-
-    /// Updates the message.
-    ///
-    /// The message must not have been made visible again
-    /// or this call would fail.
-    pub fn update(
-        &self,
-        body: impl Into<String>,
-        visibility_timeout: impl Into<VisibilityTimeout>,
-    ) -> UpdateMessageBuilder {
-        UpdateMessageBuilder::new(self.clone(), body.into(), visibility_timeout.into())
-    }
-
-    /// Deletes the message.
-    ///
-    /// The message must not have been made visible again
-    /// or this call would fail.
-    pub fn delete(&self) -> DeleteMessageBuilder {
-        DeleteMessageBuilder::new(self.clone())
     }
 }

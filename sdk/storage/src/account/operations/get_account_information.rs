@@ -26,10 +26,7 @@ impl GetAccountInformationBuilder {
 
     pub fn into_future(mut self) -> GetAccountInformation {
         Box::pin(async move {
-            let mut request = self
-                .client
-                .storage_account_client()
-                .blob_storage_request(azure_core::Method::Get)?;
+            let mut request = self.client.blob_storage_request(azure_core::Method::Get)?;
 
             for (k, v) in [("restype", "account"), ("comp", "properties")].iter() {
                 request.url_mut().query_pairs_mut().append_pair(k, v);
@@ -37,7 +34,6 @@ impl GetAccountInformationBuilder {
 
             let response = self
                 .client
-                .storage_account_client()
                 .pipeline()
                 .send(&mut self.context, &mut request)
                 .await?;

@@ -1,64 +1,30 @@
-use crate::{operations::*, QueueStoredAccessPolicy};
+use crate::{operations::*, PopReceipt, PopReceiptClient, QueueStoredAccessPolicy};
 use azure_core::{prelude::*, Context, Request, Response};
-use azure_storage::core::clients::{
-    AsStorageClient, ServiceType, StorageAccountClient, StorageClient,
-};
-use std::{fmt::Debug, sync::Arc};
+use azure_storage::core::clients::{ServiceType, StorageClient};
+use std::fmt::Debug;
 
 pub trait AsQueueClient<QN: Into<String>> {
-    fn queue_client(&self, queue_name: QN) -> Arc<QueueClient>;
+    fn queue_client(&self, queue_name: QN) -> QueueClient;
 }
 
-impl<QN: Into<String>> AsQueueClient<QN> for Arc<StorageClient> {
-    fn queue_client(&self, queue_name: QN) -> Arc<QueueClient> {
+impl<QN: Into<String>> AsQueueClient<QN> for StorageClient {
+    fn queue_client(&self, queue_name: QN) -> QueueClient {
         QueueClient::new(self.clone(), queue_name.into())
-    }
-}
-
-impl<QN: Into<String>> AsQueueClient<QN> for Arc<StorageAccountClient> {
-    fn queue_client(&self, queue_name: QN) -> Arc<QueueClient> {
-        self.storage_client().queue_client(queue_name)
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct QueueClient {
-    storage_client: Arc<StorageClient>,
+    storage_client: StorageClient,
     queue_name: String,
 }
 
 impl QueueClient {
-    pub(crate) fn new(storage_client: Arc<StorageClient>, queue_name: String) -> Arc<Self> {
-        Arc::new(Self {
+    pub(crate) fn new(storage_client: StorageClient, queue_name: String) -> Self {
+        Self {
             storage_client,
             queue_name,
-        })
-    }
-
-    pub(crate) async fn send(
-        &self,
-        context: &mut Context,
-        request: &mut Request,
-    ) -> azure_core::Result<Response> {
-        self.storage_client
-            .send(context, request, ServiceType::Queue)
-            .await
-    }
-
-    pub(crate) fn storage_client(&self) -> &StorageClient {
-        self.storage_client.as_ref()
-    }
-
-    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
-    where
-        I: IntoIterator<Item = &'a str>,
-    {
-        self.storage_client
-            .queue_url_with_segments(Some(self.queue_name.as_str()).into_iter().chain(segments))
-    }
-
-    pub fn queue_name(&self) -> &str {
-        &self.queue_name
+        }
     }
 
     /// Creates the queue.
@@ -130,6 +96,37 @@ impl QueueClient {
     pub fn clear_messages(&self) -> ClearMessagesBuilder {
         ClearMessagesBuilder::new(self.clone())
     }
+
+    /// Turn into a `PopReceiptClient`.
+    pub fn pop_receipt_client(&self, pop_receipt: impl Into<PopReceipt>) -> PopReceiptClient {
+        PopReceiptClient::new(self.clone(), pop_receipt.into())
+    }
+
+    pub fn queue_name(&self) -> &str {
+        &self.queue_name
+    }
+
+    pub(crate) async fn send(
+        &self,
+        context: &mut Context,
+        request: &mut Request,
+    ) -> azure_core::Result<Response> {
+        self.storage_client
+            .send(context, request, ServiceType::Queue)
+            .await
+    }
+
+    pub(crate) fn storage_client(&self) -> &StorageClient {
+        &self.storage_client
+    }
+
+    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
+    where
+        I: IntoIterator<Item = &'a str>,
+    {
+        self.storage_client
+            .queue_url_with_segments(Some(self.queue_name.as_str()).into_iter().chain(segments))
+    }
 }
 
 #[cfg(test)]
@@ -138,8 +135,8 @@ mod integration_tests {
     use super::*;
     use crate::{core::prelude::*, queue::clients::AsQueueClient};
 
-    fn get_emulator_client(queue_name: &str) -> Arc<QueueClient> {
-        let storage_account = StorageAccountClient::new_emulator_default().storage_client();
+    fn get_emulator_client(queue_name: &str) -> QueueClient {
+        let storage_account = StorageClient::new_emulator_default();
         storage_account.queue_client(queue_name)
     }
 

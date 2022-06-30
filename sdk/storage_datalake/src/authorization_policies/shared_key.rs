@@ -38,7 +38,7 @@ impl Policy for SharedKeyAuthorizationPolicy {
         request.insert_header(
             azure_core::headers::VERSION,
             HeaderValue::from_static("2019-12-12"),
-        ); // TODO: Remove duplication with storage_account_client.rs
+        ); // TODO: Remove duplication with storage_client.rs
 
         let auth = generate_authorization(
             request.headers(),

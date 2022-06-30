@@ -2,30 +2,19 @@ use crate::{blob::operations::*, prelude::*};
 use azure_core::{headers::Headers, prelude::*, Context, Method, Request, Response, Url};
 use azure_storage::core::prelude::*;
 use bytes::Bytes;
-use std::sync::Arc;
-
-pub trait AsBlobLeaseClient {
-    fn blob_lease_client(&self, lease_id: LeaseId) -> Arc<BlobLeaseClient>;
-}
-
-impl AsBlobLeaseClient for Arc<BlobClient> {
-    fn blob_lease_client(&self, lease_id: LeaseId) -> Arc<BlobLeaseClient> {
-        BlobLeaseClient::new(self.clone(), lease_id)
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct BlobLeaseClient {
-    blob_client: Arc<BlobClient>,
+    blob_client: BlobClient,
     lease_id: LeaseId,
 }
 
 impl BlobLeaseClient {
-    pub(crate) fn new(blob_client: Arc<BlobClient>, lease_id: LeaseId) -> Arc<Self> {
-        Arc::new(Self {
+    pub(crate) fn new(blob_client: BlobClient, lease_id: LeaseId) -> Self {
+        Self {
             blob_client,
             lease_id,
-        })
+        }
     }
 
     pub fn lease_id(&self) -> LeaseId {
@@ -33,8 +22,8 @@ impl BlobLeaseClient {
     }
 
     #[allow(dead_code)]
-    pub(crate) fn storage_account_client(&self) -> &StorageAccountClient {
-        self.blob_client.storage_account_client()
+    pub(crate) fn storage_client(&self) -> &StorageClient {
+        self.blob_client.storage_client()
     }
 
     #[allow(dead_code)]
@@ -44,7 +33,7 @@ impl BlobLeaseClient {
 
     #[allow(dead_code)]
     pub(crate) fn blob_client(&self) -> &BlobClient {
-        self.blob_client.as_ref()
+        &self.blob_client
     }
 
     pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>

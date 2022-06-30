@@ -16,31 +16,20 @@ use azure_storage::core::{
 };
 use bytes::Bytes;
 use futures::StreamExt;
-use std::sync::Arc;
 use url::Url;
-
-pub trait AsBlobClient<BN: Into<String>> {
-    fn blob_client(&self, blob_name: BN) -> Arc<BlobClient>;
-}
-
-impl<BN: Into<String>> AsBlobClient<BN> for Arc<ContainerClient> {
-    fn blob_client(&self, blob_name: BN) -> Arc<BlobClient> {
-        BlobClient::new(self.clone(), blob_name.into())
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct BlobClient {
-    container_client: Arc<ContainerClient>,
+    container_client: ContainerClient,
     blob_name: String,
 }
 
 impl BlobClient {
-    pub(crate) fn new(container_client: Arc<ContainerClient>, blob_name: String) -> Arc<Self> {
-        Arc::new(Self {
+    pub(crate) fn new(container_client: ContainerClient, blob_name: String) -> Self {
+        Self {
             container_client,
             blob_name,
-        })
+        }
     }
 
     pub fn blob_name(&self) -> &str {
@@ -48,15 +37,13 @@ impl BlobClient {
     }
 
     #[allow(dead_code)]
-    pub(crate) fn storage_account_client(&self) -> &StorageAccountClient {
-        self.container_client
-            .storage_client()
-            .storage_account_client()
+    pub(crate) fn storage_client(&self) -> &StorageClient {
+        self.container_client.storage_client()
     }
 
     #[allow(dead_code)]
     pub(crate) fn container_client(&self) -> &ContainerClient {
-        self.container_client.as_ref()
+        &self.container_client
     }
 
     pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
@@ -92,6 +79,10 @@ impl BlobClient {
 
     pub fn get_properties(&self) -> GetPropertiesBuilder {
         GetPropertiesBuilder::new(self.clone())
+    }
+
+    pub fn blob_lease_client(&self, lease_id: LeaseId) -> BlobLeaseClient {
+        BlobLeaseClient::new(self.clone(), lease_id)
     }
 
     /// Creates a builder for setting blob properties.
@@ -198,12 +189,12 @@ impl BlobClient {
     ) -> azure_core::Result<BlobSharedAccessSignatureBuilder<(), SetResources, ()>> {
         let canonicalized_resource = format!(
             "/blob/{}/{}/{}",
-            self.container_client.storage_account_client().account(),
+            self.container_client.storage_client().account(),
             self.container_client.container_name(),
             self.blob_name()
         );
 
-        match self.storage_account_client().storage_credentials() {
+        match self.storage_client().storage_credentials() {
             StorageCredentials::Key(ref _account, ref key) => Ok(
                 BlobSharedAccessSignatureBuilder::new(key.to_string(), canonicalized_resource)
                     .with_resources(BlobSignedResource::Blob),
@@ -258,7 +249,6 @@ impl BlobClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::clients::AsBlobClient;
 
     struct FakeSas {
         token: String,
@@ -270,7 +260,7 @@ mod tests {
     }
 
     fn build_url(container_name: &str, blob_name: &str, sas: &FakeSas) -> url::Url {
-        let storage_account = StorageAccountClient::new_emulator_default().storage_client();
+        let storage_account = StorageClient::new_emulator_default();
         storage_account
             .container_client(container_name)
             .blob_client(blob_name)
@@ -305,7 +295,7 @@ mod integration_tests {
     use crate::blob::clients::AsBlobClient;
 
     fn get_emulator_client(container_name: &str) -> Arc<ContainerClient> {
-        let storage_account = StorageAccountClient::new_emulator_default().storage_client();
+        let storage_account = StorageClient::new_emulator_default();
         storage_account.container_client(container_name)
     }
 

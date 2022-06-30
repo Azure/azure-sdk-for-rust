@@ -13,10 +13,8 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("please specify container name as command line parameter");
 
-    let http_client = azure_core::new_http_client();
     let container_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key)
-            .container_client(&container);
+        StorageClient::new_access_key(&account, &access_key).container_client(&container);
 
     let mut count: usize = 0;
     let mut list_blobs = container_client.list_blobs().into_stream();

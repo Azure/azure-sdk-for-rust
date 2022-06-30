@@ -14,21 +14,18 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("please specify a non-existing container name as command line parameter");
 
-    let http_client = azure_core::new_http_client();
-    let storage_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key)
-            .storage_client();
+    let storage_client = StorageClient::new_access_key(&account, &access_key);
 
     create_container_and_list(storage_client, &container_name).await?;
 
-    let storage_client = StorageAccountClient::new_emulator_default().storage_client();
+    let storage_client = StorageClient::new_emulator_default();
     create_container_and_list(storage_client, &container_name).await?;
 
     Ok(())
 }
 
 async fn create_container_and_list(
-    storage_client: std::sync::Arc<StorageClient>,
+    storage_client: StorageClient,
     container_name: &str,
 ) -> azure_core::Result<()> {
     let container_client = storage_client.container_client(container_name);
