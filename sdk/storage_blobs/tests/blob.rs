@@ -14,7 +14,6 @@ use chrono::{FixedOffset, Utc};
 use futures::StreamExt;
 use std::{
     ops::{Add, Deref},
-    sync::Arc,
     time::Duration,
 };
 use url::Url;

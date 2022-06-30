@@ -3,7 +3,6 @@ use azure_core::{headers::Headers, prelude::*, Context, Method, Request, Respons
 use azure_storage::core::prelude::*;
 use bytes::Bytes;
 
-
 pub trait AsContainerLeaseClient {
     fn container_lease_client(&self, lease_id: LeaseId) -> ContainerLeaseClient;
 }

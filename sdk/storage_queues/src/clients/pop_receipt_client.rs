@@ -2,7 +2,6 @@ use crate::{operations::*, prelude::*};
 use azure_core::{Context, Request, Response};
 use azure_storage::core::clients::StorageClient;
 
-
 pub trait AsPopReceiptClient {
     /// Implement this trait to convert the calling client into a
     /// `PopReceiptClient`. This trait is used to make sure the

@@ -5,7 +5,6 @@ use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::StreamExt;
-use std::sync::Arc;
 
 #[tokio::test]
 async fn put_page_blob() {

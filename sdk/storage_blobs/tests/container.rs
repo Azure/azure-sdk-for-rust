@@ -1,7 +1,7 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::{container::PublicAccess, prelude::*};
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
 #[tokio::test]
 async fn lease() {

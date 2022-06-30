@@ -15,7 +15,6 @@ use azure_storage::{
 };
 use bytes::Bytes;
 
-
 pub trait AsContainerClient<CN: Into<String>> {
     fn container_client(&self, container_name: CN) -> ContainerClient;
 }
