@@ -39,7 +39,6 @@ impl SetQueueServicePropertiesBuilder {
             let mut url = self
                 .service_client
                 .storage_client
-                .storage_account_client()
                 .queue_storage_url()
                 .to_owned();
 

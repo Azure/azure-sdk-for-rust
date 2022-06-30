@@ -1,8 +1,6 @@
 use crate::{operations::*, QueueStoredAccessPolicy};
 use azure_core::{prelude::*, Context, Request, Response};
-use azure_storage::core::clients::{
-    AsStorageClient, ServiceType, StorageAccountClient, StorageClient,
-};
+use azure_storage::core::clients::{ServiceType, StorageClient};
 use std::{fmt::Debug, sync::Arc};
 
 pub trait AsQueueClient<QN: Into<String>> {
@@ -12,12 +10,6 @@ pub trait AsQueueClient<QN: Into<String>> {
 impl<QN: Into<String>> AsQueueClient<QN> for Arc<StorageClient> {
     fn queue_client(&self, queue_name: QN) -> Arc<QueueClient> {
         QueueClient::new(self.clone(), queue_name.into())
-    }
-}
-
-impl<QN: Into<String>> AsQueueClient<QN> for Arc<StorageAccountClient> {
-    fn queue_client(&self, queue_name: QN) -> Arc<QueueClient> {
-        self.storage_client().queue_client(queue_name)
     }
 }
 
@@ -139,7 +131,7 @@ mod integration_tests {
     use crate::{core::prelude::*, queue::clients::AsQueueClient};
 
     fn get_emulator_client(queue_name: &str) -> Arc<QueueClient> {
-        let storage_account = StorageAccountClient::new_emulator_default().storage_client();
+        let storage_account = StorageClient::new_emulator_default();
         storage_account.queue_client(queue_name)
     }
 

@@ -41,7 +41,6 @@ impl FindBlobsByTagsBuilder {
         Box::pin(async move {
             let mut request = self
                 .client
-                .storage_account_client()
                 .blob_storage_request(azure_core::Method::Get)?;
 
             self.timeout.append_to_url_query(request.url_mut());
@@ -56,7 +55,6 @@ impl FindBlobsByTagsBuilder {
 
             let response = self
                 .client
-                .storage_account_client()
                 .send(&mut self.context, &mut request, ServiceType::Blob)
                 .await?;
 

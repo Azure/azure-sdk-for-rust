@@ -48,10 +48,8 @@ impl BlobClient {
     }
 
     #[allow(dead_code)]
-    pub(crate) fn storage_account_client(&self) -> &StorageAccountClient {
-        self.container_client
-            .storage_client()
-            .storage_account_client()
+    pub(crate) fn storage_client(&self) -> &StorageClient {
+        self.container_client.storage_client()
     }
 
     #[allow(dead_code)]
@@ -198,12 +196,12 @@ impl BlobClient {
     ) -> azure_core::Result<BlobSharedAccessSignatureBuilder<(), SetResources, ()>> {
         let canonicalized_resource = format!(
             "/blob/{}/{}/{}",
-            self.container_client.storage_account_client().account(),
+            self.container_client.storage_client().account(),
             self.container_client.container_name(),
             self.blob_name()
         );
 
-        match self.storage_account_client().storage_credentials() {
+        match self.storage_client().storage_credentials() {
             StorageCredentials::Key(ref _account, ref key) => Ok(
                 BlobSharedAccessSignatureBuilder::new(key.to_string(), canonicalized_resource)
                     .with_resources(BlobSignedResource::Blob),
@@ -270,7 +268,7 @@ mod tests {
     }
 
     fn build_url(container_name: &str, blob_name: &str, sas: &FakeSas) -> url::Url {
-        let storage_account = StorageAccountClient::new_emulator_default().storage_client();
+        let storage_account = StorageClient::new_emulator_default();
         storage_account
             .container_client(container_name)
             .blob_client(blob_name)
@@ -305,7 +303,7 @@ mod integration_tests {
     use crate::blob::clients::AsBlobClient;
 
     fn get_emulator_client(container_name: &str) -> Arc<ContainerClient> {
-        let storage_account = StorageAccountClient::new_emulator_default().storage_client();
+        let storage_account = StorageClient::new_emulator_default();
         storage_account.container_client(container_name)
     }
 

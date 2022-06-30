@@ -21,8 +21,7 @@ async fn put_append_blob() {
 
     let http_client = azure_core::new_http_client();
 
-    let storage = StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key)
-        .storage_client();
+    let storage = StorageClient::new_access_key(http_client.clone(), &account, &access_key);
     let blob_service = storage.blob_service_client();
     let container = storage.container_client(container_name);
     let blob = container.blob_client(blob_name);

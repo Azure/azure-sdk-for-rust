@@ -30,16 +30,13 @@ async fn main() -> azure_core::Result<()> {
 
     let http_client = azure_core::new_http_client();
 
-    let source_storage_account_client = StorageAccountClient::new_access_key(
-        http_client.clone(),
-        &source_account,
-        &source_access_key,
-    );
-    let source_blob = source_storage_account_client
+    let source_storage_client =
+        StorageClient::new_access_key(http_client.clone(), &source_account, &source_access_key);
+    let source_blob = source_storage_client
         .container_client(&source_container_name)
         .blob_client(&source_blob_name);
 
-    let destination_blob = StorageAccountClient::new_access_key(
+    let destination_blob = StorageClient::new_access_key(
         http_client.clone(),
         &destination_account,
         &destination_access_key,
@@ -51,7 +48,7 @@ async fn main() -> azure_core::Result<()> {
     let sas_url = {
         let now = Utc::now();
         let later = now + Duration::hours(1);
-        let sas = source_storage_account_client
+        let sas = source_storage_client
             .shared_access_signature()?
             .with_resource(AccountSasResource::Blob)
             .with_resource_type(AccountSasResourceType::Object)

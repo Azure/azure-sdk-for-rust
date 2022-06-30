@@ -13,8 +13,7 @@ async fn main() -> azure_core::Result<()> {
 
     let http_client = azure_core::new_http_client();
 
-    let storage_account =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key);
+    let storage_account = StorageClient::new_access_key(http_client.clone(), &account, &access_key);
 
     let queue_service = storage_account.queue_service_client();
 

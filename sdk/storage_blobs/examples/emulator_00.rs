@@ -7,7 +7,7 @@ async fn main() -> azure_core::Result<()> {
     env_logger::init();
 
     // this is how you use the emulator.
-    let storage_account = StorageAccountClient::new_emulator_default().storage_client();
+    let storage_account = StorageClient::new_emulator_default();
     let container_client = storage_account.container_client("emulcont");
 
     // create container

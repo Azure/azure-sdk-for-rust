@@ -7,9 +7,7 @@ use azure_core::{
 };
 use azure_core::{Method, Url};
 use azure_storage::{
-    core::clients::{
-        AsStorageClient, ServiceType, StorageAccountClient, StorageClient, StorageCredentials,
-    },
+    core::clients::{ServiceType, StorageClient, StorageCredentials},
     shared_access_signature::{
         service_sas::{BlobSharedAccessSignatureBuilder, BlobSignedResource, SetResources},
         SasToken,
@@ -25,12 +23,6 @@ pub trait AsContainerClient<CN: Into<String>> {
 impl<CN: Into<String>> AsContainerClient<CN> for Arc<StorageClient> {
     fn container_client(&self, container_name: CN) -> Arc<ContainerClient> {
         ContainerClient::new(self.clone(), container_name.into())
-    }
-}
-
-impl<CN: Into<String>> AsContainerClient<CN> for Arc<StorageAccountClient> {
-    fn container_client(&self, container_name: CN) -> Arc<ContainerClient> {
-        self.storage_client().container_client(container_name)
     }
 }
 
@@ -54,10 +46,6 @@ impl ContainerClient {
 
     pub(crate) fn storage_client(&self) -> &StorageClient {
         self.storage_client.as_ref()
-    }
-
-    pub(crate) fn storage_account_client(&self) -> &StorageAccountClient {
-        self.storage_client.storage_account_client()
     }
 
     pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
@@ -132,11 +120,11 @@ impl ContainerClient {
     ) -> azure_core::Result<BlobSharedAccessSignatureBuilder<(), SetResources, ()>> {
         let canonicalized_resource = format!(
             "/blob/{}/{}",
-            self.storage_account_client().account(),
+            self.storage_client().account(),
             self.container_name(),
         );
 
-        match self.storage_account_client().storage_credentials() {
+        match self.storage_client().storage_credentials() {
             StorageCredentials::Key(ref _account, ref key) => Ok(
                 BlobSharedAccessSignatureBuilder::new(key.to_string(), canonicalized_resource)
                     .with_resources(BlobSignedResource::Container),
@@ -164,7 +152,7 @@ mod integration_tests {
     use crate::{blob::clients::AsBlobClient, core::prelude::*};
 
     fn get_emulator_client(container_name: &str) -> Arc<ContainerClient> {
-        let storage_account = StorageAccountClient::new_emulator_default().storage_client();
+        let storage_account = StorageClient::new_emulator_default();
 
         storage_account.container_client(container_name)
     }

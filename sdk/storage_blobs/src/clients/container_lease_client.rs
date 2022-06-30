@@ -33,8 +33,8 @@ impl ContainerLeaseClient {
     }
 
     #[allow(dead_code)]
-    pub(crate) fn storage_account_client(&self) -> &StorageAccountClient {
-        self.container_client.storage_account_client()
+    pub(crate) fn storage_client(&self) -> &StorageClient {
+        self.container_client.storage_client()
     }
 
     #[allow(dead_code)]

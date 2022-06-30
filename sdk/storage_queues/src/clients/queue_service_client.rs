@@ -1,8 +1,6 @@
 use crate::{operations::*, QueueServiceProperties};
 use azure_core::{Context, Request, Response};
-use azure_storage::core::clients::{
-    AsStorageClient, ServiceType, StorageAccountClient, StorageClient,
-};
+use azure_storage::core::clients::{ServiceType, StorageClient};
 use std::{fmt::Debug, sync::Arc};
 
 pub trait AsQueueServiceClient {
@@ -12,12 +10,6 @@ pub trait AsQueueServiceClient {
 impl AsQueueServiceClient for Arc<StorageClient> {
     fn queue_service_client(&self) -> Arc<QueueServiceClient> {
         QueueServiceClient::new(self.clone())
-    }
-}
-
-impl AsQueueServiceClient for Arc<StorageAccountClient> {
-    fn queue_service_client(&self) -> Arc<QueueServiceClient> {
-        self.storage_client().queue_service_client()
     }
 }
 

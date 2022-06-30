@@ -47,12 +47,7 @@ impl ListContainersBuilder {
             let this = self.clone();
             let mut ctx = self.context.clone();
             async move {
-                let mut url = this
-                    .client
-                    .storage_client
-                    .storage_account_client()
-                    .blob_storage_url()
-                    .clone();
+                let mut url = this.client.storage_client.blob_storage_url().clone();
 
                 url.query_pairs_mut().append_pair("comp", "list");
 

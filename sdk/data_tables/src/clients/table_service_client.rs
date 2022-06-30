@@ -4,7 +4,7 @@ use azure_core::{
     headers::Headers,
     Context, Method, Request, Response,
 };
-use azure_storage::core::clients::{ServiceType, StorageAccountClient, StorageClient};
+use azure_storage::core::clients::{ServiceType, StorageClient};
 use bytes::Bytes;
 use std::sync::Arc;
 use url::Url;
@@ -27,10 +27,7 @@ pub struct TableServiceClient {
 
 impl TableServiceClient {
     pub(crate) fn new(storage_client: Arc<StorageClient>) -> azure_core::Result<Arc<Self>> {
-        let mut url = storage_client
-            .storage_account_client()
-            .table_storage_url()
-            .to_owned();
+        let mut url = storage_client.table_storage_url().to_owned();
         url.path_segments_mut()
             .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)?
             .push("Tables");
@@ -49,8 +46,8 @@ impl TableServiceClient {
         &self.url
     }
 
-    pub(crate) fn storage_account_client(&self) -> &StorageAccountClient {
-        self.storage_client.storage_account_client()
+    pub(crate) fn storage_client(&self) -> &StorageClient {
+        &self.storage_client
     }
 
     pub(crate) fn finalize_request(
@@ -61,7 +58,6 @@ impl TableServiceClient {
         request_body: Option<Bytes>,
     ) -> azure_core::Result<Request> {
         self.storage_client
-            .storage_account_client()
             .finalize_request(url, method, headers, ServiceType::Table, request_body)
             .context(ErrorKind::Other, "failed to prepare request")
     }
@@ -72,7 +68,6 @@ impl TableServiceClient {
         request: &mut Request,
     ) -> azure_core::Result<Response> {
         self.storage_client
-            .storage_account_client()
             .send(context, request, ServiceType::Table)
             .await
     }
@@ -86,7 +81,7 @@ mod integration_tests {
     use futures::StreamExt;
 
     fn get_emulator_client() -> Arc<StorageClient> {
-        StorageAccountClient::new_emulator_default().storage_client()
+        StorageClient::new_emulator_default()
     }
 
     #[tokio::test]

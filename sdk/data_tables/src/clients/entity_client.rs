@@ -32,10 +32,7 @@ impl EntityClient {
         row_key: RK,
     ) -> azure_core::Result<Arc<Self>> {
         let row_key = row_key.into();
-        let mut url = partition_key_client
-            .storage_account_client()
-            .table_storage_url()
-            .to_owned();
+        let mut url = partition_key_client.table_storage_url().to_owned();
         url.path_segments_mut()
             .map_err(|_e| {
                 Error::message(
@@ -173,7 +170,7 @@ mod integration_tests {
     }
 
     fn get_emulator_client() -> Arc<TableServiceClient> {
-        let storage_account = StorageAccountClient::new_emulator_default().storage_client();
+        let storage_account = StorageClient::new_emulator_default();
         storage_account
             .table_service_client()
             .expect("a table service client")

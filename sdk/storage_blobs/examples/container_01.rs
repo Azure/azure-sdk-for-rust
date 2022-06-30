@@ -17,9 +17,7 @@ async fn main() -> azure_core::Result<()> {
         .expect("please specify container name as command line parameter");
 
     let http_client = azure_core::new_http_client();
-    let storage_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &access_key)
-            .storage_client();
+    let storage_client = StorageClient::new_access_key(http_client.clone(), &account, &access_key);
     let container_client = storage_client.container_client(container_name);
 
     let mut metadata = Metadata::new();

@@ -1,8 +1,6 @@
 use crate::container::operations::ListContainersBuilder;
 use azure_core::{Context, Request, Response};
-use azure_storage::core::clients::{
-    AsStorageClient, ServiceType, StorageAccountClient, StorageClient,
-};
+use azure_storage::core::clients::{ServiceType, StorageClient};
 use std::sync::Arc;
 
 pub trait AsBlobServiceClient {
@@ -12,12 +10,6 @@ pub trait AsBlobServiceClient {
 impl AsBlobServiceClient for Arc<StorageClient> {
     fn blob_service_client(&self) -> Arc<BlobServiceClient> {
         BlobServiceClient::new(self.clone())
-    }
-}
-
-impl AsBlobServiceClient for Arc<StorageAccountClient> {
-    fn blob_service_client(&self) -> Arc<BlobServiceClient> {
-        self.storage_client().blob_service_client()
     }
 }
 
