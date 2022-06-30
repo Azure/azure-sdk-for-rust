@@ -2,36 +2,35 @@ use crate::operations::ListTablesBuilder;
 use azure_core::{headers::Headers, Context, Method, Request, Response};
 use azure_storage::core::clients::{ServiceType, StorageClient};
 use bytes::Bytes;
-use std::sync::Arc;
 use url::Url;
 
 pub trait AsTableServiceClient {
-    fn table_service_client(&self) -> azure_core::Result<Arc<TableServiceClient>>;
+    fn table_service_client(&self) -> azure_core::Result<TableServiceClient>;
 }
 
-impl AsTableServiceClient for Arc<StorageClient> {
-    fn table_service_client(&self) -> azure_core::Result<Arc<TableServiceClient>> {
+impl AsTableServiceClient for StorageClient {
+    fn table_service_client(&self) -> azure_core::Result<TableServiceClient> {
         TableServiceClient::new(self.clone())
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct TableServiceClient {
-    storage_client: Arc<StorageClient>,
+    storage_client: StorageClient,
     url: Url,
 }
 
 impl TableServiceClient {
-    pub(crate) fn new(storage_client: Arc<StorageClient>) -> azure_core::Result<Arc<Self>> {
+    pub(crate) fn new(storage_client: StorageClient) -> azure_core::Result<Self> {
         let mut url = storage_client.table_storage_url().to_owned();
         url.path_segments_mut()
             .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)?
             .push("Tables");
 
-        Ok(Arc::new(Self {
+        Ok(Self {
             storage_client,
             url,
-        }))
+        })
     }
 
     pub fn list(&self) -> ListTablesBuilder {
@@ -75,7 +74,7 @@ mod integration_tests {
     use crate::{core::prelude::*, table::clients::AsTableClient};
     use futures::StreamExt;
 
-    fn get_emulator_client() -> Arc<StorageClient> {
+    fn get_emulator_client() -> StorageClient {
         StorageClient::new_emulator_default()
     }
 

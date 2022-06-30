@@ -17,27 +17,27 @@ use bytes::Bytes;
 use std::sync::Arc;
 
 pub trait AsContainerClient<CN: Into<String>> {
-    fn container_client(&self, container_name: CN) -> Arc<ContainerClient>;
+    fn container_client(&self, container_name: CN) -> ContainerClient;
 }
 
-impl<CN: Into<String>> AsContainerClient<CN> for Arc<StorageClient> {
-    fn container_client(&self, container_name: CN) -> Arc<ContainerClient> {
+impl<CN: Into<String>> AsContainerClient<CN> for StorageClient {
+    fn container_client(&self, container_name: CN) -> ContainerClient {
         ContainerClient::new(self.clone(), container_name.into())
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct ContainerClient {
-    storage_client: Arc<StorageClient>,
+    storage_client: StorageClient,
     container_name: String,
 }
 
 impl ContainerClient {
-    pub(crate) fn new(storage_client: Arc<StorageClient>, container_name: String) -> Arc<Self> {
-        Arc::new(Self {
+    pub(crate) fn new(storage_client: StorageClient, container_name: String) -> Self {
+        Self {
             storage_client,
             container_name,
-        })
+        }
     }
 
     pub fn container_name(&self) -> &str {
@@ -45,7 +45,7 @@ impl ContainerClient {
     }
 
     pub(crate) fn storage_client(&self) -> &StorageClient {
-        self.storage_client.as_ref()
+        &self.storage_client
     }
 
     pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
@@ -151,7 +151,7 @@ mod integration_tests {
     use super::*;
     use crate::{blob::clients::AsBlobClient, core::prelude::*};
 
-    fn get_emulator_client(container_name: &str) -> Arc<ContainerClient> {
+    fn get_emulator_client(container_name: &str) -> ContainerClient {
         let storage_account = StorageClient::new_emulator_default();
 
         storage_account.container_client(container_name)

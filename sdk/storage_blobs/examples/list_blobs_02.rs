@@ -25,7 +25,7 @@ async fn main() -> azure_core::Result<()> {
 }
 
 async fn create_container_and_list(
-    storage_client: std::sync::Arc<StorageClient>,
+    storage_client: StorageClient,
     container_name: &str,
 ) -> azure_core::Result<()> {
     let container_client = storage_client.container_client(container_name);

@@ -494,7 +494,7 @@ fn send_check() {
     );
 }
 
-fn initialize() -> Arc<StorageClient> {
+fn initialize() -> StorageClient {
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
     let access_key =

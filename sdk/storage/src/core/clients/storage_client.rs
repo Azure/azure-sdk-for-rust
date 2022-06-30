@@ -65,7 +65,7 @@ pub struct StorageClient {
 }
 
 impl StorageClient {
-    pub fn new_access_key<A, K>(account: A, key: K) -> Arc<Self>
+    pub fn new_access_key<A, K>(account: A, key: K) -> Self
     where
         A: Into<String>,
         K: Into<String>,
@@ -76,7 +76,7 @@ impl StorageClient {
         let pipeline =
             new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
 
-        Arc::new(Self {
+        Self {
             blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
             table_storage_url: get_endpoint_uri(None, &account, "table").unwrap(),
             queue_storage_url: get_endpoint_uri(None, &account, "queue").unwrap(),
@@ -90,7 +90,7 @@ impl StorageClient {
             storage_credentials,
             account,
             pipeline,
-        })
+        }
     }
 
     /// Create a new client for customized emulator endpoints.
@@ -99,7 +99,7 @@ impl StorageClient {
         table_storage_url: &Url,
         queue_storage_url: &Url,
         filesystem_url: &Url,
-    ) -> Arc<Self> {
+    ) -> Self {
         Self::new_emulator_with_account(
             blob_storage_url,
             table_storage_url,
@@ -111,7 +111,7 @@ impl StorageClient {
     }
 
     /// Create a new client using the default HttpClient and the default emulator endpoints.
-    pub fn new_emulator_default() -> Arc<Self> {
+    pub fn new_emulator_default() -> Self {
         let blob_storage_url = Url::parse("http://127.0.0.1:10000").unwrap();
         let queue_storage_url = Url::parse("http://127.0.0.1:10001").unwrap();
         let table_storage_url = Url::parse("http://127.0.0.1:10002").unwrap();
@@ -131,7 +131,7 @@ impl StorageClient {
         filesystem_url: &Url,
         account: A,
         key: K,
-    ) -> Arc<Self>
+    ) -> Self
     where
         A: Into<String>,
         K: Into<String>,
@@ -145,7 +145,7 @@ impl StorageClient {
         let queue_storage_url = Url::parse(&format!("{}{}", queue_storage_url, account)).unwrap();
         let filesystem_url = Url::parse(&format!("{}{}", filesystem_url, account)).unwrap();
 
-        Arc::new(Self {
+        Self {
             blob_storage_url,
             table_storage_url,
             queue_storage_url: queue_storage_url.clone(),
@@ -154,10 +154,10 @@ impl StorageClient {
             storage_credentials: StorageCredentials::Key(account.clone(), key),
             account,
             pipeline,
-        })
+        }
     }
 
-    pub fn new_sas_token<A, S>(account: A, sas_token: S) -> azure_core::Result<Arc<Self>>
+    pub fn new_sas_token<A, S>(account: A, sas_token: S) -> azure_core::Result<Self>
     where
         A: Into<String>,
         S: AsRef<str>,
@@ -169,7 +169,7 @@ impl StorageClient {
         let pipeline =
             new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
 
-        Ok(Arc::new(Self {
+        Ok(Self {
             blob_storage_url: get_endpoint_uri(None, &account, "blob")?,
             table_storage_url: get_endpoint_uri(None, &account, "table")?,
             queue_storage_url: get_endpoint_uri(None, &account, "queue")?,
@@ -182,10 +182,10 @@ impl StorageClient {
             storage_credentials,
             account,
             pipeline,
-        }))
+        })
     }
 
-    pub fn new_bearer_token<A, BT>(account: A, bearer_token: BT) -> Arc<Self>
+    pub fn new_bearer_token<A, BT>(account: A, bearer_token: BT) -> Self
     where
         A: Into<String>,
         BT: Into<String>,
@@ -196,7 +196,7 @@ impl StorageClient {
         let pipeline =
             new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
 
-        Arc::new(Self {
+        Self {
             blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
             table_storage_url: get_endpoint_uri(None, &account, "table").unwrap(),
             queue_storage_url: get_endpoint_uri(None, &account, "queue").unwrap(),
@@ -210,13 +210,10 @@ impl StorageClient {
             storage_credentials,
             account,
             pipeline,
-        })
+        }
     }
 
-    pub fn new_token_credential<A>(
-        account: A,
-        token_credential: Arc<dyn TokenCredential>,
-    ) -> Arc<Self>
+    pub fn new_token_credential<A>(account: A, token_credential: Arc<dyn TokenCredential>) -> Self
     where
         A: Into<String>,
     {
@@ -225,7 +222,7 @@ impl StorageClient {
         let pipeline =
             new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
 
-        Arc::new(Self {
+        Self {
             blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
             table_storage_url: get_endpoint_uri(None, &account, "table").unwrap(),
             queue_storage_url: get_endpoint_uri(None, &account, "queue").unwrap(),
@@ -239,10 +236,10 @@ impl StorageClient {
             storage_credentials,
             account,
             pipeline,
-        })
+        }
     }
 
-    pub fn new_connection_string(connection_string: &str) -> azure_core::Result<Arc<Self>> {
+    pub fn new_connection_string(connection_string: &str) -> azure_core::Result<Self> {
         match ConnectionString::new(connection_string)? {
             ConnectionString {
                 account_name: Some(account),
@@ -261,7 +258,7 @@ impl StorageClient {
                 )?);
                 let pipeline = new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
 
-                Ok(Arc::new(Self {
+                Ok(Self {
                     storage_credentials,
                     blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
                     table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
@@ -270,7 +267,7 @@ impl StorageClient {
                     filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
                     account: account.to_string(),
                     pipeline
-                }))
+                })
             }
             ConnectionString {
                 account_name: Some(account),
@@ -284,7 +281,7 @@ impl StorageClient {
                 let storage_credentials = StorageCredentials::SASToken(get_sas_token_parms(sas_token)?);
                 let pipeline =
                 new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
-                Ok(Arc::new(Self {
+                Ok(Self {
                     storage_credentials,
                     blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
                     table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
@@ -293,7 +290,7 @@ impl StorageClient {
                     filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
                     account: account.to_string(),
                     pipeline
-            }))},
+            })},
             ConnectionString {
                 account_name: Some(account),
                 account_key: Some(key),
@@ -306,7 +303,7 @@ impl StorageClient {
 
                 let storage_credentials = StorageCredentials::Key(account.to_owned(), key.to_owned());
                 let pipeline = new_pipeline_from_options(StorageOptions::new(), storage_credentials.clone());
-                Ok(Arc::new(Self {
+                Ok(Self {
                 storage_credentials,
                 blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
                 table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
@@ -315,7 +312,7 @@ impl StorageClient {
                 filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
                 account: account.to_string(),
                 pipeline
-            }))
+            })
         },
            _ => {
                 Err(Error::message(ErrorKind::Other,

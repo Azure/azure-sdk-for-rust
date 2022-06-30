@@ -16,31 +16,30 @@ use azure_storage::core::{
 };
 use bytes::Bytes;
 use futures::StreamExt;
-use std::sync::Arc;
 use url::Url;
 
 pub trait AsBlobClient<BN: Into<String>> {
-    fn blob_client(&self, blob_name: BN) -> Arc<BlobClient>;
+    fn blob_client(&self, blob_name: BN) -> BlobClient;
 }
 
-impl<BN: Into<String>> AsBlobClient<BN> for Arc<ContainerClient> {
-    fn blob_client(&self, blob_name: BN) -> Arc<BlobClient> {
+impl<BN: Into<String>> AsBlobClient<BN> for ContainerClient {
+    fn blob_client(&self, blob_name: BN) -> BlobClient {
         BlobClient::new(self.clone(), blob_name.into())
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct BlobClient {
-    container_client: Arc<ContainerClient>,
+    container_client: ContainerClient,
     blob_name: String,
 }
 
 impl BlobClient {
-    pub(crate) fn new(container_client: Arc<ContainerClient>, blob_name: String) -> Arc<Self> {
-        Arc::new(Self {
+    pub(crate) fn new(container_client: ContainerClient, blob_name: String) -> Self {
+        Self {
             container_client,
             blob_name,
-        })
+        }
     }
 
     pub fn blob_name(&self) -> &str {
@@ -54,7 +53,7 @@ impl BlobClient {
 
     #[allow(dead_code)]
     pub(crate) fn container_client(&self) -> &ContainerClient {
-        self.container_client.as_ref()
+        &self.container_client
     }
 
     pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
@@ -302,7 +301,7 @@ mod integration_tests {
     use super::*;
     use crate::blob::clients::AsBlobClient;
 
-    fn get_emulator_client(container_name: &str) -> Arc<ContainerClient> {
+    fn get_emulator_client(container_name: &str) -> ContainerClient {
         let storage_account = StorageClient::new_emulator_default();
         storage_account.container_client(container_name)
     }

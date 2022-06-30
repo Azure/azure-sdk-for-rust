@@ -2,33 +2,29 @@ use crate::{operations::*, prelude::*};
 use azure_core::{headers::Headers, Context, Method, Request, Response, Url};
 use azure_storage::core::clients::StorageClient;
 use bytes::Bytes;
-use std::sync::Arc;
 
 pub trait AsPartitionKeyClient<PK: Into<String>> {
-    fn partition_key_client(&self, partition_key: PK) -> Arc<PartitionKeyClient>;
+    fn partition_key_client(&self, partition_key: PK) -> PartitionKeyClient;
 }
 
-impl<PK: Into<String>> AsPartitionKeyClient<PK> for Arc<TableClient> {
-    fn partition_key_client(&self, partition_key: PK) -> Arc<PartitionKeyClient> {
+impl<PK: Into<String>> AsPartitionKeyClient<PK> for TableClient {
+    fn partition_key_client(&self, partition_key: PK) -> PartitionKeyClient {
         PartitionKeyClient::new(self.clone(), partition_key)
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct PartitionKeyClient {
-    table_client: Arc<TableClient>,
+    table_client: TableClient,
     partition_key: String,
 }
 
 impl PartitionKeyClient {
-    pub(crate) fn new<PK: Into<String>>(
-        table_client: Arc<TableClient>,
-        partition_key: PK,
-    ) -> Arc<Self> {
-        Arc::new(Self {
+    pub(crate) fn new<PK: Into<String>>(table_client: TableClient, partition_key: PK) -> Self {
+        Self {
             table_client,
             partition_key: partition_key.into(),
-        })
+        }
     }
 
     pub fn transaction(&self) -> TransactionBuilder {
@@ -86,7 +82,7 @@ mod integration_tests {
         pub surname: String,
     }
 
-    fn get_emulator_client() -> Arc<TableServiceClient> {
+    fn get_emulator_client() -> TableServiceClient {
         let storage_account = StorageClient::new_emulator_default();
         storage_account
             .table_service_client()

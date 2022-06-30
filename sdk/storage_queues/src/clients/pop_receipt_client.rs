@@ -9,34 +9,31 @@ pub trait AsPopReceiptClient {
     /// returned client is wrapped in an `Arc` to avoid
     /// unnecessary copying while keeping the clients
     /// type signature simple (without lifetimes).
-    fn pop_receipt_client(&self, pop_receipt: impl Into<PopReceipt>) -> Arc<PopReceiptClient>;
+    fn pop_receipt_client(&self, pop_receipt: impl Into<PopReceipt>) -> PopReceiptClient;
 }
 
-impl AsPopReceiptClient for Arc<QueueClient> {
+impl AsPopReceiptClient for QueueClient {
     /// Pass a valid `PopReceipt` to a `QueueClient`
     /// to obtain a `PopReceiptClient` back. The `PopReceiptClient`
     /// can then delete or update the message
     /// referenced by the passed `PopReceipt`.
-    fn pop_receipt_client(&self, pop_receipt: impl Into<PopReceipt>) -> Arc<PopReceiptClient> {
+    fn pop_receipt_client(&self, pop_receipt: impl Into<PopReceipt>) -> PopReceiptClient {
         PopReceiptClient::new(self.clone(), pop_receipt)
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct PopReceiptClient {
-    queue_client: Arc<QueueClient>,
+    queue_client: QueueClient,
     pop_receipt: PopReceipt,
 }
 
 impl PopReceiptClient {
-    pub(crate) fn new(
-        queue_client: Arc<QueueClient>,
-        pop_receipt: impl Into<PopReceipt>,
-    ) -> Arc<Self> {
-        Arc::new(Self {
+    pub(crate) fn new(queue_client: QueueClient, pop_receipt: impl Into<PopReceipt>) -> Self {
+        Self {
             queue_client,
             pop_receipt: pop_receipt.into(),
-        })
+        }
     }
 
     pub(crate) async fn send(

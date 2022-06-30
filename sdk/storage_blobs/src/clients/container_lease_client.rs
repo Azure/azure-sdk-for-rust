@@ -5,27 +5,27 @@ use bytes::Bytes;
 use std::sync::Arc;
 
 pub trait AsContainerLeaseClient {
-    fn container_lease_client(&self, lease_id: LeaseId) -> Arc<ContainerLeaseClient>;
+    fn container_lease_client(&self, lease_id: LeaseId) -> ContainerLeaseClient;
 }
 
-impl AsContainerLeaseClient for Arc<ContainerClient> {
-    fn container_lease_client(&self, lease_id: LeaseId) -> Arc<ContainerLeaseClient> {
+impl AsContainerLeaseClient for ContainerClient {
+    fn container_lease_client(&self, lease_id: LeaseId) -> ContainerLeaseClient {
         ContainerLeaseClient::new(self.clone(), lease_id)
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct ContainerLeaseClient {
-    container_client: Arc<ContainerClient>,
+    container_client: ContainerClient,
     lease_id: LeaseId,
 }
 
 impl ContainerLeaseClient {
-    pub(crate) fn new(container_client: Arc<ContainerClient>, lease_id: LeaseId) -> Arc<Self> {
-        Arc::new(Self {
+    pub(crate) fn new(container_client: ContainerClient, lease_id: LeaseId) -> Self {
+        Self {
             container_client,
             lease_id,
-        })
+        }
     }
 
     pub fn lease_id(&self) -> LeaseId {
@@ -39,7 +39,7 @@ impl ContainerLeaseClient {
 
     #[allow(dead_code)]
     pub(crate) fn container_client(&self) -> &ContainerClient {
-        self.container_client.as_ref()
+        &self.container_client
     }
 
     pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>

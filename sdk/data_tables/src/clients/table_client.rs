@@ -3,33 +3,29 @@ use azure_core::{headers::Headers, Context, Method, Request, Response, Url};
 use azure_storage::clients::StorageClient;
 use bytes::Bytes;
 use serde::{de::DeserializeOwned, Serialize};
-use std::sync::Arc;
 
 pub trait AsTableClient<S: Into<String>> {
-    fn table_client(&self, s: S) -> Arc<TableClient>;
+    fn table_client(&self, s: S) -> TableClient;
 }
 
-impl<S: Into<String>> AsTableClient<S> for Arc<TableServiceClient> {
-    fn table_client(&self, s: S) -> Arc<TableClient> {
+impl<S: Into<String>> AsTableClient<S> for TableServiceClient {
+    fn table_client(&self, s: S) -> TableClient {
         TableClient::new(self.clone(), s)
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct TableClient {
-    table_service_client: Arc<TableServiceClient>,
+    table_service_client: TableServiceClient,
     table_name: String,
 }
 
 impl TableClient {
-    pub(crate) fn new<S: Into<String>>(
-        table_service_client: Arc<TableServiceClient>,
-        s: S,
-    ) -> Arc<Self> {
-        Arc::new(Self {
+    pub(crate) fn new<S: Into<String>>(table_service_client: TableServiceClient, s: S) -> Self {
+        Self {
             table_service_client,
             table_name: s.into(),
-        })
+        }
     }
 
     pub fn table_name(&self) -> &str {
@@ -103,7 +99,7 @@ mod integration_tests {
         pub surname: String,
     }
 
-    fn get_emulator_client() -> Arc<TableServiceClient> {
+    fn get_emulator_client() -> TableServiceClient {
         let storage_account = StorageClient::new_emulator_default();
         storage_account
             .table_service_client()

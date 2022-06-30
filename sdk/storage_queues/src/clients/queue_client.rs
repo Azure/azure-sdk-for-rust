@@ -4,27 +4,27 @@ use azure_storage::core::clients::{ServiceType, StorageClient};
 use std::{fmt::Debug, sync::Arc};
 
 pub trait AsQueueClient<QN: Into<String>> {
-    fn queue_client(&self, queue_name: QN) -> Arc<QueueClient>;
+    fn queue_client(&self, queue_name: QN) -> QueueClient;
 }
 
-impl<QN: Into<String>> AsQueueClient<QN> for Arc<StorageClient> {
-    fn queue_client(&self, queue_name: QN) -> Arc<QueueClient> {
+impl<QN: Into<String>> AsQueueClient<QN> for StorageClient {
+    fn queue_client(&self, queue_name: QN) -> QueueClient {
         QueueClient::new(self.clone(), queue_name.into())
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct QueueClient {
-    storage_client: Arc<StorageClient>,
+    storage_client: StorageClient,
     queue_name: String,
 }
 
 impl QueueClient {
-    pub(crate) fn new(storage_client: Arc<StorageClient>, queue_name: String) -> Arc<Self> {
-        Arc::new(Self {
+    pub(crate) fn new(storage_client: StorageClient, queue_name: String) -> Self {
+        Self {
             storage_client,
             queue_name,
-        })
+        }
     }
 
     pub(crate) async fn send(
@@ -38,7 +38,7 @@ impl QueueClient {
     }
 
     pub(crate) fn storage_client(&self) -> &StorageClient {
-        self.storage_client.as_ref()
+        &self.storage_client
     }
 
     pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
@@ -130,7 +130,7 @@ mod integration_tests {
     use super::*;
     use crate::{core::prelude::*, queue::clients::AsQueueClient};
 
-    fn get_emulator_client(queue_name: &str) -> Arc<QueueClient> {
+    fn get_emulator_client(queue_name: &str) -> QueueClient {
         let storage_account = StorageClient::new_emulator_default();
         storage_account.queue_client(queue_name)
     }
