@@ -1,7 +1,8 @@
-use crate::{clients::TableServiceClient, requests::*};
-use azure_core::{headers::Headers, Method, Request, Url};
+use crate::{clients::TableServiceClient, operations::*};
+use azure_core::{headers::Headers, Context, Method, Request, Response, Url};
 use azure_storage::core::clients::StorageAccountClient;
 use bytes::Bytes;
+use serde::{de::DeserializeOwned, Serialize};
 use std::sync::Arc;
 
 pub trait AsTableClient<S: Into<String>> {
@@ -36,19 +37,23 @@ impl TableClient {
     }
 
     pub fn create(&self) -> CreateTableBuilder {
-        CreateTableBuilder::new(self)
+        CreateTableBuilder::new(self.clone())
     }
 
     pub fn query(&self) -> QueryEntityBuilder {
-        QueryEntityBuilder::new(self)
+        QueryEntityBuilder::new(self.clone())
     }
 
     pub fn delete(&self) -> DeleteTableBuilder {
-        DeleteTableBuilder::new(self)
+        DeleteTableBuilder::new(self.clone())
     }
 
-    pub fn insert(&self) -> InsertEntityBuilder {
-        InsertEntityBuilder::new(self)
+    pub fn insert<E: Serialize, R: DeserializeOwned + Send>(
+        &self,
+        entity: E,
+    ) -> azure_core::Result<InsertEntityBuilder<R>> {
+        let body = serde_json::to_string(&entity)?.into();
+        Ok(InsertEntityBuilder::new(self.clone(), body))
     }
 
     pub(crate) fn url(&self) -> &url::Url {
@@ -59,8 +64,12 @@ impl TableClient {
         self.table_service_client.storage_account_client()
     }
 
-    pub(crate) fn http_client(&self) -> &dyn azure_core::HttpClient {
-        self.table_service_client.http_client()
+    pub(crate) async fn send(
+        &self,
+        context: &mut Context,
+        request: &mut Request,
+    ) -> azure_core::Result<Response> {
+        self.table_service_client.send(context, request).await
     }
 
     pub(crate) fn finalize_request(

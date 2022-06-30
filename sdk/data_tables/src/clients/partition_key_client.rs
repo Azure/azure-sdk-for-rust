@@ -1,5 +1,5 @@
-use crate::{prelude::*, requests::*};
-use azure_core::{headers::Headers, Method, Request, Url};
+use crate::{operations::*, prelude::*};
+use azure_core::{headers::Headers, Context, Method, Request, Response, Url};
 use azure_storage::core::clients::StorageAccountClient;
 use bytes::Bytes;
 use std::sync::Arc;
@@ -31,8 +31,8 @@ impl PartitionKeyClient {
         })
     }
 
-    pub fn submit_transaction(&self) -> SubmitTransactionBuilder {
-        SubmitTransactionBuilder::new(self)
+    pub fn transaction(&self) -> TransactionBuilder {
+        TransactionBuilder::new(self.clone())
     }
 
     pub fn partition_key(&self) -> &str {
@@ -47,10 +47,6 @@ impl PartitionKeyClient {
         self.table_client.storage_account_client()
     }
 
-    pub(crate) fn http_client(&self) -> &dyn azure_core::HttpClient {
-        self.table_client.http_client()
-    }
-
     pub(crate) fn finalize_request(
         &self,
         url: Url,
@@ -60,6 +56,14 @@ impl PartitionKeyClient {
     ) -> azure_core::Result<Request> {
         self.table_client
             .finalize_request(url, method, headers, request_body)
+    }
+
+    pub(crate) async fn send(
+        &self,
+        context: &mut Context,
+        request: &mut Request,
+    ) -> azure_core::Result<Response> {
+        self.table_client.send(context, request).await
     }
 }
 
@@ -110,7 +114,6 @@ mod integration_tests {
         let partition_client = table.partition_key_client("Milan");
 
         println!("Create the transaction");
-        let mut transaction = Transaction::default();
 
         let entity1 = TestEntity {
             city: partition_client.partition_key().to_owned(),
@@ -123,26 +126,15 @@ mod integration_tests {
             name: "Francesco".to_owned(),
             surname: "Potter".to_owned(),
         };
+        let mut transaction = partition_client.transaction();
 
-        transaction
-            .add(
-                table
-                    .insert()
-                    .to_transaction_operation(&entity1)
-                    .expect("a transaction operation"),
-            )
-            .add(
-                table
-                    .insert()
-                    .to_transaction_operation(&entity2)
-                    .expect("a transaction operation"),
-            );
-
-        let response = partition_client
-            .submit_transaction()
-            .execute(&transaction)
+        let response = transaction
+            .insert(&entity1)
+            .insert(&entity2)
+            .into_future()
             .await
-            .expect("the transaction to complete");
+            .expect("transaction compete");
+
         for response in response.operation_responses {
             assert_eq!(
                 response.status_code,

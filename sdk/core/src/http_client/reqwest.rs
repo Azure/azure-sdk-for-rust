@@ -14,7 +14,6 @@ impl HttpClient for ::reqwest::Client {
         for (name, value) in request.headers().iter() {
             req = req.header(name.as_str(), value.as_str());
         }
-
         let body = request.body().clone();
 
         let reqwest_request = match body {
