@@ -53,6 +53,56 @@ macro_rules! setters {
     }
 }
 
+#[macro_export]
+macro_rules! operation {
+    ($name:ident,
+        client: $client:ty,
+        $($required:ident: $rtype:ty,)*
+        $(?$optional:ident: $otype:ty),*) => {
+        azure_core::__private::paste! {
+        #[derive(Debug, Clone)]
+        pub struct [<$name Builder>] {
+            client: $client,
+            $($required: $rtype,)*
+            $($optional: Option<$otype>,)*
+            context: azure_core::Context,
+        }
+
+        impl [<$name Builder>] {
+            pub(crate) fn new(
+                client: $client,
+                $($required: $rtype,)*
+            ) -> Self {
+                Self {
+                    client,
+                    $($required,)*
+                    $($optional: None,)*
+                    context: azure_core::Context::new(),
+                }
+            }
+
+            setters! {
+                $($optional: $otype => Some($optional),)*
+                context: azure_core::Context => context,
+            }
+        }
+            /// The future returned by calling `into_future` on the builder.
+            pub type $name =
+                futures::future::BoxFuture<'static, azure_core::Result<[<$name Response>]>>;
+        }
+        azure_core::__private::paste! {
+        #[cfg(feature = "into_future")]
+        impl std::future::IntoFuture for [<$name Builder>] {
+            type IntoFuture = $name;
+            type Output = <$name as std::future::Future>::Output;
+            fn into_future(self) -> Self::IntoFuture {
+                Self::into_future(self)
+            }
+        }
+        }
+    }
+}
+
 /// The following macro invocation:
 /// ```
 /// # #[macro_use] extern crate azure_core;

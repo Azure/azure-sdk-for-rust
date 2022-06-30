@@ -3,41 +3,25 @@ use crate::prelude::*;
 use crate::resources::Database;
 use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
-use azure_core::{collect_pinned_stream, Context, Response as HttpResponse};
+use azure_core::{collect_pinned_stream, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct CreateDatabaseBuilder {
+operation! {
+    CreateDatabase,
     client: CosmosClient,
     database_name: String,
-    consistency_level: Option<ConsistencyLevel>,
-    context: Context,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl CreateDatabaseBuilder {
-    pub(crate) fn new(client: CosmosClient, database_name: String) -> Self {
-        Self {
-            client,
-            database_name,
-            consistency_level: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        context: Context => context,
-    }
-
-    pub fn insert<E: Send + Sync + 'static>(&mut self, entity: E) -> &mut Self {
-        self.context.insert(entity);
-        self
-    }
-
     pub fn into_future(self) -> CreateDatabase {
         Box::pin(async move {
             let mut request = self.client.request("dbs", azure_core::Method::Post);
 
+            #[derive(Serialize)]
+            struct CreateDatabaseBody<'a> {
+                pub id: &'a str,
+            }
             let body = CreateDatabaseBody {
                 id: self.database_name.as_str(),
             };
@@ -54,24 +38,6 @@ impl CreateDatabaseBuilder {
             CreateDatabaseResponse::try_from(response).await
         })
     }
-}
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for CreateDatabaseBuilder {
-    type IntoFuture = CreateDatabase;
-    type Output = <CreateDatabase as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type CreateDatabase =
-    futures::future::BoxFuture<'static, azure_core::Result<CreateDatabaseResponse>>;
-
-#[derive(Serialize)]
-struct CreateDatabaseBody<'a> {
-    pub id: &'a str,
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]

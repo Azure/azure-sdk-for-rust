@@ -1,27 +1,12 @@
-use crate::{prelude::*, resources::user::UserResponse};
-use azure_core::Context;
+use crate::{prelude::*, resources::user::UserResponse as CreateUserResponse};
 
-#[derive(Debug, Clone)]
-pub struct CreateUserBuilder {
+operation! {
+    CreateUser,
     client: UserClient,
-    consistency_level: Option<ConsistencyLevel>,
-    context: Context,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl CreateUserBuilder {
-    pub(crate) fn new(client: UserClient) -> Self {
-        Self {
-            client,
-            consistency_level: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> CreateUser {
         Box::pin(async move {
             let mut request = self.client.cosmos_client().request(
@@ -48,20 +33,8 @@ impl CreateUserBuilder {
                 )
                 .await?;
 
-            UserResponse::try_from(response).await
+            CreateUserResponse::try_from(response).await
         })
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type CreateUser = futures::future::BoxFuture<'static, azure_core::Result<UserResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for CreateUserBuilder {
-    type IntoFuture = CreateUser;
-    type Output = <CreateUser as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 

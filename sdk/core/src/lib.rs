@@ -89,3 +89,9 @@ where
         }
     }
 }
+
+#[doc(hidden)]
+/// Used by macros as an implementation detail
+pub mod __private {
+    pub use paste::paste;
+}

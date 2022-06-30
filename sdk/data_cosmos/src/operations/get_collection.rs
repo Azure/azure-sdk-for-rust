@@ -4,30 +4,16 @@ use crate::headers::from_headers::*;
 use azure_core::headers::{
     content_type_from_headers, etag_from_headers, session_token_from_headers,
 };
-use azure_core::{collect_pinned_stream, Context, Response as HttpResponse};
+use azure_core::{collect_pinned_stream, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct GetCollectionBuilder {
+operation! {
+    GetCollection,
     client: CollectionClient,
-    consistency_level: Option<ConsistencyLevel>,
-    context: Context,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl GetCollectionBuilder {
-    pub(crate) fn new(client: CollectionClient) -> Self {
-        Self {
-            client,
-            consistency_level: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> GetCollection {
         Box::pin(async move {
             let mut request = self.client.collection_request(azure_core::Method::Get);
@@ -47,19 +33,6 @@ impl GetCollectionBuilder {
 
             GetCollectionResponse::try_from(response).await
         })
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type GetCollection =
-    futures::future::BoxFuture<'static, azure_core::Result<GetCollectionResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for GetCollectionBuilder {
-    type IntoFuture = GetCollection;
-    type Output = <GetCollection as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 
