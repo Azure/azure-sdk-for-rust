@@ -43,17 +43,17 @@ async fn main() -> azure_core::Result<()> {
         let now = Utc::now();
         let later = now + Duration::hours(1);
         let sas = source_storage_client
-            .shared_access_signature()?
-            .with_resource(AccountSasResource::Blob)
-            .with_resource_type(AccountSasResourceType::Object)
-            .with_start(now)
-            .with_expiry(later)
-            .with_permissions(AccountSasPermissions {
-                read: true,
-                ..Default::default()
-            })
-            .with_protocol(SasProtocol::HttpHttps)
-            .finalize();
+            .shared_access_signature(
+                AccountSasResource::Blob,
+                AccountSasResourceType::Object,
+                later,
+                AccountSasPermissions {
+                    read: true,
+                    ..Default::default()
+                },
+            )?
+            .start(now)
+            .protocol(SasProtocol::HttpHttps);
         println!("token: '{}'", sas.token());
 
         source_blob.generate_signed_blob_url(&sas)?

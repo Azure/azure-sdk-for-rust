@@ -8,12 +8,14 @@ use azure_core::{
 use azure_core::{Method, Url};
 use azure_storage::{
     core::clients::{ServiceType, StorageClient, StorageCredentials},
+    prelude::BlobSasPermissions,
     shared_access_signature::{
-        service_sas::{BlobSharedAccessSignatureBuilder, BlobSignedResource, SetResources},
+        service_sas::{BlobSharedAccessSignature, BlobSignedResource},
         SasToken,
     },
 };
 use bytes::Bytes;
+use chrono::{DateTime, Utc};
 
 pub trait AsContainerClient<CN: Into<String>> {
     fn container_client(&self, container_name: CN) -> ContainerClient;
@@ -124,7 +126,9 @@ impl ContainerClient {
 
     pub fn shared_access_signature(
         &self,
-    ) -> azure_core::Result<BlobSharedAccessSignatureBuilder<(), SetResources, ()>> {
+        permissions: BlobSasPermissions,
+        expiry: DateTime<Utc>,
+    ) -> azure_core::Result<BlobSharedAccessSignature> {
         let canonicalized_resource = format!(
             "/blob/{}/{}",
             self.storage_client().account(),
@@ -133,8 +137,7 @@ impl ContainerClient {
 
         match self.storage_client().storage_credentials() {
             StorageCredentials::Key(ref _account, ref key) => Ok(
-                BlobSharedAccessSignatureBuilder::new(key.to_string(), canonicalized_resource)
-                    .with_resources(BlobSignedResource::Container),
+                BlobSharedAccessSignature::new(key.to_string(), canonicalized_resource, permissions, expiry, BlobSignedResource::Container),
             ),
             _ => Err(Error::message(ErrorKind::Credential,
                 "Shared access signature generation - SAS can be generated only from key and account clients",

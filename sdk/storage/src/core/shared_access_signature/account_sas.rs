@@ -131,39 +131,62 @@ impl fmt::Display for AccountSasPermissions {
 pub struct AccountSharedAccessSignature {
     account: String,
     key: String,
-    signed_version: AccountSasVersion,
-    signed_resource: AccountSasResource,
-    signed_resource_type: AccountSasResourceType,
-    signed_start: Option<DateTime<Utc>>,
-    signed_expiry: DateTime<Utc>,
-    signed_permissions: AccountSasPermissions,
-    signed_ip: Option<String>,
-    signed_protocol: Option<SasProtocol>,
+    version: AccountSasVersion,
+    resource: AccountSasResource,
+    resource_type: AccountSasResourceType,
+    start: Option<DateTime<Utc>>,
+    expiry: DateTime<Utc>,
+    permissions: AccountSasPermissions,
+    ip: Option<String>,
+    protocol: Option<SasProtocol>,
 }
 
 impl AccountSharedAccessSignature {
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new(account: String, key: String) -> AccountSharedAccessSignatureBuilder {
-        AccountSharedAccessSignatureBuilder::new(account, key)
+    pub fn new(
+        account: String,
+        key: String,
+        resource: AccountSasResource,
+        resource_type: AccountSasResourceType,
+        expiry: DateTime<Utc>,
+        permissions: AccountSasPermissions,
+    ) -> Self {
+        Self {
+            account,
+            key,
+            version: AccountSasVersion::V20181109,
+            resource,
+            resource_type,
+            start: None,
+            expiry,
+            permissions,
+            ip: None,
+            protocol: None,
+        }
+    }
+
+    setters! {
+        start: DateTime<Utc> => Some(start),
+        ip: String => Some(ip),
+        protocol: SasProtocol => Some(protocol),
     }
 
     // Azure documentation: https://docs.microsoft.com/rest/api/storageservices/create-service-sas#constructing-the-signature-string
     fn signature(&self) -> String {
-        match self.signed_version {
+        match self.version {
             AccountSasVersion::V20181109 => {
                 let string_to_sign = format!(
                     "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n",
                     self.account,
-                    self.signed_permissions,
-                    self.signed_resource,
-                    self.signed_resource_type,
-                    self.signed_start.map_or("".to_string(), format_date),
-                    format_date(self.signed_expiry),
-                    self.signed_ip.clone().unwrap_or_else(|| "".to_string()),
-                    self.signed_protocol
+                    self.permissions,
+                    self.resource,
+                    self.resource_type,
+                    self.start.map_or("".to_string(), format_date),
+                    format_date(self.expiry),
+                    self.ip.clone().unwrap_or_else(|| "".to_string()),
+                    self.protocol
                         .as_ref()
                         .map_or("".to_string(), |v| v.to_string()),
-                    self.signed_version,
+                    self.version,
                 );
 
                 sign(&string_to_sign, &self.key).unwrap()
@@ -180,20 +203,20 @@ impl SasToken for AccountSharedAccessSignature {
     /// [Example](https://docs.microsoft.com/rest/api/storageservices/create-service-sas#service-sas-example) from Azure documentation.
     fn token(&self) -> String {
         let mut elements: Vec<String> = vec![
-            format!("sv={}", self.signed_version),
-            format!("ss={}", self.signed_resource),
-            format!("srt={}", self.signed_resource_type),
-            format!("se={}", format_form(format_date(self.signed_expiry))),
-            format!("sp={}", self.signed_permissions),
+            format!("sv={}", self.version),
+            format!("ss={}", self.resource),
+            format!("srt={}", self.resource_type),
+            format!("se={}", format_form(format_date(self.expiry))),
+            format!("sp={}", self.permissions),
         ];
 
-        if let Some(start) = &self.signed_start {
+        if let Some(start) = &self.start {
             elements.push(format!("st={}", format_form(format_date(*start))))
         }
-        if let Some(ip) = &self.signed_ip {
+        if let Some(ip) = &self.ip {
             elements.push(format!("sip={}", ip))
         }
-        if let Some(protocol) = &self.signed_protocol {
+        if let Some(protocol) = &self.protocol {
             elements.push(format!("spr={}", protocol))
         }
         let sig = AccountSharedAccessSignature::signature(self);
@@ -212,138 +235,5 @@ impl PartialEq for AccountSharedAccessSignature {
 impl std::fmt::Debug for AccountSharedAccessSignature {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "SharedAccessSignature {{{}}}", self.signature())
-    }
-}
-
-pub struct AccountSharedAccessSignatureBuilder {
-    account: String,
-    key: String,
-    signed_version: AccountSasVersion,
-    signed_resource: Option<AccountSasResource>,
-    signed_resource_type: Option<AccountSasResourceType>,
-    signed_start: Option<DateTime<Utc>>,
-    signed_expiry: Option<DateTime<Utc>>,
-    signed_permissions: Option<AccountSasPermissions>,
-    signed_ip: Option<String>,
-    signed_protocol: Option<SasProtocol>,
-}
-
-impl AccountSharedAccessSignatureBuilder {
-    pub fn new(account: String, key: String) -> Self {
-        Self {
-            account,
-            key,
-            signed_version: AccountSasVersion::V20181109,
-            signed_resource: None,
-            signed_resource_type: None,
-            signed_start: None,
-            signed_expiry: None,
-            signed_permissions: None,
-            signed_ip: None,
-            signed_protocol: None,
-        }
-    }
-
-    pub fn finalize(&self) -> AccountSharedAccessSignature {
-        AccountSharedAccessSignature {
-            account: self.account.to_owned(),
-            key: self.key.to_owned(),
-            signed_version: self.signed_version,
-            signed_resource: self.signed_resource.unwrap(),
-            signed_resource_type: self.signed_resource_type.unwrap(),
-            signed_start: self.signed_start,
-            signed_expiry: self.signed_expiry.unwrap(),
-            signed_permissions: self.signed_permissions.unwrap(),
-            signed_ip: self.signed_ip.clone(),
-            signed_protocol: self.signed_protocol,
-        }
-    }
-
-    pub fn version(&self) -> AccountSasVersion {
-        self.signed_version
-    }
-
-    pub fn with_version(self, version: AccountSasVersion) -> Self {
-        Self {
-            signed_version: version,
-            ..self
-        }
-    }
-
-    pub fn resource(&self) -> AccountSasResource {
-        self.signed_resource.unwrap()
-    }
-
-    pub fn with_resource(self, resource: AccountSasResource) -> Self {
-        Self {
-            signed_resource: Some(resource),
-            ..self
-        }
-    }
-
-    pub fn resource_type_type(&self) -> AccountSasResourceType {
-        self.signed_resource_type.unwrap()
-    }
-
-    pub fn with_resource_type(self, resource_type: AccountSasResourceType) -> Self {
-        Self {
-            signed_resource_type: Some(resource_type),
-            ..self
-        }
-    }
-
-    pub fn expiry(&self) -> DateTime<Utc> {
-        self.signed_expiry.unwrap()
-    }
-
-    pub fn with_expiry(self, expiry: DateTime<Utc>) -> Self {
-        Self {
-            signed_expiry: Some(expiry),
-            ..self
-        }
-    }
-
-    pub fn signed_permissions(&self) -> AccountSasPermissions {
-        self.signed_permissions.unwrap()
-    }
-
-    pub fn with_permissions(self, permissions: AccountSasPermissions) -> Self {
-        Self {
-            signed_permissions: Some(permissions),
-            ..self
-        }
-    }
-
-    pub fn signed_start(&self) -> DateTime<Utc> {
-        self.signed_start.unwrap()
-    }
-
-    pub fn with_start(self, start: DateTime<Utc>) -> Self {
-        Self {
-            signed_start: Some(start),
-            ..self
-        }
-    }
-
-    pub fn ip(&self) -> &str {
-        self.signed_ip.as_deref().unwrap()
-    }
-
-    pub fn with_ip(self, ip: String) -> Self {
-        Self {
-            signed_ip: Some(ip),
-            ..self
-        }
-    }
-
-    pub fn protocol(&self) -> SasProtocol {
-        self.signed_protocol.unwrap()
-    }
-
-    pub fn with_protocol(self, protocol: SasProtocol) -> Self {
-        Self {
-            signed_protocol: Some(protocol),
-            ..self
-        }
     }
 }
