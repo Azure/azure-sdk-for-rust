@@ -1,7 +1,7 @@
 use crate::{operations::*, QueueStoredAccessPolicy};
 use azure_core::{prelude::*, Context, Request, Response};
 use azure_storage::core::clients::{ServiceType, StorageClient};
-use std::{fmt::Debug, sync::Arc};
+use std::{fmt::Debug};
 
 pub trait AsQueueClient<QN: Into<String>> {
     fn queue_client(&self, queue_name: QN) -> QueueClient;

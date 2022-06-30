@@ -1,7 +1,7 @@
 use crate::{operations::*, prelude::*};
 use azure_core::{Context, Request, Response};
 use azure_storage::core::clients::StorageClient;
-use std::sync::Arc;
+
 
 pub trait AsPopReceiptClient {
     /// Implement this trait to convert the calling client into a

@@ -2,7 +2,7 @@ use crate::{container::operations::*, prelude::*};
 use azure_core::{headers::Headers, prelude::*, Context, Method, Request, Response, Url};
 use azure_storage::core::prelude::*;
 use bytes::Bytes;
-use std::sync::Arc;
+
 
 pub trait AsContainerLeaseClient {
     fn container_lease_client(&self, lease_id: LeaseId) -> ContainerLeaseClient;

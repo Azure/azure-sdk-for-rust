@@ -14,7 +14,7 @@ use azure_storage::{
     },
 };
 use bytes::Bytes;
-use std::sync::Arc;
+
 
 pub trait AsContainerClient<CN: Into<String>> {
     fn container_client(&self, container_name: CN) -> ContainerClient;
