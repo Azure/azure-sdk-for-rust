@@ -1,7 +1,4 @@
 #![cfg_attr(feature = "into_future", feature(into_future))]
-#![deny(clippy::unwrap_used)]
-#![deny(clippy::expect_used)]
-#![deny(clippy::panic_used)]
 
 #[macro_use]
 extern crate serde_derive;
