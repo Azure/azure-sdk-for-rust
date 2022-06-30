@@ -1,18 +1,8 @@
-use crate::{clients::TableServiceClient, operations::*};
+use crate::{clients::*, operations::*};
 use azure_core::{headers::Headers, Context, Method, Request, Response, Url};
 use azure_storage::clients::StorageClient;
 use bytes::Bytes;
 use serde::{de::DeserializeOwned, Serialize};
-
-pub trait AsTableClient<S: Into<String>> {
-    fn table_client(&self, s: S) -> TableClient;
-}
-
-impl<S: Into<String>> AsTableClient<S> for TableServiceClient {
-    fn table_client(&self, s: S) -> TableClient {
-        TableClient::new(self.clone(), s)
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct TableClient {
@@ -58,6 +48,10 @@ impl TableClient {
 
     pub(crate) fn storage_client(&self) -> &StorageClient {
         self.table_service_client.storage_client()
+    }
+
+    pub fn partition_key_client<PK: Into<String>>(&self, partition_key: PK) -> PartitionKeyClient {
+        PartitionKeyClient::new(self.clone(), partition_key)
     }
 
     pub(crate) async fn send(

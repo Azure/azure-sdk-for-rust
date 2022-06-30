@@ -1,4 +1,4 @@
-use crate::{operations::*, QueueStoredAccessPolicy};
+use crate::{operations::*, PopReceipt, PopReceiptClient, QueueStoredAccessPolicy};
 use azure_core::{prelude::*, Context, Request, Response};
 use azure_storage::core::clients::{ServiceType, StorageClient};
 use std::fmt::Debug;
@@ -121,6 +121,14 @@ impl QueueClient {
     /// Removes all messages from the queue.
     pub fn clear_messages(&self) -> ClearMessagesBuilder {
         ClearMessagesBuilder::new(self.clone())
+    }
+
+    /// Pass a valid `PopReceipt` to a `QueueClient`
+    /// to obtain a `PopReceiptClient` back. The `PopReceiptClient`
+    /// can then delete or update the message
+    /// referenced by the passed `PopReceipt`.
+    pub fn pop_receipt_client(&self, pop_receipt: impl Into<PopReceipt>) -> PopReceiptClient {
+        PopReceiptClient::new(self.clone(), pop_receipt)
     }
 }
 

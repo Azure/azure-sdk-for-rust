@@ -18,16 +18,6 @@ use bytes::Bytes;
 use futures::StreamExt;
 use url::Url;
 
-pub trait AsBlobClient<BN: Into<String>> {
-    fn blob_client(&self, blob_name: BN) -> BlobClient;
-}
-
-impl<BN: Into<String>> AsBlobClient<BN> for ContainerClient {
-    fn blob_client(&self, blob_name: BN) -> BlobClient {
-        BlobClient::new(self.clone(), blob_name.into())
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct BlobClient {
     container_client: ContainerClient,
@@ -89,6 +79,10 @@ impl BlobClient {
 
     pub fn get_properties(&self) -> GetPropertiesBuilder {
         GetPropertiesBuilder::new(self.clone())
+    }
+
+    pub fn blob_lease_client(&self, lease_id: LeaseId) -> BlobLeaseClient {
+        BlobLeaseClient::new(self.clone(), lease_id)
     }
 
     /// Creates a builder for setting blob properties.
@@ -255,7 +249,6 @@ impl BlobClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::clients::AsBlobClient;
 
     struct FakeSas {
         token: String,
@@ -301,7 +294,7 @@ mod integration_tests {
     use super::*;
     use crate::blob::clients::AsBlobClient;
 
-    fn get_emulator_client(container_name: &str) -> ContainerClient {
+    fn get_emulator_client(container_name: &str) -> Arc<ContainerClient> {
         let storage_account = StorageClient::new_emulator_default();
         storage_account.container_client(container_name)
     }

@@ -3,16 +3,6 @@ use azure_core::{headers::Headers, Context, Method, Request, Response, Url};
 use azure_storage::core::clients::StorageClient;
 use bytes::Bytes;
 
-pub trait AsPartitionKeyClient<PK: Into<String>> {
-    fn partition_key_client(&self, partition_key: PK) -> PartitionKeyClient;
-}
-
-impl<PK: Into<String>> AsPartitionKeyClient<PK> for TableClient {
-    fn partition_key_client(&self, partition_key: PK) -> PartitionKeyClient {
-        PartitionKeyClient::new(self.clone(), partition_key)
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct PartitionKeyClient {
     table_client: TableClient,
@@ -33,6 +23,10 @@ impl PartitionKeyClient {
 
     pub fn partition_key(&self) -> &str {
         &self.partition_key
+    }
+
+    pub fn entity_client<RK: Into<String>>(&self, row_key: RK) -> azure_core::Result<EntityClient> {
+        EntityClient::new(self.clone(), row_key)
     }
 
     pub(crate) fn table_client(&self) -> &TableClient {

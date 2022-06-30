@@ -4,6 +4,8 @@ use azure_storage::core::clients::{ServiceType, StorageClient};
 use bytes::Bytes;
 use url::Url;
 
+use super::TableClient;
+
 pub trait AsTableServiceClient {
     fn table_service_client(&self) -> azure_core::Result<TableServiceClient>;
 }
@@ -43,6 +45,10 @@ impl TableServiceClient {
 
     pub(crate) fn storage_client(&self) -> &StorageClient {
         &self.storage_client
+    }
+
+    pub fn table_client<S: Into<String>>(&self, s: S) -> TableClient {
+        TableClient::new(self.clone(), s)
     }
 
     pub(crate) fn finalize_request(

@@ -2,25 +2,6 @@ use crate::{operations::*, prelude::*};
 use azure_core::{Context, Request, Response};
 use azure_storage::core::clients::StorageClient;
 
-pub trait AsPopReceiptClient {
-    /// Implement this trait to convert the calling client into a
-    /// `PopReceiptClient`. This trait is used to make sure the
-    /// returned client is wrapped in an `Arc` to avoid
-    /// unnecessary copying while keeping the clients
-    /// type signature simple (without lifetimes).
-    fn pop_receipt_client(&self, pop_receipt: impl Into<PopReceipt>) -> PopReceiptClient;
-}
-
-impl AsPopReceiptClient for QueueClient {
-    /// Pass a valid `PopReceipt` to a `QueueClient`
-    /// to obtain a `PopReceiptClient` back. The `PopReceiptClient`
-    /// can then delete or update the message
-    /// referenced by the passed `PopReceipt`.
-    fn pop_receipt_client(&self, pop_receipt: impl Into<PopReceipt>) -> PopReceiptClient {
-        PopReceiptClient::new(self.clone(), pop_receipt)
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct PopReceiptClient {
     queue_client: QueueClient,

@@ -1,4 +1,4 @@
-use crate::{container::operations::*, prelude::PublicAccess};
+use crate::{clients::*, container::operations::*, prelude::PublicAccess};
 use azure_core::{
     error::{Error, ErrorKind},
     headers::Headers,
@@ -91,6 +91,14 @@ impl ContainerClient {
 
     pub fn break_lease(&self) -> BreakLeaseBuilder {
         BreakLeaseBuilder::new(self.clone())
+    }
+
+    pub fn container_lease_client(&self, lease_id: LeaseId) -> ContainerLeaseClient {
+        ContainerLeaseClient::new(self.clone(), lease_id)
+    }
+
+    pub fn blob_client<BN: Into<String>>(&self, blob_name: BN) -> BlobClient {
+        BlobClient::new(self.clone(), blob_name.into())
     }
 
     pub(crate) async fn send(

@@ -3,16 +3,6 @@ use azure_core::{headers::Headers, prelude::*, Context, Method, Request, Respons
 use azure_storage::core::prelude::*;
 use bytes::Bytes;
 
-pub trait AsBlobLeaseClient {
-    fn blob_lease_client(&self, lease_id: LeaseId) -> BlobLeaseClient;
-}
-
-impl AsBlobLeaseClient for BlobClient {
-    fn blob_lease_client(&self, lease_id: LeaseId) -> BlobLeaseClient {
-        BlobLeaseClient::new(self.clone(), lease_id)
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct BlobLeaseClient {
     blob_client: BlobClient,

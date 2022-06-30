@@ -8,16 +8,6 @@ use bytes::Bytes;
 use serde::{de::DeserializeOwned, Serialize};
 use url::Url;
 
-pub trait AsEntityClient<RK: Into<String>> {
-    fn entity_client(&self, row_key: RK) -> azure_core::Result<EntityClient>;
-}
-
-impl<RK: Into<String>> AsEntityClient<RK> for PartitionKeyClient {
-    fn entity_client(&self, row_key: RK) -> azure_core::Result<EntityClient> {
-        EntityClient::new(self.clone(), row_key)
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct EntityClient {
     partition_key_client: PartitionKeyClient,
