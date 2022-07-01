@@ -3,6 +3,7 @@ use super::mock_transaction::MockTransaction;
 use crate::error::{Error, ErrorKind};
 use crate::policies::{Policy, PolicyResult};
 use crate::{Context, Request, TransportOptions};
+use std::collections::HashMap;
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
@@ -70,45 +71,51 @@ impl Policy for MockTransportPlayerPolicy {
             .headers()
             .iter()
             .filter(|(h, _)| !SKIPPED_HEADERS.contains(&h.as_str()))
-            .collect::<Vec<_>>();
+            .collect::<HashMap<_, _>>();
 
         let expected_headers = expected_request
             .headers()
             .iter()
             .filter(|(h, _)| !SKIPPED_HEADERS.contains(&h.as_str()))
-            .collect::<Vec<_>>();
+            .collect::<HashMap<_, _>>();
+        let more_headers = if expected_headers.len() > actual_headers.len() {
+            expected_headers.iter()
+        } else {
+            actual_headers.iter()
+        };
 
         // In order to accept a request, we make sure that:
         // 1. There are no extra headers (in both the received and read request).
         // 2. Each header has the same value.
-        if actual_headers.len() != expected_headers.len() {
-            return Err(Error::with_message(ErrorKind::MockFramework, || {
-                format!(
-                    "different number of headers in request. Actual: {0}, Expected: {1}",
-                    actual_headers.len(),
-                    expected_headers.len(),
-                )
-            }));
-        }
-
-        for (actual_header_key, actual_header_value) in actual_headers.iter() {
-            let (_, expected_header_value) = expected_headers
-                .iter()
-                .find(|(h, _)| actual_header_key.as_str() == h.as_str())
-                .ok_or_else(|| Error::with_message(ErrorKind::MockFramework, ||
-                    format!("received request have header '{0}' but it was not present in the read request",
-                    actual_header_key.as_str(),
-                )))?;
-
-            if actual_header_value != expected_header_value {
-                return Err(Error::with_message(ErrorKind::MockFramework, || {
-                    format!(
-                        "request header '{0}' value is different. Actual: {1}, Expected: {2}",
-                        actual_header_key.as_str().to_owned(),
-                        actual_header_value.as_str().to_owned(),
-                        expected_header_value.as_str().to_owned(),
-                    )
-                }));
+        for (name, _) in more_headers {
+            match (expected_headers.get(name), actual_headers.get(name)) {
+                (Some(_), None) => {
+                    return Err(Error::with_message(ErrorKind::MockFramework, || {
+                        format!(
+                            "actual request does not have header '{0}' but it was expected",
+                            name.as_str(),
+                        )
+                    }));
+                }
+                (None, Some(_)) => {
+                    return Err(Error::with_message(ErrorKind::MockFramework, || {
+                        format!(
+                            "actual request has header '{0}' but it was not expected",
+                            name.as_str(),
+                        )
+                    }));
+                }
+                (Some(exp), Some(act)) if exp != act => {
+                    return Err(Error::with_message(ErrorKind::MockFramework, || {
+                        format!(
+                            "request header '{}' is different. Actual: {}, Expected: {}",
+                            name.as_str(),
+                            act.as_str(),
+                            exp.as_str()
+                        )
+                    }));
+                }
+                _ => {}
             }
         }
 

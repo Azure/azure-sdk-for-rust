@@ -32,7 +32,7 @@ impl ListUsersBuilder {
                 if let Some(cl) = &this.consistency_level {
                     request.insert_headers(cl);
                 }
-                request.insert_headers(&this.max_item_count);
+                request.insert_headers(&this.max_item_count.unwrap_or_default());
 
                 if let Some(ref c) = continuation {
                     request.insert_headers(c);
