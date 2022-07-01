@@ -21,7 +21,8 @@ operation! {
     ?if_modified_since: IfModifiedSince,
     ?consistency_level: ConsistencyLevel,
     ?allow_tentative_writes: TentativeWritesAllowance,
-    ??partition_key: String
+    #[skip]
+    partition_key: String
 }
 
 impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {

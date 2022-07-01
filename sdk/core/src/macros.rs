@@ -242,7 +242,7 @@ macro_rules! operation {
         client: $client:ty,
         $($required:ident: $rtype:ty,)*
         $(?$optional:ident: $otype:ty,)*
-        $(??$nosetter:ident: $nstype:ty),*
+        $(#[skip]$nosetter:ident: $nstype:ty),*
     ) => {
             operation!{
                 @builder
@@ -261,7 +261,7 @@ macro_rules! operation {
         client: $client:ty,
         $($required:ident: $rtype:ty,)*
         $(?$optional:ident: $otype:ty,)*
-        $(??$nosetter:ident: $nstype:ty),*) => {
+        $(#[skip] $nosetter:ident: $nstype:ty),*) => {
             operation!{
                 $name<$($generic: $first_constraint $(+ $constraint)*),*>,
                 client: $client,

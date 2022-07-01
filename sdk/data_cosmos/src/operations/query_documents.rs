@@ -32,7 +32,8 @@ operation! {
     ?consistency_level: ConsistencyLevel,
     ?parallelize_cross_partition_query: ParallelizeCrossPartition,
     ?query_cross_partition: QueryCrossPartition,
-    ??partition_key_serialized: String
+    #[skip]
+    partition_key_serialized: String
 }
 
 impl QueryDocumentsBuilder {

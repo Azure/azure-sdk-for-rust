@@ -20,7 +20,8 @@ operation! {
     ?if_modified_since: IfModifiedSince,
     ?allow_tentative_writes: TentativeWritesAllowance,
     ?consistency_level: ConsistencyLevel,
-    ??partition_key: String
+    #[skip]
+    partition_key: String
 }
 
 impl<D: Serialize + Send + 'static> ReplaceDocumentBuilder<D> {
