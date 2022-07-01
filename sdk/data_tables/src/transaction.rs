@@ -36,7 +36,6 @@ impl Transaction {
         s.push_str("\n\n");
 
         for transaction_operation in self.transaction_operations.iter() {
-            // s.push_str(&format!("--changeset_{}\nContent-Type: application/http\nContent-Transfer-Encoding: binary\n\n", self.change_set_uuid.hyphenated()));
             s.push_str("--changeset_");
             s.push_str(&self.change_set_uuid.hyphenated().to_string());
             s.push_str("\nContent-Type: application/http\nContent-Transfer-Encoding: binary\n\n");
