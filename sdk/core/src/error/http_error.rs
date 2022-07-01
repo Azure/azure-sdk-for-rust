@@ -1,11 +1,11 @@
-use crate::{headers, Response};
+use crate::{headers, Response, StatusCode};
 use bytes::Bytes;
 use std::collections::HashMap;
 
 /// An unsuccessful HTTP response
 #[derive(Debug)]
 pub struct HttpError {
-    status: u16,
+    status: StatusCode,
     error_code: Option<String>,
     headers: std::collections::HashMap<String, String>,
     body: Bytes,
@@ -26,15 +26,15 @@ impl HttpError {
         let body = response.into_body().await;
         error_code = error_code.or_else(|| get_error_code_from_body(&body));
         HttpError {
-            status: status as u16,
+            status,
             headers,
             error_code,
             body,
         }
     }
 
-    /// Get a reference to the http error's status.
-    pub fn status(&self) -> u16 {
+    /// Get the status code for the http error
+    pub fn status(&self) -> StatusCode {
         self.status
     }
 
