@@ -60,10 +60,8 @@ where
                 Ok(response) => {
                     // Error status code
                     let status = response.status();
-
                     let http_error = HttpError::new(response).await;
-                    // status code should already be parsed as valid from the underlying HTTP
-                    // implementations.
+
                     let error = Error::full(
                         ErrorKind::http_response(
                             status,
