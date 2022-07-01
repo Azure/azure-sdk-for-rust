@@ -41,15 +41,15 @@ macro_rules! setters {
     (@recurse) => {};
     // Recurse without transform
     (@recurse $name:ident : $typ:ty, $($tokens:tt)*) => {
-        setters! { @recurse $name: $typ => $name, $($tokens)* }
+        $crate::setters! { @recurse $name: $typ => $name, $($tokens)* }
     };
     // Recurse with transform
     (@recurse $name:ident : $typ:ty => $transform:expr, $($tokens:tt)*) => {
-        setters! { @single $name : $typ => $transform }
-        setters! { @recurse $($tokens)* }
+        $crate::setters! { @single $name : $typ => $transform }
+        $crate::setters! { @recurse $($tokens)* }
     };
     ($($tokens:tt)*) => {
-        setters! { @recurse $($tokens)* }
+        $crate::setters! { @recurse $($tokens)* }
     }
 }
 
@@ -57,28 +57,30 @@ macro_rules! setters {
 ///
 /// For the following code:
 /// ```
-/// operation! {
+/// # #[derive(Clone, Debug)]
+/// # struct DatabaseClient;
+/// # struct CreateCollectionResponse;
+/// azure_core::operation! {
 ///    CreateCollection,
 ///    client: DatabaseClient,
 ///    collection_name: String,
-///    partition_key: PartitionKey,
-///    ?consistency_level: ConsistencyLevel,
-///    ?indexing_policy: IndexingPolicy,
-///    ?offer: Offer
-///}
+///    ?consistency_level: u32
+/// }
 /// ```
 ///
 /// The following code will be generated
 ///
 /// ```
+/// # use azure_core::setters;
+/// # use azure_core::Context;
+/// # #[derive(Clone, Debug)]
+/// # struct DatabaseClient;
+/// # struct CreateCollectionResponse;
 /// #[derive(Debug, Clone)]
 /// pub struct CreateCollectionBuilder {
 ///     client: DatabaseClient,
 ///     collection_name: String,
-///     partition_key: PartitionKey,
-///     consistency_level: Option<ConsistencyLevel>,
-///     indexing_policy: Option<IndexingPolicy>,
-///     offer: Option<Offer>,
+///     consistency_level: Option<u32>,
 ///     context: Context,
 /// }
 ///
@@ -86,23 +88,17 @@ macro_rules! setters {
 ///     pub(crate) fn new(
 ///         client: DatabaseClient,
 ///         collection_name: String,
-///         partition_key: PartitionKey,
 ///     ) -> Self {
 ///         Self {
 ///             client,
 ///             collection_name,
-///             partition_key,
 ///             consistency_level: None,
-///             indexing_policy: None,
-///             offer: None,
 ///             context: Context::new(),
 ///         }
 ///     }
 ///
 ///     setters! {
-///         consistency_level: ConsistencyLevel => Some(consistency_level),
-///         indexing_policy: IndexingPolicy => Some(indexing_policy),
-///         offer: Offer => Some(offer),
+///         consistency_level: u32 => Some(consistency_level),
 ///         context: Context => context,
 ///     }
 /// }
@@ -166,7 +162,7 @@ macro_rules! operation {
                 }
             }
 
-            setters! {
+            $crate::setters! {
                 $($optional: $otype => Some($optional),)*
                 context: azure_core::Context => context,
             }
@@ -183,7 +179,7 @@ macro_rules! operation {
         @nosetter
         $($nosetter:ident: $nstype:ty),*
         ) => {
-        operation! {
+        $crate::operation! {
             @builder $name<$($generic: $first_constraint $(+ $constraint)*),*>,
             client: $client,
             @required
@@ -212,7 +208,7 @@ macro_rules! operation {
         client: $client:ty,
         $($required:ident: $rtype:ty,)*
         $(?$optional:ident: $otype:ty),*) => {
-            operation!{
+            $crate::operation!{
                 $name<>,
                 client: $client,
                 @required
@@ -227,7 +223,7 @@ macro_rules! operation {
         client: $client:ty,
         $($required:ident: $rtype:ty,)*
         $(?$optional:ident: $otype:ty),*) => {
-            operation!{
+            $crate::operation!{
                 @builder
                 $name<>,
                 client: $client,
@@ -244,7 +240,7 @@ macro_rules! operation {
         $(?$optional:ident: $otype:ty,)*
         $(#[skip]$nosetter:ident: $nstype:ty),*
     ) => {
-            operation!{
+            $crate::operation!{
                 @builder
                 $name<>,
                 client: $client,
@@ -262,7 +258,7 @@ macro_rules! operation {
         $($required:ident: $rtype:ty,)*
         $(?$optional:ident: $otype:ty,)*
         $(#[skip] $nosetter:ident: $nstype:ty),*) => {
-            operation!{
+            $crate::operation!{
                 $name<$($generic: $first_constraint $(+ $constraint)*),*>,
                 client: $client,
                 @required
