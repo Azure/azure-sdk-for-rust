@@ -41,7 +41,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
         if status.is_success() {
             Ok(crate::CollectedResponse::new(status, headers, body))
         } else {
-            return Err(ErrorKind::http_response_from_body(status, &body).into_error());
+            Err(ErrorKind::http_response_from_body(status, &body).into_error())
         }
     }
 }
