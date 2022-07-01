@@ -32,11 +32,7 @@ async fn main() -> azure_core::Result<()> {
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
     // Here we are using reqwest but other clients are supported (check the documentation).
-    let client = CosmosClient::new(
-        args.account.clone(),
-        authorization_token,
-        CosmosOptions::default(),
-    );
+    let client = CosmosClient::new(args.account.clone(), authorization_token);
 
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified account.
     let databases = client

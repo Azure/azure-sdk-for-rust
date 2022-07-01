@@ -34,7 +34,7 @@ async fn main() -> azure_core::Result<()> {
     // Once we have an authorization token you can create a client instance. You can change the
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
-    let client = CosmosClient::new(args.account, authorization_token, CosmosOptions::default());
+    let client = CosmosClient::new(args.account, authorization_token);
 
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but deref to &str so you can pass it to methods

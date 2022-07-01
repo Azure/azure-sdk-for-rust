@@ -54,11 +54,7 @@ async fn main() -> azure_core::Result<()> {
 
     // Next we will create a Cosmos client. You need an authorization_token but you can later
     // change it if needed.
-    let client = CosmosClient::new(
-        args.account.clone(),
-        authorization_token.clone(),
-        CosmosOptions::default(),
-    );
+    let client = CosmosClient::new(args.account.clone(), authorization_token.clone());
 
     // list_databases will give us the databases available in our account. If there is
     // an error (for example, the given key is not valid) you will receive a

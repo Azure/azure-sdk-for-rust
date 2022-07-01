@@ -23,12 +23,10 @@ pub struct CosmosClient {
 
 impl CosmosClient {
     /// Create a new `CosmosClient` which connects to the account's instance in the public Azure cloud.
-    pub fn new(account: String, auth_token: AuthorizationToken, options: CosmosOptions) -> Self {
-        let cloud_location = CloudLocation::Public(account);
-        let pipeline = new_pipeline_from_options(options, auth_token);
+    pub fn new(account: String, auth_token: AuthorizationToken) -> Self {
         Self {
-            pipeline,
-            cloud_location,
+            pipeline: new_pipeline_from_options(ClientOptions::default(), auth_token),
+            cloud_location: CloudLocation::Public(account),
         }
     }
 
@@ -39,54 +37,38 @@ impl CosmosClient {
         auth_token: AuthorizationToken,
         transaction_name: impl Into<String>,
     ) -> Self {
-        Self::new(
-            account.into(),
-            auth_token,
-            CosmosOptions::new_with_transaction_name(transaction_name.into()),
-        )
+        let options = ClientOptions::new_with_transaction_name(transaction_name.into());
+        Self {
+            pipeline: new_pipeline_from_options(options, auth_token),
+            cloud_location: CloudLocation::Public(account.into()),
+        }
     }
 
     /// Create a new `CosmosClient` which connects to the account's instance in the Chinese Azure cloud.
-    pub fn new_china(
-        account: String,
-        auth_token: AuthorizationToken,
-        options: CosmosOptions,
-    ) -> Self {
-        let cloud_location = CloudLocation::China(account);
-        let pipeline = new_pipeline_from_options(options, auth_token);
+    pub fn new_china(account: String, auth_token: AuthorizationToken) -> Self {
         Self {
-            pipeline,
-            cloud_location,
+            pipeline: new_pipeline_from_options(ClientOptions::default(), auth_token),
+            cloud_location: CloudLocation::China(account),
         }
     }
 
     /// Create a new `CosmosClient` which connects to the account's instance in custom Azure cloud.
-    pub fn new_custom(
-        account: String,
-        auth_token: AuthorizationToken,
-        uri: String,
-        options: CosmosOptions,
-    ) -> Self {
-        let cloud_location = CloudLocation::Custom { account, uri };
-        let pipeline = new_pipeline_from_options(options, auth_token);
+    pub fn new_custom(account: String, auth_token: AuthorizationToken, uri: String) -> Self {
         Self {
-            pipeline,
-            cloud_location,
+            pipeline: new_pipeline_from_options(ClientOptions::default(), auth_token),
+            cloud_location: CloudLocation::Custom { account, uri },
         }
     }
 
     /// Create a new `CosmosClient` which connects to the account's instance in Azure emulator
-    pub fn new_emulator(address: &str, port: u16, options: CosmosOptions) -> Self {
+    pub fn new_emulator(address: &str, port: u16) -> Self {
         let auth_token = AuthorizationToken::primary_from_base64(EMULATOR_ACCOUNT_KEY).unwrap();
-        let uri = format!("https://{}:{}", address, port);
-        let cloud_location = CloudLocation::Custom {
-            account: String::from("Custom"),
-            uri,
-        };
-        let pipeline = new_pipeline_from_options(options, auth_token);
         Self {
-            pipeline,
-            cloud_location,
+            pipeline: new_pipeline_from_options(ClientOptions::default(), auth_token),
+            cloud_location: CloudLocation::Custom {
+                account: String::from("Custom"),
+                uri: format!("https://{}:{}", address, port),
+            },
         }
     }
 
@@ -146,7 +128,7 @@ impl CosmosClient {
 
 /// Create a Pipeline from CosmosOptions
 fn new_pipeline_from_options(
-    options: CosmosOptions,
+    options: ClientOptions,
     authorization_token: AuthorizationToken,
 ) -> Pipeline {
     let auth_policy: Arc<dyn azure_core::Policy> =
@@ -160,31 +142,10 @@ fn new_pipeline_from_options(
     Pipeline::new(
         option_env!("CARGO_PKG_NAME"),
         option_env!("CARGO_PKG_VERSION"),
-        options.options,
+        options,
         Vec::new(),
         per_retry_policies,
     )
-}
-
-/// Options for specifying how a Cosmos client will behave
-#[derive(Debug, Clone, Default)]
-pub struct CosmosOptions {
-    options: ClientOptions,
-}
-
-impl CosmosOptions {
-    /// Create new options
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    #[cfg(feature = "mock_transport_framework")]
-    /// Create new options with a given transaction name
-    pub fn new_with_transaction_name(name: String) -> Self {
-        Self {
-            options: ClientOptions::new_with_transaction_name(name),
-        }
-    }
 }
 
 /// The cloud with which you want to interact.

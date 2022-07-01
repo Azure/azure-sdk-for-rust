@@ -5,7 +5,7 @@ pub fn initialize() -> azure_core::Result<CosmosClient> {
     let account = get_account();
     let authorization_token = get_authorization_token()?;
 
-    let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
+    let client = CosmosClient::new(account, authorization_token);
 
     Ok(client)
 }
