@@ -33,7 +33,7 @@ impl ContentType {
     }
 }
 
-impl<'a> Header for ContentType {
+impl Header for ContentType {
     fn name(&self) -> headers::HeaderName {
         headers::CONTENT_TYPE
     }

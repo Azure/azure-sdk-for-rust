@@ -29,25 +29,27 @@ impl Transaction {
     pub(crate) fn to_string(&self) -> azure_core::Result<String> {
         let mut s = String::new();
 
-        s.push_str(&format!(
-            "--batch_{}\nContent-Type: multipart/mixed; boundary=changeset_{}\n\n",
-            self.batch_uuid.hyphenated(),
-            self.change_set_uuid.hyphenated()
-        ));
+        s.push_str("--batch_");
+        s.push_str(&self.batch_uuid.hyphenated().to_string());
+        s.push_str("\nContent-Type: multipart/mixed; boundary=changeset_");
+        s.push_str(&self.change_set_uuid.hyphenated().to_string());
+        s.push_str("\n\n");
 
         for transaction_operation in self.transaction_operations.iter() {
-            s.push_str(&format!("--changeset_{}\nContent-Type: application/http\nContent-Transfer-Encoding: binary\n\n", self.change_set_uuid.hyphenated()));
-            s.push_str(&format!(
-                "{} {} HTTP/1.1\n",
-                transaction_operation.request.method(),
-                transaction_operation.request.url()
-            ));
+            s.push_str("--changeset_");
+            s.push_str(&self.change_set_uuid.hyphenated().to_string());
+            s.push_str("\nContent-Type: application/http\nContent-Transfer-Encoding: binary\n\n");
+
+            s.push_str(transaction_operation.request.method().as_ref());
+            s.push(' ');
+            s.push_str(transaction_operation.request.url().as_ref());
+            s.push_str(" HTTP/1.1\n");
+
             for (header_name, header_value) in transaction_operation.request.headers().iter() {
-                s.push_str(&format!(
-                    "{}: {}\n",
-                    header_name.as_str(),
-                    header_value.as_str()
-                ));
+                s.push_str(header_name.as_str());
+                s.push_str(": ");
+                s.push_str(header_value.as_str());
+                s.push('\n');
             }
 
             s.push('\n');
@@ -62,11 +64,11 @@ impl Transaction {
             }
         }
 
-        s.push_str(&format!(
-            "\n--changeset_{}--\n--batch_{}\n",
-            self.change_set_uuid.hyphenated(),
-            self.batch_uuid.hyphenated(),
-        ));
+        s.push_str("--changeset_");
+        s.push_str(&self.change_set_uuid.hyphenated().to_string());
+        s.push_str("--\n--batch_");
+        s.push_str(&self.batch_uuid.hyphenated().to_string());
+        s.push('\n');
 
         Ok(s)
     }

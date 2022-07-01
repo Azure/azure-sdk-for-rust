@@ -76,9 +76,7 @@ async fn main() -> azure_core::Result<()> {
         chunk2.extend(result?.data);
     }
     assert_eq!(chunk2.len(), 2048);
-    for i in 0..2048 {
-        assert_eq!(chunk2[i], 73);
-    }
+    assert!(chunk2.iter().all(|x| *x == 73));
 
     let mut stream = blob_client.get().chunk_size(512u64).into_stream();
 

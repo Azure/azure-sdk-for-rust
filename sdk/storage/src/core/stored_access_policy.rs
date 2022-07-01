@@ -86,19 +86,24 @@ impl StoredAccessPolicyList {
         s.push_str("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<SignedIdentifiers>\n");
         for sa in &self.stored_access {
             s.push_str("\t<SignedIdentifier>\n");
-            s.push_str(&format!("\t\t<Id>{}</Id>\n\t\t<AccessPolicy>\n", sa.id));
-            s.push_str(&format!(
-                "\t\t\t<Start>{}</Start>\n",
-                sa.start.format("%Y-%m-%dT%H:%M:%SZ")
-            ));
-            s.push_str(&format!(
-                "\t\t\t<Expiry>{}</Expiry>\n",
-                sa.expiry.format("%Y-%m-%dT%H:%M:%SZ")
-            ));
-            s.push_str(&format!(
-                "\t\t\t<Permission>{}</Permission>\n",
-                sa.permission
-            ));
+
+            s.push_str("\t\t<Id>");
+            s.push_str(&sa.id);
+            s.push_str("\n\t\t</Id>\n");
+
+            s.push_str("<AccessPolicy>\n");
+
+            s.push_str("\t\t\t<Start>");
+            s.push_str(&sa.start.format("%Y-%m-%dT%H:%M:%SZ").to_string());
+            s.push_str("</Start>\n");
+
+            s.push_str("\t\t\t<Expiry>");
+            s.push_str(&sa.expiry.format("%Y-%m-%dT%H:%M:%SZ").to_string());
+            s.push_str("</Expiry>\n");
+
+            s.push_str("\t\t\t<Permission>");
+            s.push_str(&sa.permission);
+            s.push_str("</Permission>\n");
             s.push_str("\t\t</AccessPolicy>\n\t</SignedIdentifier>\n");
         }
 
