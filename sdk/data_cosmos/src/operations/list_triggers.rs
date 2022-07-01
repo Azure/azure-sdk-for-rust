@@ -10,7 +10,7 @@ use azure_core::{Pageable, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
 operation! {
-    @list
+    #[stream]
     ListTriggers,
     client: CollectionClient,
     ?if_match_condition: IfMatchCondition,

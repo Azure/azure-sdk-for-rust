@@ -11,7 +11,7 @@ use azure_core::{prelude::*, Pageable, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
 operation! {
-    @list
+    #[stream]
     ListUserDefinedFunctions,
     client: CollectionClient,
     ?if_match_condition: IfMatchCondition,

@@ -22,7 +22,7 @@ use serde_json::Value;
 use std::convert::TryInto;
 
 operation! {
-    @list
+    #[stream]
     QueryDocuments,
     client: CollectionClient,
     query: Query,

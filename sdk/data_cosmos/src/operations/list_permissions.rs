@@ -8,7 +8,7 @@ use azure_core::prelude::*;
 use azure_core::{Pageable, Response as HttpResponse};
 
 operation! {
-    @list
+    #[stream]
     ListPermissions,
     client: UserClient,
     ?max_item_count: MaxItemCount,

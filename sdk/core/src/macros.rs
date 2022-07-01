@@ -121,8 +121,8 @@ macro_rules! setters {
 ///     futures::future::BoxFuture<'static, azure_core::Result<CreateCollectionResponse>>;
 /// ```
 ///
-/// Additionally, `@list` can be used before the operation name to generate code appropriate for list operations
-/// and `??` can be used at the end of the list of options for options where we should not generate a setter.
+/// Additionally, `#[stream]` can be used before the operation name to generate code appropriate for list operations
+/// and `#[skip]` can be used at the end of the list of options for options where we should not generate a setter.
 #[macro_export]
 macro_rules! operation {
     // Construct the builder.
@@ -222,8 +222,8 @@ macro_rules! operation {
                 @nosetter
             }
     };
-    // `operation! { @list ListUsers, client: UserClient, ?consistency_level: ConsistencyLevel }`
-    (@list $name:ident,
+    // `operation! { #[stream] ListUsers, client: UserClient, ?consistency_level: ConsistencyLevel }`
+    (#[stream] $name:ident,
         client: $client:ty,
         $($required:ident: $rtype:ty,)*
         $(?$optional:ident: $otype:ty),*) => {
@@ -238,7 +238,7 @@ macro_rules! operation {
                 @nosetter
             }
     };
-    (@list $name:ident,
+    (#[stream] $name:ident,
         client: $client:ty,
         $($required:ident: $rtype:ty,)*
         $(?$optional:ident: $otype:ty,)*

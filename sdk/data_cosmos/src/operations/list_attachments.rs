@@ -12,7 +12,7 @@ use azure_core::{Pageable, Response as HttpResponse, SessionToken};
 use chrono::{DateTime, Utc};
 
 operation! {
-    @list
+    #[stream]
     ListAttachments,
     client: DocumentClient,
     ?max_item_count: MaxItemCount,

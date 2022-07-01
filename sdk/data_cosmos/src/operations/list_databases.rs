@@ -8,7 +8,7 @@ use azure_core::{collect_pinned_stream, prelude::*, Pageable, Response};
 use chrono::{DateTime, Utc};
 
 operation! {
-    @list
+    #[stream]
     ListDatabases,
     client: CosmosClient,
     ?max_item_count: MaxItemCount,

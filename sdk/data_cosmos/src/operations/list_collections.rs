@@ -9,7 +9,7 @@ use azure_core::{collect_pinned_stream, Pageable};
 use chrono::{DateTime, Utc};
 
 operation! {
-    @list
+    #[stream]
     ListCollections,
     client: DatabaseClient,
     ?max_item_count: MaxItemCount,

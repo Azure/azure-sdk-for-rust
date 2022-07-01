@@ -10,7 +10,7 @@ use azure_core::{Pageable, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
 operation! {
-    @list
+    #[stream]
     ListStoredProcedures,
     client: CollectionClient,
     ?max_item_count: MaxItemCount,

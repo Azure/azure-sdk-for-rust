@@ -11,7 +11,7 @@ use azure_core::{
 use azure_core::{Continuable, Pageable};
 
 operation! {
-    @list
+    #[stream]
     ListUsers,
     client: DatabaseClient,
     ?max_item_count: MaxItemCount,

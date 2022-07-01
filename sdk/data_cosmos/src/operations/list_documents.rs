@@ -12,7 +12,7 @@ use chrono::{DateTime, Utc};
 use serde::de::DeserializeOwned;
 
 operation! {
-    @list
+    #[stream]
     ListDocuments,
     client: CollectionClient,
     ?max_item_count: MaxItemCount,
