@@ -128,7 +128,7 @@ macro_rules! operation {
     // Construct the builder.
     (@builder
         // The name of the operation and any generic params along with their constraints
-        $name:ident<$($generic:ident: $($constraint:ident +)*),*>,
+        $name:ident<$($generic:ident: $first_constraint:ident $(+ $constraint:ident)* ),*>,
         // The client
         client: $client:ty,
         // The required fields that will be used in the constructor
@@ -152,7 +152,7 @@ macro_rules! operation {
         }
 
         /// Setters for the various options for this builder
-        impl <$($generic: $($constraint +)*)*>[<$name Builder>]<$($generic),*> {
+        impl <$($generic: $first_constraint $(+ $constraint)* )*>[<$name Builder>]<$($generic),*> {
             pub(crate) fn new(
                 client: $client,
                 $($required: $rtype,)*
@@ -174,7 +174,7 @@ macro_rules! operation {
         }
     };
     // Construct a builder and the `Future` related code
-    ($name:ident<$($generic:ident: $($constraint:ident +)*),*>,
+    ($name:ident<$($generic:ident: $first_constraint:ident $(+ $constraint:ident)* ),*>,
         client: $client:ty,
         @required
         $($required:ident: $rtype:ty,)*
@@ -184,7 +184,7 @@ macro_rules! operation {
         $($nosetter:ident: $nstype:ty),*
         ) => {
         operation! {
-            @builder $name<$($generic: $($constraint +)*),*>,
+            @builder $name<$($generic: $first_constraint $(+ $constraint)*),*>,
             client: $client,
             @required
             $($required: $rtype,)*
@@ -257,13 +257,13 @@ macro_rules! operation {
             }
     };
     // `operation! { CreateDocument<D: Serialize>, client: UserClient, ?consistency_level: ConsistencyLevel, ??other_field: bool }`
-    ($name:ident<$($generic:ident: $($constraint:ident +)*),*>,
+    ($name:ident<$($generic:ident: $first_constraint:ident $(+ $constraint:ident)*),*>,
         client: $client:ty,
         $($required:ident: $rtype:ty,)*
         $(?$optional:ident: $otype:ty,)*
         $(??$nosetter:ident: $nstype:ty),*) => {
             operation!{
-                $name<$($generic: $($constraint +)*),*>,
+                $name<$($generic: $first_constraint $(+ $constraint)*),*>,
                 client: $client,
                 @required
                 $($required: $rtype,)*

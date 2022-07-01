@@ -12,7 +12,7 @@ use chrono::{DateTime, Utc};
 use serde::Serialize;
 
 operation! {
-    ReplaceDocument<D: Serialize + Send +>,
+    ReplaceDocument<D: Serialize + Send>,
     client: DocumentClient,
     document: D,
     ?indexing_directive: IndexingDirective,

@@ -12,7 +12,7 @@ use std::convert::TryFrom;
 use azure_core::{collect_pinned_stream, Response as HttpResponse};
 
 operation! {
-    CreateDocument<D: Serialize + CosmosEntity + Send +>,
+    CreateDocument<D: Serialize + CosmosEntity + Send>,
     client: CollectionClient,
     document: D,
     ?is_upsert: bool,
