@@ -20,12 +20,11 @@ async fn main() -> azure_core::Result<()> {
     let container_client = storage_client.container_client(&container_name);
 
     // create container
-    let res = container_client
+    container_client
         .create()
         .public_access(PublicAccess::None)
         .into_future()
         .await?;
-    println!("{:?}", res);
 
     let data = Bytes::from_static(b"something");
 

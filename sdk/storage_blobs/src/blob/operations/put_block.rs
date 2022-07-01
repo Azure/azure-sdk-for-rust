@@ -15,7 +15,7 @@ pub struct PutBlockBuilder {
     context: Context,
 }
 
-impl<'a> PutBlockBuilder {
+impl PutBlockBuilder {
     pub(crate) fn new(blob_client: BlobClient, block_id: BlockId, body: Bytes) -> Self {
         Self {
             blob_client,
