@@ -241,7 +241,7 @@ pub mod billing_subscriptions {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -292,7 +292,7 @@ pub mod billing_subscriptions {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -350,7 +350,7 @@ pub mod billing_subscriptions {
                             }
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -404,7 +404,7 @@ pub mod billing_subscriptions {
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -462,7 +462,7 @@ pub mod billing_subscriptions {
                             }
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -515,7 +515,7 @@ pub mod billing_subscriptions {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -573,7 +573,7 @@ pub mod billing_subscriptions {
                             }
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -631,7 +631,7 @@ pub mod billing_subscriptions {
                             }
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -736,7 +736,7 @@ pub mod billing_subscriptions_aliases {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -787,7 +787,7 @@ pub mod billing_subscriptions_aliases {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -845,7 +845,7 @@ pub mod billing_subscriptions_aliases {
                             }
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -989,7 +989,7 @@ pub mod payment_methods {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1038,7 +1038,7 @@ pub mod payment_methods {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1087,7 +1087,7 @@ pub mod payment_methods {
                             azure_core::StatusCode::Ok => Ok(Response::Ok200),
                             azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1160,7 +1160,7 @@ pub mod payment_methods {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1211,7 +1211,7 @@ pub mod payment_methods {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1286,7 +1286,7 @@ pub mod payment_methods {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1339,7 +1339,7 @@ pub mod payment_methods {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1395,7 +1395,7 @@ pub mod payment_methods {
                             azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1473,7 +1473,7 @@ pub mod operations {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }

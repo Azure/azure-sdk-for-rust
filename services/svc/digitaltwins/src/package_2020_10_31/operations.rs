@@ -238,7 +238,7 @@ pub mod digital_twin_models {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -304,7 +304,7 @@ pub mod digital_twin_models {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -374,7 +374,7 @@ pub mod digital_twin_models {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -432,7 +432,7 @@ pub mod digital_twin_models {
                         match rsp_status {
                             azure_core::StatusCode::NoContent => Ok(()),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -488,7 +488,7 @@ pub mod digital_twin_models {
                         match rsp_status {
                             azure_core::StatusCode::NoContent => Ok(()),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -572,7 +572,7 @@ pub mod query {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -802,7 +802,7 @@ pub mod digital_twins {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -877,7 +877,7 @@ pub mod digital_twins {
                             }
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -948,7 +948,7 @@ pub mod digital_twins {
                             azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1012,7 +1012,7 @@ pub mod digital_twins {
                         match rsp_status {
                             azure_core::StatusCode::NoContent => Ok(()),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1078,7 +1078,7 @@ pub mod digital_twins {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1154,7 +1154,7 @@ pub mod digital_twins {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1226,7 +1226,7 @@ pub mod digital_twins {
                         match rsp_status {
                             azure_core::StatusCode::NoContent => Ok(()),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1296,7 +1296,7 @@ pub mod digital_twins {
                         match rsp_status {
                             azure_core::StatusCode::NoContent => Ok(()),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1390,7 +1390,7 @@ pub mod digital_twins {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1480,7 +1480,7 @@ pub mod digital_twins {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1549,7 +1549,7 @@ pub mod digital_twins {
                         match rsp_status {
                             azure_core::StatusCode::NoContent => Ok(()),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1623,7 +1623,7 @@ pub mod digital_twins {
                         match rsp_status {
                             azure_core::StatusCode::NoContent => Ok(()),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1689,7 +1689,7 @@ pub mod digital_twins {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1766,7 +1766,7 @@ pub mod digital_twins {
                             azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1897,7 +1897,7 @@ pub mod event_routes {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1958,7 +1958,7 @@ pub mod event_routes {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -2024,7 +2024,7 @@ pub mod event_routes {
                         match rsp_status {
                             azure_core::StatusCode::NoContent => Ok(()),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -2080,7 +2080,7 @@ pub mod event_routes {
                         match rsp_status {
                             azure_core::StatusCode::NoContent => Ok(()),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }

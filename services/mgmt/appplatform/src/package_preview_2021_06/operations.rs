@@ -292,7 +292,7 @@ pub mod services {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -362,7 +362,7 @@ pub mod services {
                                 Ok(Response::Accepted202(rsp_value))
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -426,7 +426,7 @@ pub mod services {
                                 Ok(Response::Accepted202(rsp_value))
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -480,7 +480,7 @@ pub mod services {
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -533,7 +533,7 @@ pub mod services {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -587,7 +587,7 @@ pub mod services {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -636,7 +636,7 @@ pub mod services {
                         match rsp_status {
                             azure_core::StatusCode::Ok => Ok(()),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -689,7 +689,7 @@ pub mod services {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -741,7 +741,7 @@ pub mod services {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -814,7 +814,7 @@ pub mod services {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -890,7 +890,7 @@ pub mod services {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1007,7 +1007,7 @@ pub mod config_servers {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1071,7 +1071,7 @@ pub mod config_servers {
                                 Ok(Response::Accepted202(rsp_value))
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1135,7 +1135,7 @@ pub mod config_servers {
                                 Ok(Response::Accepted202(rsp_value))
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1199,7 +1199,7 @@ pub mod config_servers {
                                 Ok(Response::Accepted202(rsp_value))
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1300,7 +1300,7 @@ pub mod monitoring_settings {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1364,7 +1364,7 @@ pub mod monitoring_settings {
                                 Ok(Response::Accepted202(rsp_value))
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1428,7 +1428,7 @@ pub mod monitoring_settings {
                                 Ok(Response::Accepted202(rsp_value))
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1606,7 +1606,7 @@ pub mod apps {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1678,7 +1678,7 @@ pub mod apps {
                                 Ok(Response::Accepted202(rsp_value))
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1744,7 +1744,7 @@ pub mod apps {
                                 Ok(Response::Accepted202(rsp_value))
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1802,7 +1802,7 @@ pub mod apps {
                             azure_core::StatusCode::Ok => Ok(Response::Ok200),
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1879,7 +1879,7 @@ pub mod apps {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1935,7 +1935,7 @@ pub mod apps {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -1991,7 +1991,7 @@ pub mod apps {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -2140,7 +2140,7 @@ pub mod bindings {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -2214,7 +2214,7 @@ pub mod bindings {
                                 Ok(Response::Accepted202(rsp_value))
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -2282,7 +2282,7 @@ pub mod bindings {
                                 Ok(Response::Accepted202(rsp_value))
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -2342,7 +2342,7 @@ pub mod bindings {
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             azure_core::StatusCode::Ok => Ok(Response::Ok200),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -2421,7 +2421,7 @@ pub mod bindings {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -2542,7 +2542,7 @@ pub mod certificates {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -2614,7 +2614,7 @@ pub mod certificates {
                                 Ok(Response::Accepted202(rsp_value))
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -2672,7 +2672,7 @@ pub mod certificates {
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -2749,7 +2749,7 @@ pub mod certificates {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -2899,7 +2899,7 @@ pub mod custom_domains {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -2973,7 +2973,7 @@ pub mod custom_domains {
                                 Ok(Response::Accepted202(rsp_value))
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -3041,7 +3041,7 @@ pub mod custom_domains {
                                 Ok(Response::Accepted202(rsp_value))
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -3101,7 +3101,7 @@ pub mod custom_domains {
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -3180,7 +3180,7 @@ pub mod custom_domains {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -3413,7 +3413,7 @@ pub mod deployments {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -3487,7 +3487,7 @@ pub mod deployments {
                                 Ok(Response::Accepted202(rsp_value))
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -3555,7 +3555,7 @@ pub mod deployments {
                                 Ok(Response::Ok200(rsp_value))
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -3615,7 +3615,7 @@ pub mod deployments {
                             azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -3703,7 +3703,7 @@ pub mod deployments {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -3790,7 +3790,7 @@ pub mod deployments {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -3850,7 +3850,7 @@ pub mod deployments {
                             azure_core::StatusCode::Ok => Ok(Response::Ok200),
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -3909,7 +3909,7 @@ pub mod deployments {
                             azure_core::StatusCode::Ok => Ok(Response::Ok200),
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -3960,7 +3960,7 @@ pub mod deployments {
                             azure_core::StatusCode::Ok => Ok(Response::Ok200),
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -4014,7 +4014,7 @@ pub mod deployments {
                             }
                             azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -4092,7 +4092,7 @@ pub mod operations {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -4148,7 +4148,7 @@ pub mod runtime_versions {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }
@@ -4233,7 +4233,7 @@ pub mod skus {
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code as u16,
+                                status: status_code,
                                 error_code: None,
                             })),
                         }

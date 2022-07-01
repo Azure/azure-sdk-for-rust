@@ -278,7 +278,7 @@ pub mod get_docker_registry_v2_support {
                     match rsp_status {
                         azure_core::StatusCode::Ok => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -319,7 +319,7 @@ pub mod get_tag_list {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -374,7 +374,7 @@ pub mod get_manifest {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -423,7 +423,7 @@ pub mod create_manifest {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -466,7 +466,7 @@ pub mod delete_manifest {
                     match rsp_status {
                         azure_core::StatusCode::Accepted => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -522,7 +522,7 @@ pub mod get_repositories {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -578,7 +578,7 @@ pub mod get_acr_repositories {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -619,7 +619,7 @@ pub mod get_acr_repository_attributes {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -666,7 +666,7 @@ pub mod update_acr_repository_attributes {
                     match rsp_status {
                         azure_core::StatusCode::Ok => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -707,7 +707,7 @@ pub mod delete_acr_repository {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -780,7 +780,7 @@ pub mod get_acr_tags {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -827,7 +827,7 @@ pub mod get_acr_tag_attributes {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -880,7 +880,7 @@ pub mod update_acr_tag_attributes {
                     match rsp_status {
                         azure_core::StatusCode::Ok => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -923,7 +923,7 @@ pub mod delete_acr_tag {
                     match rsp_status {
                         azure_core::StatusCode::Accepted => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -988,7 +988,7 @@ pub mod get_acr_manifests {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -1035,7 +1035,7 @@ pub mod get_acr_manifest_attributes {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -1088,7 +1088,7 @@ pub mod update_acr_manifest_attributes {
                     match rsp_status {
                         azure_core::StatusCode::Ok => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -1151,7 +1151,7 @@ pub mod get_acr_refresh_token_from_exchange {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -1197,7 +1197,7 @@ pub mod get_acr_access_token_from_login {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -1246,7 +1246,7 @@ pub mod get_acr_access_token {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }

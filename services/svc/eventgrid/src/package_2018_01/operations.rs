@@ -128,7 +128,7 @@ pub mod publish_event_grid_events {
                     match rsp_status {
                         azure_core::StatusCode::Ok => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -177,7 +177,7 @@ pub mod publish_cloud_event_events {
                     match rsp_status {
                         azure_core::StatusCode::Ok => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -218,7 +218,7 @@ pub mod publish_custom_event_events {
                     match rsp_status {
                         azure_core::StatusCode::Ok => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }

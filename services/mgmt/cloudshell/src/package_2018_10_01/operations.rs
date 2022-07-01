@@ -285,7 +285,7 @@ pub mod get_user_settings_with_location {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -337,7 +337,7 @@ pub mod put_user_settings_with_location {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -389,7 +389,7 @@ pub mod patch_user_settings_with_location {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -440,7 +440,7 @@ pub mod delete_user_settings_with_location {
                         azure_core::StatusCode::Ok => Ok(Response::Ok200),
                         azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -490,7 +490,7 @@ pub mod get_console_with_location {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -549,7 +549,7 @@ pub mod put_console_with_location {
                             Ok(Response::Created201(rsp_value))
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -600,7 +600,7 @@ pub mod delete_console_with_location {
                         azure_core::StatusCode::Ok => Ok(Response::Ok200),
                         azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -644,7 +644,7 @@ pub mod keep_alive_with_location {
                     match rsp_status {
                         azure_core::StatusCode::Ok => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -692,7 +692,7 @@ pub mod get_user_settings {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -742,7 +742,7 @@ pub mod put_user_settings {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -792,7 +792,7 @@ pub mod patch_user_settings {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -841,7 +841,7 @@ pub mod delete_user_settings {
                         azure_core::StatusCode::Ok => Ok(Response::Ok200),
                         azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -889,7 +889,7 @@ pub mod get_console {
                             Ok(rsp_value)
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -948,7 +948,7 @@ pub mod put_console {
                             Ok(Response::Created201(rsp_value))
                         }
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -997,7 +997,7 @@ pub mod delete_console {
                         azure_core::StatusCode::Ok => Ok(Response::Ok200),
                         azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
@@ -1039,7 +1039,7 @@ pub mod keep_alive {
                     match rsp_status {
                         azure_core::StatusCode::Ok => Ok(()),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code as u16,
+                            status: status_code,
                             error_code: None,
                         })),
                     }
