@@ -1,3 +1,4 @@
+use crate::StatusCode;
 use std::borrow::Cow;
 use std::fmt::{Debug, Display};
 mod http_error;
@@ -14,7 +15,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub enum ErrorKind {
     /// An HTTP status code that was not expected
     HttpResponse {
-        status: u16,
+        status: StatusCode,
         error_code: Option<String>,
     },
     /// An error performing IO
@@ -37,11 +38,11 @@ impl ErrorKind {
         }
     }
 
-    pub fn http_response(status: u16, error_code: Option<String>) -> Self {
+    pub fn http_response(status: StatusCode, error_code: Option<String>) -> Self {
         Self::HttpResponse { status, error_code }
     }
 
-    pub fn http_response_from_body(status: u16, body: &[u8]) -> Self {
+    pub fn http_response_from_body(status: StatusCode, body: &[u8]) -> Self {
         let error_code = http_error::get_error_code_from_body(body);
         Self::HttpResponse { status, error_code }
     }
@@ -414,22 +415,25 @@ mod tests {
 
     #[test]
     fn matching_against_http_error() {
-        let kind = ErrorKind::http_response_from_body(418, b"{}");
+        let kind = ErrorKind::http_response_from_body(StatusCode::ImATeapot, b"{}");
 
         assert!(matches!(
             kind,
             ErrorKind::HttpResponse {
-                status: 418,
+                status: StatusCode::ImATeapot,
                 error_code: None
             }
         ));
 
-        let kind = ErrorKind::http_response_from_body(418, br#"{"error": {"code":"teepot"}}"#);
+        let kind = ErrorKind::http_response_from_body(
+            StatusCode::ImATeapot,
+            br#"{"error": {"code":"teepot"}}"#,
+        );
 
         assert!(matches!(
             kind,
             ErrorKind::HttpResponse {
-                status: 418,
+                status: StatusCode::ImATeapot,
                 error_code
             }
             if error_code.as_deref() == Some("teepot")

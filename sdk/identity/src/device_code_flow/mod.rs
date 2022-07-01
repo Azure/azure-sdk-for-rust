@@ -45,7 +45,7 @@ where
     let rsp_status = rsp.status();
     let rsp_body = rsp.into_body().await;
     if !rsp_status.is_success() {
-        return Err(ErrorKind::http_response_from_body(rsp_status as u16, &rsp_body).into_error());
+        return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
     }
     let device_code_response: DeviceCodePhaseOneResponse = serde_json::from_slice(&rsp_body)?;
 

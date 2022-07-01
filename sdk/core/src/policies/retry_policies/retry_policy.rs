@@ -59,19 +59,14 @@ where
                 }
                 Ok(response) => {
                     // Error status code
-                    let code = response.status() as u16;
+                    let status = response.status();
 
                     let http_error = HttpError::new(response).await;
                     // status code should already be parsed as valid from the underlying HTTP
                     // implementations.
-                    let status = StatusCode::try_from(code).map_err(|_| {
-                        Error::with_message(ErrorKind::DataConversion, || {
-                            format!("invalid status code '{code}'")
-                        })
-                    })?;
                     let error = Error::full(
                         ErrorKind::http_response(
-                            code,
+                            status,
                             http_error.error_code().map(|s| s.to_owned()),
                         ),
                         http_error,
