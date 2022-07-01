@@ -23,10 +23,10 @@ pub struct CosmosClient {
 
 impl CosmosClient {
     /// Create a new `CosmosClient` which connects to the account's instance in the public Azure cloud.
-    pub fn new(account: String, auth_token: AuthorizationToken) -> Self {
+    pub fn new(account: impl Into<String>, auth_token: AuthorizationToken) -> Self {
         Self {
             pipeline: new_pipeline_from_options(ClientOptions::default(), auth_token),
-            cloud_location: CloudLocation::Public(account),
+            cloud_location: CloudLocation::Public(account.into()),
         }
     }
 
@@ -45,15 +45,20 @@ impl CosmosClient {
     }
 
     /// Create a new `CosmosClient` which connects to the account's instance in the Chinese Azure cloud.
-    pub fn new_china(account: String, auth_token: AuthorizationToken) -> Self {
+    pub fn new_china(account: impl Into<String>, auth_token: AuthorizationToken) -> Self {
         Self {
             pipeline: new_pipeline_from_options(ClientOptions::default(), auth_token),
-            cloud_location: CloudLocation::China(account),
+            cloud_location: CloudLocation::China(account.into()),
         }
     }
 
     /// Create a new `CosmosClient` which connects to the account's instance in custom Azure cloud.
-    pub fn new_custom(account: String, auth_token: AuthorizationToken, uri: String) -> Self {
+    pub fn new_custom(
+        account: impl Into<String>,
+        auth_token: AuthorizationToken,
+        uri: String,
+    ) -> Self {
+        let account = account.into();
         Self {
             pipeline: new_pipeline_from_options(ClientOptions::default(), auth_token),
             cloud_location: CloudLocation::Custom { account, uri },
@@ -61,13 +66,13 @@ impl CosmosClient {
     }
 
     /// Create a new `CosmosClient` which connects to the account's instance in Azure emulator
-    pub fn new_emulator(address: &str, port: u16) -> Self {
+    pub fn new_emulator(address: impl AsRef<str>, port: u16) -> Self {
         let auth_token = AuthorizationToken::primary_from_base64(EMULATOR_ACCOUNT_KEY).unwrap();
         Self {
             pipeline: new_pipeline_from_options(ClientOptions::default(), auth_token),
             cloud_location: CloudLocation::Custom {
                 account: String::from("Custom"),
-                uri: format!("https://{}:{}", address, port),
+                uri: format!("https://{}:{}", address.as_ref(), port),
             },
         }
     }

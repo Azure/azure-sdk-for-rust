@@ -57,7 +57,7 @@ async fn main() -> azure_core::Result<()> {
     let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
 
     // Next we will create a Cosmos client.
-    let client = CosmosClient::new(args.account.clone(), authorization_token);
+    let client = CosmosClient::new(args.account, authorization_token);
 
     // We know the database so we can obtain a database client.
     let database = client.database_client(args.database_name);
