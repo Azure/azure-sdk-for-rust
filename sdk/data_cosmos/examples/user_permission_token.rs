@@ -1,35 +1,40 @@
 use azure_data_cosmos::prelude::*;
+use clap::Parser;
 use futures::StreamExt;
+
+#[derive(Debug, Parser)]
+struct Args {
+    /// Cosmos primary key name
+    #[clap(env = "COSMOS_PRIMARY_KEY")]
+    primary_key: String,
+    /// The cosmos account your're using
+    #[clap(env = "COSMOS_ACCOUNT")]
+    account: String,
+    /// The name of the database
+    database_name: String,
+    /// The name of the collection
+    collection_name: String,
+    /// The name of the user
+    user_name: String,
+}
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
     // First we retrieve the account name and access key from environment variables.
     // We expect access keys (ie, not resource constrained)
-    let primary_key =
-        std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
-    let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
+    let args = Args::parse();
 
-    let database_name = std::env::args()
-        .nth(1)
-        .expect("please specify the database name as first command line parameter");
-    let collection_name = std::env::args()
-        .nth(2)
-        .expect("please specify the collection name as second command line parameter");
-    let user_name = std::env::args()
-        .nth(3)
-        .expect("please specify the user name as third command line parameter");
-
-    let authorization_token = AuthorizationToken::primary_from_base64(&primary_key)?;
+    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
 
     let client = CosmosClient::new(
-        account.clone(),
+        args.account.clone(),
         authorization_token,
         CosmosOptions::default(),
     );
 
-    let database = client.database_client(database_name.clone());
-    let collection = database.collection_client(collection_name.clone());
-    let user = database.user_client(user_name);
+    let database = client.database_client(args.database_name.clone());
+    let collection = database.collection_client(args.collection_name.clone());
+    let user = database.user_client(args.user_name);
 
     let get_collection_response = collection.get_collection().into_future().await?;
     println!("get_collection_response == {:#?}", get_collection_response);
@@ -81,8 +86,8 @@ async fn main() -> azure_core::Result<()> {
 
     // let's list the documents with the new auth token
     let list_documents_response = client
-        .database_client(database_name.clone())
-        .collection_client(collection_name.clone())
+        .database_client(args.database_name.clone())
+        .collection_client(args.collection_name.clone())
         .list_documents()
         .into_stream::<serde_json::Value>()
         .next()
@@ -109,8 +114,8 @@ async fn main() -> azure_core::Result<()> {
     let document = serde_json::from_str::<serde_json::Value>(data)?;
 
     match client
-        .database_client(database_name.clone())
-        .collection_client(collection_name.clone())
+        .database_client(args.database_name.clone())
+        .collection_client(args.collection_name.clone())
         .create_document(document.clone())
         .is_upsert(true)
         .partition_key(&"Gianluigi Bombatomica")?
@@ -150,8 +155,8 @@ async fn main() -> azure_core::Result<()> {
     // now we have an "All" authorization_token
     // so the create_document should succeed!
     let create_document_response = client
-        .database_client(database_name)
-        .collection_client(collection_name)
+        .database_client(args.database_name)
+        .collection_client(args.collection_name)
         .create_document(document)
         .is_upsert(true)
         .partition_key(&"Gianluigi Bombatomica")?

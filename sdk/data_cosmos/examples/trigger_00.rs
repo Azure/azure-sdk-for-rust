@@ -1,6 +1,23 @@
 use azure_data_cosmos::prelude::*;
 use azure_data_cosmos::resources::trigger::{TriggerOperation, TriggerType};
+use clap::Parser;
 use futures::stream::StreamExt;
+
+#[derive(Debug, Parser)]
+struct Args {
+    /// Cosmos primary key name
+    #[clap(env = "COSMOS_PRIMARY_KEY")]
+    primary_key: String,
+    /// The cosmos account your're using
+    #[clap(env = "COSMOS_ACCOUNT")]
+    account: String,
+    /// The name of the database
+    database_name: String,
+    /// The name of the collection
+    collection_name: String,
+    /// The name of the trigger
+    trigger_name: String,
+}
 
 const TRIGGER_BODY: &str = r#"
 function updateMetadata() {
@@ -34,31 +51,18 @@ function updateMetadata() {
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    let database = std::env::args()
-        .nth(1)
-        .expect("please specify database name as first command line parameter");
-    let collection = std::env::args()
-        .nth(2)
-        .expect("please specify collection name as second command line parameter");
-    let trigger_name = std::env::args()
-        .nth(3)
-        .expect("please specify trigger name as third command line parameter");
-
-    let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
-    let primary_key =
-        std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
-
-    let authorization_token = AuthorizationToken::primary_from_base64(&primary_key)?;
+    let args = Args::parse();
+    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
 
     let client = CosmosClient::new(
-        account.clone(),
+        args.account.clone(),
         authorization_token,
         CosmosOptions::default(),
     );
 
-    let database = client.database_client(database);
-    let collection = database.collection_client(collection);
-    let trigger = collection.clone().trigger_client(trigger_name);
+    let database = client.database_client(args.database_name);
+    let collection = database.collection_client(args.collection_name);
+    let trigger = collection.clone().trigger_client(args.trigger_name);
 
     let ret = trigger
         .create_trigger("something", TriggerType::Post, TriggerOperation::All)

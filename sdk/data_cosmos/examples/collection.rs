@@ -1,13 +1,22 @@
 use azure_data_cosmos::prelude::*;
+use clap::Parser;
 use futures::stream::StreamExt;
+
+#[derive(Debug, Parser)]
+struct Args {
+    /// Cosmos primary key name
+    #[clap(env = "COSMOS_PRIMARY_KEY")]
+    primary_key: String,
+    /// The cosmos account your're using
+    #[clap(env = "COSMOS_ACCOUNT")]
+    account: String,
+}
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
     // First we retrieve the account name and access key from environment variables.
     // We expect access keys (ie, not resource constrained)
-    let primary_key =
-        std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
-    let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
+    let args = Args::parse();
 
     // This is how you construct an authorization token.
     // Remember to pick the correct token type.
@@ -17,14 +26,14 @@ async fn main() -> azure_core::Result<()> {
     // errors, plus Azure specific ones. For example if a REST call returns the
     // unexpected result (ie NotFound instead of Ok) we return an Err telling
     // you that.
-    let authorization_token = AuthorizationToken::primary_from_base64(&primary_key)?;
+    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
 
     // Once we have an authorization token you can create a client instance. You can change the
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
     // Here we are using reqwest but other clients are supported (check the documentation).
     let client = CosmosClient::new(
-        account.clone(),
+        args.account.clone(),
         authorization_token,
         CosmosOptions::default(),
     );
@@ -39,7 +48,7 @@ async fn main() -> azure_core::Result<()> {
 
     println!(
         "Account {} has {} database(s)",
-        account,
+        args.account,
         databases.databases.len()
     );
 

@@ -2,7 +2,22 @@ use serde::{Deserialize, Serialize};
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos.
 
 use azure_data_cosmos::prelude::*;
+use clap::Parser;
 use futures::stream::StreamExt;
+
+#[derive(Debug, Parser)]
+struct Args {
+    /// Cosmos primary key name
+    #[clap(env = "COSMOS_PRIMARY_KEY")]
+    primary_key: String,
+    /// The cosmos account your're using
+    #[clap(env = "COSMOS_ACCOUNT")]
+    account: String,
+    /// The name of the database
+    database_name: String,
+    /// The name of the collection
+    collection_name: String,
+}
 
 // This is the stuct we want to use in our sample.
 // Make sure to have a collection with partition key "a_number" for this example to
@@ -34,34 +49,24 @@ impl azure_data_cosmos::CosmosEntity for MySampleStruct {
 async fn main() -> azure_core::Result<()> {
     // Let's get Cosmos account and access key from env variables.
     // This helps automated testing.
-    let primary_key =
-        std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
-    let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
-
-    let database_name = std::env::args()
-        .nth(1)
-        .expect("please specify the database name as first command line parameter");
-    let collection_name = std::env::args()
-        .nth(2)
-        .expect("please specify the collection name as first command line parameter");
-
+    let args = Args::parse();
     // First, we create an authorization token. There are two types of tokens, master and resource
     // constrained. This SDK supports both.
     // Please check the Azure documentation for details or the examples folder
     // on how to create and use token-based permissions.
-    let authorization_token = AuthorizationToken::primary_from_base64(&primary_key)?;
+    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
 
     // Next we will create a Cosmos client.
     let client = CosmosClient::new(
-        account.clone(),
+        args.account.clone(),
         authorization_token,
         CosmosOptions::default(),
     );
 
     // We know the database so we can obtain a database client.
-    let database = client.database_client(database_name);
+    let database = client.database_client(args.database_name);
     // We know the collection so we can obtain a collection client.
-    let collection = database.collection_client(collection_name);
+    let collection = database.collection_client(args.collection_name);
 
     // TASK 1 - Insert 10 documents
     println!("Inserting 10 documents...");

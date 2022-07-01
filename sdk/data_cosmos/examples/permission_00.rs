@@ -1,39 +1,42 @@
 use azure_data_cosmos::prelude::*;
+use clap::Parser;
 use futures::StreamExt;
+
+#[derive(Debug, Parser)]
+struct Args {
+    /// Cosmos primary key name
+    #[clap(env = "COSMOS_PRIMARY_KEY")]
+    primary_key: String,
+    /// The cosmos account your're using
+    #[clap(env = "COSMOS_ACCOUNT")]
+    account: String,
+    /// The name of the database
+    database_name: String,
+    /// The name of the collection
+    collection_name: String,
+    /// The name of the second collection
+    collection_name2: String,
+    /// The name of the user
+    user_name: String,
+}
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
     // First we retrieve the account name and access key from environment variables.
     // We expect access keys (ie, not resource constrained)
-    let primary_key =
-        std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
-    let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
-
-    let database_name = std::env::args()
-        .nth(1)
-        .expect("please specify the database name as first command line parameter");
-    let collection_name = std::env::args()
-        .nth(2)
-        .expect("please specify the collection name as second command line parameter");
-    let collection_name2 = std::env::args()
-        .nth(3)
-        .expect("please specify the collection name as third command line parameter");
-    let user_name = std::env::args()
-        .nth(4)
-        .expect("please specify the user name as fourth command line parameter");
-
-    let authorization_token = AuthorizationToken::primary_from_base64(&primary_key)?;
+    let args = Args::parse();
+    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
 
     let client = CosmosClient::new(
-        account.clone(),
+        args.account.clone(),
         authorization_token,
         CosmosOptions::default(),
     );
 
-    let database = client.database_client(database_name);
-    let collection = database.collection_client(collection_name);
-    let collection2 = database.collection_client(collection_name2);
-    let user = database.user_client(user_name);
+    let database = client.database_client(args.database_name);
+    let collection = database.collection_client(args.collection_name);
+    let collection2 = database.collection_client(args.collection_name2);
+    let user = database.user_client(args.user_name);
 
     let get_database_response = database.get_database().into_future().await?;
     println!("get_database_response == {:#?}", get_database_response);
