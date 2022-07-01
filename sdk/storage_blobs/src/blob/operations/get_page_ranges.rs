@@ -11,7 +11,7 @@ pub struct GetPageRangesBuilder {
     context: Context,
 }
 
-impl<'a> GetPageRangesBuilder {
+impl GetPageRangesBuilder {
     pub(crate) fn new(blob_client: BlobClient) -> Self {
         Self {
             blob_client,

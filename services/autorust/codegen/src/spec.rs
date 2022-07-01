@@ -537,7 +537,7 @@ pub enum WebVerb {
     Head,
 }
 
-impl<'a> WebVerb {
+impl WebVerb {
     pub fn as_str(&self) -> &'static str {
         match self {
             WebVerb::Get => "get",
