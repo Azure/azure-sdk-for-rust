@@ -29,7 +29,7 @@ macro_rules! setters {
         #[allow(clippy::redundant_field_names)]
         #[allow(clippy::needless_update)]
         // TODO: Declare using idiomatic with_$name when https://github.com/Azure/azure-sdk-for-rust/issues/292 is resolved.
-        pub fn $name<_T: ::std::convert::Into<$typ>>(self, $name: _T) -> Self {
+        pub fn $name<P: ::std::convert::Into<$typ>>(self, $name: P) -> Self {
             let $name: $typ = $name.into();
             Self  {
                 $name: $transform,
@@ -55,20 +55,24 @@ macro_rules! setters {
 
 #[macro_export]
 macro_rules! operation {
-    ($name:ident,
+    ($name:ident<$($generic:ident: $($constraint:ident +)*),*>,
         client: $client:ty,
         $($required:ident: $rtype:ty,)*
-        $(?$optional:ident: $otype:ty),*) => {
+        $(?$optional:ident: $otype:ty,)*
+        $(??$foo:ident: $ftype:ty),*
+        ) => {
         azure_core::__private::paste! {
         #[derive(Debug, Clone)]
-        pub struct [<$name Builder>] {
+        pub struct [<$name Builder>]<$($generic)*> {
             client: $client,
             $($required: $rtype,)*
             $($optional: Option<$otype>,)*
+            $($foo: Option<$ftype>,)*
             context: azure_core::Context,
         }
 
-        impl [<$name Builder>] {
+        /// Setters for the various options for this builder
+        impl <$($generic: $($constraint +)*)*>[<$name Builder>]<$($generic),*> {
             pub(crate) fn new(
                 client: $client,
                 $($required: $rtype,)*
@@ -77,6 +81,7 @@ macro_rules! operation {
                     client,
                     $($required,)*
                     $($optional: None,)*
+                    $($foo: None,)*
                     context: azure_core::Context::new(),
                 }
             }
@@ -100,6 +105,13 @@ macro_rules! operation {
             }
         }
         }
+    };
+    // Allows `operation! { CreateUser, client: UserClient, ?consistency_level: ConsistencyLevel }`
+    ($name:ident,
+        client: $client:ty,
+        $($required:ident: $rtype:ty,)*
+        $(?$optional:ident: $otype:ty),*) => {
+            $crate::operation!{$name<>, client: $client, $($required: $rtype,)* $(?$optional: $otype,)*}
     }
 }
 

@@ -11,46 +11,20 @@ use std::convert::TryFrom;
 
 use azure_core::{collect_pinned_stream, Response as HttpResponse};
 
-#[derive(Debug, Clone)]
-pub struct CreateDocumentBuilder<D> {
+operation! {
+    CreateDocument<D: Serialize + CosmosEntity + Send +>,
     client: CollectionClient,
-    is_upsert: IsUpsert,
-    indexing_directive: IndexingDirective,
-    if_match_condition: Option<IfMatchCondition>,
-    if_modified_since: Option<IfModifiedSince>,
-    consistency_level: Option<ConsistencyLevel>,
-    allow_tentative_writes: TentativeWritesAllowance,
-    partition_key: Option<String>,
     document: D,
-    context: Context,
+    ?is_upsert: bool,
+    ?indexing_directive: IndexingDirective,
+    ?if_match_condition: IfMatchCondition,
+    ?if_modified_since: IfModifiedSince,
+    ?consistency_level: ConsistencyLevel,
+    ?allow_tentative_writes: TentativeWritesAllowance,
+    ??partition_key: String
 }
 
 impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
-    pub(crate) fn new(client: CollectionClient, document: D) -> Self {
-        Self {
-            client,
-            is_upsert: IsUpsert::No,
-            indexing_directive: IndexingDirective::Default,
-            if_match_condition: None,
-            if_modified_since: None,
-            consistency_level: None,
-            allow_tentative_writes: TentativeWritesAllowance::Deny,
-            partition_key: None,
-            document,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        if_match_condition: IfMatchCondition => Some(if_match_condition),
-        if_modified_since: DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
-        allow_tentative_writes: TentativeWritesAllowance,
-        is_upsert: bool => if is_upsert { IsUpsert::Yes } else { IsUpsert::No },
-        indexing_directive: IndexingDirective,
-        context: Context => context,
-    }
-
     pub fn partition_key<PK: Serialize>(mut self, partition_key: &PK) -> azure_core::Result<Self> {
         self.partition_key = Some(serialize_partition_key(partition_key)?);
         Ok(self)
@@ -72,9 +46,22 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);
             }
-            request.insert_headers(&self.is_upsert);
-            request.insert_headers(&self.indexing_directive);
-            request.insert_headers(&self.allow_tentative_writes);
+            let is_upsert = if self.is_upsert.unwrap_or_default() {
+                IsUpsert::Yes
+            } else {
+                IsUpsert::No
+            };
+            request.insert_headers(&is_upsert);
+            request.insert_headers(
+                &self
+                    .indexing_directive
+                    .unwrap_or(IndexingDirective::Default),
+            );
+            request.insert_headers(
+                &self
+                    .allow_tentative_writes
+                    .unwrap_or(TentativeWritesAllowance::Deny),
+            );
 
             request.set_body(serialized);
             let response = self
@@ -88,21 +75,6 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
 
             CreateDocumentResponse::try_from(response).await
         })
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type CreateDocument =
-    futures::future::BoxFuture<'static, azure_core::Result<CreateDocumentResponse>>;
-
-#[cfg(feature = "into_future")]
-impl<D: Serialize + CosmosEntity + Send + 'static> std::future::IntoFuture
-    for CreateDocumentBuilder<D>
-{
-    type IntoFuture = CreateDocument;
-    type Output = <CreateDocument as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 
