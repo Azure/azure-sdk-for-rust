@@ -1,29 +1,13 @@
-use crate::{prelude::*, resources::user::UserResponse};
-use azure_core::Context;
+use crate::{prelude::*, resources::user::UserResponse as ReplaceUserResponse};
 
-#[derive(Debug, Clone)]
-pub struct ReplaceUserBuilder {
+operation! {
+    ReplaceUser,
     client: UserClient,
     user_name: String,
-    consistency_level: Option<ConsistencyLevel>,
-    context: Context,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl ReplaceUserBuilder {
-    pub(crate) fn new(client: UserClient, user_name: String) -> Self {
-        Self {
-            client,
-            user_name,
-            consistency_level: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> ReplaceUser {
         Box::pin(async move {
             let mut request = self.client.user_request(azure_core::Method::Put);
@@ -44,7 +28,7 @@ impl ReplaceUserBuilder {
                 )
                 .await?;
 
-            UserResponse::try_from(response).await
+            ReplaceUserResponse::try_from(response).await
         })
     }
 }
@@ -52,16 +36,4 @@ impl ReplaceUserBuilder {
 #[derive(Serialize)]
 struct ReplaceUserBody<'a> {
     id: &'a str,
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type ReplaceUser = futures::future::BoxFuture<'static, azure_core::Result<UserResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for ReplaceUserBuilder {
-    type IntoFuture = ReplaceUser;
-    type Output = <ReplaceUser as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
-    }
 }

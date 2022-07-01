@@ -2,30 +2,16 @@ use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::ResourceQuota;
 use azure_core::headers::session_token_from_headers;
-use azure_core::prelude::*;
 use azure_core::Response as HttpResponse;
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct DeleteStoredProcedureBuilder {
+operation! {
+    DeleteStoredProcedure,
     client: StoredProcedureClient,
-    consistency_level: Option<ConsistencyLevel>,
-    context: Context,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl DeleteStoredProcedureBuilder {
-    pub(crate) fn new(client: StoredProcedureClient) -> Self {
-        Self {
-            client,
-            consistency_level: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-    }
-
     pub fn into_future(self) -> DeleteStoredProcedure {
         Box::pin(async move {
             let mut request = self
@@ -47,19 +33,6 @@ impl DeleteStoredProcedureBuilder {
 
             DeleteStoredProcedureResponse::try_from(response).await
         })
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type DeleteStoredProcedure =
-    futures::future::BoxFuture<'static, azure_core::Result<DeleteStoredProcedureResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for DeleteStoredProcedureBuilder {
-    type IntoFuture = DeleteStoredProcedure;
-    type Output = <DeleteStoredProcedure as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 

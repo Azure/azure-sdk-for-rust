@@ -27,3 +27,9 @@ impl From<i32> for MaxItemCount {
         Self::new(count)
     }
 }
+
+impl Default for MaxItemCount {
+    fn default() -> Self {
+        MaxItemCount::new(-1)
+    }
+}

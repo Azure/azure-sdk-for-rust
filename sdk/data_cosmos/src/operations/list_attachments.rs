@@ -41,9 +41,8 @@ impl ListAttachmentsBuilder {
                 if let Some(cl) = &this.consistency_level {
                     request.insert_headers(cl);
                 }
-                request
-                    .insert_headers(&this.max_item_count.unwrap_or_else(|| MaxItemCount::new(-1)));
-                request.insert_headers(&this.a_im.unwrap_or(ChangeFeed::None));
+                request.insert_headers(&this.max_item_count.unwrap_or_default());
+                request.insert_headers(&this.a_im.unwrap_or_default());
                 crate::cosmos_entity::add_as_partition_key_header_serialized(
                     this.client.partition_key_serialized(),
                     &mut request,

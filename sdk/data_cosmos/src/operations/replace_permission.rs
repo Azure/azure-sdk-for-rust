@@ -1,34 +1,17 @@
 use crate::prelude::*;
-use crate::resources::permission::{ExpirySeconds, PermissionMode, PermissionResponse};
+use crate::resources::permission::{
+    ExpirySeconds, PermissionMode, PermissionResponse as ReplacePermissionResponse,
+};
 
-use azure_core::Context;
-
-#[derive(Debug, Clone)]
-pub struct ReplacePermissionBuilder {
+operation! {
+    ReplacePermission,
     client: PermissionClient,
     permission_mode: PermissionMode,
-    expiry_seconds: Option<ExpirySeconds>,
-    consistency_level: Option<ConsistencyLevel>,
-    context: Context,
+    ?expiry_seconds: ExpirySeconds,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl ReplacePermissionBuilder {
-    pub(crate) fn new(client: PermissionClient, permission_mode: PermissionMode) -> Self {
-        Self {
-            client,
-            permission_mode,
-            expiry_seconds: Some(ExpirySeconds::new(3600)),
-            consistency_level: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        expiry_seconds: u64 => Some(ExpirySeconds::new(expiry_seconds)),
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> ReplacePermission {
         Box::pin(async move {
             let mut request = self.client.permission_request(azure_core::Method::Put);
@@ -62,20 +45,7 @@ impl ReplacePermissionBuilder {
                 )
                 .await?;
 
-            PermissionResponse::try_from(response).await
+            ReplacePermissionResponse::try_from(response).await
         })
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type ReplacePermission =
-    futures::future::BoxFuture<'static, azure_core::Result<PermissionResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for ReplacePermissionBuilder {
-    type IntoFuture = ReplacePermission;
-    type Output = <ReplacePermission as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }

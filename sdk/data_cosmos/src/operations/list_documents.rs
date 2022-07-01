@@ -11,38 +11,18 @@ use azure_core::{prelude::*, Pageable};
 use chrono::{DateTime, Utc};
 use serde::de::DeserializeOwned;
 
-#[derive(Debug, Clone)]
-pub struct ListDocumentsBuilder {
+operation! {
+    @list
+    ListDocuments,
     client: CollectionClient,
-    if_match_condition: Option<IfMatchCondition>,
-    consistency_level: Option<ConsistencyLevel>,
-    max_item_count: MaxItemCount,
-    a_im: ChangeFeed,
-    partition_range_id: Option<PartitionRangeId>,
-    context: Context,
+    ?max_item_count: MaxItemCount,
+    ?a_im: ChangeFeed,
+    ?if_match_condition: IfMatchCondition,
+    ?consistency_level: ConsistencyLevel,
+    ?partition_range_id: PartitionRangeId
 }
 
 impl ListDocumentsBuilder {
-    pub(crate) fn new(client: CollectionClient) -> Self {
-        Self {
-            client,
-            if_match_condition: None,
-            consistency_level: None,
-            max_item_count: MaxItemCount::new(-1),
-            a_im: ChangeFeed::None,
-            partition_range_id: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        max_item_count: i32 => MaxItemCount::new(max_item_count),
-        a_im: ChangeFeed,
-        if_match_condition: IfMatchCondition => Some(if_match_condition),
-        partition_range_id: String => Some(PartitionRangeId::new(partition_range_id)),
-    }
-
     pub fn into_stream<T>(self) -> ListDocuments<T>
     where
         T: DeserializeOwned + Send + Sync,
@@ -64,8 +44,8 @@ impl ListDocumentsBuilder {
                 if let Some(cl) = &this.consistency_level {
                     req.insert_headers(cl);
                 }
-                req.insert_headers(&this.max_item_count);
-                req.insert_headers(&this.a_im);
+                req.insert_headers(&this.max_item_count.unwrap_or_default());
+                req.insert_headers(&this.a_im.unwrap_or_default());
                 req.insert_headers(&this.partition_range_id);
                 req.insert_headers(&continuation);
 

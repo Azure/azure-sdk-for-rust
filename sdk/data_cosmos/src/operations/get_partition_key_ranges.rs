@@ -5,33 +5,15 @@ use azure_core::headers::{item_count_from_headers, session_token_from_headers};
 use azure_core::{collect_pinned_stream, prelude::*, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct GetPartitionKeyRangesBuilder {
+operation! {
+    GetPartitionKeyRanges,
     client: CollectionClient,
-    if_match_condition: Option<IfMatchCondition>,
-    if_modified_since: Option<IfModifiedSince>,
-    consistency_level: Option<ConsistencyLevel>,
-    context: Context,
+    ?if_match_condition: IfMatchCondition,
+    ?if_modified_since: IfModifiedSince,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl GetPartitionKeyRangesBuilder {
-    pub(crate) fn new(client: CollectionClient) -> Self {
-        Self {
-            client,
-            if_match_condition: None,
-            if_modified_since: None,
-            consistency_level: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        if_match_condition: IfMatchCondition => Some(if_match_condition),
-        if_modified_since: DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> GetPartitionKeyRanges {
         Box::pin(async move {
             let mut request = self.client.cosmos_client().request(
@@ -62,19 +44,6 @@ impl GetPartitionKeyRangesBuilder {
 
             GetPartitionKeyRangesResponse::try_from(response).await
         })
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type GetPartitionKeyRanges =
-    futures::future::BoxFuture<'static, azure_core::Result<GetPartitionKeyRangesResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for GetPartitionKeyRangesBuilder {
-    type IntoFuture = GetPartitionKeyRanges;
-    type Output = <GetPartitionKeyRanges as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 

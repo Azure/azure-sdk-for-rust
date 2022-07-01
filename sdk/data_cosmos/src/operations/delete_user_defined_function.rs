@@ -3,31 +3,16 @@ use crate::prelude::*;
 use crate::ResourceQuota;
 
 use azure_core::headers::session_token_from_headers;
-use azure_core::prelude::*;
 use azure_core::Response as HttpResponse;
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct DeleteUserDefinedFunctionBuilder {
+operation! {
+    DeleteUserDefinedFunction,
     client: UserDefinedFunctionClient,
-    consistency_level: Option<ConsistencyLevel>,
-    context: Context,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl DeleteUserDefinedFunctionBuilder {
-    pub(crate) fn new(client: UserDefinedFunctionClient) -> Self {
-        Self {
-            client,
-            consistency_level: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> DeleteUserDefinedFunction {
         Box::pin(async move {
             let mut request = self.client.udf_request(azure_core::Method::Delete);
@@ -51,19 +36,6 @@ impl DeleteUserDefinedFunctionBuilder {
         })
     }
 }
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for DeleteUserDefinedFunctionBuilder {
-    type IntoFuture = DeleteUserDefinedFunction;
-    type Output = <DeleteUserDefinedFunction as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type DeleteUserDefinedFunction =
-    futures::future::BoxFuture<'static, azure_core::Result<DeleteUserDefinedFunctionResponse>>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeleteUserDefinedFunctionResponse {

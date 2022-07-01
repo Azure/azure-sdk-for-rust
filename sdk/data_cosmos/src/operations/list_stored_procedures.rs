@@ -9,30 +9,15 @@ use azure_core::prelude::*;
 use azure_core::{Pageable, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct ListStoredProceduresBuilder {
+operation! {
+    @list
+    ListStoredProcedures,
     client: CollectionClient,
-    consistency_level: Option<ConsistencyLevel>,
-    max_item_count: MaxItemCount,
-    context: Context,
+    ?max_item_count: MaxItemCount,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl ListStoredProceduresBuilder {
-    pub(crate) fn new(client: CollectionClient) -> Self {
-        Self {
-            client,
-            consistency_level: None,
-            max_item_count: MaxItemCount::new(-1),
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        max_item_count: i32 => MaxItemCount::new(max_item_count),
-        context: Context => context,
-    }
-
     pub fn into_stream(self) -> ListStoredProcedures {
         let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();
@@ -50,7 +35,7 @@ impl ListStoredProceduresBuilder {
                 if let Some(cl) = &this.consistency_level {
                     request.insert_headers(cl);
                 }
-                request.insert_headers(&this.max_item_count);
+                request.insert_headers(&this.max_item_count.unwrap_or_default());
 
                 request.insert_headers(&continuation);
 

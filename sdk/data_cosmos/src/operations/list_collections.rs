@@ -8,30 +8,15 @@ use azure_core::Response as HttpResponse;
 use azure_core::{collect_pinned_stream, Pageable};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct ListCollectionsBuilder {
+operation! {
+    @list
+    ListCollections,
     client: DatabaseClient,
-    consistency_level: Option<ConsistencyLevel>,
-    max_item_count: MaxItemCount,
-    context: Context,
+    ?max_item_count: MaxItemCount,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl ListCollectionsBuilder {
-    pub(crate) fn new(client: DatabaseClient) -> Self {
-        Self {
-            client,
-            max_item_count: MaxItemCount::new(-1),
-            consistency_level: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        max_item_count: i32 => MaxItemCount::new(max_item_count),
-        context: Context => context,
-    }
-
     pub fn into_stream(self) -> ListCollections {
         let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();
@@ -41,7 +26,7 @@ impl ListCollectionsBuilder {
                 if let Some(cl) = &this.consistency_level {
                     request.insert_headers(cl);
                 }
-                request.insert_headers(&this.max_item_count);
+                request.insert_headers(&this.max_item_count.unwrap_or_default());
 
                 request.insert_headers(&continuation);
 

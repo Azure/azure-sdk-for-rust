@@ -238,6 +238,24 @@ macro_rules! operation {
                 @nosetter
             }
     };
+    (@list $name:ident,
+        client: $client:ty,
+        $($required:ident: $rtype:ty,)*
+        $(?$optional:ident: $otype:ty,)*
+        $(??$nosetter:ident: $nstype:ty),*
+    ) => {
+            operation!{
+                @builder
+                $name<>,
+                client: $client,
+                @required
+                $($required: $rtype,)*
+                @optional
+                $($optional: $otype,)*
+                @nosetter
+                $($nosetter: $nstype),*
+            }
+    };
     // `operation! { CreateDocument<D: Serialize>, client: UserClient, ?consistency_level: ConsistencyLevel, ??other_field: bool }`
     ($name:ident<$($generic:ident: $($constraint:ident +)*),*>,
         client: $client:ty,

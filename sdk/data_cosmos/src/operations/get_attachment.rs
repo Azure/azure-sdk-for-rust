@@ -10,30 +10,14 @@ use azure_core::SessionToken;
 use azure_core::{collect_pinned_stream, prelude::*, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct GetAttachmentBuilder {
+operation! {
+    GetAttachment,
     client: AttachmentClient,
-    if_match_condition: Option<IfMatchCondition>,
-    consistency_level: Option<ConsistencyLevel>,
-    context: Context,
+    ?if_match_condition: IfMatchCondition,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl GetAttachmentBuilder {
-    pub(crate) fn new(client: AttachmentClient) -> Self {
-        Self {
-            client,
-            if_match_condition: None,
-            consistency_level: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        if_match_condition: IfMatchCondition => Some(if_match_condition),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> GetAttachment {
         Box::pin(async move {
             let mut request = self.client.attachment_request(azure_core::Method::Get);
@@ -60,19 +44,6 @@ impl GetAttachmentBuilder {
         })
     }
 }
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for GetAttachmentBuilder {
-    type IntoFuture = GetAttachment;
-    type Output = <GetAttachment as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type GetAttachment =
-    futures::future::BoxFuture<'static, azure_core::Result<GetAttachmentResponse>>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetAttachmentResponse {

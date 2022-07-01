@@ -8,32 +8,17 @@ use azure_core::{
     prelude::MaxItemCount,
     Response as HttpResponse, SessionToken,
 };
-use azure_core::{Context, Continuable, Pageable};
+use azure_core::{Continuable, Pageable};
 
-#[derive(Debug, Clone)]
-pub struct ListUsersBuilder {
+operation! {
+    @list
+    ListUsers,
     client: DatabaseClient,
-    consistency_level: Option<ConsistencyLevel>,
-    max_item_count: MaxItemCount,
-    context: Context,
+    ?max_item_count: MaxItemCount,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl ListUsersBuilder {
-    pub(crate) fn new(client: DatabaseClient) -> Self {
-        Self {
-            client,
-            consistency_level: None,
-            max_item_count: MaxItemCount::new(-1),
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        max_item_count: i32 => MaxItemCount::new(max_item_count),
-        context: Context => context,
-    }
-
     pub fn into_stream(self) -> ListUsers {
         let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();

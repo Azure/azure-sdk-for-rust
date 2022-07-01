@@ -13,6 +13,12 @@ pub enum IndexingDirective {
     Exclude,
 }
 
+impl Default for IndexingDirective {
+    fn default() -> Self {
+        Self::Default
+    }
+}
+
 impl<'a> From<&'a IndexingDirective> for &'a str {
     fn from(s: &'a IndexingDirective) -> &'a str {
         match s {

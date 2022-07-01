@@ -11,43 +11,19 @@ use azure_core::{collect_pinned_stream, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 
-#[derive(Debug, Clone)]
-pub struct ReplaceDocumentBuilder<D> {
+operation! {
+    ReplaceDocument<D: Serialize + Send +>,
     client: DocumentClient,
     document: D,
-    partition_key: Option<String>,
-    indexing_directive: IndexingDirective,
-    if_match_condition: Option<IfMatchCondition>,
-    if_modified_since: Option<IfModifiedSince>,
-    consistency_level: Option<ConsistencyLevel>,
-    allow_tentative_writes: TentativeWritesAllowance,
-    context: Context,
+    ?indexing_directive: IndexingDirective,
+    ?if_match_condition: IfMatchCondition,
+    ?if_modified_since: IfModifiedSince,
+    ?allow_tentative_writes: TentativeWritesAllowance,
+    ?consistency_level: ConsistencyLevel,
+    ??partition_key: String
 }
 
 impl<D: Serialize + Send + 'static> ReplaceDocumentBuilder<D> {
-    pub(crate) fn new(client: DocumentClient, document: D) -> Self {
-        Self {
-            client,
-            document,
-            partition_key: None,
-            indexing_directive: IndexingDirective::Default,
-            if_match_condition: None,
-            if_modified_since: None,
-            consistency_level: None,
-            allow_tentative_writes: TentativeWritesAllowance::Deny,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        if_match_condition: IfMatchCondition => Some(if_match_condition),
-        if_modified_since: DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
-        allow_tentative_writes: TentativeWritesAllowance,
-        indexing_directive: IndexingDirective,
-        context: Context => context,
-    }
-
     pub fn partition_key<T: Serialize>(&mut self, partition_key: &T) -> azure_core::Result<()> {
         self.partition_key = Some(serialize_partition_key(partition_key)?);
         Ok(())
@@ -63,13 +39,13 @@ impl<D: Serialize + Send + 'static> ReplaceDocumentBuilder<D> {
                 .unwrap_or_else(|| self.client.partition_key_serialized());
             add_as_partition_key_header_serialized(partition_key, &mut request);
 
-            request.insert_headers(&self.indexing_directive);
+            request.insert_headers(&self.indexing_directive.unwrap_or_default());
             request.insert_headers(&self.if_match_condition);
             request.insert_headers(&self.if_modified_since);
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);
             }
-            request.insert_headers(&self.allow_tentative_writes);
+            request.insert_headers(&self.allow_tentative_writes.unwrap_or_default());
 
             let serialized = azure_core::to_json(&self.document)?;
             request.set_body(serialized);
@@ -86,19 +62,6 @@ impl<D: Serialize + Send + 'static> ReplaceDocumentBuilder<D> {
 
             ReplaceDocumentResponse::try_from(response).await
         })
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type ReplaceDocument =
-    futures::future::BoxFuture<'static, azure_core::Result<ReplaceDocumentResponse>>;
-
-#[cfg(feature = "into_future")]
-impl<D: Serialize + Send + 'static> std::future::IntoFuture for ReplaceDocumentBuilder<D> {
-    type IntoFuture = ReplaceDocument;
-    type Output = <ReplaceDocument as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 
