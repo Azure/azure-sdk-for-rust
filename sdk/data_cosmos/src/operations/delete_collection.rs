@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use crate::{headers::from_headers::*, ResourceQuota};
 use azure_core::headers::{content_type_from_headers, session_token_from_headers};
-use azure_core::{Response as HttpResponse};
+use azure_core::Response as HttpResponse;
 use chrono::{DateTime, Utc};
 
 operation! {
