@@ -3,7 +3,7 @@ use crate::{
     hmac,
 };
 use chrono::{DateTime, Utc};
-use std::{fmt, marker::PhantomData};
+use std::fmt;
 
 const SERVICE_SAS_VERSION: &str = "2020-06-12";
 
@@ -92,37 +92,60 @@ impl fmt::Display for BlobSasPermissions {
 
 pub struct BlobSharedAccessSignature {
     key: String,
-
     canonicalized_resource: String,
-    signed_permissions: BlobSasPermissions, // sp
-    signed_start: Option<DateTime<Utc>>,    // st
-    signed_expiry: DateTime<Utc>,           // se
-    signed_identifier: Option<String>,
-    signed_ip: Option<String>,
-    signed_protocol: Option<SasProtocol>,
-    signed_resource: BlobSignedResource,
+    resource: BlobSignedResource,
+    permissions: BlobSasPermissions, // sp
+    expiry: DateTime<Utc>,           // se
+    start: Option<DateTime<Utc>>,    // st
+    identifier: Option<String>,
+    ip: Option<String>,
+    protocol: Option<SasProtocol>,
 }
 
 impl BlobSharedAccessSignature {
+    pub fn new(
+        key: String,
+        canonicalized_resource: String,
+        permissions: BlobSasPermissions,
+        expiry: DateTime<Utc>,
+        resource: BlobSignedResource,
+    ) -> Self {
+        Self {
+            key,
+            canonicalized_resource,
+            resource,
+            permissions,
+            expiry,
+            start: None,
+            identifier: None,
+            ip: None,
+            protocol: None,
+        }
+    }
+
+    setters! {
+        start: DateTime<Utc> => Some(start),
+        identifier: String => Some(identifier),
+        ip: String => Some(ip),
+        protocol: SasProtocol => Some(protocol),
+    }
+
     fn sign(&self) -> String {
         let content = vec![
-            self.signed_permissions.to_string(),
-            self.signed_start.map_or("".to_string(), format_date),
-            format_date(self.signed_expiry),
+            self.permissions.to_string(),
+            self.start.map_or("".to_string(), format_date),
+            format_date(self.expiry),
             self.canonicalized_resource.clone(),
-            self.signed_identifier
+            self.identifier
                 .as_ref()
                 .unwrap_or(&"".to_string())
                 .to_string(),
-            self.signed_ip
-                .as_ref()
-                .unwrap_or(&"".to_string())
-                .to_string(),
-            self.signed_protocol
+            self.ip.as_ref().unwrap_or(&"".to_string()).to_string(),
+            self.protocol
                 .map(|x| x.to_string())
                 .unwrap_or_else(|| "".to_string()),
             SERVICE_SAS_VERSION.to_string(),
-            self.signed_resource.to_string(),
+            self.resource.to_string(),
             "".to_string(), // snapshot time
             "".to_string(), // rscd
             "".to_string(), // rscc
@@ -131,7 +154,7 @@ impl BlobSharedAccessSignature {
             "".to_string(), // rsct
         ];
 
-        hmac::sign(&content.join("\n"), &self.key).unwrap()
+        hmac::sign(&content.join("\n"), &self.key).expect("HMAC signing failed")
     }
 }
 
@@ -139,20 +162,20 @@ impl SasToken for BlobSharedAccessSignature {
     fn token(&self) -> String {
         let mut elements: Vec<String> = vec![
             format!("sv={}", SERVICE_SAS_VERSION),
-            format!("sp={}", self.signed_permissions),
-            format!("sr={}", self.signed_resource),
-            format!("se={}", format_form(format_date(self.signed_expiry))),
+            format!("sp={}", self.permissions),
+            format!("sr={}", self.resource),
+            format!("se={}", format_form(format_date(self.expiry))),
         ];
 
-        if let Some(start) = &self.signed_start {
+        if let Some(start) = &self.start {
             elements.push(format!("st={}", format_form(format_date(*start))))
         }
 
-        if let Some(ip) = &self.signed_ip {
+        if let Some(ip) = &self.ip {
             elements.push(format!("sip={}", ip))
         }
 
-        if let Some(protocol) = &self.signed_protocol {
+        if let Some(protocol) = &self.protocol {
             elements.push(format!("spr={}", protocol))
         }
 
@@ -160,191 +183,5 @@ impl SasToken for BlobSharedAccessSignature {
         elements.push(format!("sig={}", format_form(sig)));
 
         elements.join("&")
-    }
-}
-
-pub struct SetPerms {}
-pub struct SetResources {}
-pub struct SetExpiry {}
-
-#[derive(Default)]
-pub struct BlobSharedAccessSignatureBuilder<T1, T2, T3> {
-    _phantom: PhantomData<(T1, T2, T3)>,
-    key: String,
-    canonicalized_resource: String,
-
-    // required
-    signed_permissions: Option<BlobSasPermissions>,
-    signed_expiry: Option<DateTime<Utc>>,
-    signed_resource: Option<BlobSignedResource>,
-
-    // optional
-    signed_start: Option<DateTime<Utc>>,
-    signed_identifier: Option<String>,
-    signed_ip: Option<String>,
-    signed_protocol: Option<SasProtocol>,
-}
-
-impl BlobSharedAccessSignatureBuilder<(), (), ()> {
-    pub fn new(
-        key: String,
-        canonicalized_resource: String,
-    ) -> BlobSharedAccessSignatureBuilder<(), (), ()> {
-        BlobSharedAccessSignatureBuilder {
-            _phantom: PhantomData,
-            key,
-            canonicalized_resource,
-            signed_permissions: None,
-            signed_expiry: None,
-            signed_resource: None,
-            signed_start: None,
-            signed_identifier: None,
-            signed_ip: None,
-            signed_protocol: None,
-        }
-    }
-}
-
-impl<T1, T2, T3> BlobSharedAccessSignatureBuilder<T1, T2, T3> {
-    pub fn with_start(
-        self,
-        signed_start: DateTime<Utc>,
-    ) -> BlobSharedAccessSignatureBuilder<T1, T2, T3> {
-        BlobSharedAccessSignatureBuilder {
-            _phantom: PhantomData,
-            key: self.key,
-            canonicalized_resource: self.canonicalized_resource,
-            signed_permissions: self.signed_permissions,
-            signed_resource: self.signed_resource,
-            signed_expiry: self.signed_expiry,
-            signed_start: Some(signed_start),
-            signed_identifier: self.signed_identifier,
-            signed_protocol: self.signed_protocol,
-            signed_ip: self.signed_ip,
-        }
-    }
-    pub fn with_ip(self, signed_ip: String) -> BlobSharedAccessSignatureBuilder<T1, T2, T3> {
-        BlobSharedAccessSignatureBuilder {
-            _phantom: PhantomData,
-            key: self.key,
-            canonicalized_resource: self.canonicalized_resource,
-            signed_permissions: self.signed_permissions,
-            signed_resource: self.signed_resource,
-            signed_expiry: self.signed_expiry,
-            signed_start: self.signed_start,
-            signed_identifier: self.signed_identifier,
-            signed_protocol: self.signed_protocol,
-            signed_ip: Some(signed_ip),
-        }
-    }
-    pub fn with_identifier(
-        self,
-        signed_identifier: String,
-    ) -> BlobSharedAccessSignatureBuilder<T1, T2, T3> {
-        BlobSharedAccessSignatureBuilder {
-            _phantom: PhantomData,
-            key: self.key,
-            canonicalized_resource: self.canonicalized_resource,
-            signed_permissions: self.signed_permissions,
-            signed_resource: self.signed_resource,
-            signed_expiry: self.signed_expiry,
-            signed_start: self.signed_start,
-            signed_identifier: Some(signed_identifier),
-            signed_protocol: self.signed_protocol,
-            signed_ip: self.signed_ip,
-        }
-    }
-    pub fn with_protocol(
-        self,
-        signed_protocol: SasProtocol,
-    ) -> BlobSharedAccessSignatureBuilder<T1, T2, T3> {
-        BlobSharedAccessSignatureBuilder {
-            _phantom: PhantomData,
-            key: self.key,
-            canonicalized_resource: self.canonicalized_resource,
-            signed_permissions: self.signed_permissions,
-            signed_resource: self.signed_resource,
-            signed_expiry: self.signed_expiry,
-            signed_start: self.signed_start,
-            signed_identifier: self.signed_identifier,
-            signed_protocol: Some(signed_protocol),
-            signed_ip: self.signed_ip,
-        }
-    }
-}
-
-impl BlobSharedAccessSignatureBuilder<SetPerms, SetResources, SetExpiry> {
-    pub fn finalize(self) -> BlobSharedAccessSignature {
-        BlobSharedAccessSignature {
-            key: self.key.clone(),
-            canonicalized_resource: self.canonicalized_resource.clone(),
-            signed_permissions: self.signed_permissions.unwrap(),
-            signed_resource: self.signed_resource.unwrap(),
-            signed_expiry: self.signed_expiry.unwrap(),
-            signed_start: self.signed_start,
-            signed_identifier: self.signed_identifier,
-            signed_protocol: self.signed_protocol,
-            signed_ip: self.signed_ip,
-        }
-    }
-}
-
-impl<T1, T2> BlobSharedAccessSignatureBuilder<(), T1, T2> {
-    pub fn with_permissions(
-        self,
-        permissions: BlobSasPermissions,
-    ) -> BlobSharedAccessSignatureBuilder<SetPerms, T1, T2> {
-        BlobSharedAccessSignatureBuilder {
-            _phantom: PhantomData,
-            key: self.key,
-            canonicalized_resource: self.canonicalized_resource,
-            signed_permissions: Some(permissions),
-            signed_resource: self.signed_resource,
-            signed_expiry: self.signed_expiry,
-            signed_start: self.signed_start,
-            signed_identifier: self.signed_identifier,
-            signed_protocol: self.signed_protocol,
-            signed_ip: self.signed_ip,
-        }
-    }
-}
-
-impl<T1, T2> BlobSharedAccessSignatureBuilder<T1, (), T2> {
-    pub fn with_resources(
-        self,
-        signed_resource: BlobSignedResource,
-    ) -> BlobSharedAccessSignatureBuilder<T1, SetResources, T2> {
-        BlobSharedAccessSignatureBuilder {
-            _phantom: PhantomData,
-            key: self.key,
-            canonicalized_resource: self.canonicalized_resource,
-            signed_permissions: self.signed_permissions,
-            signed_resource: Some(signed_resource),
-            signed_expiry: self.signed_expiry,
-            signed_start: self.signed_start,
-            signed_identifier: self.signed_identifier,
-            signed_protocol: self.signed_protocol,
-            signed_ip: self.signed_ip,
-        }
-    }
-}
-
-impl<T1, T2> BlobSharedAccessSignatureBuilder<T1, T2, ()> {
-    pub fn with_expiry(
-        self,
-        signed_expiry: DateTime<Utc>,
-    ) -> BlobSharedAccessSignatureBuilder<T1, T2, SetExpiry> {
-        BlobSharedAccessSignatureBuilder {
-            _phantom: PhantomData,
-            key: self.key,
-            canonicalized_resource: self.canonicalized_resource,
-            signed_permissions: self.signed_permissions,
-            signed_resource: self.signed_resource,
-            signed_expiry: Some(signed_expiry),
-            signed_start: self.signed_start,
-            signed_identifier: self.signed_identifier,
-            signed_protocol: self.signed_protocol,
-            signed_ip: self.signed_ip,
-        }
     }
 }
