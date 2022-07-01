@@ -2,30 +2,15 @@ use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::ResourceQuota;
 use azure_core::headers::session_token_from_headers;
-use azure_core::Context;
 use azure_core::Response as HttpResponse;
 
-#[derive(Debug, Clone)]
-pub struct DeleteDatabaseBuilder {
+operation! {
+    DeleteDatabase,
     client: DatabaseClient,
-    consistency_level: Option<ConsistencyLevel>,
-    context: Context,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl DeleteDatabaseBuilder {
-    pub(crate) fn new(client: DatabaseClient) -> Self {
-        Self {
-            client,
-            consistency_level: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> DeleteDatabase {
         Box::pin(async move {
             let mut request = self.client.database_request(azure_core::Method::Delete);
@@ -40,19 +25,6 @@ impl DeleteDatabaseBuilder {
                 .await?;
             DeleteDatabaseResponse::try_from(response).await
         })
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type DeleteDatabase =
-    futures::future::BoxFuture<'static, azure_core::Result<DeleteDatabaseResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for DeleteDatabaseBuilder {
-    type IntoFuture = DeleteDatabase;
-    type Output = <DeleteDatabase as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 

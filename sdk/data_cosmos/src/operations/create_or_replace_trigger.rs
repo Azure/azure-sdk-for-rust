@@ -5,45 +5,20 @@ use crate::resources::Trigger;
 use crate::ResourceQuota;
 use azure_core::collect_pinned_stream;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
-use azure_core::prelude::*;
 use azure_core::Response as HttpResponse;
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct CreateOrReplaceTriggerBuilder {
+operation! {
+    CreateOrReplaceTrigger,
     client: TriggerClient,
     is_create: bool,
     body: String,
     trigger_type: TriggerType,
     trigger_operation: TriggerOperation,
-    consistency_level: Option<ConsistencyLevel>,
-    context: Context,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl CreateOrReplaceTriggerBuilder {
-    pub(crate) fn new(
-        client: TriggerClient,
-        is_create: bool,
-        body: String,
-        trigger_type: TriggerType,
-        trigger_operation: TriggerOperation,
-    ) -> Self {
-        Self {
-            client,
-            is_create,
-            body,
-            trigger_operation,
-            trigger_type,
-            consistency_level: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> CreateOrReplaceTrigger {
         Box::pin(async move {
             let mut request = if self.is_create {
@@ -85,18 +60,6 @@ impl CreateOrReplaceTriggerBuilder {
 
             CreateOrReplaceTriggerResponse::try_from(response).await
         })
-    }
-}
-/// The future returned by calling `into_future` on the builder.
-pub type CreateOrReplaceTrigger =
-    futures::future::BoxFuture<'static, azure_core::Result<CreateOrReplaceTriggerResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for CreateOrReplaceTriggerBuilder {
-    type IntoFuture = CreateOrReplaceTrigger;
-    type Output = <CreateOrReplaceTrigger as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 

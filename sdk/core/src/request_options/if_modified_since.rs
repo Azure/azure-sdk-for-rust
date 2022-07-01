@@ -19,3 +19,9 @@ impl Header for IfModifiedSince {
         self.0.to_rfc2822().into()
     }
 }
+
+impl From<DateTime<Utc>> for IfModifiedSince {
+    fn from(time: DateTime<Utc>) -> Self {
+        Self::new(time)
+    }
+}

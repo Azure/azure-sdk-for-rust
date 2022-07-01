@@ -4,38 +4,17 @@ use crate::prelude::*;
 use azure_core::headers::session_token_from_headers;
 use azure_core::prelude::*;
 use azure_core::Response as HttpResponse;
-use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct DeleteDocumentBuilder {
+operation! {
+    DeleteDocument,
     client: DocumentClient,
-    if_match_condition: Option<IfMatchCondition>,
-    if_modified_since: Option<IfModifiedSince>,
-    consistency_level: Option<ConsistencyLevel>,
-    allow_tentative_writes: TentativeWritesAllowance,
-    context: Context,
+    ?if_match_condition: IfMatchCondition,
+    ?if_modified_since: IfModifiedSince,
+    ?allow_tentative_writes: TentativeWritesAllowance,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl DeleteDocumentBuilder {
-    pub(crate) fn new(client: DocumentClient) -> DeleteDocumentBuilder {
-        Self {
-            client,
-            if_match_condition: None,
-            if_modified_since: None,
-            consistency_level: None,
-            allow_tentative_writes: TentativeWritesAllowance::Deny,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        if_match_condition: IfMatchCondition => Some(if_match_condition),
-        allow_tentative_writes: TentativeWritesAllowance,
-        if_modified_since: DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> DeleteDocument {
         Box::pin(async move {
             let mut request = self.client.document_request(azure_core::Method::Delete);
@@ -45,7 +24,11 @@ impl DeleteDocumentBuilder {
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);
             }
-            request.insert_headers(&self.allow_tentative_writes);
+            request.insert_headers(
+                &self
+                    .allow_tentative_writes
+                    .unwrap_or(TentativeWritesAllowance::Deny),
+            );
 
             crate::cosmos_entity::add_as_partition_key_header_serialized(
                 self.client.partition_key_serialized(),
@@ -64,19 +47,6 @@ impl DeleteDocumentBuilder {
 
             DeleteDocumentResponse::try_from(response).await
         })
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type DeleteDocument =
-    futures::future::BoxFuture<'static, azure_core::Result<DeleteDocumentResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for DeleteDocumentBuilder {
-    type IntoFuture = DeleteDocument;
-    type Output = <DeleteDocument as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 
