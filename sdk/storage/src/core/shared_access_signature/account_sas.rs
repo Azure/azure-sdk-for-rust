@@ -134,9 +134,9 @@ pub struct AccountSharedAccessSignature {
     version: AccountSasVersion,
     resource: AccountSasResource,
     resource_type: AccountSasResourceType,
-    start: Option<DateTime<Utc>>,
     expiry: DateTime<Utc>,
     permissions: AccountSasPermissions,
+    start: Option<DateTime<Utc>>,
     ip: Option<String>,
     protocol: Option<SasProtocol>,
 }
@@ -156,15 +156,16 @@ impl AccountSharedAccessSignature {
             version: AccountSasVersion::V20181109,
             resource,
             resource_type,
-            start: None,
             expiry,
             permissions,
+            start: None,
             ip: None,
             protocol: None,
         }
     }
 
     setters! {
+        version: AccountSasVersion => version,
         start: DateTime<Utc> => Some(start),
         ip: String => Some(ip),
         protocol: SasProtocol => Some(protocol),

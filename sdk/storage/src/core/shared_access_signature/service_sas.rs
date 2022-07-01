@@ -93,13 +93,13 @@ impl fmt::Display for BlobSasPermissions {
 pub struct BlobSharedAccessSignature {
     key: String,
     canonicalized_resource: String,
+    resource: BlobSignedResource,
     permissions: BlobSasPermissions, // sp
-    start: Option<DateTime<Utc>>,    // st
     expiry: DateTime<Utc>,           // se
+    start: Option<DateTime<Utc>>,    // st
     identifier: Option<String>,
     ip: Option<String>,
     protocol: Option<SasProtocol>,
-    resource: BlobSignedResource,
 }
 
 impl BlobSharedAccessSignature {
@@ -113,13 +113,13 @@ impl BlobSharedAccessSignature {
         Self {
             key,
             canonicalized_resource,
+            resource,
             permissions,
-            start: None,
             expiry,
+            start: None,
             identifier: None,
             ip: None,
             protocol: None,
-            resource,
         }
     }
 
