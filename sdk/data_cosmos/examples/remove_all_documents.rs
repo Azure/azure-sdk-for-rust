@@ -32,13 +32,13 @@ async fn main() -> azure_core::Result<()> {
         authorization_token,
         CosmosOptions::default(),
     );
-
-    let client = client.database_client(args.database_name);
-    let client = client.collection_client(args.collection_name);
+    let collection = client
+        .database_client(args.database_name)
+        .collection_client(args.collection_name);
 
     let mut documents = Vec::new();
 
-    let stream = client.list_documents();
+    let stream = collection.list_documents();
     let mut stream = stream.into_stream::<serde_json::Value>();
     while let Some(res) = stream.next().await {
         for doc in res?.documents {
@@ -73,7 +73,7 @@ async fn main() -> azure_core::Result<()> {
             id, partition_key
         );
 
-        client
+        collection
             .document_client(id.clone(), &partition_key)?
             .delete_document()
             .into_future()

@@ -40,9 +40,9 @@ async fn main() -> azure_core::Result<()> {
     let args = Args::parse();
     let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
 
-    let client = CosmosClient::new(args.account, authorization_token, CosmosOptions::default());
-    let client = client.database_client(args.database_name);
-    let client = client.collection_client(args.collection_name);
+    let client = CosmosClient::new(args.account, authorization_token, CosmosOptions::default())
+        .database_client(args.database_name)
+        .collection_client(args.collection_name);
 
     let mut doc = MySampleStruct {
         id: format!("unique_id{}", 500),

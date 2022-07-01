@@ -44,10 +44,9 @@ async fn main() -> azure_core::Result<()> {
         args.account.clone(),
         authorization_token,
         CosmosOptions::default(),
-    );
-
-    let client = client.database_client(args.database_name);
-    let client = client.collection_client(args.collection_name);
+    )
+    .database_client(args.database_name)
+    .collection_client(args.collection_name);
 
     let query_obj = Query::new(args.query);
 
