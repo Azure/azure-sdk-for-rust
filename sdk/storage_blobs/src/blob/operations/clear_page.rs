@@ -1,4 +1,4 @@
-use crate::{prelude::*, BA512Range};
+use crate::prelude::*;
 use azure_core::{
     headers::{BLOB_TYPE, PAGE_WRITE, *},
     prelude::*,

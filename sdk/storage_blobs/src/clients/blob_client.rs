@@ -1,4 +1,4 @@
-use crate::{blob::operations::*, prelude::*, BA512Range};
+use crate::{blob::operations::*, options::BA512Range, prelude::*};
 use azure_core::Method;
 use azure_core::{
     error::{Error, ErrorKind},
