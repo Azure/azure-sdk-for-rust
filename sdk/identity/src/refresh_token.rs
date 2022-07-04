@@ -55,9 +55,7 @@ pub async fn exchange(
         if let Ok(token_error) = serde_json::from_slice::<RefreshTokenError>(&rsp_body) {
             return Err(Error::new(ErrorKind::Credential, token_error));
         } else {
-            return Err(
-                ErrorKind::http_response_from_body(rsp_status as u16, &rsp_body).into_error(),
-            );
+            return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
         }
     }
 

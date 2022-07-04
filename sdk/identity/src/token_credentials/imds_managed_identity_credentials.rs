@@ -1,7 +1,8 @@
-use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
-use azure_core::error::{Error, ErrorKind, ResultExt};
-use azure_core::Method;
-use azure_core::{HttpClient, Request};
+use azure_core::{
+    auth::{AccessToken, TokenCredential, TokenResponse},
+    error::{Error, ErrorKind, ResultExt},
+    HttpClient, Method, Request, StatusCode,
+};
 use chrono::{DateTime, TimeZone, Utc};
 use serde::{
     de::{self, Deserializer},
@@ -125,14 +126,14 @@ impl TokenCredential for ImdsManagedIdentityCredential {
         let rsp_body = rsp.into_body().await;
 
         if !rsp_status.is_success() {
-            match rsp_status as u16 {
-                400 => {
+            match rsp_status {
+                StatusCode::BadRequest => {
                     return Err(Error::message(
                         ErrorKind::Credential,
                         "the requested identity has not been assigned to this resource",
                     ))
                 }
-                502 | 504 => {
+                StatusCode::BadGateway | StatusCode::GatewayTimeout => {
                     return Err(Error::message(
                         ErrorKind::Credential,
                         "the request failed due to a gateway error",

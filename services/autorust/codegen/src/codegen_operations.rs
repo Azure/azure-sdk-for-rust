@@ -662,7 +662,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     }
     match_status.extend(quote! {
         status_code => {
-            Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse { status: status_code as u16, error_code: None }))
+            Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse { status: status_code, error_code: None }))
         }
     });
 
