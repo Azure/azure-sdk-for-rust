@@ -8,18 +8,13 @@ use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub struct MockTransportPlayerPolicy {
-    #[allow(unused)]
-    pub(crate) transport_options: TransportOptions,
     transaction: MockTransaction,
 }
 
 impl MockTransportPlayerPolicy {
     pub fn new(transport_options: TransportOptions) -> Self {
         let transaction = MockTransaction::new(transport_options.transaction_name.clone());
-        Self {
-            transport_options,
-            transaction,
-        }
+        Self { transaction }
     }
 }
 
