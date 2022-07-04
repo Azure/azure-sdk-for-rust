@@ -6,43 +6,46 @@
 ///     response.setBody("Hello, " + personToGreet);
 /// }
 use azure_data_cosmos::prelude::*;
+use clap::Parser;
 use futures::StreamExt;
+
+#[derive(Debug, Parser)]
+struct Args {
+    /// Cosmos primary key name
+    #[clap(env = "COSMOS_PRIMARY_KEY")]
+    primary_key: String,
+    /// The cosmos account your're using
+    #[clap(env = "COSMOS_ACCOUNT")]
+    account: String,
+    /// The name of the database
+    database_name: String,
+    /// The name of the collection
+    collection_name: String,
+    /// The name of the stored procedure
+    stored_procedure_name: String,
+}
+
+const FUNCTION_BODY: &str = r#"
+    function f(personToGreet) {
+        var context = getContext();
+        var response = context.getResponse();
+        response.setBody("Hello, " + personToGreet);
+    }
+"#;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    let function_body: &str = r#"
-        function f(personToGreet) {
-            var context = getContext();
-            var response = context.getResponse();
-            response.setBody("Hello, " + personToGreet);
-        }
-        "#;
+    let args = Args::parse();
+    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
 
-    let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
-    let primary_key =
-        std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
-
-    let database_name = std::env::args()
-        .nth(1)
-        .expect("please specify the database name as first command line parameter");
-    let collection_name = std::env::args()
-        .nth(2)
-        .expect("please specify the collection name as second command line parameter");
-    let stored_procedure_name = std::env::args()
-        .nth(3)
-        .expect("please specify the stored procedure name as third command line parameter");
-
-    let authorization_token = AuthorizationToken::primary_from_base64(&primary_key)?;
-
-    let client = CosmosClient::new(
-        account.clone(),
+    let collection = CosmosClient::new(
+        args.account.clone(),
         authorization_token,
         CosmosOptions::default(),
-    );
-
-    let database = client.database_client(database_name);
-    let collection = database.collection_client(collection_name);
-    let stored_procedure = collection.stored_procedure_client(stored_procedure_name);
+    )
+    .database_client(args.database_name)
+    .collection_client(args.collection_name);
+    let stored_procedure = collection.stored_procedure_client(args.stored_procedure_name);
 
     let list_stored_procedures_response = collection
         .list_stored_procedures()
@@ -56,7 +59,7 @@ async fn main() -> azure_core::Result<()> {
     );
 
     let create_stored_procedure_response = stored_procedure
-        .create_stored_procedure(function_body)
+        .create_stored_procedure(FUNCTION_BODY)
         .into_future()
         .await?;
     println!(

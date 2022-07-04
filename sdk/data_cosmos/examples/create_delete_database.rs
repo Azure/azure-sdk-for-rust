@@ -1,17 +1,24 @@
 use azure_data_cosmos::prelude::*;
+use clap::Parser;
 use futures::stream::StreamExt;
+
+#[derive(Debug, Parser)]
+struct Args {
+    /// Cosmos primary key name
+    #[clap(env = "COSMOS_PRIMARY_KEY")]
+    primary_key: String,
+    /// The cosmos account your're using
+    #[clap(env = "COSMOS_ACCOUNT")]
+    account: String,
+    /// The name of the database
+    database_name: String,
+}
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
     // First we retrieve the account name and access key from environment variables.
     // We expect access keys (ie, not resource constrained)
-    let primary_key =
-        std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
-    let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
-
-    let database_name = std::env::args()
-        .nth(1)
-        .expect("please specify database name as first command line parameter");
+    let args = Args::parse();
 
     // This is how you construct an authorization token.
     // Remember to pick the correct token type.
@@ -21,12 +28,13 @@ async fn main() -> azure_core::Result<()> {
     // errors, plus Azure specific ones. For example if a REST call returns the
     // unexpected result (ie NotFound instead of Ok) we return an Err telling
     // you that.
-    let authorization_token = permission::AuthorizationToken::primary_from_base64(&primary_key)?;
+    let authorization_token =
+        permission::AuthorizationToken::primary_from_base64(&args.primary_key)?;
 
     // Once we have an authorization token you can create a client instance. You can change the
     // authorization token at later time if you need, for example, to escalate the privileges for a
     // single operation.
-    let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
+    let client = CosmosClient::new(args.account, authorization_token, CosmosOptions::default());
 
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
     // account. Database do not implement Display but deref to &str so you can pass it to methods
@@ -38,12 +46,15 @@ async fn main() -> azure_core::Result<()> {
     }
     drop(list_databases_stream);
 
-    let db = client.create_database(&database_name).into_future().await?;
+    let db = client
+        .create_database(&args.database_name)
+        .into_future()
+        .await?;
     println!("created database = {:#?}", db);
 
     // create collection!
     {
-        let database = client.database_client(database_name.clone());
+        let database = client.database_client(args.database_name.clone());
         let create_collection_response = database
             .create_collection("panzadoro", "/id")
             .into_future()
@@ -70,7 +81,7 @@ async fn main() -> azure_core::Result<()> {
     }
 
     let resp = client
-        .database_client(database_name)
+        .database_client(args.database_name)
         .delete_database()
         .into_future()
         .await?;

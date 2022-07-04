@@ -1,6 +1,21 @@
 use azure_data_cosmos::prelude::*;
+use clap::Parser;
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Parser)]
+struct Args {
+    /// Cosmos primary key name
+    #[clap(env = "COSMOS_PRIMARY_KEY")]
+    primary_key: String,
+    /// The cosmos account your're using
+    #[clap(env = "COSMOS_ACCOUNT")]
+    account: String,
+    /// The name of the database
+    database_name: String,
+    /// The name of the collection
+    collection_name: String,
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct MySampleStruct {
@@ -22,22 +37,12 @@ impl azure_data_cosmos::CosmosEntity for MySampleStruct {
 // with partitionKey on "id".
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    let database_name = std::env::args()
-        .nth(1)
-        .expect("please specify database name as first command line parameter");
-    let collection_name = std::env::args()
-        .nth(2)
-        .expect("please specify collection name as second command line parameter");
+    let args = Args::parse();
+    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
 
-    let primary_key =
-        std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
-    let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
-
-    let authorization_token = AuthorizationToken::primary_from_base64(&primary_key)?;
-
-    let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
-    let client = client.database_client(database_name);
-    let client = client.collection_client(collection_name);
+    let client = CosmosClient::new(args.account, authorization_token, CosmosOptions::default())
+        .database_client(args.database_name)
+        .collection_client(args.collection_name);
 
     let mut doc = MySampleStruct {
         id: format!("unique_id{}", 500),

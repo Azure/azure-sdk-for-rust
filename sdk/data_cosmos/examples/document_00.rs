@@ -1,9 +1,20 @@
+use clap::Parser;
 use futures::stream::StreamExt;
 use serde::{Deserialize, Serialize};
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos DB.
 use azure_core::prelude::*;
 
 use azure_data_cosmos::prelude::*;
+
+#[derive(Debug, Parser)]
+struct Args {
+    /// Cosmos primary key name
+    #[clap(env = "COSMOS_PRIMARY_KEY")]
+    primary_key: String,
+    /// The cosmos account your're using
+    #[clap(env = "COSMOS_ACCOUNT")]
+    account: String,
+}
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 struct MySampleStruct {
@@ -34,19 +45,17 @@ const COLLECTION: &str = "azuresdktc";
 async fn main() -> azure_core::Result<()> {
     // Let's get Cosmos account and access key from env variables.
     // This helps automated testing.
-    let primary_key =
-        std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
-    let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
+    let args = Args::parse();
 
     // First, we create an authorization token. There are two types of tokens, master and resource
     // constrained. Please check the Azure documentation for details. You can change tokens
     // at will and it's a good practice to raise your privileges only when needed.
-    let authorization_token = AuthorizationToken::primary_from_base64(&primary_key)?;
+    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
 
     // Next we will create a Cosmos client. You need an authorization_token but you can later
     // change it if needed.
     let client = CosmosClient::new(
-        account.clone(),
+        args.account.clone(),
         authorization_token.clone(),
         CosmosOptions::default(),
     );

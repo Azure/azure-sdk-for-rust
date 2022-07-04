@@ -1,21 +1,30 @@
 use azure_data_cosmos::prelude::*;
+use clap::Parser;
 use stop_token::prelude::*;
 use stop_token::StopSource;
 use tokio::time::{Duration, Instant};
+
+#[derive(Debug, Parser)]
+struct Args {
+    /// Cosmos primary key name
+    #[clap(env = "COSMOS_PRIMARY_KEY")]
+    primary_key: String,
+    /// The cosmos account your're using
+    #[clap(env = "COSMOS_ACCOUNT")]
+    account: String,
+}
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
     env_logger::init();
     // First we retrieve the account name and access key from environment variables, and
     // create an authorization token.
-    let account = std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!");
-    let primary_key =
-        std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
-    let authorization_token = AuthorizationToken::primary_from_base64(&primary_key)?;
+    let args = Args::parse();
+    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
 
     // Create a new Cosmos client.
     let options = CosmosOptions::default();
-    let client = CosmosClient::new(account.clone(), authorization_token.clone(), options);
+    let client = CosmosClient::new(args.account.clone(), authorization_token.clone(), options);
 
     // Create a new database, and time out if it takes more than 1 second.
     let future = client.create_database("my_database").into_future();
