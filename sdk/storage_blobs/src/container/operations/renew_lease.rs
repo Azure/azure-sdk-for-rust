@@ -7,7 +7,6 @@ pub type RenewLeaseResponse = AcquireLeaseResponse;
 #[derive(Debug, Clone)]
 pub struct RenewLeaseBuilder {
     container_lease_client: ContainerLeaseClient,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -15,13 +14,11 @@ impl RenewLeaseBuilder {
     pub(crate) fn new(container_lease_client: ContainerLeaseClient) -> Self {
         Self {
             container_lease_client,
-            timeout: None,
             context: Context::new(),
         }
     }
 
     setters! {
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
@@ -31,8 +28,6 @@ impl RenewLeaseBuilder {
 
             url.query_pairs_mut().append_pair("restype", "container");
             url.query_pairs_mut().append_pair("comp", "lease");
-
-            self.timeout.append_to_url_query(&mut url);
 
             let mut headers = Headers::new();
             headers.insert(LEASE_ACTION, "renew");
