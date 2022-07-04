@@ -17,7 +17,6 @@ pub struct PutBlockListBuilder {
     access_tier: Option<AccessTier>,
     // TODO: Support tags
     lease_id: Option<LeaseId>,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -35,7 +34,6 @@ impl PutBlockListBuilder {
             access_tier: None,
             lease_id: None,
             context: Context::new(),
-            timeout: None,
         }
     }
 
@@ -48,7 +46,6 @@ impl PutBlockListBuilder {
         metadata: Metadata => Some(metadata),
         access_tier: AccessTier => Some(access_tier),
         lease_id: LeaseId => Some(lease_id),
-        timeout: Timeout => Some(timeout),
     }
 
     pub fn into_future(mut self) -> Response {
@@ -56,7 +53,6 @@ impl PutBlockListBuilder {
             let mut url = self.blob_client.url_with_segments(None)?;
 
             url.query_pairs_mut().append_pair("comp", "blocklist");
-            self.timeout.append_to_url_query(&mut url);
 
             let body = self.block_list.to_xml();
             let body_bytes = Bytes::from(body);

@@ -12,7 +12,6 @@ pub struct FindBlobsByTagsBuilder {
     next_marker: Option<NextMarker>,
     #[allow(unused)]
     max_results: Option<MaxResults>,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -23,7 +22,6 @@ impl FindBlobsByTagsBuilder {
             expression: String::new(),
             next_marker: None,
             max_results: None,
-            timeout: None,
             context: Context::new(),
         }
     }
@@ -32,7 +30,6 @@ impl FindBlobsByTagsBuilder {
         expression: String => expression,
         next_marker: NextMarker => Some(next_marker),
         max_results: MaxResults => Some(max_results),
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
@@ -41,7 +38,6 @@ impl FindBlobsByTagsBuilder {
         Box::pin(async move {
             let mut request = self.client.blob_storage_request(azure_core::Method::Get)?;
 
-            self.timeout.append_to_url_query(request.url_mut());
             request
                 .url_mut()
                 .query_pairs_mut()

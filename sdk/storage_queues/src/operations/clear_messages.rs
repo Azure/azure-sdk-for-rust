@@ -6,7 +6,6 @@ use std::convert::TryInto;
 #[derive(Debug)]
 pub struct ClearMessagesBuilder {
     queue_client: QueueClient,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -14,21 +13,17 @@ impl ClearMessagesBuilder {
     pub(crate) fn new(queue_client: QueueClient) -> Self {
         ClearMessagesBuilder {
             queue_client,
-            timeout: None,
             context: Context::new(),
         }
     }
 
     setters! {
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
     pub fn into_future(mut self) -> Response {
         Box::pin(async move {
-            let mut url = self.queue_client.url_with_segments(Some("messages"))?;
-
-            self.timeout.append_to_url_query(&mut url);
+            let url = self.queue_client.url_with_segments(Some("messages"))?;
 
             let mut request = self.queue_client.storage_client().finalize_request(
                 url,

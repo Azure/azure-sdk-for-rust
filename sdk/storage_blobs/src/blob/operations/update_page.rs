@@ -13,7 +13,6 @@ pub struct UpdatePageBuilder {
     sequence_number_condition: Option<SequenceNumberCondition>,
     if_modified_since_condition: Option<IfModifiedSinceCondition>,
     if_match_condition: Option<IfMatchCondition>,
-    timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
     context: Context,
 }
@@ -28,9 +27,8 @@ impl UpdatePageBuilder {
             sequence_number_condition: None,
             if_modified_since_condition: None,
             if_match_condition: None,
-            context: Context::new(),
-            timeout: None,
             lease_id: None,
+            context: Context::new(),
         }
     }
 
@@ -39,15 +37,12 @@ impl UpdatePageBuilder {
         sequence_number_condition: SequenceNumberCondition => Some(sequence_number_condition),
         if_modified_since_condition: IfModifiedSinceCondition => Some(if_modified_since_condition),
         if_match_condition: IfMatchCondition => Some(if_match_condition),
-        timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
     }
 
     pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.blob_client.url_with_segments(None)?;
-
-            self.timeout.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("comp", "page");
 
             let mut headers = Headers::new();

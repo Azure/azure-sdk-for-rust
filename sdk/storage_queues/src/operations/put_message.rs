@@ -13,7 +13,6 @@ pub struct PutMessageBuilder {
     queue_client: QueueClient,
     visibility_timeout: Option<VisibilityTimeout>,
     ttl: Option<MessageTTL>,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -24,7 +23,6 @@ impl PutMessageBuilder {
             queue_client,
             visibility_timeout: None,
             ttl: None,
-            timeout: None,
             context: Context::new(),
         }
     }
@@ -32,7 +30,6 @@ impl PutMessageBuilder {
     setters! {
         visibility_timeout: VisibilityTimeout => Some(visibility_timeout),
         ttl: MessageTTL => Some(ttl),
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
@@ -42,7 +39,6 @@ impl PutMessageBuilder {
 
             self.visibility_timeout.append_to_url_query(&mut url);
             self.ttl.append_to_url_query(&mut url);
-            self.timeout.append_to_url_query(&mut url);
 
             // since the format is fixed we just decorate the message with the tags.
             // This could be made optional in the future and/or more

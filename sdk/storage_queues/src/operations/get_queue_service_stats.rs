@@ -13,7 +13,6 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct GetQueueServiceStatsBuilder {
     service_client: QueueServiceClient,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -21,13 +20,11 @@ impl GetQueueServiceStatsBuilder {
     pub(crate) fn new(service_client: QueueServiceClient) -> Self {
         Self {
             service_client,
-            timeout: None,
             context: Context::new(),
         }
     }
 
     setters! {
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
@@ -41,8 +38,6 @@ impl GetQueueServiceStatsBuilder {
 
             url.query_pairs_mut().append_pair("restype", "service");
             url.query_pairs_mut().append_pair("comp", "stats");
-
-            self.timeout.append_to_url_query(&mut url);
 
             let mut request = self.service_client.storage_client.finalize_request(
                 url,

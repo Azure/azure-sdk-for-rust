@@ -7,7 +7,6 @@ pub struct GetPageRangesBuilder {
     blob_client: BlobClient,
     blob_versioning: Option<BlobVersioning>,
     lease_id: Option<LeaseId>,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -18,14 +17,12 @@ impl GetPageRangesBuilder {
             blob_versioning: None,
             lease_id: None,
             context: Context::new(),
-            timeout: None,
         }
     }
 
     setters! {
         blob_versioning: BlobVersioning => Some(blob_versioning),
         lease_id: LeaseId => Some(lease_id),
-        timeout: Timeout => Some(timeout),
     }
 
     pub fn into_future(mut self) -> Response {
@@ -34,7 +31,6 @@ impl GetPageRangesBuilder {
 
             url.query_pairs_mut().append_pair("comp", "pagelist");
             self.blob_versioning.append_to_url_query(&mut url);
-            self.timeout.append_to_url_query(&mut url);
 
             let mut headers = Headers::new();
             headers.add(self.lease_id);

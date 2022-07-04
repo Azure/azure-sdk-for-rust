@@ -6,7 +6,6 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct CreateQueueBuilder {
     queue_client: QueueClient,
-    timeout: Option<Timeout>,
     metadata: Option<Metadata>,
     context: Context,
 }
@@ -15,7 +14,6 @@ impl CreateQueueBuilder {
     pub(crate) fn new(queue_client: QueueClient) -> Self {
         CreateQueueBuilder {
             queue_client,
-            timeout: None,
             metadata: None,
             context: Context::new(),
         }
@@ -23,15 +21,12 @@ impl CreateQueueBuilder {
 
     setters! {
         metadata: Metadata => Some(metadata),
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
     pub fn into_future(mut self) -> Response {
         Box::pin(async move {
-            let mut url = self.queue_client.url_with_segments(None)?;
-
-            self.timeout.append_to_url_query(&mut url);
+            let url = self.queue_client.url_with_segments(None)?;
 
             let mut headers = Headers::new();
             if let Some(metadata) = &self.metadata {

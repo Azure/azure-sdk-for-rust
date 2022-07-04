@@ -7,7 +7,6 @@ use std::convert::{TryFrom, TryInto};
 pub struct SetMetadataBuilder {
     blob_client: BlobClient,
     lease_id: Option<LeaseId>,
-    timeout: Option<Timeout>,
     metadata: Option<Metadata>,
     context: Context,
 }
@@ -17,25 +16,20 @@ impl SetMetadataBuilder {
         Self {
             blob_client,
             lease_id: None,
-            context: Context::new(),
-            timeout: None,
             metadata: None,
+            context: Context::new(),
         }
     }
 
     setters! {
         lease_id: LeaseId => Some(lease_id),
-        timeout: Timeout => Some(timeout),
-
         metadata: Metadata => Some(metadata),
     }
 
     pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.blob_client.url_with_segments(None)?;
-
             url.query_pairs_mut().append_pair("comp", "metadata");
-            self.timeout.append_to_url_query(&mut url);
 
             let mut headers = Headers::new();
             headers.add(self.lease_id);

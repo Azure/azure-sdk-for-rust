@@ -6,7 +6,6 @@ use chrono::{DateTime, Utc};
 pub struct DeleteBlobBuilder {
     blob_client: BlobClient,
     delete_snapshots_method: DeleteSnapshotsMethod,
-    timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
     context: Context,
 }
@@ -16,7 +15,6 @@ impl DeleteBlobBuilder {
         Self {
             blob_client,
             delete_snapshots_method: DeleteSnapshotsMethod::Include,
-            timeout: None,
             lease_id: None,
             context: Context::new(),
         }
@@ -24,15 +22,12 @@ impl DeleteBlobBuilder {
 
     setters! {
         delete_snapshots_method: DeleteSnapshotsMethod => delete_snapshots_method,
-        timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
     }
 
     pub fn into_future(mut self) -> Response {
         Box::pin(async move {
-            let mut url = self.blob_client.url_with_segments(None)?;
-
-            self.timeout.append_to_url_query(&mut url);
+            let url = self.blob_client.url_with_segments(None)?;
 
             let mut headers = Headers::new();
             headers.add(self.lease_id);

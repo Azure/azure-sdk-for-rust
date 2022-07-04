@@ -1,14 +1,11 @@
 use crate::clients::QueueClient;
-use azure_core::{
-    error::Error, headers::Headers, prelude::*, Context, Method, Response as AzureResponse,
-};
+use azure_core::{error::Error, headers::Headers, Context, Method, Response as AzureResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
 pub struct DeleteQueueBuilder {
     queue_client: QueueClient,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -16,21 +13,17 @@ impl DeleteQueueBuilder {
     pub(crate) fn new(queue_client: QueueClient) -> Self {
         DeleteQueueBuilder {
             queue_client,
-            timeout: None,
             context: Context::new(),
         }
     }
 
     setters! {
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
     pub fn into_future(mut self) -> Response {
         Box::pin(async move {
-            let mut url = self.queue_client.url_with_segments(None)?;
-
-            self.timeout.append_to_url_query(&mut url);
+            let url = self.queue_client.url_with_segments(None)?;
 
             let mut request = self.queue_client.storage_client().finalize_request(
                 url,
