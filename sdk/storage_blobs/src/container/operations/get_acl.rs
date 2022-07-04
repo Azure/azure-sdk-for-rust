@@ -77,7 +77,7 @@ impl GetACLResponse {
         // todo: parse SAS policies
         let public_access = public_access_from_header(&headers)?;
 
-        let etag = headers.get_string(&ETAG)?;
+        let etag = headers.get_as(&ETAG)?;
 
         let last_modified = headers.get_str(&LAST_MODIFIED)?;
         let last_modified =

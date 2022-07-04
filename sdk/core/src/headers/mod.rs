@@ -59,14 +59,9 @@ impl Headers {
         Self::default()
     }
 
-    /// Get a header value as a String or error if it is not found
-    pub fn get_string(&self, key: &HeaderName) -> crate::Result<String> {
-        Ok(self.get_str(key)?.to_owned())
-    }
-
     /// Optionally get a header value as a String
     pub fn get_optional_string(&self, key: &HeaderName) -> Option<String> {
-        self.get_string(key).ok()
+        self.get_as(key).ok()
     }
 
     /// Get a header value as a str or error if it is not found
