@@ -42,8 +42,6 @@ impl StoredAccessPolicyList {
     }
 
     pub fn from_xml(xml: &Bytes) -> azure_core::Result<StoredAccessPolicyList> {
-        debug!("{:?}", xml);
-
         let mut sal = StoredAccessPolicyList::default();
         let sis: SignedIdentifiers = read_xml(xml).context(
             ErrorKind::DataConversion,

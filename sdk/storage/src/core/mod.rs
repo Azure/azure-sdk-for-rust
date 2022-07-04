@@ -4,14 +4,12 @@ mod connection_string_builder;
 mod copy_id;
 mod copy_progress;
 pub mod hmac;
-mod into_azure_path;
 mod macros;
 pub mod prelude;
 pub mod shared_access_signature;
 
 pub use self::connection_string::{ConnectionString, EndpointProtocol};
 pub use self::connection_string_builder::ConnectionStringBuilder;
-pub use self::into_azure_path::IntoAzurePath;
 pub mod headers;
 pub use copy_id::{copy_id_from_headers, CopyId};
 pub use copy_progress::CopyProgress;
