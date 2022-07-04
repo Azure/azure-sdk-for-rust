@@ -1,7 +1,5 @@
 use crate::clients::PopReceiptClient;
-use azure_core::{
-    error::Error, headers::Headers, Context, Method, Response as AzureResponse,
-};
+use azure_core::{error::Error, headers::Headers, Context, Method, Response as AzureResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 

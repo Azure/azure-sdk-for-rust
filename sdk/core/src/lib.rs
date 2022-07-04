@@ -79,6 +79,15 @@ pub trait AppendToUrlQuery {
     fn append_to_url_query(&self, url: &mut url::Url);
 }
 
+impl<T> AppendToUrlQuery for &T
+where
+    T: AppendToUrlQuery,
+{
+    fn append_to_url_query(&self, url: &mut url::Url) {
+        (*self).append_to_url_query(url)
+    }
+}
+
 impl<T> AppendToUrlQuery for Option<T>
 where
     T: AppendToUrlQuery,

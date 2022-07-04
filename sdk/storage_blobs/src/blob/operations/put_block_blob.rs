@@ -52,7 +52,6 @@ impl PutBlockBlobBuilder {
         Box::pin(async move {
             let url = self.blob_client.url_with_segments(None)?;
 
-
             let mut headers = Headers::new();
             headers.insert(BLOB_TYPE, "BlockBlob");
             headers.add(self.hash);
