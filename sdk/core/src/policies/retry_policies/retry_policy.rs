@@ -48,13 +48,12 @@ where
 
         loop {
             let error = match next[0].send(ctx, request, &next[1..]).await {
-                Ok(response) if (200..400).contains(&u16::from(response.status())) => {
+                Ok(response) if response.status().is_success() => {
                     log::trace!(
                         "Succesful response. Request={:?} response={:?}",
                         request,
                         response
                     );
-                    // Successful status code
                     return Ok(response);
                 }
                 Ok(response) => {
