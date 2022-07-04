@@ -21,48 +21,22 @@ use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::convert::TryInto;
 
-#[derive(Debug, Clone)]
-pub struct QueryDocumentsBuilder {
+operation! {
+    #[stream]
+    QueryDocuments,
     client: CollectionClient,
     query: Query,
-    if_match_condition: Option<IfMatchCondition>,
-    if_modified_since: Option<IfModifiedSince>,
-    consistency_level: Option<ConsistencyLevel>,
-    max_item_count: MaxItemCount,
-    partition_key_serialized: Option<String>,
-    query_cross_partition: QueryCrossPartition,
-    #[allow(unused)]
-    parallelize_cross_partition_query: ParallelizeCrossPartition,
-    context: Context,
+    ?if_match_condition: IfMatchCondition,
+    ?if_modified_since: IfModifiedSince,
+    ?max_item_count: MaxItemCount,
+    ?consistency_level: ConsistencyLevel,
+    ?parallelize_cross_partition_query: ParallelizeCrossPartition,
+    ?query_cross_partition: QueryCrossPartition,
+    #[skip]
+    partition_key_serialized: String
 }
 
 impl QueryDocumentsBuilder {
-    pub(crate) fn new(client: CollectionClient, query: Query) -> Self {
-        Self {
-            client,
-            query,
-            if_match_condition: None,
-            if_modified_since: None,
-            consistency_level: None,
-            max_item_count: MaxItemCount::new(-1),
-            partition_key_serialized: None,
-            query_cross_partition: QueryCrossPartition::No,
-            // TODO: use this in request
-            parallelize_cross_partition_query: ParallelizeCrossPartition::No,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        if_match_condition: IfMatchCondition => Some(if_match_condition),
-        max_item_count: i32 => MaxItemCount::new(max_item_count),
-        if_modified_since: DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
-        query_cross_partition: bool => if query_cross_partition { QueryCrossPartition::Yes } else { QueryCrossPartition::No },
-        parallelize_cross_partition_query: bool => if parallelize_cross_partition_query { ParallelizeCrossPartition::Yes } else { ParallelizeCrossPartition::No },
-        context: Context => context,
-    }
-
     pub fn partition_key<PK: serde::Serialize>(self, pk: &PK) -> azure_core::Result<Self> {
         Ok(Self {
             partition_key_serialized: Some(crate::cosmos_entity::serialize_partition_key(pk)?),
@@ -102,8 +76,8 @@ impl QueryDocumentsBuilder {
                 if let Some(cl) = &this.consistency_level {
                     request.insert_headers(cl);
                 }
-                request.insert_headers(&this.max_item_count);
-                request.insert_headers(&this.query_cross_partition);
+                request.insert_headers(&this.max_item_count.unwrap_or_default());
+                request.insert_headers(&this.query_cross_partition.unwrap_or_default());
 
                 request.set_body(serde_json::to_vec(&this.query)?);
                 if let Some(partition_key_serialized) = this.partition_key_serialized.as_ref() {

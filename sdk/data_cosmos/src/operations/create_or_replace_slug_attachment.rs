@@ -13,39 +13,17 @@ use azure_core::{content_type, prelude::*};
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct CreateOrReplaceSlugAttachmentBuilder {
+operation! {
+    CreateOrReplaceSlugAttachment,
     client: AttachmentClient,
     is_create: bool,
     body: Bytes,
-    if_match_condition: Option<IfMatchCondition>,
-    consistency_level: Option<ConsistencyLevel>,
-    content_type: Option<String>,
-    context: Context,
+    ?if_match_condition: IfMatchCondition,
+    ?consistency_level: ConsistencyLevel,
+    ?content_type: String
 }
 
 impl CreateOrReplaceSlugAttachmentBuilder {
-    pub(crate) fn new(client: AttachmentClient, is_create: bool, body: Bytes) -> Self {
-        Self {
-            client,
-            is_create,
-            body,
-            if_match_condition: None,
-            consistency_level: None,
-            content_type: None,
-            context: Context::new(),
-        }
-    }
-}
-
-impl CreateOrReplaceSlugAttachmentBuilder {
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        if_match_condition: IfMatchCondition => Some(if_match_condition),
-        content_type: String => Some(content_type),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> CreateOrReplaceSlugAttachment {
         Box::pin(async move {
             let mut request = if self.is_create {
@@ -93,18 +71,6 @@ impl CreateOrReplaceSlugAttachmentBuilder {
 
             CreateOrReplaceSlugAttachmentResponse::try_from(response).await
         })
-    }
-}
-/// The future returned by calling `into_future` on the builder.
-pub type CreateOrReplaceSlugAttachment =
-    futures::future::BoxFuture<'static, azure_core::Result<CreateOrReplaceSlugAttachmentResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for CreateOrReplaceSlugAttachmentBuilder {
-    type IntoFuture = CreateOrReplaceSlugAttachment;
-    type Output = <CreateOrReplaceSlugAttachment as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 

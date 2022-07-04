@@ -11,36 +11,17 @@ use azure_core::prelude::*;
 use azure_core::{Pageable, Response as HttpResponse, SessionToken};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct ListAttachmentsBuilder {
+operation! {
+    #[stream]
+    ListAttachments,
     client: DocumentClient,
-    if_match_condition: Option<IfMatchCondition>,
-    consistency_level: Option<ConsistencyLevel>,
-    max_item_count: MaxItemCount,
-    a_im: ChangeFeed,
-    context: Context,
+    ?max_item_count: MaxItemCount,
+    ?a_im: ChangeFeed,
+    ?if_match_condition: IfMatchCondition,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl ListAttachmentsBuilder {
-    pub(crate) fn new(client: DocumentClient) -> Self {
-        Self {
-            client,
-            if_match_condition: None,
-            consistency_level: None,
-            max_item_count: MaxItemCount::new(-1),
-            a_im: ChangeFeed::None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        if_match_condition: IfMatchCondition => Some(if_match_condition),
-        max_item_count: i32 => MaxItemCount::new(max_item_count),
-        a_im: ChangeFeed,
-        context: Context => context,
-    }
-
     pub fn into_stream(self) -> ListAttachments {
         let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();
@@ -60,8 +41,8 @@ impl ListAttachmentsBuilder {
                 if let Some(cl) = &this.consistency_level {
                     request.insert_headers(cl);
                 }
-                request.insert_headers(&this.max_item_count);
-                request.insert_headers(&this.a_im);
+                request.insert_headers(&this.max_item_count.unwrap_or_default());
+                request.insert_headers(&this.a_im.unwrap_or_default());
                 crate::cosmos_entity::add_as_partition_key_header_serialized(
                     this.client.partition_key_serialized(),
                     &mut request,

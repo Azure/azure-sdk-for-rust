@@ -29,7 +29,7 @@ macro_rules! setters {
         #[allow(clippy::redundant_field_names)]
         #[allow(clippy::needless_update)]
         // TODO: Declare using idiomatic with_$name when https://github.com/Azure/azure-sdk-for-rust/issues/292 is resolved.
-        pub fn $name<_T: ::std::convert::Into<$typ>>(self, $name: _T) -> Self {
+        pub fn $name<P: ::std::convert::Into<$typ>>(self, $name: P) -> Self {
             let $name: $typ = $name.into();
             Self  {
                 $name: $transform,
@@ -41,15 +41,233 @@ macro_rules! setters {
     (@recurse) => {};
     // Recurse without transform
     (@recurse $name:ident : $typ:ty, $($tokens:tt)*) => {
-        setters! { @recurse $name: $typ => $name, $($tokens)* }
+        $crate::setters! { @recurse $name: $typ => $name, $($tokens)* }
     };
     // Recurse with transform
     (@recurse $name:ident : $typ:ty => $transform:expr, $($tokens:tt)*) => {
-        setters! { @single $name : $typ => $transform }
-        setters! { @recurse $($tokens)* }
+        $crate::setters! { @single $name : $typ => $transform }
+        $crate::setters! { @recurse $($tokens)* }
     };
     ($($tokens:tt)*) => {
-        setters! { @recurse $($tokens)* }
+        $crate::setters! { @recurse $($tokens)* }
+    }
+}
+
+/// Helper for constructing operations
+///
+/// For the following code:
+/// ```
+/// # #[derive(Clone, Debug)]
+/// # struct DatabaseClient;
+/// # struct CreateCollectionResponse;
+/// azure_core::operation! {
+///    CreateCollection,
+///    client: DatabaseClient,
+///    collection_name: String,
+///    ?consistency_level: u32
+/// }
+/// ```
+///
+/// The following code will be generated
+///
+/// ```
+/// # use azure_core::setters;
+/// # use azure_core::Context;
+/// # #[derive(Clone, Debug)]
+/// # struct DatabaseClient;
+/// # struct CreateCollectionResponse;
+/// #[derive(Debug, Clone)]
+/// pub struct CreateCollectionBuilder {
+///     client: DatabaseClient,
+///     collection_name: String,
+///     consistency_level: Option<u32>,
+///     context: Context,
+/// }
+///
+/// impl CreateCollectionBuilder {
+///     pub(crate) fn new(
+///         client: DatabaseClient,
+///         collection_name: String,
+///     ) -> Self {
+///         Self {
+///             client,
+///             collection_name,
+///             consistency_level: None,
+///             context: Context::new(),
+///         }
+///     }
+///
+///     setters! {
+///         consistency_level: u32 => Some(consistency_level),
+///         context: Context => context,
+///     }
+/// }
+///
+/// #[cfg(feature = "into_future")]
+/// impl std::future::IntoFuture for CreateCollectionBuilder {
+///     type IntoFuture = CreateCollection;
+///     type Output = <CreateCollection as std::future::Future>::Output;
+///     fn into_future(self) -> Self::IntoFuture {
+///         Self::into_future(self)
+///     }
+/// }
+///
+/// /// The future returned by calling `into_future` on the builder.
+/// pub type CreateCollection =
+///     futures::future::BoxFuture<'static, azure_core::Result<CreateCollectionResponse>>;
+/// ```
+///
+/// Additionally, `#[stream]` can be used before the operation name to generate code appropriate for list operations
+/// and `#[skip]` can be used at the end of the list of options for options where we should not generate a setter.
+#[macro_export]
+macro_rules! operation {
+    // Construct the builder.
+    (@builder
+        // The name of the operation and any generic params along with their constraints
+        $name:ident<$($generic:ident: $first_constraint:ident $(+ $constraint:ident)* ),*>,
+        // The client
+        client: $client:ty,
+        // The required fields that will be used in the constructor
+        @required
+        $($required:ident: $rtype:ty,)*
+        // The optional fields that will have generated setters
+        @optional
+        $($optional:ident: $otype:ty,)*
+        // The optional fields which won't have generated setters
+        @nosetter
+        $($nosetter:ident: $nstype:ty),*
+        ) => {
+        azure_core::__private::paste! {
+        #[derive(Debug, Clone)]
+        pub struct [<$name Builder>]<$($generic)*> {
+            client: $client,
+            $($required: $rtype,)*
+            $($optional: Option<$otype>,)*
+            $($nosetter: Option<$nstype>,)*
+            context: azure_core::Context,
+        }
+
+        /// Setters for the various options for this builder
+        impl <$($generic: $first_constraint $(+ $constraint)* )*>[<$name Builder>]<$($generic),*> {
+            pub(crate) fn new(
+                client: $client,
+                $($required: $rtype,)*
+            ) -> Self {
+                Self {
+                    client,
+                    $($required,)*
+                    $($optional: None,)*
+                    $($nosetter: None,)*
+                    context: azure_core::Context::new(),
+                }
+            }
+
+            $crate::setters! {
+                $($optional: $otype => Some($optional),)*
+                context: azure_core::Context => context,
+            }
+        }
+        }
+    };
+    // Construct a builder and the `Future` related code
+    ($name:ident<$($generic:ident: $first_constraint:ident $(+ $constraint:ident)* ),*>,
+        client: $client:ty,
+        @required
+        $($required:ident: $rtype:ty,)*
+        @optional
+        $($optional:ident: $otype:ty,)*
+        @nosetter
+        $($nosetter:ident: $nstype:ty),*
+        ) => {
+        $crate::operation! {
+            @builder $name<$($generic: $first_constraint $(+ $constraint)*),*>,
+            client: $client,
+            @required
+            $($required: $rtype,)*
+            @optional
+            $($optional: $otype,)*
+            @nosetter
+            $($nosetter: $nstype),*
+        }
+        azure_core::__private::paste! {
+        /// The future returned by calling `into_future` on the builder.
+        pub type $name =
+            futures::future::BoxFuture<'static, azure_core::Result<[<$name Response>]>>;
+        #[cfg(feature = "into_future")]
+        impl std::future::IntoFuture for [<$name Builder>] {
+            type IntoFuture = $name;
+            type Output = <$name as std::future::Future>::Output;
+            fn into_future(self) -> Self::IntoFuture {
+                Self::into_future(self)
+            }
+        }
+        }
+    };
+    // `operation! { CreateUser, client: UserClient, ?consistency_level: ConsistencyLevel }`
+    ($name:ident,
+        client: $client:ty,
+        $($required:ident: $rtype:ty,)*
+        $(?$optional:ident: $otype:ty),*) => {
+            $crate::operation!{
+                $name<>,
+                client: $client,
+                @required
+                $($required: $rtype,)*
+                @optional
+                $($optional: $otype,)*
+                @nosetter
+            }
+    };
+    // `operation! { #[stream] ListUsers, client: UserClient, ?consistency_level: ConsistencyLevel }`
+    (#[stream] $name:ident,
+        client: $client:ty,
+        $($required:ident: $rtype:ty,)*
+        $(?$optional:ident: $otype:ty),*) => {
+            $crate::operation!{
+                @builder
+                $name<>,
+                client: $client,
+                @required
+                $($required: $rtype,)*
+                @optional
+                $($optional: $otype,)*
+                @nosetter
+            }
+    };
+    (#[stream] $name:ident,
+        client: $client:ty,
+        $($required:ident: $rtype:ty,)*
+        $(?$optional:ident: $otype:ty,)*
+        $(#[skip]$nosetter:ident: $nstype:ty),*
+    ) => {
+            $crate::operation!{
+                @builder
+                $name<>,
+                client: $client,
+                @required
+                $($required: $rtype,)*
+                @optional
+                $($optional: $otype,)*
+                @nosetter
+                $($nosetter: $nstype),*
+            }
+    };
+    // `operation! { CreateDocument<D: Serialize>, client: UserClient, ?consistency_level: ConsistencyLevel, ??other_field: bool }`
+    ($name:ident<$($generic:ident: $first_constraint:ident $(+ $constraint:ident)*),*>,
+        client: $client:ty,
+        $($required:ident: $rtype:ty,)*
+        $(?$optional:ident: $otype:ty,)*
+        $(#[skip] $nosetter:ident: $nstype:ty),*) => {
+            $crate::operation!{
+                $name<$($generic: $first_constraint $(+ $constraint)*),*>,
+                client: $client,
+                @required
+                $($required: $rtype,)*
+                @optional
+                $($optional: $otype,)*
+                @nosetter
+                $($nosetter: $nstype),*
+            }
     }
 }
 

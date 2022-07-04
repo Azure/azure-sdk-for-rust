@@ -21,3 +21,15 @@ impl Header for MaxItemCount {
         format!("{}", count).into()
     }
 }
+
+impl From<i32> for MaxItemCount {
+    fn from(count: i32) -> Self {
+        Self::new(count)
+    }
+}
+
+impl Default for MaxItemCount {
+    fn default() -> Self {
+        MaxItemCount::new(-1)
+    }
+}

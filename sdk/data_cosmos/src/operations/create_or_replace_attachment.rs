@@ -4,42 +4,20 @@ use crate::resources::Attachment;
 use crate::ResourceQuota;
 
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
-use azure_core::prelude::*;
 use azure_core::SessionToken;
 use azure_core::{collect_pinned_stream, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct CreateOrReplaceAttachmentBuilder {
+operation! {
+    CreateOrReplaceAttachment,
     client: AttachmentClient,
     is_create: bool,
     media: String,
     content_type: String,
-    consistency_level: Option<ConsistencyLevel>,
-    context: Context,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl CreateOrReplaceAttachmentBuilder {
-    pub(crate) fn new(
-        client: AttachmentClient,
-        is_create: bool,
-        media: String,
-        content_type: String,
-    ) -> Self {
-        Self {
-            client,
-            is_create,
-            media,
-            content_type,
-            consistency_level: None,
-            context: Context::new(),
-        }
-    }
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> CreateOrReplaceAttachment {
         Box::pin(async move {
             let mut req = if self.is_create {
@@ -82,19 +60,6 @@ impl CreateOrReplaceAttachmentBuilder {
                 .await?;
             CreateOrReplaceAttachmentResponse::try_from(response).await
         })
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type CreateOrReplaceAttachment =
-    futures::future::BoxFuture<'static, azure_core::Result<CreateOrReplaceAttachmentResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for CreateOrReplaceAttachmentBuilder {
-    type IntoFuture = CreateOrReplaceAttachment;
-    type Output = <CreateOrReplaceAttachment as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 

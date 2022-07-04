@@ -9,33 +9,16 @@ use azure_core::prelude::*;
 use azure_core::{Pageable, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct ListTriggersBuilder {
+operation! {
+    #[stream]
+    ListTriggers,
     client: CollectionClient,
-    if_match_condition: Option<IfMatchCondition>,
-    consistency_level: Option<ConsistencyLevel>,
-    max_item_count: MaxItemCount,
-    context: Context,
+    ?if_match_condition: IfMatchCondition,
+    ?max_item_count: MaxItemCount,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl ListTriggersBuilder {
-    pub(crate) fn new(client: CollectionClient) -> Self {
-        Self {
-            client,
-            if_match_condition: None,
-            consistency_level: None,
-            max_item_count: MaxItemCount::new(-1),
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        max_item_count: i32 => MaxItemCount::new(max_item_count),
-        if_match_condition: IfMatchCondition => Some(if_match_condition),
-        context: Context => context,
-    }
-
     pub fn into_stream(self) -> ListTriggers {
         let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();
@@ -54,7 +37,7 @@ impl ListTriggersBuilder {
                 if let Some(cl) = &this.consistency_level {
                     request.insert_headers(cl);
                 }
-                request.insert_headers(&this.max_item_count);
+                request.insert_headers(&this.max_item_count.unwrap_or_default());
 
                 request.insert_headers(&continuation);
 

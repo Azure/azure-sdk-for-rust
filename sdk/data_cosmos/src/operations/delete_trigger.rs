@@ -3,31 +3,16 @@ use crate::prelude::*;
 use crate::ResourceQuota;
 
 use azure_core::headers::session_token_from_headers;
-use azure_core::prelude::*;
 use azure_core::Response as HttpResponse;
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct DeleteTriggerBuilder {
+operation! {
+    DeleteTrigger,
     client: TriggerClient,
-    consistency_level: Option<ConsistencyLevel>,
-    context: Context,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl DeleteTriggerBuilder {
-    pub(crate) fn new(client: TriggerClient) -> Self {
-        Self {
-            client,
-            consistency_level: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> DeleteTrigger {
         Box::pin(async move {
             let mut request = self.client.trigger_request(azure_core::Method::Delete);
@@ -47,19 +32,6 @@ impl DeleteTriggerBuilder {
 
             DeleteTriggerResponse::try_from(response).await
         })
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type DeleteTrigger =
-    futures::future::BoxFuture<'static, azure_core::Result<DeleteTriggerResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for DeleteTriggerBuilder {
-    type IntoFuture = DeleteTrigger;
-    type Output = <DeleteTrigger as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 

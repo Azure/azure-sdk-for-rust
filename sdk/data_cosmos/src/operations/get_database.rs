@@ -3,31 +3,16 @@ use crate::prelude::*;
 use crate::ResourceQuota;
 
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
-use azure_core::Context;
 use azure_core::{collect_pinned_stream, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct GetDatabaseBuilder {
+operation! {
+    GetDatabase,
     client: DatabaseClient,
-    consistency_level: Option<ConsistencyLevel>,
-    context: Context,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl GetDatabaseBuilder {
-    pub(crate) fn new(client: DatabaseClient) -> Self {
-        Self {
-            client,
-            consistency_level: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> GetDatabase {
         Box::pin(async move {
             let mut request = self.client.database_request(azure_core::Method::Get);
@@ -42,18 +27,6 @@ impl GetDatabaseBuilder {
                 .await?;
             GetDatabaseResponse::try_from(response).await
         })
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type GetDatabase = futures::future::BoxFuture<'static, azure_core::Result<GetDatabaseResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for GetDatabaseBuilder {
-    type IntoFuture = GetDatabase;
-    type Output = <GetDatabase as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 

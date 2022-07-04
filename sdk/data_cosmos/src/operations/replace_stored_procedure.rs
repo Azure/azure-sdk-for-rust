@@ -1,31 +1,14 @@
 use super::CreateStoredProcedureResponse;
 use crate::prelude::*;
-use azure_core::prelude::*;
 
-#[derive(Debug, Clone)]
-pub struct ReplaceStoredProcedureBuilder {
+operation! {
+    ReplaceStoredProcedure,
     client: StoredProcedureClient,
     function_body: String,
-    consistency_level: Option<ConsistencyLevel>,
-    context: Context,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl ReplaceStoredProcedureBuilder {
-    pub(crate) fn new(client: StoredProcedureClient, function_body: String) -> Self {
-        Self {
-            client,
-            function_body,
-            consistency_level: None,
-            context: Context::new(),
-        }
-    }
-}
-
-impl ReplaceStoredProcedureBuilder {
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-    }
-
     pub fn into_future(self) -> ReplaceStoredProcedure {
         Box::pin(async move {
             let mut req = self
@@ -60,18 +43,5 @@ impl ReplaceStoredProcedureBuilder {
         })
     }
 }
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for ReplaceStoredProcedureBuilder {
-    type IntoFuture = ReplaceStoredProcedure;
-    type Output = <ReplaceStoredProcedure as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type ReplaceStoredProcedure =
-    futures::future::BoxFuture<'static, azure_core::Result<ReplaceStoredProcedureResponse>>;
 
 pub type ReplaceStoredProcedureResponse = CreateStoredProcedureResponse;

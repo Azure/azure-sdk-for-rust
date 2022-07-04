@@ -78,6 +78,22 @@ pub enum QueryCrossPartition {
     No,
 }
 
+impl Default for QueryCrossPartition {
+    fn default() -> Self {
+        Self::No
+    }
+}
+
+impl From<bool> for QueryCrossPartition {
+    fn from(b: bool) -> Self {
+        if b {
+            Self::Yes
+        } else {
+            Self::No
+        }
+    }
+}
+
 impl QueryCrossPartition {
     fn as_bool_str(&self) -> &str {
         match self {
@@ -110,6 +126,16 @@ impl ParallelizeCrossPartition {
         match self {
             Self::Yes => "true",
             Self::No => "false",
+        }
+    }
+}
+
+impl From<bool> for ParallelizeCrossPartition {
+    fn from(b: bool) -> Self {
+        if b {
+            Self::Yes
+        } else {
+            Self::No
         }
     }
 }
@@ -159,6 +185,12 @@ pub enum ChangeFeed {
     None,
 }
 
+impl Default for ChangeFeed {
+    fn default() -> Self {
+        Self::None
+    }
+}
+
 impl AsHeaders for ChangeFeed {
     type Iter = std::option::IntoIter<(HeaderName, HeaderValue)>;
     fn as_headers(&self) -> Self::Iter {
@@ -185,6 +217,12 @@ impl TentativeWritesAllowance {
             Self::Allow => "true",
             Self::Deny => "false",
         }
+    }
+}
+
+impl Default for TentativeWritesAllowance {
+    fn default() -> Self {
+        Self::Deny
     }
 }
 

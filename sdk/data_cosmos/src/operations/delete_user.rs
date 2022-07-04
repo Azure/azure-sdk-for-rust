@@ -1,28 +1,14 @@
 use crate::headers::from_headers::*;
 use crate::prelude::*;
-use azure_core::{headers::session_token_from_headers, Context, Response as HttpResponse};
+use azure_core::{headers::session_token_from_headers, Response as HttpResponse};
 
-#[derive(Debug, Clone)]
-pub struct DeleteUserBuilder {
+operation! {
+    DeleteUser,
     client: UserClient,
-    consistency_level: Option<ConsistencyLevel>,
-    context: Context,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl DeleteUserBuilder {
-    pub(crate) fn new(client: UserClient) -> Self {
-        Self {
-            client,
-            consistency_level: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> DeleteUser {
         Box::pin(async move {
             let mut request = self.client.user_request(azure_core::Method::Delete);
@@ -41,18 +27,6 @@ impl DeleteUserBuilder {
 
             DeleteUserResponse::try_from(response).await
         })
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type DeleteUser = futures::future::BoxFuture<'static, azure_core::Result<DeleteUserResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for DeleteUserBuilder {
-    type IntoFuture = DeleteUser;
-    type Output = <DeleteUser as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 

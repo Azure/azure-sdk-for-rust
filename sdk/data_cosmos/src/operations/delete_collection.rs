@@ -1,30 +1,16 @@
 use crate::prelude::*;
 use crate::{headers::from_headers::*, ResourceQuota};
 use azure_core::headers::{content_type_from_headers, session_token_from_headers};
-use azure_core::{Context, Response as HttpResponse};
+use azure_core::Response as HttpResponse;
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct DeleteCollectionBuilder {
+operation! {
+    DeleteCollection,
     client: CollectionClient,
-    consistency_level: Option<ConsistencyLevel>,
-    context: Context,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl DeleteCollectionBuilder {
-    pub fn new(client: CollectionClient) -> Self {
-        Self {
-            client,
-            consistency_level: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> DeleteCollection {
         Box::pin(async move {
             let mut request = self.client.collection_request(azure_core::Method::Delete);
@@ -44,19 +30,6 @@ impl DeleteCollectionBuilder {
 
             DeleteCollectionResponse::try_from(response).await
         })
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type DeleteCollection =
-    futures::future::BoxFuture<'static, azure_core::Result<DeleteCollectionResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for DeleteCollectionBuilder {
-    type IntoFuture = DeleteCollection;
-    type Output = <DeleteCollection as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 

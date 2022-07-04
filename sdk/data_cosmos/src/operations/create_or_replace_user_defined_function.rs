@@ -4,35 +4,18 @@ use crate::resources::UserDefinedFunction;
 use crate::ResourceQuota;
 
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
-use azure_core::prelude::*;
 use azure_core::{collect_pinned_stream, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct CreateOrReplaceUserDefinedFunctionBuilder {
+operation! {
+    CreateOrReplaceUserDefinedFunction,
     client: UserDefinedFunctionClient,
     is_create: bool,
     body: String,
-    consistency_level: Option<ConsistencyLevel>,
-    context: Context,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl CreateOrReplaceUserDefinedFunctionBuilder {
-    pub(crate) fn new(client: UserDefinedFunctionClient, is_create: bool, body: String) -> Self {
-        Self {
-            client,
-            is_create,
-            body,
-            consistency_level: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> CreateOrReplaceUserDefinedFunction {
         Box::pin(async move {
             let mut request = match self.is_create {
@@ -65,21 +48,6 @@ impl CreateOrReplaceUserDefinedFunctionBuilder {
 
             CreateOrReplaceUserDefinedFunctionResponse::try_from(response).await
         })
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type CreateOrReplaceUserDefinedFunction = futures::future::BoxFuture<
-    'static,
-    azure_core::Result<CreateOrReplaceUserDefinedFunctionResponse>,
->;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for CreateOrReplaceUserDefinedFunctionBuilder {
-    type IntoFuture = CreateOrReplaceUserDefinedFunction;
-    type Output = <CreateOrReplaceUserDefinedFunction as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 

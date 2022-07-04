@@ -7,30 +7,15 @@ use azure_core::headers::{continuation_token_from_headers_optional, session_toke
 use azure_core::{collect_pinned_stream, prelude::*, Pageable, Response};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct ListDatabasesBuilder {
+operation! {
+    #[stream]
+    ListDatabases,
     client: CosmosClient,
-    consistency_level: Option<ConsistencyLevel>,
-    max_item_count: MaxItemCount,
-    context: Context,
+    ?max_item_count: MaxItemCount,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl ListDatabasesBuilder {
-    pub(crate) fn new(client: CosmosClient) -> Self {
-        Self {
-            client,
-            consistency_level: None,
-            max_item_count: MaxItemCount::new(-1),
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        max_item_count: i32 => MaxItemCount::new(max_item_count),
-        context: Context => context,
-    }
-
     pub fn into_stream(self) -> ListDatabases {
         let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();
@@ -40,7 +25,7 @@ impl ListDatabasesBuilder {
                 if let Some(cl) = &this.consistency_level {
                     request.insert_headers(cl);
                 }
-                request.insert_headers(&this.max_item_count);
+                request.insert_headers(&this.max_item_count.unwrap_or_default());
                 request.insert_headers(&continuation);
 
                 let response = this

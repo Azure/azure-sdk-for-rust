@@ -1,34 +1,17 @@
 use crate::prelude::*;
-use crate::resources::permission::{ExpirySeconds, PermissionMode, PermissionResponse};
+use crate::resources::permission::{
+    ExpirySeconds, PermissionMode, PermissionResponse as CreatePermissionResponse,
+};
 
-use azure_core::Context;
-
-#[derive(Debug, Clone)]
-pub struct CreatePermissionBuilder {
+operation! {
+    CreatePermission,
     client: PermissionClient,
-    expiry_seconds: Option<ExpirySeconds>,
-    consistency_level: Option<ConsistencyLevel>,
     permission_mode: PermissionMode,
-    context: Context,
+    ?expiry_seconds: ExpirySeconds,
+    ?consistency_level: ConsistencyLevel
 }
 
 impl CreatePermissionBuilder {
-    pub(crate) fn new(client: PermissionClient, permission_mode: PermissionMode) -> Self {
-        Self {
-            client,
-            expiry_seconds: Some(ExpirySeconds::new(3600)),
-            consistency_level: None,
-            permission_mode,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        expiry_seconds: u64 => Some(ExpirySeconds::new(expiry_seconds)),
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> CreatePermission {
         Box::pin(async move {
             let mut request = self.client.cosmos_client().request(
@@ -69,20 +52,7 @@ impl CreatePermissionBuilder {
                 )
                 .await?;
 
-            PermissionResponse::try_from(response).await
+            CreatePermissionResponse::try_from(response).await
         })
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type CreatePermission =
-    futures::future::BoxFuture<'static, azure_core::Result<PermissionResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for CreatePermissionBuilder {
-    type IntoFuture = CreatePermission;
-    type Output = <CreatePermission as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }

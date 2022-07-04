@@ -2,50 +2,36 @@ use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::resources::collection::{IndexingPolicy, PartitionKey};
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
-use azure_core::{collect_pinned_stream, Context, Response as HttpResponse};
+use azure_core::{collect_pinned_stream, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct CreateCollectionBuilder {
+operation! {
+    CreateCollection,
     client: DatabaseClient,
-    partition_key: PartitionKey,
-    consistency_level: Option<ConsistencyLevel>,
-    indexing_policy: Option<IndexingPolicy>,
     collection_name: String,
-    offer: Option<Offer>,
-    context: Context,
+    partition_key: PartitionKey,
+    ?consistency_level: ConsistencyLevel,
+    ?indexing_policy: IndexingPolicy,
+    ?offer: Offer
 }
 
 impl CreateCollectionBuilder {
-    pub(crate) fn new(
-        client: DatabaseClient,
-        collection_name: String,
-        partition_key: PartitionKey,
-    ) -> Self {
-        Self {
-            client,
-            collection_name,
-            partition_key,
-            consistency_level: None,
-            indexing_policy: None,
-            offer: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        consistency_level: ConsistencyLevel => Some(consistency_level),
-        indexing_policy: IndexingPolicy => Some(indexing_policy),
-        offer: Offer => Some(offer),
-        context: Context => context,
-    }
-
     pub fn into_future(self) -> CreateCollection {
         Box::pin(async move {
             let mut request = self.client.collections_request(azure_core::Method::Post);
             request.insert_headers(&self.offer);
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);
+            }
+
+            /// Body for the create collection request
+            #[derive(Serialize)]
+            struct CreateCollectionBody<'a> {
+                pub id: &'a str,
+                #[serde(rename = "indexingPolicy", skip_serializing_if = "Option::is_none")]
+                pub indexing_policy: &'a Option<IndexingPolicy>,
+                #[serde(rename = "partitionKey")]
+                pub partition_key: &'a PartitionKey,
             }
 
             let collection = CreateCollectionBody {
@@ -65,29 +51,6 @@ impl CreateCollectionBuilder {
             CreateCollectionResponse::try_from(response).await
         })
     }
-}
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for CreateCollectionBuilder {
-    type IntoFuture = CreateCollection;
-    type Output = <CreateCollection as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type CreateCollection =
-    futures::future::BoxFuture<'static, azure_core::Result<CreateCollectionResponse>>;
-
-/// Body for the create collection request
-#[derive(Serialize, Debug)]
-struct CreateCollectionBody<'a> {
-    pub id: &'a str,
-    #[serde(rename = "indexingPolicy", skip_serializing_if = "Option::is_none")]
-    pub indexing_policy: &'a Option<IndexingPolicy>,
-    #[serde(rename = "partitionKey")]
-    pub partition_key: &'a PartitionKey,
 }
 
 #[derive(Debug, Clone, PartialEq)]

@@ -35,3 +35,9 @@ impl Header for ExpirySeconds {
         self.0.to_string().into()
     }
 }
+
+impl From<u64> for ExpirySeconds {
+    fn from(s: u64) -> Self {
+        Self::new(s)
+    }
+}
