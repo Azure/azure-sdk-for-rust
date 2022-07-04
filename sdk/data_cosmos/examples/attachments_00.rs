@@ -3,6 +3,8 @@ use clap::Parser;
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 
+mod util;
+
 // Now we create a sample struct.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct MySampleStruct {
@@ -26,12 +28,8 @@ struct Args {
     database_name: String,
     /// Name of the collection in the database
     collection_name: String,
-    /// Cosmos primary key name
-    #[clap(env = "COSMOS_PRIMARY_KEY")]
-    primary_key: String,
-    /// The cosmos account your're using
-    #[clap(env = "COSMOS_ACCOUNT")]
-    account: String,
+    #[clap(flatten)]
+    auth: util::Auth,
 }
 
 // This example expects you to have created a collection
@@ -39,9 +37,9 @@ struct Args {
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
     let args = Args::parse();
-    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
-
-    let client = CosmosClient::new(args.account, authorization_token, CosmosOptions::default())
+    let client = args
+        .auth
+        .into_client()?
         .database_client(args.database_name)
         .collection_client(args.collection_name);
 

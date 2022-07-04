@@ -5,7 +5,7 @@ use azure_data_cosmos::prelude::*;
 use clap::Parser;
 use futures::stream::StreamExt;
 
-#[derive(Debug, Parser)]
+#[derive(Debug, clap::Parser)]
 struct Args {
     /// Cosmos primary key name
     #[clap(env = "COSMOS_PRIMARY_KEY")]
@@ -47,13 +47,9 @@ impl azure_data_cosmos::CosmosEntity for MySampleStruct {
 // 5. Check the remaining documents.
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    // Let's get Cosmos account and access key from env variables.
-    // This helps automated testing.
+    // Let's get a Cosmos account name and access key from env variables.
     let args = Args::parse();
-    // First, we create an authorization token. There are two types of tokens, master and resource
-    // constrained. This SDK supports both.
-    // Please check the Azure documentation for details or the examples folder
-    // on how to create and use token-based permissions.
+    // First, we create an authorization token. There are two types of tokens: primary and resource constrained.
     let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
 
     // Next we will create a Cosmos client.

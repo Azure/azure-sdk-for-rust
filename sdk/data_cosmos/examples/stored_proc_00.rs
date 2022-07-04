@@ -5,17 +5,14 @@
 ///     var response = context.getResponse();
 ///     response.setBody("Hello, " + personToGreet);
 /// }
-use azure_data_cosmos::prelude::*;
 use clap::Parser;
 
-#[derive(Debug, Parser)]
+mod util;
+
+#[derive(Debug, clap::Parser)]
 struct Args {
-    /// Cosmos primary key name
-    #[clap(env = "COSMOS_PRIMARY_KEY")]
-    primary_key: String,
-    /// The cosmos account your're using
-    #[clap(env = "COSMOS_ACCOUNT")]
-    account: String,
+    #[clap(flatten)]
+    auth: util::Auth,
     /// The name of the database
     database_name: String,
     /// The name of the collection
@@ -25,13 +22,7 @@ struct Args {
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
     let args = Args::parse();
-    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
-
-    let client = CosmosClient::new(
-        args.account.clone(),
-        authorization_token,
-        CosmosOptions::default(),
-    );
+    let client = args.auth.into_client()?;
 
     let ret = client
         .database_client(args.database_name)

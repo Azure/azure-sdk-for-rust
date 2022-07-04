@@ -1,43 +1,12 @@
-use azure_data_cosmos::prelude::*;
 use clap::Parser;
 use futures::stream::StreamExt;
-
-#[derive(Debug, Parser)]
-struct Args {
-    /// Cosmos primary key name
-    #[clap(env = "COSMOS_PRIMARY_KEY")]
-    primary_key: String,
-    /// The cosmos account your're using
-    #[clap(env = "COSMOS_ACCOUNT")]
-    account: String,
-}
+mod util;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    // First we retrieve the account name and access key from environment variables.
-    // We expect access keys (ie, not resource constrained)
-    let args = Args::parse();
-
-    // This is how you construct an authorization token.
-    // Remember to pick the correct token type.
-    // Here we assume master.
-    // Most methods return a ```Result<_, azure_data_cosmos::Error>```.
-    // ```azure_data_cosmos::Error``` is an enum union of all the possible underlying
-    // errors, plus Azure specific ones. For example if a REST call returns the
-    // unexpected result (ie NotFound instead of Ok) we return an Err telling
-    // you that.
-    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
-
-    // Once we have an authorization token you can create a client instance. You can change the
-    // authorization token at later time if you need, for example, to escalate the privileges for a
-    // single operation.
-    // Here we are using reqwest but other clients are supported (check the documentation).
-    let client = CosmosClient::new(
-        args.account.clone(),
-        authorization_token,
-        CosmosOptions::default(),
-    );
-
+    let args = util::Auth::parse();
+    let account = args.account().clone();
+    let client = args.into_client()?;
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified account.
     let databases = client
         .list_databases()
@@ -48,7 +17,7 @@ async fn main() -> azure_core::Result<()> {
 
     println!(
         "Account {} has {} database(s)",
-        args.account,
+        account,
         databases.databases.len()
     );
 
