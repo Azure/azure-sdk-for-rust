@@ -23,12 +23,12 @@ pub(crate) fn activity_id_from_headers(headers: &Headers) -> azure_core::Result<
     headers.get_as(&HEADER_ACTIVITY_ID)
 }
 
-pub(crate) fn content_path_from_headers(headers: &Headers) -> azure_core::Result<&str> {
-    headers.get_str(&HEADER_CONTENT_PATH)
+pub(crate) fn content_path_from_headers(headers: &Headers) -> azure_core::Result<String> {
+    headers.get_string(&HEADER_CONTENT_PATH)
 }
 
-pub(crate) fn alt_content_path_from_headers(headers: &Headers) -> azure_core::Result<&str> {
-    headers.get_str(&HEADER_ALT_CONTENT_PATH)
+pub(crate) fn alt_content_path_from_headers(headers: &Headers) -> azure_core::Result<String> {
+    headers.get_string(&HEADER_ALT_CONTENT_PATH)
 }
 
 pub(crate) fn resource_quota_from_headers(
@@ -139,24 +139,24 @@ pub(crate) fn current_replica_set_size_from_headers_optional(
     headers.get_optional_as(&HEADER_CURRENT_REPLICA_SET_SIZE)
 }
 
-pub(crate) fn schema_version_from_headers(headers: &Headers) -> azure_core::Result<&str> {
-    headers.get_str(&HEADER_SCHEMA_VERSION)
+pub(crate) fn schema_version_from_headers(headers: &Headers) -> azure_core::Result<String> {
+    headers.get_string(&HEADER_SCHEMA_VERSION)
 }
 
-pub(crate) fn server_from_headers(headers: &Headers) -> azure_core::Result<&str> {
-    headers.get_str(&headers::SERVER)
+pub(crate) fn server_from_headers(headers: &Headers) -> azure_core::Result<String> {
+    headers.get_string(&headers::SERVER)
 }
 
-pub(crate) fn service_version_from_headers(headers: &Headers) -> azure_core::Result<&str> {
-    headers.get_str(&HEADER_SERVICE_VERSION)
+pub(crate) fn service_version_from_headers(headers: &Headers) -> azure_core::Result<String> {
+    headers.get_string(&HEADER_SERVICE_VERSION)
 }
 
-pub(crate) fn content_location_from_headers(headers: &Headers) -> azure_core::Result<&str> {
-    headers.get_str(&headers::CONTENT_LOCATION)
+pub(crate) fn content_location_from_headers(headers: &Headers) -> azure_core::Result<String> {
+    headers.get_string(&headers::CONTENT_LOCATION)
 }
 
-pub(crate) fn gateway_version_from_headers(headers: &Headers) -> azure_core::Result<&str> {
-    headers.get_str(&HEADER_GATEWAY_VERSION)
+pub(crate) fn gateway_version_from_headers(headers: &Headers) -> azure_core::Result<String> {
+    headers.get_string(&HEADER_GATEWAY_VERSION)
 }
 
 pub(crate) fn max_media_storage_usage_mb_from_headers(

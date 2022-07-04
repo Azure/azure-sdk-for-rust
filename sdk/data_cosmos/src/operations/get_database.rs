@@ -59,9 +59,9 @@ impl GetDatabaseResponse {
             last_state_change: last_state_change_from_headers(&headers)?,
             resource_quota: resource_quota_from_headers(&headers)?,
             resource_usage: resource_usage_from_headers(&headers)?,
-            schema_version: schema_version_from_headers(&headers)?.to_owned(),
-            service_version: service_version_from_headers(&headers)?.to_owned(),
-            gateway_version: gateway_version_from_headers(&headers)?.to_owned(),
+            schema_version: schema_version_from_headers(&headers)?,
+            service_version: service_version_from_headers(&headers)?,
+            gateway_version: gateway_version_from_headers(&headers)?,
         })
     }
 }

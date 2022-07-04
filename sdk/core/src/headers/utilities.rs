@@ -113,20 +113,20 @@ pub fn session_token_from_headers(headers: &Headers) -> crate::Result<SessionTok
     headers.get_string(&SESSION_TOKEN)
 }
 
-pub fn server_from_headers(headers: &Headers) -> crate::Result<&str> {
-    headers.get_str(&SERVER)
+pub fn server_from_headers(headers: &Headers) -> crate::Result<String> {
+    headers.get_string(&SERVER)
 }
 
-pub fn version_from_headers(headers: &Headers) -> crate::Result<&str> {
-    headers.get_str(&VERSION)
+pub fn version_from_headers(headers: &Headers) -> crate::Result<String> {
+    headers.get_string(&VERSION)
 }
 
 pub fn request_server_encrypted_from_headers(headers: &Headers) -> crate::Result<bool> {
     headers.get_as(&REQUEST_SERVER_ENCRYPTED)
 }
 
-pub fn content_type_from_headers(headers: &Headers) -> crate::Result<&str> {
-    headers.get_str(&CONTENT_TYPE)
+pub fn content_type_from_headers(headers: &Headers) -> crate::Result<String> {
+    headers.get_string(&CONTENT_TYPE)
 }
 
 pub fn item_count_from_headers(headers: &Headers) -> crate::Result<u32> {

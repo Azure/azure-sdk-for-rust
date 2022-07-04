@@ -119,7 +119,7 @@ impl TryFrom<&Headers> for SetPropertiesResponse {
         Ok(SetPropertiesResponse {
             request_id: request_id_from_headers(headers)?,
             etag: etag_from_headers(headers)?,
-            server: server_from_headers(headers)?.to_owned(),
+            server: server_from_headers(headers)?,
             date: date_from_headers(headers)?,
         })
     }

@@ -74,10 +74,10 @@ impl CreateDatabaseResponse {
             quorum_acked_lsn: quorum_acked_lsn_from_headers(&headers)?,
             current_write_quorum: current_write_quorum_from_headers(&headers)?,
             current_replica_set_size: current_replica_set_size_from_headers(&headers)?,
-            schema_version: schema_version_from_headers(&headers)?.to_owned(),
-            service_version: service_version_from_headers(&headers)?.to_owned(),
+            schema_version: schema_version_from_headers(&headers)?,
+            service_version: service_version_from_headers(&headers)?,
             activity_id: activity_id_from_headers(&headers)?,
-            gateway_version: gateway_version_from_headers(&headers)?.to_owned(),
+            gateway_version: gateway_version_from_headers(&headers)?,
         })
     }
 }

@@ -24,9 +24,9 @@ impl TryFrom<&Headers> for CommonStorageResponseHeaders {
         Ok(Self {
             request_id: request_id_from_headers(headers)?,
             client_request_id: client_request_id_from_headers_optional(headers),
-            version: version_from_headers(headers)?.to_owned(),
+            version: version_from_headers(headers)?,
             date: date_from_headers(headers)?,
-            server: server_from_headers(headers)?.to_owned(),
+            server: server_from_headers(headers)?,
         })
     }
 }
