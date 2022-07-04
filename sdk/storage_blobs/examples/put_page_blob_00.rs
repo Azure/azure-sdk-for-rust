@@ -56,7 +56,7 @@ async fn main() -> azure_core::Result<()> {
     // the size of tha page or a buffer out
     // of bounds error will be thrown.
     let res = blob_client
-        .update_page(BA512Range::new(0, 511)?, slice.clone())
+        .put_page(BA512Range::new(0, 511)?, slice.clone())
         .hash(digest)
         .into_future()
         .await?;
@@ -64,7 +64,7 @@ async fn main() -> azure_core::Result<()> {
 
     // update a second page with the same data
     let res = blob_client
-        .update_page(BA512Range::new(512, 1023)?, slice.clone())
+        .put_page(BA512Range::new(512, 1023)?, slice.clone())
         .hash(digest)
         .into_future()
         .await?;
@@ -72,7 +72,7 @@ async fn main() -> azure_core::Result<()> {
 
     // update the second page again with checks
     let res = blob_client
-        .update_page(BA512Range::new(512, 1023)?, slice)
+        .put_page(BA512Range::new(512, 1023)?, slice)
         .hash(digest)
         .sequence_number_condition(SequenceNumberCondition::Equal(100))
         .into_future()

@@ -14,7 +14,7 @@ impl VersionId {
     }
 }
 
-impl AppendToUrlQuery for &VersionId {
+impl AppendToUrlQuery for VersionId {
     fn append_to_url_query(&self, url: &mut url::Url) {
         url.query_pairs_mut().append_pair("version_id", &self.0);
     }
