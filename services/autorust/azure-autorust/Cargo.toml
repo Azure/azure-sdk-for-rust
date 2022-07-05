@@ -1,0 +1,10 @@
+[package]
+name = "azure-autorust"
+version = "0.1.0"
+authors = ["Cameron Taggart <cameron.taggart@gmail.com>"]
+edition = "2021"
+publish = false
+
+[dependencies]
+autorust_codegen = { path = "../codegen" }
+clap = { version = "3.2.7", features = ["derive"] }

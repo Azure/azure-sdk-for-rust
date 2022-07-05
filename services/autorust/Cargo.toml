@@ -2,4 +2,5 @@
 members = [
   "codegen",
   "openapi",
+  "azure-autorust",
 ]
