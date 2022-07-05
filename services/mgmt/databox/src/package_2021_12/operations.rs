@@ -683,7 +683,7 @@ pub mod jobs {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-12-01");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.job_resource_update_parameter)?;

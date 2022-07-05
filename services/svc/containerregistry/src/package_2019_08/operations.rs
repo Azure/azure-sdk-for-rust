@@ -249,7 +249,7 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.insert_header("Range", &this.range);
+                        req.insert_header("range", &this.range);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -298,7 +298,7 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.insert_header("Range", &this.range);
+                        req.insert_header("range", &this.range);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;

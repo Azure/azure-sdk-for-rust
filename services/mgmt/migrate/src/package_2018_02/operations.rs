@@ -220,7 +220,7 @@ pub mod assessment_options {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -381,7 +381,7 @@ pub mod projects {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -440,7 +440,7 @@ pub mod projects {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -500,7 +500,7 @@ pub mod projects {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -569,7 +569,7 @@ pub mod projects {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = if let Some(project) = &this.project {
                             req.insert_header("content-type", "application/json");
@@ -644,7 +644,7 @@ pub mod projects {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = if let Some(project) = &this.project {
                             req.insert_header("content-type", "application/json");
@@ -709,7 +709,7 @@ pub mod projects {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -765,7 +765,7 @@ pub mod projects {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -865,7 +865,7 @@ pub mod machines {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -927,7 +927,7 @@ pub mod machines {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1061,7 +1061,7 @@ pub mod groups {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1123,7 +1123,7 @@ pub mod groups {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1194,7 +1194,7 @@ pub mod groups {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = if let Some(group) = &this.group {
                             req.insert_header("content-type", "application/json");
@@ -1266,7 +1266,7 @@ pub mod groups {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1440,7 +1440,7 @@ pub mod assessments {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1501,7 +1501,7 @@ pub mod assessments {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1565,7 +1565,7 @@ pub mod assessments {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1638,7 +1638,7 @@ pub mod assessments {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = if let Some(assessment) = &this.assessment {
                             req.insert_header("content-type", "application/json");
@@ -1712,7 +1712,7 @@ pub mod assessments {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1764,7 +1764,7 @@ pub mod assessments {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -1868,7 +1868,7 @@ pub mod assessed_machines {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1925,7 +1925,7 @@ pub mod assessed_machines {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-02-02");
                         if let Some(accept_language) = &this.accept_language {
-                            req.insert_header("Accept-Language", accept_language);
+                            req.insert_header("accept-language", accept_language);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);

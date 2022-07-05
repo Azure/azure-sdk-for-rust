@@ -407,26 +407,28 @@ impl ToTokens for BuildRequestParamsCode {
                     }
                 }
                 ParamKind::Header => {
+                    // always use lowercase header names
+                    let header_name = param_name.to_lowercase();
                     if !param.optional() || is_vec {
                         if param.is_string() {
                             tokens.extend(quote! {
-                                req.insert_header(#param_name, &this.#param_name_var);
+                                req.insert_header(#header_name, &this.#param_name_var);
                             });
                         } else {
                             tokens.extend(quote! {
-                                req.insert_header(#param_name, &this.#param_name_var.to_string());
+                                req.insert_header(#header_name, &this.#param_name_var.to_string());
                             });
                         }
                     } else if param.is_string() {
                         tokens.extend(quote! {
                             if let Some(#param_name_var) = &this.#param_name_var {
-                                req.insert_header(#param_name, #param_name_var);
+                                req.insert_header(#header_name, #param_name_var);
                             }
                         });
                     } else {
                         tokens.extend(quote! {
                             if let Some(#param_name_var) = &this.#param_name_var {
-                                req.insert_header(#param_name, &#param_name_var.to_string());
+                                req.insert_header(#header_name, &#param_name_var.to_string());
                             }
                         });
                     }

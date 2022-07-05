@@ -272,10 +272,10 @@ pub mod private_zones {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -348,7 +348,7 @@ pub mod private_zones {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -414,7 +414,7 @@ pub mod private_zones {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2020-01-01");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -796,10 +796,10 @@ pub mod virtual_network_links {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -874,7 +874,7 @@ pub mod virtual_network_links {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -942,7 +942,7 @@ pub mod virtual_network_links {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2020-01-01");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1272,10 +1272,10 @@ pub mod record_sets {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1346,7 +1346,7 @@ pub mod record_sets {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1413,7 +1413,7 @@ pub mod record_sets {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2020-01-01");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);

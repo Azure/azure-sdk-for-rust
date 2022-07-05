@@ -217,7 +217,7 @@ pub mod individual_enrollment {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.enrollment)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -268,7 +268,7 @@ pub mod individual_enrollment {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -572,7 +572,7 @@ pub mod enrollment_group {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.enrollment_group)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -623,7 +623,7 @@ pub mod enrollment_group {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -900,7 +900,7 @@ pub mod device_registration_state {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);

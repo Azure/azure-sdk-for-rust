@@ -622,7 +622,7 @@ pub mod iot_hub_resource {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.iot_hub_description)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2276,7 +2276,7 @@ pub mod certificates {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.certificate_description)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2341,7 +2341,7 @@ pub mod certificates {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-07-02-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2387,7 +2387,7 @@ pub mod certificates {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-07-02-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -2447,7 +2447,7 @@ pub mod certificates {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-07-02-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.certificate_verification_body)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();

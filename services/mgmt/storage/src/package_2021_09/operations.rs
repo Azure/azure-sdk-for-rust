@@ -4324,7 +4324,7 @@ pub mod blob_containers {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-09-01");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -4391,7 +4391,7 @@ pub mod blob_containers {
                             azure_core::EMPTY_BODY
                         };
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -4441,7 +4441,7 @@ pub mod blob_containers {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-09-01");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -4490,7 +4490,7 @@ pub mod blob_containers {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-09-01");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -4551,7 +4551,7 @@ pub mod blob_containers {
                         } else {
                             azure_core::EMPTY_BODY
                         };
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();

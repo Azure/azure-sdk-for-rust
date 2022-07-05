@@ -4040,9 +4040,9 @@ pub mod file {
                         }
                         req.insert_header("x-ms-range", &this.x_ms_range);
                         req.insert_header("x-ms-write", &this.x_ms_write);
-                        req.insert_header("Content-Length", &this.content_length.to_string());
+                        req.insert_header("content-length", &this.content_length.to_string());
                         if let Some(content_md5) = &this.content_md5 {
-                            req.insert_header("Content-MD5", content_md5);
+                            req.insert_header("content-md5", content_md5);
                         }
                         req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
@@ -4141,7 +4141,7 @@ pub mod file {
                             req.insert_header("x-ms-source-range", x_ms_source_range);
                         }
                         req.insert_header("x-ms-write", &this.x_ms_write);
-                        req.insert_header("Content-Length", &this.content_length.to_string());
+                        req.insert_header("content-length", &this.content_length.to_string());
                         if let Some(x_ms_source_content_crc64) = &this.x_ms_source_content_crc64 {
                             req.insert_header("x-ms-source-content-crc64", x_ms_source_content_crc64);
                         }

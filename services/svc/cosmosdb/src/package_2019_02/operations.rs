@@ -580,7 +580,7 @@ pub mod table {
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
-                        req.insert_header("DataServiceVersion", &this.data_service_version);
+                        req.insert_header("dataserviceversion", &this.data_service_version);
                         if let Some(format) = &this.format {
                             req.url_mut().query_pairs_mut().append_pair("$format", format);
                         }
@@ -662,14 +662,14 @@ pub mod table {
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
-                        req.insert_header("DataServiceVersion", &this.data_service_version);
+                        req.insert_header("dataserviceversion", &this.data_service_version);
                         if let Some(format) = &this.format {
                             req.url_mut().query_pairs_mut().append_pair("$format", format);
                         }
                         req.insert_header("content-type", "application/json;odata=nometadata");
                         let req_body = azure_core::to_json(&this.table_properties)?;
                         if let Some(prefer) = &this.prefer {
-                            req.insert_header("Prefer", prefer);
+                            req.insert_header("prefer", prefer);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -808,7 +808,7 @@ pub mod table {
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
-                        req.insert_header("DataServiceVersion", &this.data_service_version);
+                        req.insert_header("dataserviceversion", &this.data_service_version);
                         if let Some(format) = &this.format {
                             req.url_mut().query_pairs_mut().append_pair("$format", format);
                         }
@@ -910,7 +910,7 @@ pub mod table {
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
-                        req.insert_header("DataServiceVersion", &this.data_service_version);
+                        req.insert_header("dataserviceversion", &this.data_service_version);
                         if let Some(format) = &this.format {
                             req.url_mut().query_pairs_mut().append_pair("$format", format);
                         }
@@ -1003,7 +1003,7 @@ pub mod table {
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
-                        req.insert_header("DataServiceVersion", &this.data_service_version);
+                        req.insert_header("dataserviceversion", &this.data_service_version);
                         if let Some(format) = &this.format {
                             req.url_mut().query_pairs_mut().append_pair("$format", format);
                         }
@@ -1014,7 +1014,7 @@ pub mod table {
                             azure_core::EMPTY_BODY
                         };
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1094,7 +1094,7 @@ pub mod table {
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
-                        req.insert_header("DataServiceVersion", &this.data_service_version);
+                        req.insert_header("dataserviceversion", &this.data_service_version);
                         if let Some(format) = &this.format {
                             req.url_mut().query_pairs_mut().append_pair("$format", format);
                         }
@@ -1105,7 +1105,7 @@ pub mod table {
                             azure_core::EMPTY_BODY
                         };
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1176,11 +1176,11 @@ pub mod table {
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
-                        req.insert_header("DataServiceVersion", &this.data_service_version);
+                        req.insert_header("dataserviceversion", &this.data_service_version);
                         if let Some(format) = &this.format {
                             req.url_mut().query_pairs_mut().append_pair("$format", format);
                         }
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1318,7 +1318,7 @@ pub mod table {
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
-                        req.insert_header("DataServiceVersion", &this.data_service_version);
+                        req.insert_header("dataserviceversion", &this.data_service_version);
                         if let Some(format) = &this.format {
                             req.url_mut().query_pairs_mut().append_pair("$format", format);
                         }
@@ -1329,7 +1329,7 @@ pub mod table {
                             azure_core::EMPTY_BODY
                         };
                         if let Some(prefer) = &this.prefer {
-                            req.insert_header("Prefer", prefer);
+                            req.insert_header("prefer", prefer);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;

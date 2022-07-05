@@ -1051,16 +1051,16 @@ pub mod pool {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1162,16 +1162,16 @@ pub mod pool {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1265,16 +1265,16 @@ pub mod pool {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1369,16 +1369,16 @@ pub mod pool {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1549,16 +1549,16 @@ pub mod pool {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1733,16 +1733,16 @@ pub mod pool {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1836,16 +1836,16 @@ pub mod pool {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -2018,16 +2018,16 @@ pub mod pool {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2674,16 +2674,16 @@ pub mod job {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -2785,16 +2785,16 @@ pub mod job {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2891,16 +2891,16 @@ pub mod job {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2994,16 +2994,16 @@ pub mod job {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -3101,16 +3101,16 @@ pub mod job {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -3204,16 +3204,16 @@ pub mod job {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -3320,16 +3320,16 @@ pub mod job {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -4640,10 +4640,10 @@ pub mod file {
                             req.insert_header("ocp-range", ocp_range);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -4828,10 +4828,10 @@ pub mod file {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -4932,10 +4932,10 @@ pub mod file {
                             req.insert_header("ocp-range", ocp_range);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -5120,10 +5120,10 @@ pub mod file {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -5660,16 +5660,16 @@ pub mod job_schedule {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -5771,16 +5771,16 @@ pub mod job_schedule {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -5877,16 +5877,16 @@ pub mod job_schedule {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -5980,16 +5980,16 @@ pub mod job_schedule {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -6084,16 +6084,16 @@ pub mod job_schedule {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -6192,16 +6192,16 @@ pub mod job_schedule {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -6298,16 +6298,16 @@ pub mod job_schedule {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -6407,16 +6407,16 @@ pub mod job_schedule {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -7171,16 +7171,16 @@ pub mod task {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -7284,16 +7284,16 @@ pub mod task {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -7389,16 +7389,16 @@ pub mod task {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -7589,16 +7589,16 @@ pub mod task {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -7700,16 +7700,16 @@ pub mod task {
                             req.insert_header("ocp-date", ocp_date);
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("If-Modified-Since", if_modified_since);
+                            req.insert_header("if-modified-since", if_modified_since);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("If-Unmodified-Since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", if_unmodified_since);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");

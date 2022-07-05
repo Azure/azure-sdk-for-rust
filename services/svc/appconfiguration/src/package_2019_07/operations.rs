@@ -307,13 +307,13 @@ pub mod get_keys {
                                 req.url_mut().query_pairs_mut().append_pair("name", name);
                             }
                             if let Some(sync_token) = &this.sync_token {
-                                req.insert_header("Sync-Token", sync_token);
+                                req.insert_header("sync-token", sync_token);
                             }
                             if let Some(after) = &this.after {
                                 req.url_mut().query_pairs_mut().append_pair("After", after);
                             }
                             if let Some(accept_datetime) = &this.accept_datetime {
-                                req.insert_header("Accept-Datetime", accept_datetime);
+                                req.insert_header("accept-datetime", accept_datetime);
                             }
                             let req_body = azure_core::EMPTY_BODY;
                             req.set_body(req_body);
@@ -385,13 +385,13 @@ pub mod check_keys {
                         req.url_mut().query_pairs_mut().append_pair("name", name);
                     }
                     if let Some(sync_token) = &this.sync_token {
-                        req.insert_header("Sync-Token", sync_token);
+                        req.insert_header("sync-token", sync_token);
                     }
                     if let Some(after) = &this.after {
                         req.url_mut().query_pairs_mut().append_pair("After", after);
                     }
                     if let Some(accept_datetime) = &this.accept_datetime {
-                        req.insert_header("Accept-Datetime", accept_datetime);
+                        req.insert_header("accept-datetime", accept_datetime);
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
@@ -492,13 +492,13 @@ pub mod get_key_values {
                                 req.url_mut().query_pairs_mut().append_pair("label", label);
                             }
                             if let Some(sync_token) = &this.sync_token {
-                                req.insert_header("Sync-Token", sync_token);
+                                req.insert_header("sync-token", sync_token);
                             }
                             if let Some(after) = &this.after {
                                 req.url_mut().query_pairs_mut().append_pair("After", after);
                             }
                             if let Some(accept_datetime) = &this.accept_datetime {
-                                req.insert_header("Accept-Datetime", accept_datetime);
+                                req.insert_header("accept-datetime", accept_datetime);
                             }
                             let req_body = azure_core::EMPTY_BODY;
                             req.set_body(req_body);
@@ -583,13 +583,13 @@ pub mod check_key_values {
                         req.url_mut().query_pairs_mut().append_pair("label", label);
                     }
                     if let Some(sync_token) = &this.sync_token {
-                        req.insert_header("Sync-Token", sync_token);
+                        req.insert_header("sync-token", sync_token);
                     }
                     if let Some(after) = &this.after {
                         req.url_mut().query_pairs_mut().append_pair("After", after);
                     }
                     if let Some(accept_datetime) = &this.accept_datetime {
-                        req.insert_header("Accept-Datetime", accept_datetime);
+                        req.insert_header("accept-datetime", accept_datetime);
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
@@ -665,16 +665,16 @@ pub mod get_key_value {
                         req.url_mut().query_pairs_mut().append_pair("label", label);
                     }
                     if let Some(sync_token) = &this.sync_token {
-                        req.insert_header("Sync-Token", sync_token);
+                        req.insert_header("sync-token", sync_token);
                     }
                     if let Some(accept_datetime) = &this.accept_datetime {
-                        req.insert_header("Accept-Datetime", accept_datetime);
+                        req.insert_header("accept-datetime", accept_datetime);
                     }
                     if let Some(if_match) = &this.if_match {
-                        req.insert_header("If-Match", if_match);
+                        req.insert_header("if-match", if_match);
                     }
                     if let Some(if_none_match) = &this.if_none_match {
-                        req.insert_header("If-None-Match", if_none_match);
+                        req.insert_header("if-none-match", if_none_match);
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
@@ -755,13 +755,13 @@ pub mod put_key_value {
                         azure_core::EMPTY_BODY
                     };
                     if let Some(sync_token) = &this.sync_token {
-                        req.insert_header("Sync-Token", sync_token);
+                        req.insert_header("sync-token", sync_token);
                     }
                     if let Some(if_match) = &this.if_match {
-                        req.insert_header("If-Match", if_match);
+                        req.insert_header("if-match", if_match);
                     }
                     if let Some(if_none_match) = &this.if_none_match {
-                        req.insert_header("If-None-Match", if_none_match);
+                        req.insert_header("if-none-match", if_none_match);
                     }
                     req.set_body(req_body);
                     let rsp = this.client.send(&mut req).await?;
@@ -829,10 +829,10 @@ pub mod delete_key_value {
                         req.url_mut().query_pairs_mut().append_pair("label", label);
                     }
                     if let Some(sync_token) = &this.sync_token {
-                        req.insert_header("Sync-Token", sync_token);
+                        req.insert_header("sync-token", sync_token);
                     }
                     if let Some(if_match) = &this.if_match {
-                        req.insert_header("If-Match", if_match);
+                        req.insert_header("if-match", if_match);
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
@@ -913,16 +913,16 @@ pub mod check_key_value {
                         req.url_mut().query_pairs_mut().append_pair("label", label);
                     }
                     if let Some(sync_token) = &this.sync_token {
-                        req.insert_header("Sync-Token", sync_token);
+                        req.insert_header("sync-token", sync_token);
                     }
                     if let Some(accept_datetime) = &this.accept_datetime {
-                        req.insert_header("Accept-Datetime", accept_datetime);
+                        req.insert_header("accept-datetime", accept_datetime);
                     }
                     if let Some(if_match) = &this.if_match {
-                        req.insert_header("If-Match", if_match);
+                        req.insert_header("if-match", if_match);
                     }
                     if let Some(if_none_match) = &this.if_none_match {
-                        req.insert_header("If-None-Match", if_none_match);
+                        req.insert_header("if-none-match", if_none_match);
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
@@ -1015,13 +1015,13 @@ pub mod get_labels {
                                 req.url_mut().query_pairs_mut().append_pair("name", name);
                             }
                             if let Some(sync_token) = &this.sync_token {
-                                req.insert_header("Sync-Token", sync_token);
+                                req.insert_header("sync-token", sync_token);
                             }
                             if let Some(after) = &this.after {
                                 req.url_mut().query_pairs_mut().append_pair("After", after);
                             }
                             if let Some(accept_datetime) = &this.accept_datetime {
-                                req.insert_header("Accept-Datetime", accept_datetime);
+                                req.insert_header("accept-datetime", accept_datetime);
                             }
                             let req_body = azure_core::EMPTY_BODY;
                             req.set_body(req_body);
@@ -1098,13 +1098,13 @@ pub mod check_labels {
                         req.url_mut().query_pairs_mut().append_pair("name", name);
                     }
                     if let Some(sync_token) = &this.sync_token {
-                        req.insert_header("Sync-Token", sync_token);
+                        req.insert_header("sync-token", sync_token);
                     }
                     if let Some(after) = &this.after {
                         req.url_mut().query_pairs_mut().append_pair("After", after);
                     }
                     if let Some(accept_datetime) = &this.accept_datetime {
-                        req.insert_header("Accept-Datetime", accept_datetime);
+                        req.insert_header("accept-datetime", accept_datetime);
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
@@ -1170,13 +1170,13 @@ pub mod put_lock {
                         req.url_mut().query_pairs_mut().append_pair("label", label);
                     }
                     if let Some(sync_token) = &this.sync_token {
-                        req.insert_header("Sync-Token", sync_token);
+                        req.insert_header("sync-token", sync_token);
                     }
                     if let Some(if_match) = &this.if_match {
-                        req.insert_header("If-Match", if_match);
+                        req.insert_header("if-match", if_match);
                     }
                     if let Some(if_none_match) = &this.if_none_match {
-                        req.insert_header("If-None-Match", if_none_match);
+                        req.insert_header("if-none-match", if_none_match);
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
@@ -1246,13 +1246,13 @@ pub mod delete_lock {
                         req.url_mut().query_pairs_mut().append_pair("label", label);
                     }
                     if let Some(sync_token) = &this.sync_token {
-                        req.insert_header("Sync-Token", sync_token);
+                        req.insert_header("sync-token", sync_token);
                     }
                     if let Some(if_match) = &this.if_match {
-                        req.insert_header("If-Match", if_match);
+                        req.insert_header("if-match", if_match);
                     }
                     if let Some(if_none_match) = &this.if_none_match {
-                        req.insert_header("If-None-Match", if_none_match);
+                        req.insert_header("if-none-match", if_none_match);
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
@@ -1357,13 +1357,13 @@ pub mod get_revisions {
                                 req.url_mut().query_pairs_mut().append_pair("label", label);
                             }
                             if let Some(sync_token) = &this.sync_token {
-                                req.insert_header("Sync-Token", sync_token);
+                                req.insert_header("sync-token", sync_token);
                             }
                             if let Some(after) = &this.after {
                                 req.url_mut().query_pairs_mut().append_pair("After", after);
                             }
                             if let Some(accept_datetime) = &this.accept_datetime {
-                                req.insert_header("Accept-Datetime", accept_datetime);
+                                req.insert_header("accept-datetime", accept_datetime);
                             }
                             let req_body = azure_core::EMPTY_BODY;
                             req.set_body(req_body);
@@ -1448,13 +1448,13 @@ pub mod check_revisions {
                         req.url_mut().query_pairs_mut().append_pair("label", label);
                     }
                     if let Some(sync_token) = &this.sync_token {
-                        req.insert_header("Sync-Token", sync_token);
+                        req.insert_header("sync-token", sync_token);
                     }
                     if let Some(after) = &this.after {
                         req.url_mut().query_pairs_mut().append_pair("After", after);
                     }
                     if let Some(accept_datetime) = &this.accept_datetime {
-                        req.insert_header("Accept-Datetime", accept_datetime);
+                        req.insert_header("accept-datetime", accept_datetime);
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);

@@ -728,7 +728,7 @@ pub mod api {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -793,7 +793,7 @@ pub mod api {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -862,7 +862,7 @@ pub mod api {
                                 .query_pairs_mut()
                                 .append_pair("deleteRevisions", &delete_revisions.to_string());
                         }
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1497,7 +1497,7 @@ pub mod api_release {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1563,7 +1563,7 @@ pub mod api_release {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -1624,7 +1624,7 @@ pub mod api_release {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2030,7 +2030,7 @@ pub mod api_operation {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2096,7 +2096,7 @@ pub mod api_operation {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -2157,7 +2157,7 @@ pub mod api_operation {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2479,7 +2479,7 @@ pub mod api_operation_policy {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2539,7 +2539,7 @@ pub mod api_operation_policy {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -4164,7 +4164,7 @@ pub mod tag {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -4228,7 +4228,7 @@ pub mod tag {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -4287,7 +4287,7 @@ pub mod tag {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -4745,7 +4745,7 @@ pub mod api_policy {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -4812,7 +4812,7 @@ pub mod api_policy {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -5191,7 +5191,7 @@ pub mod api_schema {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -5267,7 +5267,7 @@ pub mod api_schema {
                         if let Some(force) = &this.force {
                             req.url_mut().query_pairs_mut().append_pair("force", &force.to_string());
                         }
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -5664,7 +5664,7 @@ pub mod api_diagnostic {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -5730,7 +5730,7 @@ pub mod api_diagnostic {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -5791,7 +5791,7 @@ pub mod api_diagnostic {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -6210,7 +6210,7 @@ pub mod api_issue {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -6276,7 +6276,7 @@ pub mod api_issue {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -6337,7 +6337,7 @@ pub mod api_issue {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -6711,7 +6711,7 @@ pub mod api_issue_comment {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -6771,7 +6771,7 @@ pub mod api_issue_comment {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -7130,7 +7130,7 @@ pub mod api_issue_attachment {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -7190,7 +7190,7 @@ pub mod api_issue_attachment {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -7559,7 +7559,7 @@ pub mod api_tag_description {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -7626,7 +7626,7 @@ pub mod api_tag_description {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -8144,7 +8144,7 @@ pub mod api_version_set {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -8208,7 +8208,7 @@ pub mod api_version_set {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -8267,7 +8267,7 @@ pub mod api_version_set {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -8659,7 +8659,7 @@ pub mod authorization_server {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -8723,7 +8723,7 @@ pub mod authorization_server {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -8782,7 +8782,7 @@ pub mod authorization_server {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -9223,7 +9223,7 @@ pub mod backend {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -9287,7 +9287,7 @@ pub mod backend {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -9346,7 +9346,7 @@ pub mod backend {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -9774,7 +9774,7 @@ pub mod cache {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -9838,7 +9838,7 @@ pub mod cache {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -9897,7 +9897,7 @@ pub mod cache {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -10281,7 +10281,7 @@ pub mod certificate {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -10346,7 +10346,7 @@ pub mod certificate {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -10705,7 +10705,7 @@ pub mod content_type {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -10771,7 +10771,7 @@ pub mod content_type {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -11040,7 +11040,7 @@ pub mod content_item {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -11100,7 +11100,7 @@ pub mod content_item {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -12748,7 +12748,7 @@ pub mod diagnostic {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -12812,7 +12812,7 @@ pub mod diagnostic {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -12871,7 +12871,7 @@ pub mod diagnostic {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -13248,7 +13248,7 @@ pub mod email_template {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -13310,7 +13310,7 @@ pub mod email_template {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -13371,7 +13371,7 @@ pub mod email_template {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -13797,7 +13797,7 @@ pub mod gateway {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -13861,7 +13861,7 @@ pub mod gateway {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -13920,7 +13920,7 @@ pub mod gateway {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -14432,7 +14432,7 @@ pub mod gateway_hostname_configuration {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
@@ -14493,7 +14493,7 @@ pub mod gateway_hostname_configuration {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -15200,7 +15200,7 @@ pub mod gateway_certificate_authority {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
@@ -15261,7 +15261,7 @@ pub mod gateway_certificate_authority {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -15632,7 +15632,7 @@ pub mod group {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -15696,7 +15696,7 @@ pub mod group {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -15755,7 +15755,7 @@ pub mod group {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -16473,7 +16473,7 @@ pub mod identity_provider {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -16537,7 +16537,7 @@ pub mod identity_provider {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -16596,7 +16596,7 @@ pub mod identity_provider {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -17214,7 +17214,7 @@ pub mod logger {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -17278,7 +17278,7 @@ pub mod logger {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -17337,7 +17337,7 @@ pub mod logger {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -17757,7 +17757,7 @@ pub mod named_value {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -17827,7 +17827,7 @@ pub mod named_value {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -17887,7 +17887,7 @@ pub mod named_value {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -18444,7 +18444,7 @@ pub mod notification {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -19328,7 +19328,7 @@ pub mod open_id_connect_provider {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -19392,7 +19392,7 @@ pub mod open_id_connect_provider {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -19451,7 +19451,7 @@ pub mod open_id_connect_provider {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -19878,7 +19878,7 @@ pub mod policy {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -19943,7 +19943,7 @@ pub mod policy {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -20440,7 +20440,7 @@ pub mod portal_revision {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -20740,7 +20740,7 @@ pub mod sign_in_settings {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -20797,7 +20797,7 @@ pub mod sign_in_settings {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -21019,7 +21019,7 @@ pub mod sign_up_settings {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -21076,7 +21076,7 @@ pub mod sign_up_settings {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -21311,7 +21311,7 @@ pub mod delegation_settings {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -21368,7 +21368,7 @@ pub mod delegation_settings {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -22232,7 +22232,7 @@ pub mod product {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -22296,7 +22296,7 @@ pub mod product {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -22360,7 +22360,7 @@ pub mod product {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         if let Some(delete_subscriptions) = &this.delete_subscriptions {
                             req.url_mut()
                                 .query_pairs_mut()
@@ -23639,7 +23639,7 @@ pub mod product_policy {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
@@ -23708,7 +23708,7 @@ pub mod product_policy {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -25423,7 +25423,7 @@ pub mod schema {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -25489,7 +25489,7 @@ pub mod schema {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -26189,7 +26189,7 @@ pub mod subscription {
                             req.url_mut().query_pairs_mut().append_pair("notify", &notify.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(app_type) = &this.app_type {
                             req.url_mut().query_pairs_mut().append_pair("appType", app_type);
@@ -26269,7 +26269,7 @@ pub mod subscription {
                         if let Some(notify) = &this.notify {
                             req.url_mut().query_pairs_mut().append_pair("notify", &notify.to_string());
                         }
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         if let Some(app_type) = &this.app_type {
                             req.url_mut().query_pairs_mut().append_pair("appType", app_type);
                         }
@@ -26331,7 +26331,7 @@ pub mod subscription {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -26970,7 +26970,7 @@ pub mod tenant_access {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -27028,7 +27028,7 @@ pub mod tenant_access {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -28041,7 +28041,7 @@ pub mod user {
                             req.url_mut().query_pairs_mut().append_pair("notify", &notify.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -28105,7 +28105,7 @@ pub mod user {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-04-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
@@ -28187,7 +28187,7 @@ pub mod user {
                         if let Some(notify) = &this.notify {
                             req.url_mut().query_pairs_mut().append_pair("notify", &notify.to_string());
                         }
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         if let Some(app_type) = &this.app_type {
                             req.url_mut().query_pairs_mut().append_pair("appType", app_type);
                         }
