@@ -21,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = azure_mgmt_vmware::ClientBuilder::new(credential).build();
 
     let mut count = 0;
-    let mut clouds = client.private_clouds().list_in_subscription(subscription_id).into_stream();
+    let mut clouds = client.private_clouds_client().list_in_subscription(subscription_id).into_stream();
     while let Some(clouds) = clouds.next().await {
         let clouds = clouds?;
         count += clouds.value.len();

@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .scopes(scopes)
         .build();
 
-    let mut stream = client.pool().list().into_stream();
+    let mut stream = client.pool_client().list().into_stream();
     while let Some(pools) = stream.next().await {
         let pools = pools?;
         for pool in pools.value {

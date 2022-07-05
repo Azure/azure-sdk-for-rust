@@ -20,7 +20,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let group = std::env::args().nth(1).expect("please specify resource group");
     let account = std::env::args().nth(2).expect("please specify account");
 
-    let mut stream = client.blob_containers().list(&group, &account, &subscription_id).into_stream();
+    let mut stream = client
+        .blob_containers_client()
+        .list(&group, &account, &subscription_id)
+        .into_stream();
     let mut count = 0;
     while let Some(x) = stream.next().await {
         let x = x?;

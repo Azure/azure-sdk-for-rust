@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = azure_mgmt_compute::ClientBuilder::new(credential).build();
 
     let mut count = 0;
-    let mut vms = client.virtual_machines().list_all(subscription_id).into_stream();
+    let mut vms = client.virtual_machines_client().list_all(subscription_id).into_stream();
     while let Some(vms) = vms.next().await {
         let vms = vms?;
         count += vms.value.len();

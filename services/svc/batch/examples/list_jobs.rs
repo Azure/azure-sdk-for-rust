@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .scopes(scopes)
         .build();
 
-    let mut stream = client.job().list().into_stream();
+    let mut stream = client.job_client().list().into_stream();
     while let Some(jobs) = stream.next().await {
         let jobs = jobs?;
         for job in jobs.value {

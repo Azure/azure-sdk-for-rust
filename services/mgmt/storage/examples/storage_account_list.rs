@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = azure_mgmt_storage::ClientBuilder::new(credential).build();
 
     let mut count = 0;
-    let mut stream = client.storage_accounts().list(subscription_id).into_stream();
+    let mut stream = client.storage_accounts_client().list(subscription_id).into_stream();
     while let Some(accounts) = stream.next().await {
         let accounts = accounts?;
         count += accounts.value.len();
