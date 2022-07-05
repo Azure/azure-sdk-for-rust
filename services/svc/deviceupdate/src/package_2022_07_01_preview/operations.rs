@@ -386,7 +386,7 @@ pub mod device_update {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2022-07-01-preview");
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -817,7 +817,7 @@ pub mod device_update {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2022-07-01-preview");
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -965,7 +965,7 @@ pub mod device_update {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2022-07-01-preview");
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -3347,7 +3347,7 @@ pub mod device_management {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2022-07-01-preview");
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);

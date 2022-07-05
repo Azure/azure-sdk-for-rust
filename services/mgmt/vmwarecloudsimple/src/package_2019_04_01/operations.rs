@@ -243,7 +243,7 @@ pub mod operations {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-04-01");
-                        req.insert_header("Referer", &this.referer);
+                        req.insert_header("referer", &this.referer);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -644,7 +644,7 @@ pub mod dedicated_cloud_nodes {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-04-01");
-                        req.insert_header("Referer", &this.referer);
+                        req.insert_header("referer", &this.referer);
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.dedicated_cloud_node_request)?;
                         req.set_body(req_body);
@@ -2694,7 +2694,7 @@ pub mod virtual_machines {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-04-01");
-                        req.insert_header("Referer", &this.referer);
+                        req.insert_header("referer", &this.referer);
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.virtual_machine_request)?;
                         req.set_body(req_body);
@@ -2814,7 +2814,7 @@ pub mod virtual_machines {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-04-01");
-                        req.insert_header("Referer", &this.referer);
+                        req.insert_header("referer", &this.referer);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2870,7 +2870,7 @@ pub mod virtual_machines {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-04-01");
-                        req.insert_header("Referer", &this.referer);
+                        req.insert_header("referer", &this.referer);
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -2937,7 +2937,7 @@ pub mod virtual_machines {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-04-01");
-                        req.insert_header("Referer", &this.referer);
+                        req.insert_header("referer", &this.referer);
                         let req_body = if let Some(m) = &this.m {
                             req.insert_header("content-type", "application/json");
                             azure_core::to_json(m)?

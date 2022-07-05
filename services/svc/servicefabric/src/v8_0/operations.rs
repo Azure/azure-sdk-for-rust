@@ -11491,7 +11491,7 @@ pub mod upload_file_chunk {
                         .append_pair(azure_core::query_param::API_VERSION, "8.0");
                     let session_id = &this.session_id;
                     req.url_mut().query_pairs_mut().append_pair("session-id", session_id);
-                    req.insert_header("Content-Range", &this.content_range);
+                    req.insert_header("content-range", &this.content_range);
                     if let Some(timeout) = &this.timeout {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }

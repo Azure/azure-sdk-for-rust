@@ -1187,7 +1187,7 @@ pub mod update_address {
                         .query_pairs_mut()
                         .append_pair(azure_core::query_param::API_VERSION, "2020-12-01-preview");
                     if let Some(if_match) = &this.if_match {
-                        req.insert_header("If-Match", if_match);
+                        req.insert_header("if-match", if_match);
                     }
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.address_update_parameter)?;
@@ -1669,7 +1669,7 @@ pub mod update_order_item {
                         .query_pairs_mut()
                         .append_pair(azure_core::query_param::API_VERSION, "2020-12-01-preview");
                     if let Some(if_match) = &this.if_match {
-                        req.insert_header("If-Match", if_match);
+                        req.insert_header("if-match", if_match);
                     }
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.order_item_update_parameter)?;

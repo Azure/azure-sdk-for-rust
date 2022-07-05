@@ -119,7 +119,7 @@ pub mod instances {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-02-01");
-                        req.insert_header("Metadata", &this.metadata);
+                        req.insert_header("metadata", &this.metadata);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -185,7 +185,7 @@ pub mod attested {
                         if let Some(nonce) = &this.nonce {
                             req.url_mut().query_pairs_mut().append_pair("nonce", nonce);
                         }
-                        req.insert_header("Metadata", &this.metadata);
+                        req.insert_header("metadata", &this.metadata);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -280,7 +280,7 @@ pub mod identity {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-02-01");
-                        req.insert_header("Metadata", &this.metadata);
+                        req.insert_header("metadata", &this.metadata);
                         let resource = &this.resource;
                         req.url_mut().query_pairs_mut().append_pair("resource", resource);
                         if let Some(client_id) = &this.client_id {
@@ -342,7 +342,7 @@ pub mod identity {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-02-01");
-                        req.insert_header("Metadata", &this.metadata);
+                        req.insert_header("metadata", &this.metadata);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;

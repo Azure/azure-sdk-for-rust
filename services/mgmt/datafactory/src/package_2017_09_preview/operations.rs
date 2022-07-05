@@ -1141,7 +1141,7 @@ pub mod integration_runtimes {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2017-09-01-preview");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.integration_runtime)?;
@@ -2205,7 +2205,7 @@ pub mod linked_services {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2017-09-01-preview");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.linked_service)?;
@@ -2523,7 +2523,7 @@ pub mod datasets {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2017-09-01-preview");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.dataset)?;
@@ -2857,7 +2857,7 @@ pub mod pipelines {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2017-09-01-preview");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.pipeline)?;
@@ -3565,7 +3565,7 @@ pub mod triggers {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2017-09-01-preview");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.trigger)?;

@@ -193,7 +193,7 @@ pub mod query {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         if let Some(prefer) = &this.prefer {
-                            req.insert_header("Prefer", prefer);
+                            req.insert_header("prefer", prefer);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;

@@ -880,7 +880,7 @@ pub mod managers {
                             .append_pair(azure_core::query_param::API_VERSION, "2016-10-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.manager_extended_info)?;
-                        req.insert_header("If-Match", &this.if_match);
+                        req.insert_header("if-match", &this.if_match);
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();

@@ -580,7 +580,7 @@ pub mod factories {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -643,7 +643,7 @@ pub mod factories {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.factory)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1477,7 +1477,7 @@ pub mod integration_runtimes {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1540,7 +1540,7 @@ pub mod integration_runtimes {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.integration_runtime)?;
@@ -2855,7 +2855,7 @@ pub mod linked_services {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -2918,7 +2918,7 @@ pub mod linked_services {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.linked_service)?;
@@ -3182,7 +3182,7 @@ pub mod datasets {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -3245,7 +3245,7 @@ pub mod datasets {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.dataset)?;
@@ -3529,7 +3529,7 @@ pub mod pipelines {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -3592,7 +3592,7 @@ pub mod pipelines {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.pipeline)?;
@@ -4395,7 +4395,7 @@ pub mod triggers {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -4458,7 +4458,7 @@ pub mod triggers {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.trigger)?;
@@ -5103,7 +5103,7 @@ pub mod data_flows {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -5166,7 +5166,7 @@ pub mod data_flows {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.data_flow)?;
@@ -5869,7 +5869,7 @@ pub mod managed_virtual_networks {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -5932,7 +5932,7 @@ pub mod managed_virtual_networks {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.managed_virtual_network)?;
@@ -6138,7 +6138,7 @@ pub mod managed_private_endpoints {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -6195,7 +6195,7 @@ pub mod managed_private_endpoints {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.managed_private_endpoint)?;
@@ -6452,7 +6452,7 @@ pub mod private_endpoint_connection {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -6508,7 +6508,7 @@ pub mod private_endpoint_connection {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.private_endpoint_wrapper)?;

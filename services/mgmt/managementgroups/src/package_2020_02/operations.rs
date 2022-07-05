@@ -211,7 +211,7 @@ pub mod management_groups {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2020-02-01");
                                 if let Some(cache_control) = &this.cache_control {
-                                    req.insert_header("Cache-Control", cache_control);
+                                    req.insert_header("cache-control", cache_control);
                                 }
                                 if let Some(skiptoken) = &this.skiptoken {
                                     req.url_mut().query_pairs_mut().append_pair("$skiptoken", skiptoken);
@@ -297,7 +297,7 @@ pub mod management_groups {
                             req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                         }
                         if let Some(cache_control) = &this.cache_control {
-                            req.insert_header("Cache-Control", cache_control);
+                            req.insert_header("cache-control", cache_control);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -359,7 +359,7 @@ pub mod management_groups {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2020-02-01");
                         if let Some(cache_control) = &this.cache_control {
-                            req.insert_header("Cache-Control", cache_control);
+                            req.insert_header("cache-control", cache_control);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.create_management_group_request)?;
@@ -422,7 +422,7 @@ pub mod management_groups {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2020-02-01");
                         if let Some(cache_control) = &this.cache_control {
-                            req.insert_header("Cache-Control", cache_control);
+                            req.insert_header("cache-control", cache_control);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.patch_group_request)?;
@@ -484,7 +484,7 @@ pub mod management_groups {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2020-02-01");
                         if let Some(cache_control) = &this.cache_control {
-                            req.insert_header("Cache-Control", cache_control);
+                            req.insert_header("cache-control", cache_control);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -659,7 +659,7 @@ pub mod management_group_subscriptions {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2020-02-01");
                         if let Some(cache_control) = &this.cache_control {
-                            req.insert_header("Cache-Control", cache_control);
+                            req.insert_header("cache-control", cache_control);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -718,7 +718,7 @@ pub mod management_group_subscriptions {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2020-02-01");
                         if let Some(cache_control) = &this.cache_control {
-                            req.insert_header("Cache-Control", cache_control);
+                            req.insert_header("cache-control", cache_control);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1398,7 +1398,7 @@ pub mod entities {
                                     req.url_mut().query_pairs_mut().append_pair("groupName", group_name);
                                 }
                                 if let Some(cache_control) = &this.cache_control {
-                                    req.insert_header("Cache-Control", cache_control);
+                                    req.insert_header("cache-control", cache_control);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");

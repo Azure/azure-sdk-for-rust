@@ -2074,10 +2074,10 @@ pub mod certificate {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2141,7 +2141,7 @@ pub mod certificate {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2678,7 +2678,7 @@ pub mod private_endpoint_connection {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -3026,10 +3026,10 @@ pub mod pool {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         if let Some(if_none_match) = &this.if_none_match {
-                            req.insert_header("If-None-Match", if_none_match);
+                            req.insert_header("if-none-match", if_none_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -3093,7 +3093,7 @@ pub mod pool {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(if_match) = &this.if_match {
-                            req.insert_header("If-Match", if_match);
+                            req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;

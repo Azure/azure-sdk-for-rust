@@ -8756,7 +8756,7 @@ pub mod job {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-06-01");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req.insert_header("clientRequestId", client_request_id);
+                            req.insert_header("clientrequestid", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -8811,7 +8811,7 @@ pub mod job {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-06-01");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req.insert_header("clientRequestId", client_request_id);
+                            req.insert_header("clientrequestid", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -8873,7 +8873,7 @@ pub mod job {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-06-01");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req.insert_header("clientRequestId", client_request_id);
+                            req.insert_header("clientrequestid", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -8932,7 +8932,7 @@ pub mod job {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-06-01");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req.insert_header("clientRequestId", client_request_id);
+                            req.insert_header("clientrequestid", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -8991,7 +8991,7 @@ pub mod job {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-06-01");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req.insert_header("clientRequestId", client_request_id);
+                            req.insert_header("clientrequestid", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -9056,7 +9056,7 @@ pub mod job {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         if let Some(client_request_id) = &this.client_request_id {
-                            req.insert_header("clientRequestId", client_request_id);
+                            req.insert_header("clientrequestid", client_request_id);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -9146,7 +9146,7 @@ pub mod job {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
                                 if let Some(client_request_id) = &this.client_request_id {
-                                    req.insert_header("clientRequestId", client_request_id);
+                                    req.insert_header("clientrequestid", client_request_id);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -9211,7 +9211,7 @@ pub mod job {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-06-01");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req.insert_header("clientRequestId", client_request_id);
+                            req.insert_header("clientrequestid", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
@@ -9313,7 +9313,7 @@ pub mod job_stream {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-06-01");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req.insert_header("clientRequestId", client_request_id);
+                            req.insert_header("clientrequestid", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -9406,7 +9406,7 @@ pub mod job_stream {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
                                 if let Some(client_request_id) = &this.client_request_id {
-                                    req.insert_header("clientRequestId", client_request_id);
+                                    req.insert_header("clientrequestid", client_request_id);
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -9589,7 +9589,7 @@ pub mod software_update_configurations {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-06-01");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req.insert_header("clientRequestId", client_request_id);
+                            req.insert_header("clientrequestid", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -9649,7 +9649,7 @@ pub mod software_update_configurations {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-06-01");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req.insert_header("clientRequestId", client_request_id);
+                            req.insert_header("clientrequestid", client_request_id);
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
@@ -9714,7 +9714,7 @@ pub mod software_update_configurations {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-06-01");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req.insert_header("clientRequestId", client_request_id);
+                            req.insert_header("clientrequestid", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -9770,7 +9770,7 @@ pub mod software_update_configurations {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-06-01");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req.insert_header("clientRequestId", client_request_id);
+                            req.insert_header("clientrequestid", client_request_id);
                         }
                         if let Some(filter) = &this.filter {
                             req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -9867,7 +9867,7 @@ pub mod software_update_configuration_runs {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-06-01");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req.insert_header("clientRequestId", client_request_id);
+                            req.insert_header("clientrequestid", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -9936,7 +9936,7 @@ pub mod software_update_configuration_runs {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-06-01");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req.insert_header("clientRequestId", client_request_id);
+                            req.insert_header("clientrequestid", client_request_id);
                         }
                         if let Some(filter) = &this.filter {
                             req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -10039,7 +10039,7 @@ pub mod software_update_configuration_machine_runs {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-06-01");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req.insert_header("clientRequestId", client_request_id);
+                            req.insert_header("clientrequestid", client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -10108,7 +10108,7 @@ pub mod software_update_configuration_machine_runs {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-06-01");
                         if let Some(client_request_id) = &this.client_request_id {
-                            req.insert_header("clientRequestId", client_request_id);
+                            req.insert_header("clientrequestid", client_request_id);
                         }
                         if let Some(filter) = &this.filter {
                             req.url_mut().query_pairs_mut().append_pair("$filter", filter);
