@@ -1,4 +1,4 @@
-use crate::BlockId;
+use crate::options::BlockId;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum BlobBlockType {

@@ -1,7 +1,6 @@
 use crate::{
     blob::{copy_status_from_headers, CopyStatus},
     prelude::*,
-    RehydratePriority,
 };
 use azure_core::{headers::*, prelude::*, RequestId};
 use azure_storage::core::{copy_id_from_headers, CopyId};

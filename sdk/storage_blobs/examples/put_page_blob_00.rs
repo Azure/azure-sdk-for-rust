@@ -2,7 +2,7 @@
 extern crate log;
 use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
-use azure_storage_blobs::{prelude::*, BA512Range};
+use azure_storage_blobs::prelude::*;
 use bytes::Bytes;
 
 #[tokio::main]

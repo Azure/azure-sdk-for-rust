@@ -17,7 +17,7 @@ pub use self::block_with_size_list::BlockWithSizeList;
 pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
 pub use self::page_range_list::PageRangeList;
 
-use crate::AccessTier;
+use crate::options::AccessTier;
 use azure_core::{
     content_type,
     error::{ErrorKind, ResultExt},

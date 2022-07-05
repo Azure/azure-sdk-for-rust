@@ -7,7 +7,6 @@ use azure_storage_blobs::{
     blob::BlockListType,
     container::{Container, PublicAccess},
     prelude::*,
-    BA512Range,
 };
 use bytes::Bytes;
 use chrono::{FixedOffset, Utc};
