@@ -15,6 +15,12 @@ impl Default for Properties {
     }
 }
 
+impl From<BTreeMap<Cow<'static, str>, Cow<'static, str>>> for Properties {
+    fn from(value: BTreeMap<Cow<'static, str>, Cow<'static, str>>) -> Self {
+        Self(value)
+    }
+}
+
 impl Properties {
     pub fn new() -> Self {
         Self(BTreeMap::new())

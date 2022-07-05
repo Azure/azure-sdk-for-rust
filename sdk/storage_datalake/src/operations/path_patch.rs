@@ -20,6 +20,7 @@ where
     C: PathClient,
 {
     client: C,
+    acl: Option<AccessControlList>,
     action: Option<PathUpdateAction>,
     close: Option<Close>,
     continuation: Option<NextMarker>,
@@ -38,6 +39,7 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
     pub(crate) fn new(client: C, context: Context) -> Self {
         Self {
             client,
+            acl: None,
             action: None,
             close: None,
             continuation: None,
@@ -54,6 +56,7 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
     }
 
     setters! {
+        acl: AccessControlList => Some(acl),
         action: PathUpdateAction => Some(action),
         close: Close => Some(close),
         continuation: NextMarker => Some(continuation),
@@ -86,6 +89,7 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
 
             let mut request = Request::new(url, azure_core::Method::Patch);
 
+            request.insert_headers(&this.acl);
             request.insert_headers(&this.client_request_id);
             request.insert_headers(&this.properties);
             request.insert_headers(&this.if_match_condition);
