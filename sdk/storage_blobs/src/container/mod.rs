@@ -123,7 +123,7 @@ impl Container {
         })
     }
 
-    fn parse(elem: &Element) -> azure_core::Result<Container> {
+    pub(crate) fn parse(elem: &Element) -> azure_core::Result<Container> {
         let name = cast_must(elem, &["Name"]).map_kind(ErrorKind::DataConversion)?;
         let last_modified = cast_must(elem, &["Properties", "Last-Modified"])?;
         let e_tag = cast_must(elem, &["Properties", "Etag"])?;

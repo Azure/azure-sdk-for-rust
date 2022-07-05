@@ -10,6 +10,7 @@ pub use azure_core::error::{Error, ErrorKind, ResultExt};
 pub mod blob;
 pub mod container;
 pub mod prelude;
+pub mod service;
 
 mod clients;
 mod options;

@@ -1,4 +1,4 @@
-use crate::container::operations::ListContainersBuilder;
+use crate::service::operations::ListContainersBuilder;
 use azure_core::{Context, Request, Response};
 use azure_storage::core::clients::{ServiceType, StorageClient};
 
