@@ -36,6 +36,9 @@ impl GetPropertiesBuilder {
     pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.container_client.url_with_segments(None)?;
+
+            url.query_pairs_mut().append_pair("restype", "container");
+
             self.timeout.append_to_url_query(&mut url);
 
             let mut headers = Headers::new();
