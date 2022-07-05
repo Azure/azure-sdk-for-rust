@@ -67,7 +67,7 @@ fn gen_svc() -> Result<()> {
 
 fn gen_services_workspace() -> Result<()> {
     let dirs = list_dirs()?;
-    let dirs: Vec<String> = dirs.iter().map(|dir| dir.as_str().replace("\\", "/").replace("../", "")).collect();
+    let dirs: Vec<String> = dirs.iter().map(|dir| dir.as_str().replace('\\', "/").replace("../", "")).collect();
 
     let yml = CargoToml { dirs };
     yml.create("../Cargo.toml")?;
