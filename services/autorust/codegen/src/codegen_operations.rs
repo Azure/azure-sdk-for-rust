@@ -43,9 +43,10 @@ fn error_fqn(operation: &WebOperationGen) -> Result<TokenStream> {
 pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<TokenStream> {
     let mut clients = TokenStream::new();
     for md in modules {
+        let client = format!("{md}_client").to_snake_case_ident()?;
         let md = md.to_snake_case_ident()?;
         clients.extend(quote! {
-            pub fn #md(&self) -> #md::Client {
+            pub fn #client(&self) -> #md::Client {
                 #md::Client(self.clone())
             }
         });
