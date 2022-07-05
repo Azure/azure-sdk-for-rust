@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn advisor_scores(&self) -> advisor_scores::Client {
+    pub fn advisor_scores_client(&self) -> advisor_scores::Client {
         advisor_scores::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

@@ -74,64 +74,64 @@ impl Client {
             pipeline,
         }
     }
-    pub fn app_service_certificate_orders(&self) -> app_service_certificate_orders::Client {
+    pub fn app_service_certificate_orders_client(&self) -> app_service_certificate_orders::Client {
         app_service_certificate_orders::Client(self.clone())
     }
-    pub fn app_service_environments(&self) -> app_service_environments::Client {
+    pub fn app_service_environments_client(&self) -> app_service_environments::Client {
         app_service_environments::Client(self.clone())
     }
-    pub fn app_service_plans(&self) -> app_service_plans::Client {
+    pub fn app_service_plans_client(&self) -> app_service_plans::Client {
         app_service_plans::Client(self.clone())
     }
-    pub fn certificate_orders_diagnostics(&self) -> certificate_orders_diagnostics::Client {
+    pub fn certificate_orders_diagnostics_client(&self) -> certificate_orders_diagnostics::Client {
         certificate_orders_diagnostics::Client(self.clone())
     }
-    pub fn certificate_registration_provider(&self) -> certificate_registration_provider::Client {
+    pub fn certificate_registration_provider_client(&self) -> certificate_registration_provider::Client {
         certificate_registration_provider::Client(self.clone())
     }
-    pub fn certificates(&self) -> certificates::Client {
+    pub fn certificates_client(&self) -> certificates::Client {
         certificates::Client(self.clone())
     }
-    pub fn container_apps(&self) -> container_apps::Client {
+    pub fn container_apps_client(&self) -> container_apps::Client {
         container_apps::Client(self.clone())
     }
-    pub fn container_apps_revisions(&self) -> container_apps_revisions::Client {
+    pub fn container_apps_revisions_client(&self) -> container_apps_revisions::Client {
         container_apps_revisions::Client(self.clone())
     }
-    pub fn deleted_web_apps(&self) -> deleted_web_apps::Client {
+    pub fn deleted_web_apps_client(&self) -> deleted_web_apps::Client {
         deleted_web_apps::Client(self.clone())
     }
-    pub fn diagnostics(&self) -> diagnostics::Client {
+    pub fn diagnostics_client(&self) -> diagnostics::Client {
         diagnostics::Client(self.clone())
     }
-    pub fn domain_registration_provider(&self) -> domain_registration_provider::Client {
+    pub fn domain_registration_provider_client(&self) -> domain_registration_provider::Client {
         domain_registration_provider::Client(self.clone())
     }
-    pub fn domains(&self) -> domains::Client {
+    pub fn domains_client(&self) -> domains::Client {
         domains::Client(self.clone())
     }
-    pub fn global(&self) -> global::Client {
+    pub fn global_client(&self) -> global::Client {
         global::Client(self.clone())
     }
-    pub fn kube_environments(&self) -> kube_environments::Client {
+    pub fn kube_environments_client(&self) -> kube_environments::Client {
         kube_environments::Client(self.clone())
     }
-    pub fn provider(&self) -> provider::Client {
+    pub fn provider_client(&self) -> provider::Client {
         provider::Client(self.clone())
     }
-    pub fn recommendations(&self) -> recommendations::Client {
+    pub fn recommendations_client(&self) -> recommendations::Client {
         recommendations::Client(self.clone())
     }
-    pub fn resource_health_metadata(&self) -> resource_health_metadata::Client {
+    pub fn resource_health_metadata_client(&self) -> resource_health_metadata::Client {
         resource_health_metadata::Client(self.clone())
     }
-    pub fn static_sites(&self) -> static_sites::Client {
+    pub fn static_sites_client(&self) -> static_sites::Client {
         static_sites::Client(self.clone())
     }
-    pub fn top_level_domains(&self) -> top_level_domains::Client {
+    pub fn top_level_domains_client(&self) -> top_level_domains::Client {
         top_level_domains::Client(self.clone())
     }
-    pub fn web_apps(&self) -> web_apps::Client {
+    pub fn web_apps_client(&self) -> web_apps::Client {
         web_apps::Client(self.clone())
     }
 }

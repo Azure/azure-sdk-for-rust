@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn bot_connection(&self) -> bot_connection::Client {
+    pub fn bot_connection_client(&self) -> bot_connection::Client {
         bot_connection::Client(self.clone())
     }
-    pub fn bots(&self) -> bots::Client {
+    pub fn bots_client(&self) -> bots::Client {
         bots::Client(self.clone())
     }
-    pub fn channels(&self) -> channels::Client {
+    pub fn channels_client(&self) -> channels::Client {
         channels::Client(self.clone())
     }
-    pub fn direct_line(&self) -> direct_line::Client {
+    pub fn direct_line_client(&self) -> direct_line::Client {
         direct_line::Client(self.clone())
     }
-    pub fn host_settings(&self) -> host_settings::Client {
+    pub fn host_settings_client(&self) -> host_settings::Client {
         host_settings::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

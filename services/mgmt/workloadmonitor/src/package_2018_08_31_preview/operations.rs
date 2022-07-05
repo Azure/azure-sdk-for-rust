@@ -74,25 +74,25 @@ impl Client {
             pipeline,
         }
     }
-    pub fn components(&self) -> components::Client {
+    pub fn components_client(&self) -> components::Client {
         components::Client(self.clone())
     }
-    pub fn components_summary(&self) -> components_summary::Client {
+    pub fn components_summary_client(&self) -> components_summary::Client {
         components_summary::Client(self.clone())
     }
-    pub fn monitor_instances(&self) -> monitor_instances::Client {
+    pub fn monitor_instances_client(&self) -> monitor_instances::Client {
         monitor_instances::Client(self.clone())
     }
-    pub fn monitor_instances_summary(&self) -> monitor_instances_summary::Client {
+    pub fn monitor_instances_summary_client(&self) -> monitor_instances_summary::Client {
         monitor_instances_summary::Client(self.clone())
     }
-    pub fn monitors(&self) -> monitors::Client {
+    pub fn monitors_client(&self) -> monitors::Client {
         monitors::Client(self.clone())
     }
-    pub fn notification_settings(&self) -> notification_settings::Client {
+    pub fn notification_settings_client(&self) -> notification_settings::Client {
         notification_settings::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

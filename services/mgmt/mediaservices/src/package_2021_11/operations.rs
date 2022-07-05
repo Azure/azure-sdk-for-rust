@@ -74,61 +74,61 @@ impl Client {
             pipeline,
         }
     }
-    pub fn account_filters(&self) -> account_filters::Client {
+    pub fn account_filters_client(&self) -> account_filters::Client {
         account_filters::Client(self.clone())
     }
-    pub fn asset_filters(&self) -> asset_filters::Client {
+    pub fn asset_filters_client(&self) -> asset_filters::Client {
         asset_filters::Client(self.clone())
     }
-    pub fn assets(&self) -> assets::Client {
+    pub fn assets_client(&self) -> assets::Client {
         assets::Client(self.clone())
     }
-    pub fn content_key_policies(&self) -> content_key_policies::Client {
+    pub fn content_key_policies_client(&self) -> content_key_policies::Client {
         content_key_policies::Client(self.clone())
     }
-    pub fn jobs(&self) -> jobs::Client {
+    pub fn jobs_client(&self) -> jobs::Client {
         jobs::Client(self.clone())
     }
-    pub fn live_events(&self) -> live_events::Client {
+    pub fn live_events_client(&self) -> live_events::Client {
         live_events::Client(self.clone())
     }
-    pub fn live_outputs(&self) -> live_outputs::Client {
+    pub fn live_outputs_client(&self) -> live_outputs::Client {
         live_outputs::Client(self.clone())
     }
-    pub fn locations(&self) -> locations::Client {
+    pub fn locations_client(&self) -> locations::Client {
         locations::Client(self.clone())
     }
-    pub fn mediaservices(&self) -> mediaservices::Client {
+    pub fn mediaservices_client(&self) -> mediaservices::Client {
         mediaservices::Client(self.clone())
     }
-    pub fn operation_results(&self) -> operation_results::Client {
+    pub fn operation_results_client(&self) -> operation_results::Client {
         operation_results::Client(self.clone())
     }
-    pub fn operation_statuses(&self) -> operation_statuses::Client {
+    pub fn operation_statuses_client(&self) -> operation_statuses::Client {
         operation_statuses::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn streaming_endpoints(&self) -> streaming_endpoints::Client {
+    pub fn streaming_endpoints_client(&self) -> streaming_endpoints::Client {
         streaming_endpoints::Client(self.clone())
     }
-    pub fn streaming_locators(&self) -> streaming_locators::Client {
+    pub fn streaming_locators_client(&self) -> streaming_locators::Client {
         streaming_locators::Client(self.clone())
     }
-    pub fn streaming_policies(&self) -> streaming_policies::Client {
+    pub fn streaming_policies_client(&self) -> streaming_policies::Client {
         streaming_policies::Client(self.clone())
     }
-    pub fn tracks(&self) -> tracks::Client {
+    pub fn tracks_client(&self) -> tracks::Client {
         tracks::Client(self.clone())
     }
-    pub fn transforms(&self) -> transforms::Client {
+    pub fn transforms_client(&self) -> transforms::Client {
         transforms::Client(self.clone())
     }
 }

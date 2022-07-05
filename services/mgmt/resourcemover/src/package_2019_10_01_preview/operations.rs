@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn move_collections(&self) -> move_collections::Client {
+    pub fn move_collections_client(&self) -> move_collections::Client {
         move_collections::Client(self.clone())
     }
-    pub fn move_resources(&self) -> move_resources::Client {
+    pub fn move_resources_client(&self) -> move_resources::Client {
         move_resources::Client(self.clone())
     }
-    pub fn operations_discovery(&self) -> operations_discovery::Client {
+    pub fn operations_discovery_client(&self) -> operations_discovery::Client {
         operations_discovery::Client(self.clone())
     }
-    pub fn unresolved_dependencies(&self) -> unresolved_dependencies::Client {
+    pub fn unresolved_dependencies_client(&self) -> unresolved_dependencies::Client {
         unresolved_dependencies::Client(self.clone())
     }
 }

@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn endpoints(&self) -> endpoints::Client {
+    pub fn endpoints_client(&self) -> endpoints::Client {
         endpoints::Client(self.clone())
     }
-    pub fn geographic_hierarchies(&self) -> geographic_hierarchies::Client {
+    pub fn geographic_hierarchies_client(&self) -> geographic_hierarchies::Client {
         geographic_hierarchies::Client(self.clone())
     }
-    pub fn heat_map(&self) -> heat_map::Client {
+    pub fn heat_map_client(&self) -> heat_map::Client {
         heat_map::Client(self.clone())
     }
-    pub fn profiles(&self) -> profiles::Client {
+    pub fn profiles_client(&self) -> profiles::Client {
         profiles::Client(self.clone())
     }
 }

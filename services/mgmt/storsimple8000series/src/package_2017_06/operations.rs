@@ -74,52 +74,52 @@ impl Client {
             pipeline,
         }
     }
-    pub fn access_control_records(&self) -> access_control_records::Client {
+    pub fn access_control_records_client(&self) -> access_control_records::Client {
         access_control_records::Client(self.clone())
     }
-    pub fn alerts(&self) -> alerts::Client {
+    pub fn alerts_client(&self) -> alerts::Client {
         alerts::Client(self.clone())
     }
-    pub fn backup_policies(&self) -> backup_policies::Client {
+    pub fn backup_policies_client(&self) -> backup_policies::Client {
         backup_policies::Client(self.clone())
     }
-    pub fn backup_schedules(&self) -> backup_schedules::Client {
+    pub fn backup_schedules_client(&self) -> backup_schedules::Client {
         backup_schedules::Client(self.clone())
     }
-    pub fn backups(&self) -> backups::Client {
+    pub fn backups_client(&self) -> backups::Client {
         backups::Client(self.clone())
     }
-    pub fn bandwidth_settings(&self) -> bandwidth_settings::Client {
+    pub fn bandwidth_settings_client(&self) -> bandwidth_settings::Client {
         bandwidth_settings::Client(self.clone())
     }
-    pub fn cloud_appliances(&self) -> cloud_appliances::Client {
+    pub fn cloud_appliances_client(&self) -> cloud_appliances::Client {
         cloud_appliances::Client(self.clone())
     }
-    pub fn device_settings(&self) -> device_settings::Client {
+    pub fn device_settings_client(&self) -> device_settings::Client {
         device_settings::Client(self.clone())
     }
-    pub fn devices(&self) -> devices::Client {
+    pub fn devices_client(&self) -> devices::Client {
         devices::Client(self.clone())
     }
-    pub fn hardware_component_groups(&self) -> hardware_component_groups::Client {
+    pub fn hardware_component_groups_client(&self) -> hardware_component_groups::Client {
         hardware_component_groups::Client(self.clone())
     }
-    pub fn jobs(&self) -> jobs::Client {
+    pub fn jobs_client(&self) -> jobs::Client {
         jobs::Client(self.clone())
     }
-    pub fn managers(&self) -> managers::Client {
+    pub fn managers_client(&self) -> managers::Client {
         managers::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn storage_account_credentials(&self) -> storage_account_credentials::Client {
+    pub fn storage_account_credentials_client(&self) -> storage_account_credentials::Client {
         storage_account_credentials::Client(self.clone())
     }
-    pub fn volume_containers(&self) -> volume_containers::Client {
+    pub fn volume_containers_client(&self) -> volume_containers::Client {
         volume_containers::Client(self.clone())
     }
-    pub fn volumes(&self) -> volumes::Client {
+    pub fn volumes_client(&self) -> volumes::Client {
         volumes::Client(self.clone())
     }
 }

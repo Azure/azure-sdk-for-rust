@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn global_administrator(&self) -> global_administrator::Client {
+    pub fn global_administrator_client(&self) -> global_administrator::Client {
         global_administrator::Client(self.clone())
     }
-    pub fn permissions(&self) -> permissions::Client {
+    pub fn permissions_client(&self) -> permissions::Client {
         permissions::Client(self.clone())
     }
-    pub fn provider_operations_metadata(&self) -> provider_operations_metadata::Client {
+    pub fn provider_operations_metadata_client(&self) -> provider_operations_metadata::Client {
         provider_operations_metadata::Client(self.clone())
     }
-    pub fn role_assignments(&self) -> role_assignments::Client {
+    pub fn role_assignments_client(&self) -> role_assignments::Client {
         role_assignments::Client(self.clone())
     }
-    pub fn role_definitions(&self) -> role_definitions::Client {
+    pub fn role_definitions_client(&self) -> role_definitions::Client {
         role_definitions::Client(self.clone())
     }
 }

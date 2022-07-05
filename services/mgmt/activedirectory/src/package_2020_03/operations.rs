@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_for_azure_ad(&self) -> private_link_for_azure_ad::Client {
+    pub fn private_link_for_azure_ad_client(&self) -> private_link_for_azure_ad::Client {
         private_link_for_azure_ad::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
 }

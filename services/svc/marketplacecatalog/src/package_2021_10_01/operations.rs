@@ -74,7 +74,7 @@ impl Client {
             pipeline,
         }
     }
-    pub fn public_offers(&self) -> public_offers::Client {
+    pub fn public_offers_client(&self) -> public_offers::Client {
         public_offers::Client(self.clone())
     }
 }

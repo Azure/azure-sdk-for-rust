@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn access_policies(&self) -> access_policies::Client {
+    pub fn access_policies_client(&self) -> access_policies::Client {
         access_policies::Client(self.clone())
     }
-    pub fn edge_modules(&self) -> edge_modules::Client {
+    pub fn edge_modules_client(&self) -> edge_modules::Client {
         edge_modules::Client(self.clone())
     }
-    pub fn locations(&self) -> locations::Client {
+    pub fn locations_client(&self) -> locations::Client {
         locations::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn video_analyzers(&self) -> video_analyzers::Client {
+    pub fn video_analyzers_client(&self) -> video_analyzers::Client {
         video_analyzers::Client(self.clone())
     }
-    pub fn videos(&self) -> videos::Client {
+    pub fn videos_client(&self) -> videos::Client {
         videos::Client(self.clone())
     }
 }

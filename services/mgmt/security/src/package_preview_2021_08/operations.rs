@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn assignments(&self) -> assignments::Client {
+    pub fn assignments_client(&self) -> assignments::Client {
         assignments::Client(self.clone())
     }
-    pub fn standards(&self) -> standards::Client {
+    pub fn standards_client(&self) -> standards::Client {
         standards::Client(self.clone())
     }
 }

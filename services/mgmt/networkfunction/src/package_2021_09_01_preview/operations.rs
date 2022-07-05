@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn azure_traffic_collectors(&self) -> azure_traffic_collectors::Client {
+    pub fn azure_traffic_collectors_client(&self) -> azure_traffic_collectors::Client {
         azure_traffic_collectors::Client(self.clone())
     }
-    pub fn azure_traffic_collectors_by_resource_group(&self) -> azure_traffic_collectors_by_resource_group::Client {
+    pub fn azure_traffic_collectors_by_resource_group_client(&self) -> azure_traffic_collectors_by_resource_group::Client {
         azure_traffic_collectors_by_resource_group::Client(self.clone())
     }
-    pub fn azure_traffic_collectors_by_subscription(&self) -> azure_traffic_collectors_by_subscription::Client {
+    pub fn azure_traffic_collectors_by_subscription_client(&self) -> azure_traffic_collectors_by_subscription::Client {
         azure_traffic_collectors_by_subscription::Client(self.clone())
     }
-    pub fn collector_policies(&self) -> collector_policies::Client {
+    pub fn collector_policies_client(&self) -> collector_policies::Client {
         collector_policies::Client(self.clone())
     }
-    pub fn network_function(&self) -> network_function::Client {
+    pub fn network_function_client(&self) -> network_function::Client {
         network_function::Client(self.clone())
     }
 }

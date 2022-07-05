@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn azure_bare_metal_instances(&self) -> azure_bare_metal_instances::Client {
+    pub fn azure_bare_metal_instances_client(&self) -> azure_bare_metal_instances::Client {
         azure_bare_metal_instances::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

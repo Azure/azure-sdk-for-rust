@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn marketplace_registration_definitions(&self) -> marketplace_registration_definitions::Client {
+    pub fn marketplace_registration_definitions_client(&self) -> marketplace_registration_definitions::Client {
         marketplace_registration_definitions::Client(self.clone())
     }
-    pub fn marketplace_registration_definitions_without_scope(&self) -> marketplace_registration_definitions_without_scope::Client {
+    pub fn marketplace_registration_definitions_without_scope_client(&self) -> marketplace_registration_definitions_without_scope::Client {
         marketplace_registration_definitions_without_scope::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn registration_assignments(&self) -> registration_assignments::Client {
+    pub fn registration_assignments_client(&self) -> registration_assignments::Client {
         registration_assignments::Client(self.clone())
     }
-    pub fn registration_definitions(&self) -> registration_definitions::Client {
+    pub fn registration_definitions_client(&self) -> registration_definitions::Client {
         registration_definitions::Client(self.clone())
     }
 }

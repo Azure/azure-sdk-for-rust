@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn dns_resource_reference(&self) -> dns_resource_reference::Client {
+    pub fn dns_resource_reference_client(&self) -> dns_resource_reference::Client {
         dns_resource_reference::Client(self.clone())
     }
-    pub fn record_sets(&self) -> record_sets::Client {
+    pub fn record_sets_client(&self) -> record_sets::Client {
         record_sets::Client(self.clone())
     }
-    pub fn zones(&self) -> zones::Client {
+    pub fn zones_client(&self) -> zones::Client {
         zones::Client(self.clone())
     }
 }

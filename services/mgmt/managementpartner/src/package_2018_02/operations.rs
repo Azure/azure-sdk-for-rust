@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn operation(&self) -> operation::Client {
+    pub fn operation_client(&self) -> operation::Client {
         operation::Client(self.clone())
     }
-    pub fn partner(&self) -> partner::Client {
+    pub fn partner_client(&self) -> partner::Client {
         partner::Client(self.clone())
     }
-    pub fn partners(&self) -> partners::Client {
+    pub fn partners_client(&self) -> partners::Client {
         partners::Client(self.clone())
     }
 }

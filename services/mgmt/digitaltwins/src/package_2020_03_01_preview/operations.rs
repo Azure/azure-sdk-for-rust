@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn digital_twins(&self) -> digital_twins::Client {
+    pub fn digital_twins_client(&self) -> digital_twins::Client {
         digital_twins::Client(self.clone())
     }
-    pub fn digital_twins_endpoint(&self) -> digital_twins_endpoint::Client {
+    pub fn digital_twins_endpoint_client(&self) -> digital_twins_endpoint::Client {
         digital_twins_endpoint::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

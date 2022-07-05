@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn usages(&self) -> usages::Client {
+    pub fn usages_client(&self) -> usages::Client {
         usages::Client(self.clone())
     }
-    pub fn web_pub_sub(&self) -> web_pub_sub::Client {
+    pub fn web_pub_sub_client(&self) -> web_pub_sub::Client {
         web_pub_sub::Client(self.clone())
     }
-    pub fn web_pub_sub_private_endpoint_connections(&self) -> web_pub_sub_private_endpoint_connections::Client {
+    pub fn web_pub_sub_private_endpoint_connections_client(&self) -> web_pub_sub_private_endpoint_connections::Client {
         web_pub_sub_private_endpoint_connections::Client(self.clone())
     }
-    pub fn web_pub_sub_private_link_resources(&self) -> web_pub_sub_private_link_resources::Client {
+    pub fn web_pub_sub_private_link_resources_client(&self) -> web_pub_sub_private_link_resources::Client {
         web_pub_sub_private_link_resources::Client(self.clone())
     }
-    pub fn web_pub_sub_shared_private_link_resources(&self) -> web_pub_sub_shared_private_link_resources::Client {
+    pub fn web_pub_sub_shared_private_link_resources_client(&self) -> web_pub_sub_shared_private_link_resources::Client {
         web_pub_sub_shared_private_link_resources::Client(self.clone())
     }
 }

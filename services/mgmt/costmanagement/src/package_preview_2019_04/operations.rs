@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn budget(&self) -> budget::Client {
+    pub fn budget_client(&self) -> budget::Client {
         budget::Client(self.clone())
     }
-    pub fn budgets(&self) -> budgets::Client {
+    pub fn budgets_client(&self) -> budgets::Client {
         budgets::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn views(&self) -> views::Client {
+    pub fn views_client(&self) -> views::Client {
         views::Client(self.clone())
     }
 }

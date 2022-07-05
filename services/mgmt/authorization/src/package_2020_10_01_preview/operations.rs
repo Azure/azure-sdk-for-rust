@@ -74,78 +74,78 @@ impl Client {
             pipeline,
         }
     }
-    pub fn access_review_default_settings(&self) -> access_review_default_settings::Client {
+    pub fn access_review_default_settings_client(&self) -> access_review_default_settings::Client {
         access_review_default_settings::Client(self.clone())
     }
-    pub fn access_review_instance(&self) -> access_review_instance::Client {
+    pub fn access_review_instance_client(&self) -> access_review_instance::Client {
         access_review_instance::Client(self.clone())
     }
-    pub fn access_review_instance_decisions(&self) -> access_review_instance_decisions::Client {
+    pub fn access_review_instance_decisions_client(&self) -> access_review_instance_decisions::Client {
         access_review_instance_decisions::Client(self.clone())
     }
-    pub fn access_review_instance_my_decisions(&self) -> access_review_instance_my_decisions::Client {
+    pub fn access_review_instance_my_decisions_client(&self) -> access_review_instance_my_decisions::Client {
         access_review_instance_my_decisions::Client(self.clone())
     }
-    pub fn access_review_instances(&self) -> access_review_instances::Client {
+    pub fn access_review_instances_client(&self) -> access_review_instances::Client {
         access_review_instances::Client(self.clone())
     }
-    pub fn access_review_instances_assigned_for_my_approval(&self) -> access_review_instances_assigned_for_my_approval::Client {
+    pub fn access_review_instances_assigned_for_my_approval_client(&self) -> access_review_instances_assigned_for_my_approval::Client {
         access_review_instances_assigned_for_my_approval::Client(self.clone())
     }
-    pub fn access_review_schedule_definitions(&self) -> access_review_schedule_definitions::Client {
+    pub fn access_review_schedule_definitions_client(&self) -> access_review_schedule_definitions::Client {
         access_review_schedule_definitions::Client(self.clone())
     }
-    pub fn access_review_schedule_definitions_assigned_for_my_approval(
+    pub fn access_review_schedule_definitions_assigned_for_my_approval_client(
         &self,
     ) -> access_review_schedule_definitions_assigned_for_my_approval::Client {
         access_review_schedule_definitions_assigned_for_my_approval::Client(self.clone())
     }
-    pub fn deny_assignments(&self) -> deny_assignments::Client {
+    pub fn deny_assignments_client(&self) -> deny_assignments::Client {
         deny_assignments::Client(self.clone())
     }
-    pub fn eligible_child_resources(&self) -> eligible_child_resources::Client {
+    pub fn eligible_child_resources_client(&self) -> eligible_child_resources::Client {
         eligible_child_resources::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn permissions(&self) -> permissions::Client {
+    pub fn permissions_client(&self) -> permissions::Client {
         permissions::Client(self.clone())
     }
-    pub fn provider_operations_metadata(&self) -> provider_operations_metadata::Client {
+    pub fn provider_operations_metadata_client(&self) -> provider_operations_metadata::Client {
         provider_operations_metadata::Client(self.clone())
     }
-    pub fn role_assignment_metrics(&self) -> role_assignment_metrics::Client {
+    pub fn role_assignment_metrics_client(&self) -> role_assignment_metrics::Client {
         role_assignment_metrics::Client(self.clone())
     }
-    pub fn role_assignment_schedule_instances(&self) -> role_assignment_schedule_instances::Client {
+    pub fn role_assignment_schedule_instances_client(&self) -> role_assignment_schedule_instances::Client {
         role_assignment_schedule_instances::Client(self.clone())
     }
-    pub fn role_assignment_schedule_requests(&self) -> role_assignment_schedule_requests::Client {
+    pub fn role_assignment_schedule_requests_client(&self) -> role_assignment_schedule_requests::Client {
         role_assignment_schedule_requests::Client(self.clone())
     }
-    pub fn role_assignment_schedules(&self) -> role_assignment_schedules::Client {
+    pub fn role_assignment_schedules_client(&self) -> role_assignment_schedules::Client {
         role_assignment_schedules::Client(self.clone())
     }
-    pub fn role_assignments(&self) -> role_assignments::Client {
+    pub fn role_assignments_client(&self) -> role_assignments::Client {
         role_assignments::Client(self.clone())
     }
-    pub fn role_definitions(&self) -> role_definitions::Client {
+    pub fn role_definitions_client(&self) -> role_definitions::Client {
         role_definitions::Client(self.clone())
     }
-    pub fn role_eligibility_schedule_instances(&self) -> role_eligibility_schedule_instances::Client {
+    pub fn role_eligibility_schedule_instances_client(&self) -> role_eligibility_schedule_instances::Client {
         role_eligibility_schedule_instances::Client(self.clone())
     }
-    pub fn role_eligibility_schedule_requests(&self) -> role_eligibility_schedule_requests::Client {
+    pub fn role_eligibility_schedule_requests_client(&self) -> role_eligibility_schedule_requests::Client {
         role_eligibility_schedule_requests::Client(self.clone())
     }
-    pub fn role_eligibility_schedules(&self) -> role_eligibility_schedules::Client {
+    pub fn role_eligibility_schedules_client(&self) -> role_eligibility_schedules::Client {
         role_eligibility_schedules::Client(self.clone())
     }
-    pub fn role_management_policies(&self) -> role_management_policies::Client {
+    pub fn role_management_policies_client(&self) -> role_management_policies::Client {
         role_management_policies::Client(self.clone())
     }
-    pub fn role_management_policy_assignments(&self) -> role_management_policy_assignments::Client {
+    pub fn role_management_policy_assignments_client(&self) -> role_management_policy_assignments::Client {
         role_management_policy_assignments::Client(self.clone())
     }
 }

@@ -74,7 +74,7 @@ impl Client {
             pipeline,
         }
     }
-    pub fn custom_locations(&self) -> custom_locations::Client {
+    pub fn custom_locations_client(&self) -> custom_locations::Client {
         custom_locations::Client(self.clone())
     }
 }

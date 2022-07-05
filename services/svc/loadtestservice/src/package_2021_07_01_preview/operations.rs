@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn app_component(&self) -> app_component::Client {
+    pub fn app_component_client(&self) -> app_component::Client {
         app_component::Client(self.clone())
     }
-    pub fn file(&self) -> file::Client {
+    pub fn file_client(&self) -> file::Client {
         file::Client(self.clone())
     }
-    pub fn server_metrics(&self) -> server_metrics::Client {
+    pub fn server_metrics_client(&self) -> server_metrics::Client {
         server_metrics::Client(self.clone())
     }
-    pub fn test(&self) -> test::Client {
+    pub fn test_client(&self) -> test::Client {
         test::Client(self.clone())
     }
-    pub fn test_run(&self) -> test_run::Client {
+    pub fn test_run_client(&self) -> test_run::Client {
         test_run::Client(self.clone())
     }
 }

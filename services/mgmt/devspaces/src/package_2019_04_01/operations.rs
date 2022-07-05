@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn container_host_mappings(&self) -> container_host_mappings::Client {
+    pub fn container_host_mappings_client(&self) -> container_host_mappings::Client {
         container_host_mappings::Client(self.clone())
     }
-    pub fn controllers(&self) -> controllers::Client {
+    pub fn controllers_client(&self) -> controllers::Client {
         controllers::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

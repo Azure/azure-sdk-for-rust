@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn spark_batch(&self) -> spark_batch::Client {
+    pub fn spark_batch_client(&self) -> spark_batch::Client {
         spark_batch::Client(self.clone())
     }
-    pub fn spark_session(&self) -> spark_session::Client {
+    pub fn spark_session_client(&self) -> spark_session::Client {
         spark_session::Client(self.clone())
     }
 }

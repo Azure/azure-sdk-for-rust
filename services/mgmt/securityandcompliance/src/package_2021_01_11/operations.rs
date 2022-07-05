@@ -74,58 +74,60 @@ impl Client {
             pipeline,
         }
     }
-    pub fn operation_results(&self) -> operation_results::Client {
+    pub fn operation_results_client(&self) -> operation_results::Client {
         operation_results::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections_adt_api(&self) -> private_endpoint_connections_adt_api::Client {
+    pub fn private_endpoint_connections_adt_api_client(&self) -> private_endpoint_connections_adt_api::Client {
         private_endpoint_connections_adt_api::Client(self.clone())
     }
-    pub fn private_endpoint_connections_comp(&self) -> private_endpoint_connections_comp::Client {
+    pub fn private_endpoint_connections_comp_client(&self) -> private_endpoint_connections_comp::Client {
         private_endpoint_connections_comp::Client(self.clone())
     }
-    pub fn private_endpoint_connections_for_edm(&self) -> private_endpoint_connections_for_edm::Client {
+    pub fn private_endpoint_connections_for_edm_client(&self) -> private_endpoint_connections_for_edm::Client {
         private_endpoint_connections_for_edm::Client(self.clone())
     }
-    pub fn private_endpoint_connections_for_scc_powershell(&self) -> private_endpoint_connections_for_scc_powershell::Client {
+    pub fn private_endpoint_connections_for_scc_powershell_client(&self) -> private_endpoint_connections_for_scc_powershell::Client {
         private_endpoint_connections_for_scc_powershell::Client(self.clone())
     }
-    pub fn private_endpoint_connections_sec(&self) -> private_endpoint_connections_sec::Client {
+    pub fn private_endpoint_connections_sec_client(&self) -> private_endpoint_connections_sec::Client {
         private_endpoint_connections_sec::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn private_link_resources_adt_api(&self) -> private_link_resources_adt_api::Client {
+    pub fn private_link_resources_adt_api_client(&self) -> private_link_resources_adt_api::Client {
         private_link_resources_adt_api::Client(self.clone())
     }
-    pub fn private_link_resources_comp(&self) -> private_link_resources_comp::Client {
+    pub fn private_link_resources_comp_client(&self) -> private_link_resources_comp::Client {
         private_link_resources_comp::Client(self.clone())
     }
-    pub fn private_link_resources_for_scc_powershell(&self) -> private_link_resources_for_scc_powershell::Client {
+    pub fn private_link_resources_for_scc_powershell_client(&self) -> private_link_resources_for_scc_powershell::Client {
         private_link_resources_for_scc_powershell::Client(self.clone())
     }
-    pub fn private_link_resources_sec(&self) -> private_link_resources_sec::Client {
+    pub fn private_link_resources_sec_client(&self) -> private_link_resources_sec::Client {
         private_link_resources_sec::Client(self.clone())
     }
-    pub fn private_link_services_for_edm_upload(&self) -> private_link_services_for_edm_upload::Client {
+    pub fn private_link_services_for_edm_upload_client(&self) -> private_link_services_for_edm_upload::Client {
         private_link_services_for_edm_upload::Client(self.clone())
     }
-    pub fn private_link_services_for_m365_compliance_center(&self) -> private_link_services_for_m365_compliance_center::Client {
+    pub fn private_link_services_for_m365_compliance_center_client(&self) -> private_link_services_for_m365_compliance_center::Client {
         private_link_services_for_m365_compliance_center::Client(self.clone())
     }
-    pub fn private_link_services_for_m365_security_center(&self) -> private_link_services_for_m365_security_center::Client {
+    pub fn private_link_services_for_m365_security_center_client(&self) -> private_link_services_for_m365_security_center::Client {
         private_link_services_for_m365_security_center::Client(self.clone())
     }
-    pub fn private_link_services_for_o365_management_activity_api(&self) -> private_link_services_for_o365_management_activity_api::Client {
+    pub fn private_link_services_for_o365_management_activity_api_client(
+        &self,
+    ) -> private_link_services_for_o365_management_activity_api::Client {
         private_link_services_for_o365_management_activity_api::Client(self.clone())
     }
-    pub fn private_link_services_for_scc_powershell(&self) -> private_link_services_for_scc_powershell::Client {
+    pub fn private_link_services_for_scc_powershell_client(&self) -> private_link_services_for_scc_powershell::Client {
         private_link_services_for_scc_powershell::Client(self.clone())
     }
-    pub fn services(&self) -> services::Client {
+    pub fn services_client(&self) -> services::Client {
         services::Client(self.clone())
     }
 }

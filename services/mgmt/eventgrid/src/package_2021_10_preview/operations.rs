@@ -74,73 +74,73 @@ impl Client {
             pipeline,
         }
     }
-    pub fn channels(&self) -> channels::Client {
+    pub fn channels_client(&self) -> channels::Client {
         channels::Client(self.clone())
     }
-    pub fn domain_event_subscriptions(&self) -> domain_event_subscriptions::Client {
+    pub fn domain_event_subscriptions_client(&self) -> domain_event_subscriptions::Client {
         domain_event_subscriptions::Client(self.clone())
     }
-    pub fn domain_topic_event_subscriptions(&self) -> domain_topic_event_subscriptions::Client {
+    pub fn domain_topic_event_subscriptions_client(&self) -> domain_topic_event_subscriptions::Client {
         domain_topic_event_subscriptions::Client(self.clone())
     }
-    pub fn domain_topics(&self) -> domain_topics::Client {
+    pub fn domain_topics_client(&self) -> domain_topics::Client {
         domain_topics::Client(self.clone())
     }
-    pub fn domains(&self) -> domains::Client {
+    pub fn domains_client(&self) -> domains::Client {
         domains::Client(self.clone())
     }
-    pub fn event_channels(&self) -> event_channels::Client {
+    pub fn event_channels_client(&self) -> event_channels::Client {
         event_channels::Client(self.clone())
     }
-    pub fn event_subscriptions(&self) -> event_subscriptions::Client {
+    pub fn event_subscriptions_client(&self) -> event_subscriptions::Client {
         event_subscriptions::Client(self.clone())
     }
-    pub fn extension_topics(&self) -> extension_topics::Client {
+    pub fn extension_topics_client(&self) -> extension_topics::Client {
         extension_topics::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn partner_configurations(&self) -> partner_configurations::Client {
+    pub fn partner_configurations_client(&self) -> partner_configurations::Client {
         partner_configurations::Client(self.clone())
     }
-    pub fn partner_destinations(&self) -> partner_destinations::Client {
+    pub fn partner_destinations_client(&self) -> partner_destinations::Client {
         partner_destinations::Client(self.clone())
     }
-    pub fn partner_namespaces(&self) -> partner_namespaces::Client {
+    pub fn partner_namespaces_client(&self) -> partner_namespaces::Client {
         partner_namespaces::Client(self.clone())
     }
-    pub fn partner_registrations(&self) -> partner_registrations::Client {
+    pub fn partner_registrations_client(&self) -> partner_registrations::Client {
         partner_registrations::Client(self.clone())
     }
-    pub fn partner_topic_event_subscriptions(&self) -> partner_topic_event_subscriptions::Client {
+    pub fn partner_topic_event_subscriptions_client(&self) -> partner_topic_event_subscriptions::Client {
         partner_topic_event_subscriptions::Client(self.clone())
     }
-    pub fn partner_topics(&self) -> partner_topics::Client {
+    pub fn partner_topics_client(&self) -> partner_topics::Client {
         partner_topics::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn system_topic_event_subscriptions(&self) -> system_topic_event_subscriptions::Client {
+    pub fn system_topic_event_subscriptions_client(&self) -> system_topic_event_subscriptions::Client {
         system_topic_event_subscriptions::Client(self.clone())
     }
-    pub fn system_topics(&self) -> system_topics::Client {
+    pub fn system_topics_client(&self) -> system_topics::Client {
         system_topics::Client(self.clone())
     }
-    pub fn topic_event_subscriptions(&self) -> topic_event_subscriptions::Client {
+    pub fn topic_event_subscriptions_client(&self) -> topic_event_subscriptions::Client {
         topic_event_subscriptions::Client(self.clone())
     }
-    pub fn topic_types(&self) -> topic_types::Client {
+    pub fn topic_types_client(&self) -> topic_types::Client {
         topic_types::Client(self.clone())
     }
-    pub fn topics(&self) -> topics::Client {
+    pub fn topics_client(&self) -> topics::Client {
         topics::Client(self.clone())
     }
-    pub fn verified_partners(&self) -> verified_partners::Client {
+    pub fn verified_partners_client(&self) -> verified_partners::Client {
         verified_partners::Client(self.clone())
     }
 }

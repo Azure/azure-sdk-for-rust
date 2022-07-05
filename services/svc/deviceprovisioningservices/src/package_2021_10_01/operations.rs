@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn device_registration_state(&self) -> device_registration_state::Client {
+    pub fn device_registration_state_client(&self) -> device_registration_state::Client {
         device_registration_state::Client(self.clone())
     }
-    pub fn enrollment_group(&self) -> enrollment_group::Client {
+    pub fn enrollment_group_client(&self) -> enrollment_group::Client {
         enrollment_group::Client(self.clone())
     }
-    pub fn individual_enrollment(&self) -> individual_enrollment::Client {
+    pub fn individual_enrollment_client(&self) -> individual_enrollment::Client {
         individual_enrollment::Client(self.clone())
     }
 }

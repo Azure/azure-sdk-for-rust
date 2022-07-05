@@ -74,25 +74,25 @@ impl Client {
             pipeline,
         }
     }
-    pub fn monitor(&self) -> monitor::Client {
+    pub fn monitor_client(&self) -> monitor::Client {
         monitor::Client(self.clone())
     }
-    pub fn monitors(&self) -> monitors::Client {
+    pub fn monitors_client(&self) -> monitors::Client {
         monitors::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn single_sign_on(&self) -> single_sign_on::Client {
+    pub fn single_sign_on_client(&self) -> single_sign_on::Client {
         single_sign_on::Client(self.clone())
     }
-    pub fn sub_account(&self) -> sub_account::Client {
+    pub fn sub_account_client(&self) -> sub_account::Client {
         sub_account::Client(self.clone())
     }
-    pub fn sub_account_tag_rules(&self) -> sub_account_tag_rules::Client {
+    pub fn sub_account_tag_rules_client(&self) -> sub_account_tag_rules::Client {
         sub_account_tag_rules::Client(self.clone())
     }
-    pub fn tag_rules(&self) -> tag_rules::Client {
+    pub fn tag_rules_client(&self) -> tag_rules::Client {
         tag_rules::Client(self.clone())
     }
 }

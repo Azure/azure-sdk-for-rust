@@ -74,25 +74,25 @@ impl Client {
             pipeline,
         }
     }
-    pub fn accounts(&self) -> accounts::Client {
+    pub fn accounts_client(&self) -> accounts::Client {
         accounts::Client(self.clone())
     }
-    pub fn compute_policies(&self) -> compute_policies::Client {
+    pub fn compute_policies_client(&self) -> compute_policies::Client {
         compute_policies::Client(self.clone())
     }
-    pub fn data_lake_store_accounts(&self) -> data_lake_store_accounts::Client {
+    pub fn data_lake_store_accounts_client(&self) -> data_lake_store_accounts::Client {
         data_lake_store_accounts::Client(self.clone())
     }
-    pub fn firewall_rules(&self) -> firewall_rules::Client {
+    pub fn firewall_rules_client(&self) -> firewall_rules::Client {
         firewall_rules::Client(self.clone())
     }
-    pub fn locations(&self) -> locations::Client {
+    pub fn locations_client(&self) -> locations::Client {
         locations::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn storage_accounts(&self) -> storage_accounts::Client {
+    pub fn storage_accounts_client(&self) -> storage_accounts::Client {
         storage_accounts::Client(self.clone())
     }
 }

@@ -74,31 +74,31 @@ impl Client {
             pipeline,
         }
     }
-    pub fn clusters(&self) -> clusters::Client {
+    pub fn clusters_client(&self) -> clusters::Client {
         clusters::Client(self.clone())
     }
-    pub fn functions(&self) -> functions::Client {
+    pub fn functions_client(&self) -> functions::Client {
         functions::Client(self.clone())
     }
-    pub fn inputs(&self) -> inputs::Client {
+    pub fn inputs_client(&self) -> inputs::Client {
         inputs::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn outputs(&self) -> outputs::Client {
+    pub fn outputs_client(&self) -> outputs::Client {
         outputs::Client(self.clone())
     }
-    pub fn private_endpoints(&self) -> private_endpoints::Client {
+    pub fn private_endpoints_client(&self) -> private_endpoints::Client {
         private_endpoints::Client(self.clone())
     }
-    pub fn streaming_jobs(&self) -> streaming_jobs::Client {
+    pub fn streaming_jobs_client(&self) -> streaming_jobs::Client {
         streaming_jobs::Client(self.clone())
     }
-    pub fn subscriptions(&self) -> subscriptions::Client {
+    pub fn subscriptions_client(&self) -> subscriptions::Client {
         subscriptions::Client(self.clone())
     }
-    pub fn transformations(&self) -> transformations::Client {
+    pub fn transformations_client(&self) -> transformations::Client {
         transformations::Client(self.clone())
     }
 }

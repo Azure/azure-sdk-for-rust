@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn pipeline_template_definitions(&self) -> pipeline_template_definitions::Client {
+    pub fn pipeline_template_definitions_client(&self) -> pipeline_template_definitions::Client {
         pipeline_template_definitions::Client(self.clone())
     }
-    pub fn pipelines(&self) -> pipelines::Client {
+    pub fn pipelines_client(&self) -> pipelines::Client {
         pipelines::Client(self.clone())
     }
 }

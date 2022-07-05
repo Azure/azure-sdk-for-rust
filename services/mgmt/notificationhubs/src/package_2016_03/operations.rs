@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn namespaces(&self) -> namespaces::Client {
+    pub fn namespaces_client(&self) -> namespaces::Client {
         namespaces::Client(self.clone())
     }
-    pub fn notification_hubs(&self) -> notification_hubs::Client {
+    pub fn notification_hubs_client(&self) -> notification_hubs::Client {
         notification_hubs::Client(self.clone())
     }
 }

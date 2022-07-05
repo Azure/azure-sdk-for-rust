@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn managed_network_groups(&self) -> managed_network_groups::Client {
+    pub fn managed_network_groups_client(&self) -> managed_network_groups::Client {
         managed_network_groups::Client(self.clone())
     }
-    pub fn managed_network_peering_policies(&self) -> managed_network_peering_policies::Client {
+    pub fn managed_network_peering_policies_client(&self) -> managed_network_peering_policies::Client {
         managed_network_peering_policies::Client(self.clone())
     }
-    pub fn managed_networks(&self) -> managed_networks::Client {
+    pub fn managed_networks_client(&self) -> managed_networks::Client {
         managed_networks::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn scope_assignments(&self) -> scope_assignments::Client {
+    pub fn scope_assignments_client(&self) -> scope_assignments::Client {
         scope_assignments::Client(self.clone())
     }
 }

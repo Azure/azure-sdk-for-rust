@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn metadata(&self) -> metadata::Client {
+    pub fn metadata_client(&self) -> metadata::Client {
         metadata::Client(self.clone())
     }
-    pub fn query(&self) -> query::Client {
+    pub fn query_client(&self) -> query::Client {
         query::Client(self.clone())
     }
 }

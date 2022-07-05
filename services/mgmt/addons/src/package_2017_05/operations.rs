@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn canonical_support_plan_types(&self) -> canonical_support_plan_types::Client {
+    pub fn canonical_support_plan_types_client(&self) -> canonical_support_plan_types::Client {
         canonical_support_plan_types::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn support_plan_types(&self) -> support_plan_types::Client {
+    pub fn support_plan_types_client(&self) -> support_plan_types::Client {
         support_plan_types::Client(self.clone())
     }
 }

@@ -74,34 +74,34 @@ impl Client {
             pipeline,
         }
     }
-    pub fn alerts(&self) -> alerts::Client {
+    pub fn alerts_client(&self) -> alerts::Client {
         alerts::Client(self.clone())
     }
-    pub fn dimensions(&self) -> dimensions::Client {
+    pub fn dimensions_client(&self) -> dimensions::Client {
         dimensions::Client(self.clone())
     }
-    pub fn exports(&self) -> exports::Client {
+    pub fn exports_client(&self) -> exports::Client {
         exports::Client(self.clone())
     }
-    pub fn forecast(&self) -> forecast::Client {
+    pub fn forecast_client(&self) -> forecast::Client {
         forecast::Client(self.clone())
     }
-    pub fn generate_detailed_cost_report(&self) -> generate_detailed_cost_report::Client {
+    pub fn generate_detailed_cost_report_client(&self) -> generate_detailed_cost_report::Client {
         generate_detailed_cost_report::Client(self.clone())
     }
-    pub fn generate_detailed_cost_report_operation_results(&self) -> generate_detailed_cost_report_operation_results::Client {
+    pub fn generate_detailed_cost_report_operation_results_client(&self) -> generate_detailed_cost_report_operation_results::Client {
         generate_detailed_cost_report_operation_results::Client(self.clone())
     }
-    pub fn generate_detailed_cost_report_operation_status(&self) -> generate_detailed_cost_report_operation_status::Client {
+    pub fn generate_detailed_cost_report_operation_status_client(&self) -> generate_detailed_cost_report_operation_status::Client {
         generate_detailed_cost_report_operation_status::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn query(&self) -> query::Client {
+    pub fn query_client(&self) -> query::Client {
         query::Client(self.clone())
     }
-    pub fn views(&self) -> views::Client {
+    pub fn views_client(&self) -> views::Client {
         views::Client(self.clone())
     }
 }

@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn accounts(&self) -> accounts::Client {
+    pub fn accounts_client(&self) -> accounts::Client {
         accounts::Client(self.clone())
     }
-    pub fn extensions(&self) -> extensions::Client {
+    pub fn extensions_client(&self) -> extensions::Client {
         extensions::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn projects(&self) -> projects::Client {
+    pub fn projects_client(&self) -> projects::Client {
         projects::Client(self.clone())
     }
 }

@@ -74,31 +74,31 @@ impl Client {
             pipeline,
         }
     }
-    pub fn alerts(&self) -> alerts::Client {
+    pub fn alerts_client(&self) -> alerts::Client {
         alerts::Client(self.clone())
     }
-    pub fn dimensions(&self) -> dimensions::Client {
+    pub fn dimensions_client(&self) -> dimensions::Client {
         dimensions::Client(self.clone())
     }
-    pub fn exports(&self) -> exports::Client {
+    pub fn exports_client(&self) -> exports::Client {
         exports::Client(self.clone())
     }
-    pub fn forecast(&self) -> forecast::Client {
+    pub fn forecast_client(&self) -> forecast::Client {
         forecast::Client(self.clone())
     }
-    pub fn generate_reservation_details_report(&self) -> generate_reservation_details_report::Client {
+    pub fn generate_reservation_details_report_client(&self) -> generate_reservation_details_report::Client {
         generate_reservation_details_report::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn query(&self) -> query::Client {
+    pub fn query_client(&self) -> query::Client {
         query::Client(self.clone())
     }
-    pub fn scheduled_actions(&self) -> scheduled_actions::Client {
+    pub fn scheduled_actions_client(&self) -> scheduled_actions::Client {
         scheduled_actions::Client(self.clone())
     }
-    pub fn views(&self) -> views::Client {
+    pub fn views_client(&self) -> views::Client {
         views::Client(self.clone())
     }
 }

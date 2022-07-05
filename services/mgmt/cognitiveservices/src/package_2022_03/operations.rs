@@ -74,31 +74,31 @@ impl Client {
             pipeline,
         }
     }
-    pub fn accounts(&self) -> accounts::Client {
+    pub fn accounts_client(&self) -> accounts::Client {
         accounts::Client(self.clone())
     }
-    pub fn commitment_plans(&self) -> commitment_plans::Client {
+    pub fn commitment_plans_client(&self) -> commitment_plans::Client {
         commitment_plans::Client(self.clone())
     }
-    pub fn commitment_tiers(&self) -> commitment_tiers::Client {
+    pub fn commitment_tiers_client(&self) -> commitment_tiers::Client {
         commitment_tiers::Client(self.clone())
     }
-    pub fn deleted_accounts(&self) -> deleted_accounts::Client {
+    pub fn deleted_accounts_client(&self) -> deleted_accounts::Client {
         deleted_accounts::Client(self.clone())
     }
-    pub fn deployments(&self) -> deployments::Client {
+    pub fn deployments_client(&self) -> deployments::Client {
         deployments::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn resource_skus(&self) -> resource_skus::Client {
+    pub fn resource_skus_client(&self) -> resource_skus::Client {
         resource_skus::Client(self.clone())
     }
 }

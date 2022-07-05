@@ -74,7 +74,7 @@ impl Client {
             pipeline,
         }
     }
-    pub fn managed_private_endpoints(&self) -> managed_private_endpoints::Client {
+    pub fn managed_private_endpoints_client(&self) -> managed_private_endpoints::Client {
         managed_private_endpoints::Client(self.clone())
     }
 }

@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn notification(&self) -> notification::Client {
+    pub fn notification_client(&self) -> notification::Client {
         notification::Client(self.clone())
     }
-    pub fn notifications(&self) -> notifications::Client {
+    pub fn notifications_client(&self) -> notifications::Client {
         notifications::Client(self.clone())
     }
 }

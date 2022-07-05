@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn b2c_tenants(&self) -> b2c_tenants::Client {
+    pub fn b2c_tenants_client(&self) -> b2c_tenants::Client {
         b2c_tenants::Client(self.clone())
     }
-    pub fn guest_usages(&self) -> guest_usages::Client {
+    pub fn guest_usages_client(&self) -> guest_usages::Client {
         guest_usages::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

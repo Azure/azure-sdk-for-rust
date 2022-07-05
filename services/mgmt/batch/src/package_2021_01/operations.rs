@@ -74,31 +74,31 @@ impl Client {
             pipeline,
         }
     }
-    pub fn application(&self) -> application::Client {
+    pub fn application_client(&self) -> application::Client {
         application::Client(self.clone())
     }
-    pub fn application_package(&self) -> application_package::Client {
+    pub fn application_package_client(&self) -> application_package::Client {
         application_package::Client(self.clone())
     }
-    pub fn batch_account(&self) -> batch_account::Client {
+    pub fn batch_account_client(&self) -> batch_account::Client {
         batch_account::Client(self.clone())
     }
-    pub fn certificate(&self) -> certificate::Client {
+    pub fn certificate_client(&self) -> certificate::Client {
         certificate::Client(self.clone())
     }
-    pub fn location(&self) -> location::Client {
+    pub fn location_client(&self) -> location::Client {
         location::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn pool(&self) -> pool::Client {
+    pub fn pool_client(&self) -> pool::Client {
         pool::Client(self.clone())
     }
-    pub fn private_endpoint_connection(&self) -> private_endpoint_connection::Client {
+    pub fn private_endpoint_connection_client(&self) -> private_endpoint_connection::Client {
         private_endpoint_connection::Client(self.clone())
     }
-    pub fn private_link_resource(&self) -> private_link_resource::Client {
+    pub fn private_link_resource_client(&self) -> private_link_resource::Client {
         private_link_resource::Client(self.clone())
     }
 }

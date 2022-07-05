@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn controller(&self) -> controller::Client {
+    pub fn controller_client(&self) -> controller::Client {
         controller::Client(self.clone())
     }
-    pub fn delegated_network(&self) -> delegated_network::Client {
+    pub fn delegated_network_client(&self) -> delegated_network::Client {
         delegated_network::Client(self.clone())
     }
-    pub fn delegated_subnet_service(&self) -> delegated_subnet_service::Client {
+    pub fn delegated_subnet_service_client(&self) -> delegated_subnet_service::Client {
         delegated_subnet_service::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn orchestrator_instance_service(&self) -> orchestrator_instance_service::Client {
+    pub fn orchestrator_instance_service_client(&self) -> orchestrator_instance_service::Client {
         orchestrator_instance_service::Client(self.clone())
     }
 }

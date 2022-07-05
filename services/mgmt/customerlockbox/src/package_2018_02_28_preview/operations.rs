@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn get(&self) -> get::Client {
+    pub fn get_client(&self) -> get::Client {
         get::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn post(&self) -> post::Client {
+    pub fn post_client(&self) -> post::Client {
         post::Client(self.clone())
     }
-    pub fn requests(&self) -> requests::Client {
+    pub fn requests_client(&self) -> requests::Client {
         requests::Client(self.clone())
     }
 }

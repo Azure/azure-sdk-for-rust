@@ -74,28 +74,28 @@ impl Client {
             pipeline,
         }
     }
-    pub fn availability_sets(&self) -> availability_sets::Client {
+    pub fn availability_sets_client(&self) -> availability_sets::Client {
         availability_sets::Client(self.clone())
     }
-    pub fn clouds(&self) -> clouds::Client {
+    pub fn clouds_client(&self) -> clouds::Client {
         clouds::Client(self.clone())
     }
-    pub fn inventory_items(&self) -> inventory_items::Client {
+    pub fn inventory_items_client(&self) -> inventory_items::Client {
         inventory_items::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn virtual_machine_templates(&self) -> virtual_machine_templates::Client {
+    pub fn virtual_machine_templates_client(&self) -> virtual_machine_templates::Client {
         virtual_machine_templates::Client(self.clone())
     }
-    pub fn virtual_machines(&self) -> virtual_machines::Client {
+    pub fn virtual_machines_client(&self) -> virtual_machines::Client {
         virtual_machines::Client(self.clone())
     }
-    pub fn virtual_networks(&self) -> virtual_networks::Client {
+    pub fn virtual_networks_client(&self) -> virtual_networks::Client {
         virtual_networks::Client(self.clone())
     }
-    pub fn vmm_servers(&self) -> vmm_servers::Client {
+    pub fn vmm_servers_client(&self) -> vmm_servers::Client {
         vmm_servers::Client(self.clone())
     }
 }

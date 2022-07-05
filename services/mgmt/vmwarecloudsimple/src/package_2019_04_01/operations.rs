@@ -74,37 +74,37 @@ impl Client {
             pipeline,
         }
     }
-    pub fn customization_policies(&self) -> customization_policies::Client {
+    pub fn customization_policies_client(&self) -> customization_policies::Client {
         customization_policies::Client(self.clone())
     }
-    pub fn dedicated_cloud_nodes(&self) -> dedicated_cloud_nodes::Client {
+    pub fn dedicated_cloud_nodes_client(&self) -> dedicated_cloud_nodes::Client {
         dedicated_cloud_nodes::Client(self.clone())
     }
-    pub fn dedicated_cloud_services(&self) -> dedicated_cloud_services::Client {
+    pub fn dedicated_cloud_services_client(&self) -> dedicated_cloud_services::Client {
         dedicated_cloud_services::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_clouds(&self) -> private_clouds::Client {
+    pub fn private_clouds_client(&self) -> private_clouds::Client {
         private_clouds::Client(self.clone())
     }
-    pub fn resource_pools(&self) -> resource_pools::Client {
+    pub fn resource_pools_client(&self) -> resource_pools::Client {
         resource_pools::Client(self.clone())
     }
-    pub fn skus_availability(&self) -> skus_availability::Client {
+    pub fn skus_availability_client(&self) -> skus_availability::Client {
         skus_availability::Client(self.clone())
     }
-    pub fn usages(&self) -> usages::Client {
+    pub fn usages_client(&self) -> usages::Client {
         usages::Client(self.clone())
     }
-    pub fn virtual_machine_templates(&self) -> virtual_machine_templates::Client {
+    pub fn virtual_machine_templates_client(&self) -> virtual_machine_templates::Client {
         virtual_machine_templates::Client(self.clone())
     }
-    pub fn virtual_machines(&self) -> virtual_machines::Client {
+    pub fn virtual_machines_client(&self) -> virtual_machines::Client {
         virtual_machines::Client(self.clone())
     }
-    pub fn virtual_networks(&self) -> virtual_networks::Client {
+    pub fn virtual_networks_client(&self) -> virtual_networks::Client {
         virtual_networks::Client(self.clone())
     }
 }

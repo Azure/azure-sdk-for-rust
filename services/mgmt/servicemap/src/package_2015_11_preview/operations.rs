@@ -74,25 +74,25 @@ impl Client {
             pipeline,
         }
     }
-    pub fn client_groups(&self) -> client_groups::Client {
+    pub fn client_groups_client(&self) -> client_groups::Client {
         client_groups::Client(self.clone())
     }
-    pub fn machine_groups(&self) -> machine_groups::Client {
+    pub fn machine_groups_client(&self) -> machine_groups::Client {
         machine_groups::Client(self.clone())
     }
-    pub fn machines(&self) -> machines::Client {
+    pub fn machines_client(&self) -> machines::Client {
         machines::Client(self.clone())
     }
-    pub fn maps(&self) -> maps::Client {
+    pub fn maps_client(&self) -> maps::Client {
         maps::Client(self.clone())
     }
-    pub fn ports(&self) -> ports::Client {
+    pub fn ports_client(&self) -> ports::Client {
         ports::Client(self.clone())
     }
-    pub fn processes(&self) -> processes::Client {
+    pub fn processes_client(&self) -> processes::Client {
         processes::Client(self.clone())
     }
-    pub fn summaries(&self) -> summaries::Client {
+    pub fn summaries_client(&self) -> summaries::Client {
         summaries::Client(self.clone())
     }
 }

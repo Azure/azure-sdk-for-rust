@@ -74,46 +74,46 @@ impl Client {
             pipeline,
         }
     }
-    pub fn cdn_peering_prefixes(&self) -> cdn_peering_prefixes::Client {
+    pub fn cdn_peering_prefixes_client(&self) -> cdn_peering_prefixes::Client {
         cdn_peering_prefixes::Client(self.clone())
     }
-    pub fn legacy_peerings(&self) -> legacy_peerings::Client {
+    pub fn legacy_peerings_client(&self) -> legacy_peerings::Client {
         legacy_peerings::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn peer_asns(&self) -> peer_asns::Client {
+    pub fn peer_asns_client(&self) -> peer_asns::Client {
         peer_asns::Client(self.clone())
     }
-    pub fn peering_locations(&self) -> peering_locations::Client {
+    pub fn peering_locations_client(&self) -> peering_locations::Client {
         peering_locations::Client(self.clone())
     }
-    pub fn peering_service_countries(&self) -> peering_service_countries::Client {
+    pub fn peering_service_countries_client(&self) -> peering_service_countries::Client {
         peering_service_countries::Client(self.clone())
     }
-    pub fn peering_service_locations(&self) -> peering_service_locations::Client {
+    pub fn peering_service_locations_client(&self) -> peering_service_locations::Client {
         peering_service_locations::Client(self.clone())
     }
-    pub fn peering_service_providers(&self) -> peering_service_providers::Client {
+    pub fn peering_service_providers_client(&self) -> peering_service_providers::Client {
         peering_service_providers::Client(self.clone())
     }
-    pub fn peering_services(&self) -> peering_services::Client {
+    pub fn peering_services_client(&self) -> peering_services::Client {
         peering_services::Client(self.clone())
     }
-    pub fn peerings(&self) -> peerings::Client {
+    pub fn peerings_client(&self) -> peerings::Client {
         peerings::Client(self.clone())
     }
-    pub fn prefixes(&self) -> prefixes::Client {
+    pub fn prefixes_client(&self) -> prefixes::Client {
         prefixes::Client(self.clone())
     }
-    pub fn received_routes(&self) -> received_routes::Client {
+    pub fn received_routes_client(&self) -> received_routes::Client {
         received_routes::Client(self.clone())
     }
-    pub fn registered_asns(&self) -> registered_asns::Client {
+    pub fn registered_asns_client(&self) -> registered_asns::Client {
         registered_asns::Client(self.clone())
     }
-    pub fn registered_prefixes(&self) -> registered_prefixes::Client {
+    pub fn registered_prefixes_client(&self) -> registered_prefixes::Client {
         registered_prefixes::Client(self.clone())
     }
 }

@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn elastic_sans(&self) -> elastic_sans::Client {
+    pub fn elastic_sans_client(&self) -> elastic_sans::Client {
         elastic_sans::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn skus(&self) -> skus::Client {
+    pub fn skus_client(&self) -> skus::Client {
         skus::Client(self.clone())
     }
-    pub fn volume_groups(&self) -> volume_groups::Client {
+    pub fn volume_groups_client(&self) -> volume_groups::Client {
         volume_groups::Client(self.clone())
     }
-    pub fn volumes(&self) -> volumes::Client {
+    pub fn volumes_client(&self) -> volumes::Client {
         volumes::Client(self.clone())
     }
 }

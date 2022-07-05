@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn authorization_operations(&self) -> authorization_operations::Client {
+    pub fn authorization_operations_client(&self) -> authorization_operations::Client {
         authorization_operations::Client(self.clone())
     }
-    pub fn management_locks(&self) -> management_locks::Client {
+    pub fn management_locks_client(&self) -> management_locks::Client {
         management_locks::Client(self.clone())
     }
 }

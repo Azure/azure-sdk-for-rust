@@ -74,28 +74,28 @@ impl Client {
             pipeline,
         }
     }
-    pub fn custom_rollouts(&self) -> custom_rollouts::Client {
+    pub fn custom_rollouts_client(&self) -> custom_rollouts::Client {
         custom_rollouts::Client(self.clone())
     }
-    pub fn default_rollouts(&self) -> default_rollouts::Client {
+    pub fn default_rollouts_client(&self) -> default_rollouts::Client {
         default_rollouts::Client(self.clone())
     }
-    pub fn notification_registrations(&self) -> notification_registrations::Client {
+    pub fn notification_registrations_client(&self) -> notification_registrations::Client {
         notification_registrations::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn provider_registrations(&self) -> provider_registrations::Client {
+    pub fn provider_registrations_client(&self) -> provider_registrations::Client {
         provider_registrations::Client(self.clone())
     }
-    pub fn resource_actions(&self) -> resource_actions::Client {
+    pub fn resource_actions_client(&self) -> resource_actions::Client {
         resource_actions::Client(self.clone())
     }
-    pub fn resource_type_registrations(&self) -> resource_type_registrations::Client {
+    pub fn resource_type_registrations_client(&self) -> resource_type_registrations::Client {
         resource_type_registrations::Client(self.clone())
     }
-    pub fn skus(&self) -> skus::Client {
+    pub fn skus_client(&self) -> skus::Client {
         skus::Client(self.clone())
     }
 }

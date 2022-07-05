@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn dashboards(&self) -> dashboards::Client {
+    pub fn dashboards_client(&self) -> dashboards::Client {
         dashboards::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn tenant_configurations(&self) -> tenant_configurations::Client {
+    pub fn tenant_configurations_client(&self) -> tenant_configurations::Client {
         tenant_configurations::Client(self.clone())
     }
 }

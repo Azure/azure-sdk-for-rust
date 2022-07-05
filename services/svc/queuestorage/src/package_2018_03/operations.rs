@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn message_id(&self) -> message_id::Client {
+    pub fn message_id_client(&self) -> message_id::Client {
         message_id::Client(self.clone())
     }
-    pub fn messages(&self) -> messages::Client {
+    pub fn messages_client(&self) -> messages::Client {
         messages::Client(self.clone())
     }
-    pub fn queue(&self) -> queue::Client {
+    pub fn queue_client(&self) -> queue::Client {
         queue::Client(self.clone())
     }
-    pub fn service(&self) -> service::Client {
+    pub fn service_client(&self) -> service::Client {
         service::Client(self.clone())
     }
 }

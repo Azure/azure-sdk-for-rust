@@ -74,49 +74,49 @@ impl Client {
             pipeline,
         }
     }
-    pub fn analysis_results(&self) -> analysis_results::Client {
+    pub fn analysis_results_client(&self) -> analysis_results::Client {
         analysis_results::Client(self.clone())
     }
-    pub fn available_os(&self) -> available_os::Client {
+    pub fn available_os_client(&self) -> available_os::Client {
         available_os::Client(self.clone())
     }
-    pub fn customer_events(&self) -> customer_events::Client {
+    pub fn customer_events_client(&self) -> customer_events::Client {
         customer_events::Client(self.clone())
     }
-    pub fn email_events(&self) -> email_events::Client {
+    pub fn email_events_client(&self) -> email_events::Client {
         email_events::Client(self.clone())
     }
-    pub fn favorite_processes(&self) -> favorite_processes::Client {
+    pub fn favorite_processes_client(&self) -> favorite_processes::Client {
         favorite_processes::Client(self.clone())
     }
-    pub fn flighting_rings(&self) -> flighting_rings::Client {
+    pub fn flighting_rings_client(&self) -> flighting_rings::Client {
         flighting_rings::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn os_updates(&self) -> os_updates::Client {
+    pub fn os_updates_client(&self) -> os_updates::Client {
         os_updates::Client(self.clone())
     }
-    pub fn packages(&self) -> packages::Client {
+    pub fn packages_client(&self) -> packages::Client {
         packages::Client(self.clone())
     }
-    pub fn skus(&self) -> skus::Client {
+    pub fn skus_client(&self) -> skus::Client {
         skus::Client(self.clone())
     }
-    pub fn test_base_accounts(&self) -> test_base_accounts::Client {
+    pub fn test_base_accounts_client(&self) -> test_base_accounts::Client {
         test_base_accounts::Client(self.clone())
     }
-    pub fn test_results(&self) -> test_results::Client {
+    pub fn test_results_client(&self) -> test_results::Client {
         test_results::Client(self.clone())
     }
-    pub fn test_summaries(&self) -> test_summaries::Client {
+    pub fn test_summaries_client(&self) -> test_summaries::Client {
         test_summaries::Client(self.clone())
     }
-    pub fn test_types(&self) -> test_types::Client {
+    pub fn test_types_client(&self) -> test_types::Client {
         test_types::Client(self.clone())
     }
-    pub fn usage(&self) -> usage::Client {
+    pub fn usage_client(&self) -> usage::Client {
         usage::Client(self.clone())
     }
 }

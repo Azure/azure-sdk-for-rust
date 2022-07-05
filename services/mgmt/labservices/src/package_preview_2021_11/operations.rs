@@ -74,34 +74,34 @@ impl Client {
             pipeline,
         }
     }
-    pub fn images(&self) -> images::Client {
+    pub fn images_client(&self) -> images::Client {
         images::Client(self.clone())
     }
-    pub fn lab_plans(&self) -> lab_plans::Client {
+    pub fn lab_plans_client(&self) -> lab_plans::Client {
         lab_plans::Client(self.clone())
     }
-    pub fn labs(&self) -> labs::Client {
+    pub fn labs_client(&self) -> labs::Client {
         labs::Client(self.clone())
     }
-    pub fn operation_results(&self) -> operation_results::Client {
+    pub fn operation_results_client(&self) -> operation_results::Client {
         operation_results::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn schedules(&self) -> schedules::Client {
+    pub fn schedules_client(&self) -> schedules::Client {
         schedules::Client(self.clone())
     }
-    pub fn skus(&self) -> skus::Client {
+    pub fn skus_client(&self) -> skus::Client {
         skus::Client(self.clone())
     }
-    pub fn usages(&self) -> usages::Client {
+    pub fn usages_client(&self) -> usages::Client {
         usages::Client(self.clone())
     }
-    pub fn users(&self) -> users::Client {
+    pub fn users_client(&self) -> users::Client {
         users::Client(self.clone())
     }
-    pub fn virtual_machines(&self) -> virtual_machines::Client {
+    pub fn virtual_machines_client(&self) -> virtual_machines::Client {
         virtual_machines::Client(self.clone())
     }
 }

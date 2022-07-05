@@ -74,31 +74,31 @@ impl Client {
             pipeline,
         }
     }
-    pub fn applications(&self) -> applications::Client {
+    pub fn applications_client(&self) -> applications::Client {
         applications::Client(self.clone())
     }
-    pub fn deleted_applications(&self) -> deleted_applications::Client {
+    pub fn deleted_applications_client(&self) -> deleted_applications::Client {
         deleted_applications::Client(self.clone())
     }
-    pub fn domains(&self) -> domains::Client {
+    pub fn domains_client(&self) -> domains::Client {
         domains::Client(self.clone())
     }
-    pub fn groups(&self) -> groups::Client {
+    pub fn groups_client(&self) -> groups::Client {
         groups::Client(self.clone())
     }
-    pub fn o_auth2_permission_grant(&self) -> o_auth2_permission_grant::Client {
+    pub fn o_auth2_permission_grant_client(&self) -> o_auth2_permission_grant::Client {
         o_auth2_permission_grant::Client(self.clone())
     }
-    pub fn objects(&self) -> objects::Client {
+    pub fn objects_client(&self) -> objects::Client {
         objects::Client(self.clone())
     }
-    pub fn service_principals(&self) -> service_principals::Client {
+    pub fn service_principals_client(&self) -> service_principals::Client {
         service_principals::Client(self.clone())
     }
-    pub fn signed_in_user(&self) -> signed_in_user::Client {
+    pub fn signed_in_user_client(&self) -> signed_in_user::Client {
         signed_in_user::Client(self.clone())
     }
-    pub fn users(&self) -> users::Client {
+    pub fn users_client(&self) -> users::Client {
         users::Client(self.clone())
     }
 }

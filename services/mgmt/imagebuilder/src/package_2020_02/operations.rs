@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn virtual_machine_image_templates(&self) -> virtual_machine_image_templates::Client {
+    pub fn virtual_machine_image_templates_client(&self) -> virtual_machine_image_templates::Client {
         virtual_machine_image_templates::Client(self.clone())
     }
 }

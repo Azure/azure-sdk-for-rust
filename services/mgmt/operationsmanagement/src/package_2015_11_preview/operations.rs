@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn management_associations(&self) -> management_associations::Client {
+    pub fn management_associations_client(&self) -> management_associations::Client {
         management_associations::Client(self.clone())
     }
-    pub fn management_configurations(&self) -> management_configurations::Client {
+    pub fn management_configurations_client(&self) -> management_configurations::Client {
         management_configurations::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn solutions(&self) -> solutions::Client {
+    pub fn solutions_client(&self) -> solutions::Client {
         solutions::Client(self.clone())
     }
 }

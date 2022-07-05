@@ -74,28 +74,28 @@ impl Client {
             pipeline,
         }
     }
-    pub fn assessed_machines(&self) -> assessed_machines::Client {
+    pub fn assessed_machines_client(&self) -> assessed_machines::Client {
         assessed_machines::Client(self.clone())
     }
-    pub fn assessment_options(&self) -> assessment_options::Client {
+    pub fn assessment_options_client(&self) -> assessment_options::Client {
         assessment_options::Client(self.clone())
     }
-    pub fn assessments(&self) -> assessments::Client {
+    pub fn assessments_client(&self) -> assessments::Client {
         assessments::Client(self.clone())
     }
-    pub fn groups(&self) -> groups::Client {
+    pub fn groups_client(&self) -> groups::Client {
         groups::Client(self.clone())
     }
-    pub fn location(&self) -> location::Client {
+    pub fn location_client(&self) -> location::Client {
         location::Client(self.clone())
     }
-    pub fn machines(&self) -> machines::Client {
+    pub fn machines_client(&self) -> machines::Client {
         machines::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn projects(&self) -> projects::Client {
+    pub fn projects_client(&self) -> projects::Client {
         projects::Client(self.clone())
     }
 }

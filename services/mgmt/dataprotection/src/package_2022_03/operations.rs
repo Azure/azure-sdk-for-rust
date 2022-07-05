@@ -74,52 +74,52 @@ impl Client {
             pipeline,
         }
     }
-    pub fn backup_instances(&self) -> backup_instances::Client {
+    pub fn backup_instances_client(&self) -> backup_instances::Client {
         backup_instances::Client(self.clone())
     }
-    pub fn backup_policies(&self) -> backup_policies::Client {
+    pub fn backup_policies_client(&self) -> backup_policies::Client {
         backup_policies::Client(self.clone())
     }
-    pub fn backup_vault_operation_results(&self) -> backup_vault_operation_results::Client {
+    pub fn backup_vault_operation_results_client(&self) -> backup_vault_operation_results::Client {
         backup_vault_operation_results::Client(self.clone())
     }
-    pub fn backup_vaults(&self) -> backup_vaults::Client {
+    pub fn backup_vaults_client(&self) -> backup_vaults::Client {
         backup_vaults::Client(self.clone())
     }
-    pub fn data_protection(&self) -> data_protection::Client {
+    pub fn data_protection_client(&self) -> data_protection::Client {
         data_protection::Client(self.clone())
     }
-    pub fn data_protection_operations(&self) -> data_protection_operations::Client {
+    pub fn data_protection_operations_client(&self) -> data_protection_operations::Client {
         data_protection_operations::Client(self.clone())
     }
-    pub fn export_jobs(&self) -> export_jobs::Client {
+    pub fn export_jobs_client(&self) -> export_jobs::Client {
         export_jobs::Client(self.clone())
     }
-    pub fn export_jobs_operation_result(&self) -> export_jobs_operation_result::Client {
+    pub fn export_jobs_operation_result_client(&self) -> export_jobs_operation_result::Client {
         export_jobs_operation_result::Client(self.clone())
     }
-    pub fn jobs(&self) -> jobs::Client {
+    pub fn jobs_client(&self) -> jobs::Client {
         jobs::Client(self.clone())
     }
-    pub fn operation_result(&self) -> operation_result::Client {
+    pub fn operation_result_client(&self) -> operation_result::Client {
         operation_result::Client(self.clone())
     }
-    pub fn operation_status(&self) -> operation_status::Client {
+    pub fn operation_status_client(&self) -> operation_status::Client {
         operation_status::Client(self.clone())
     }
-    pub fn operation_status_backup_vault_context(&self) -> operation_status_backup_vault_context::Client {
+    pub fn operation_status_backup_vault_context_client(&self) -> operation_status_backup_vault_context::Client {
         operation_status_backup_vault_context::Client(self.clone())
     }
-    pub fn operation_status_resource_group_context(&self) -> operation_status_resource_group_context::Client {
+    pub fn operation_status_resource_group_context_client(&self) -> operation_status_resource_group_context::Client {
         operation_status_resource_group_context::Client(self.clone())
     }
-    pub fn recovery_points(&self) -> recovery_points::Client {
+    pub fn recovery_points_client(&self) -> recovery_points::Client {
         recovery_points::Client(self.clone())
     }
-    pub fn resource_guards(&self) -> resource_guards::Client {
+    pub fn resource_guards_client(&self) -> resource_guards::Client {
         resource_guards::Client(self.clone())
     }
-    pub fn restorable_time_ranges(&self) -> restorable_time_ranges::Client {
+    pub fn restorable_time_ranges_client(&self) -> restorable_time_ranges::Client {
         restorable_time_ranges::Client(self.clone())
     }
 }

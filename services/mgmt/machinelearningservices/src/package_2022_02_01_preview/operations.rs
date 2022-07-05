@@ -74,82 +74,82 @@ impl Client {
             pipeline,
         }
     }
-    pub fn batch_deployments(&self) -> batch_deployments::Client {
+    pub fn batch_deployments_client(&self) -> batch_deployments::Client {
         batch_deployments::Client(self.clone())
     }
-    pub fn batch_endpoints(&self) -> batch_endpoints::Client {
+    pub fn batch_endpoints_client(&self) -> batch_endpoints::Client {
         batch_endpoints::Client(self.clone())
     }
-    pub fn code_containers(&self) -> code_containers::Client {
+    pub fn code_containers_client(&self) -> code_containers::Client {
         code_containers::Client(self.clone())
     }
-    pub fn code_versions(&self) -> code_versions::Client {
+    pub fn code_versions_client(&self) -> code_versions::Client {
         code_versions::Client(self.clone())
     }
-    pub fn component_containers(&self) -> component_containers::Client {
+    pub fn component_containers_client(&self) -> component_containers::Client {
         component_containers::Client(self.clone())
     }
-    pub fn component_versions(&self) -> component_versions::Client {
+    pub fn component_versions_client(&self) -> component_versions::Client {
         component_versions::Client(self.clone())
     }
-    pub fn compute(&self) -> compute::Client {
+    pub fn compute_client(&self) -> compute::Client {
         compute::Client(self.clone())
     }
-    pub fn data_containers(&self) -> data_containers::Client {
+    pub fn data_containers_client(&self) -> data_containers::Client {
         data_containers::Client(self.clone())
     }
-    pub fn data_versions(&self) -> data_versions::Client {
+    pub fn data_versions_client(&self) -> data_versions::Client {
         data_versions::Client(self.clone())
     }
-    pub fn datastores(&self) -> datastores::Client {
+    pub fn datastores_client(&self) -> datastores::Client {
         datastores::Client(self.clone())
     }
-    pub fn environment_containers(&self) -> environment_containers::Client {
+    pub fn environment_containers_client(&self) -> environment_containers::Client {
         environment_containers::Client(self.clone())
     }
-    pub fn environment_versions(&self) -> environment_versions::Client {
+    pub fn environment_versions_client(&self) -> environment_versions::Client {
         environment_versions::Client(self.clone())
     }
-    pub fn jobs(&self) -> jobs::Client {
+    pub fn jobs_client(&self) -> jobs::Client {
         jobs::Client(self.clone())
     }
-    pub fn model_containers(&self) -> model_containers::Client {
+    pub fn model_containers_client(&self) -> model_containers::Client {
         model_containers::Client(self.clone())
     }
-    pub fn model_versions(&self) -> model_versions::Client {
+    pub fn model_versions_client(&self) -> model_versions::Client {
         model_versions::Client(self.clone())
     }
-    pub fn online_deployments(&self) -> online_deployments::Client {
+    pub fn online_deployments_client(&self) -> online_deployments::Client {
         online_deployments::Client(self.clone())
     }
-    pub fn online_endpoints(&self) -> online_endpoints::Client {
+    pub fn online_endpoints_client(&self) -> online_endpoints::Client {
         online_endpoints::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn quotas(&self) -> quotas::Client {
+    pub fn quotas_client(&self) -> quotas::Client {
         quotas::Client(self.clone())
     }
-    pub fn usages(&self) -> usages::Client {
+    pub fn usages_client(&self) -> usages::Client {
         usages::Client(self.clone())
     }
-    pub fn virtual_machine_sizes(&self) -> virtual_machine_sizes::Client {
+    pub fn virtual_machine_sizes_client(&self) -> virtual_machine_sizes::Client {
         virtual_machine_sizes::Client(self.clone())
     }
-    pub fn workspace_connections(&self) -> workspace_connections::Client {
+    pub fn workspace_connections_client(&self) -> workspace_connections::Client {
         workspace_connections::Client(self.clone())
     }
-    pub fn workspace_features(&self) -> workspace_features::Client {
+    pub fn workspace_features_client(&self) -> workspace_features::Client {
         workspace_features::Client(self.clone())
     }
-    pub fn workspaces(&self) -> workspaces::Client {
+    pub fn workspaces_client(&self) -> workspaces::Client {
         workspaces::Client(self.clone())
     }
 }

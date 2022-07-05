@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn multiple_activation_keys(&self) -> multiple_activation_keys::Client {
+    pub fn multiple_activation_keys_client(&self) -> multiple_activation_keys::Client {
         multiple_activation_keys::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

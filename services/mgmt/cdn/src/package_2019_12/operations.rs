@@ -74,28 +74,28 @@ impl Client {
             pipeline,
         }
     }
-    pub fn custom_domains(&self) -> custom_domains::Client {
+    pub fn custom_domains_client(&self) -> custom_domains::Client {
         custom_domains::Client(self.clone())
     }
-    pub fn edge_nodes(&self) -> edge_nodes::Client {
+    pub fn edge_nodes_client(&self) -> edge_nodes::Client {
         edge_nodes::Client(self.clone())
     }
-    pub fn endpoints(&self) -> endpoints::Client {
+    pub fn endpoints_client(&self) -> endpoints::Client {
         endpoints::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn origin_groups(&self) -> origin_groups::Client {
+    pub fn origin_groups_client(&self) -> origin_groups::Client {
         origin_groups::Client(self.clone())
     }
-    pub fn origins(&self) -> origins::Client {
+    pub fn origins_client(&self) -> origins::Client {
         origins::Client(self.clone())
     }
-    pub fn profiles(&self) -> profiles::Client {
+    pub fn profiles_client(&self) -> profiles::Client {
         profiles::Client(self.clone())
     }
-    pub fn resource_usage(&self) -> resource_usage::Client {
+    pub fn resource_usage_client(&self) -> resource_usage::Client {
         resource_usage::Client(self.clone())
     }
 }

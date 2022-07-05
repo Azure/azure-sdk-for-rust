@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn deployments(&self) -> deployments::Client {
+    pub fn deployments_client(&self) -> deployments::Client {
         deployments::Client(self.clone())
     }
-    pub fn devices(&self) -> devices::Client {
+    pub fn devices_client(&self) -> devices::Client {
         devices::Client(self.clone())
     }
-    pub fn updates(&self) -> updates::Client {
+    pub fn updates_client(&self) -> updates::Client {
         updates::Client(self.clone())
     }
 }

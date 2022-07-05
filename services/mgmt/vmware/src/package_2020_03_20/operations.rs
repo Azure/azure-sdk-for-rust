@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn authorizations(&self) -> authorizations::Client {
+    pub fn authorizations_client(&self) -> authorizations::Client {
         authorizations::Client(self.clone())
     }
-    pub fn clusters(&self) -> clusters::Client {
+    pub fn clusters_client(&self) -> clusters::Client {
         clusters::Client(self.clone())
     }
-    pub fn hcx_enterprise_sites(&self) -> hcx_enterprise_sites::Client {
+    pub fn hcx_enterprise_sites_client(&self) -> hcx_enterprise_sites::Client {
         hcx_enterprise_sites::Client(self.clone())
     }
-    pub fn locations(&self) -> locations::Client {
+    pub fn locations_client(&self) -> locations::Client {
         locations::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_clouds(&self) -> private_clouds::Client {
+    pub fn private_clouds_client(&self) -> private_clouds::Client {
         private_clouds::Client(self.clone())
     }
 }

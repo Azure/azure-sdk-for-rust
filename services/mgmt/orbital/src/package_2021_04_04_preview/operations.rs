@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn available_ground_stations(&self) -> available_ground_stations::Client {
+    pub fn available_ground_stations_client(&self) -> available_ground_stations::Client {
         available_ground_stations::Client(self.clone())
     }
-    pub fn contact_profiles(&self) -> contact_profiles::Client {
+    pub fn contact_profiles_client(&self) -> contact_profiles::Client {
         contact_profiles::Client(self.clone())
     }
-    pub fn contacts(&self) -> contacts::Client {
+    pub fn contacts_client(&self) -> contacts::Client {
         contacts::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn spacecrafts(&self) -> spacecrafts::Client {
+    pub fn spacecrafts_client(&self) -> spacecrafts::Client {
         spacecrafts::Client(self.clone())
     }
 }

@@ -74,43 +74,43 @@ impl Client {
             pipeline,
         }
     }
-    pub fn disaster_recovery_configs(&self) -> disaster_recovery_configs::Client {
+    pub fn disaster_recovery_configs_client(&self) -> disaster_recovery_configs::Client {
         disaster_recovery_configs::Client(self.clone())
     }
-    pub fn event_hubs(&self) -> event_hubs::Client {
+    pub fn event_hubs_client(&self) -> event_hubs::Client {
         event_hubs::Client(self.clone())
     }
-    pub fn migration_configs(&self) -> migration_configs::Client {
+    pub fn migration_configs_client(&self) -> migration_configs::Client {
         migration_configs::Client(self.clone())
     }
-    pub fn namespaces(&self) -> namespaces::Client {
+    pub fn namespaces_client(&self) -> namespaces::Client {
         namespaces::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn premium_messaging_regions(&self) -> premium_messaging_regions::Client {
+    pub fn premium_messaging_regions_client(&self) -> premium_messaging_regions::Client {
         premium_messaging_regions::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn queues(&self) -> queues::Client {
+    pub fn queues_client(&self) -> queues::Client {
         queues::Client(self.clone())
     }
-    pub fn regions(&self) -> regions::Client {
+    pub fn regions_client(&self) -> regions::Client {
         regions::Client(self.clone())
     }
-    pub fn rules(&self) -> rules::Client {
+    pub fn rules_client(&self) -> rules::Client {
         rules::Client(self.clone())
     }
-    pub fn subscriptions(&self) -> subscriptions::Client {
+    pub fn subscriptions_client(&self) -> subscriptions::Client {
         subscriptions::Client(self.clone())
     }
-    pub fn topics(&self) -> topics::Client {
+    pub fn topics_client(&self) -> topics::Client {
         topics::Client(self.clone())
     }
 }

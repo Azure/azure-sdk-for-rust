@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn container_groups(&self) -> container_groups::Client {
+    pub fn container_groups_client(&self) -> container_groups::Client {
         container_groups::Client(self.clone())
     }
-    pub fn containers(&self) -> containers::Client {
+    pub fn containers_client(&self) -> containers::Client {
         containers::Client(self.clone())
     }
-    pub fn location(&self) -> location::Client {
+    pub fn location_client(&self) -> location::Client {
         location::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

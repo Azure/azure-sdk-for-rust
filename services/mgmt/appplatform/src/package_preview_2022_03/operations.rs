@@ -74,73 +74,73 @@ impl Client {
             pipeline,
         }
     }
-    pub fn api_portal_custom_domains(&self) -> api_portal_custom_domains::Client {
+    pub fn api_portal_custom_domains_client(&self) -> api_portal_custom_domains::Client {
         api_portal_custom_domains::Client(self.clone())
     }
-    pub fn api_portals(&self) -> api_portals::Client {
+    pub fn api_portals_client(&self) -> api_portals::Client {
         api_portals::Client(self.clone())
     }
-    pub fn apps(&self) -> apps::Client {
+    pub fn apps_client(&self) -> apps::Client {
         apps::Client(self.clone())
     }
-    pub fn bindings(&self) -> bindings::Client {
+    pub fn bindings_client(&self) -> bindings::Client {
         bindings::Client(self.clone())
     }
-    pub fn build_service(&self) -> build_service::Client {
+    pub fn build_service_client(&self) -> build_service::Client {
         build_service::Client(self.clone())
     }
-    pub fn build_service_agent_pool(&self) -> build_service_agent_pool::Client {
+    pub fn build_service_agent_pool_client(&self) -> build_service_agent_pool::Client {
         build_service_agent_pool::Client(self.clone())
     }
-    pub fn build_service_builder(&self) -> build_service_builder::Client {
+    pub fn build_service_builder_client(&self) -> build_service_builder::Client {
         build_service_builder::Client(self.clone())
     }
-    pub fn buildpack_binding(&self) -> buildpack_binding::Client {
+    pub fn buildpack_binding_client(&self) -> buildpack_binding::Client {
         buildpack_binding::Client(self.clone())
     }
-    pub fn certificates(&self) -> certificates::Client {
+    pub fn certificates_client(&self) -> certificates::Client {
         certificates::Client(self.clone())
     }
-    pub fn config_servers(&self) -> config_servers::Client {
+    pub fn config_servers_client(&self) -> config_servers::Client {
         config_servers::Client(self.clone())
     }
-    pub fn configuration_services(&self) -> configuration_services::Client {
+    pub fn configuration_services_client(&self) -> configuration_services::Client {
         configuration_services::Client(self.clone())
     }
-    pub fn custom_domains(&self) -> custom_domains::Client {
+    pub fn custom_domains_client(&self) -> custom_domains::Client {
         custom_domains::Client(self.clone())
     }
-    pub fn deployments(&self) -> deployments::Client {
+    pub fn deployments_client(&self) -> deployments::Client {
         deployments::Client(self.clone())
     }
-    pub fn gateway_custom_domains(&self) -> gateway_custom_domains::Client {
+    pub fn gateway_custom_domains_client(&self) -> gateway_custom_domains::Client {
         gateway_custom_domains::Client(self.clone())
     }
-    pub fn gateway_route_configs(&self) -> gateway_route_configs::Client {
+    pub fn gateway_route_configs_client(&self) -> gateway_route_configs::Client {
         gateway_route_configs::Client(self.clone())
     }
-    pub fn gateways(&self) -> gateways::Client {
+    pub fn gateways_client(&self) -> gateways::Client {
         gateways::Client(self.clone())
     }
-    pub fn monitoring_settings(&self) -> monitoring_settings::Client {
+    pub fn monitoring_settings_client(&self) -> monitoring_settings::Client {
         monitoring_settings::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn runtime_versions(&self) -> runtime_versions::Client {
+    pub fn runtime_versions_client(&self) -> runtime_versions::Client {
         runtime_versions::Client(self.clone())
     }
-    pub fn service_registries(&self) -> service_registries::Client {
+    pub fn service_registries_client(&self) -> service_registries::Client {
         service_registries::Client(self.clone())
     }
-    pub fn services(&self) -> services::Client {
+    pub fn services_client(&self) -> services::Client {
         services::Client(self.clone())
     }
-    pub fn skus(&self) -> skus::Client {
+    pub fn skus_client(&self) -> skus::Client {
         skus::Client(self.clone())
     }
-    pub fn storages(&self) -> storages::Client {
+    pub fn storages_client(&self) -> storages::Client {
         storages::Client(self.clone())
     }
 }

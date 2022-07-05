@@ -74,25 +74,25 @@ impl Client {
             pipeline,
         }
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn policy_events(&self) -> policy_events::Client {
+    pub fn policy_events_client(&self) -> policy_events::Client {
         policy_events::Client(self.clone())
     }
-    pub fn policy_metadata(&self) -> policy_metadata::Client {
+    pub fn policy_metadata_client(&self) -> policy_metadata::Client {
         policy_metadata::Client(self.clone())
     }
-    pub fn policy_restrictions(&self) -> policy_restrictions::Client {
+    pub fn policy_restrictions_client(&self) -> policy_restrictions::Client {
         policy_restrictions::Client(self.clone())
     }
-    pub fn policy_states(&self) -> policy_states::Client {
+    pub fn policy_states_client(&self) -> policy_states::Client {
         policy_states::Client(self.clone())
     }
-    pub fn policy_tracked_resources(&self) -> policy_tracked_resources::Client {
+    pub fn policy_tracked_resources_client(&self) -> policy_tracked_resources::Client {
         policy_tracked_resources::Client(self.clone())
     }
-    pub fn remediations(&self) -> remediations::Client {
+    pub fn remediations_client(&self) -> remediations::Client {
         remediations::Client(self.clone())
     }
 }

@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn workspace_collections(&self) -> workspace_collections::Client {
+    pub fn workspace_collections_client(&self) -> workspace_collections::Client {
         workspace_collections::Client(self.clone())
     }
-    pub fn workspaces(&self) -> workspaces::Client {
+    pub fn workspaces_client(&self) -> workspaces::Client {
         workspaces::Client(self.clone())
     }
 }

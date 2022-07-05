@@ -74,7 +74,7 @@ impl Client {
             pipeline,
         }
     }
-    pub fn azure_ad_metrics(&self) -> azure_ad_metrics::Client {
+    pub fn azure_ad_metrics_client(&self) -> azure_ad_metrics::Client {
         azure_ad_metrics::Client(self.clone())
     }
 }

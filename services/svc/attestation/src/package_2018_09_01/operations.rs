@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn metadata_configuration(&self) -> metadata_configuration::Client {
+    pub fn metadata_configuration_client(&self) -> metadata_configuration::Client {
         metadata_configuration::Client(self.clone())
     }
-    pub fn policy(&self) -> policy::Client {
+    pub fn policy_client(&self) -> policy::Client {
         policy::Client(self.clone())
     }
-    pub fn policy_certificates(&self) -> policy_certificates::Client {
+    pub fn policy_certificates_client(&self) -> policy_certificates::Client {
         policy_certificates::Client(self.clone())
     }
-    pub fn signing_certificates(&self) -> signing_certificates::Client {
+    pub fn signing_certificates_client(&self) -> signing_certificates::Client {
         signing_certificates::Client(self.clone())
     }
 }

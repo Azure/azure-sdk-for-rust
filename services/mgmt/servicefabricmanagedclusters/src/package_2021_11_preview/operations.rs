@@ -74,34 +74,34 @@ impl Client {
             pipeline,
         }
     }
-    pub fn application_type_versions(&self) -> application_type_versions::Client {
+    pub fn application_type_versions_client(&self) -> application_type_versions::Client {
         application_type_versions::Client(self.clone())
     }
-    pub fn application_types(&self) -> application_types::Client {
+    pub fn application_types_client(&self) -> application_types::Client {
         application_types::Client(self.clone())
     }
-    pub fn applications(&self) -> applications::Client {
+    pub fn applications_client(&self) -> applications::Client {
         applications::Client(self.clone())
     }
-    pub fn managed_cluster_version(&self) -> managed_cluster_version::Client {
+    pub fn managed_cluster_version_client(&self) -> managed_cluster_version::Client {
         managed_cluster_version::Client(self.clone())
     }
-    pub fn managed_clusters(&self) -> managed_clusters::Client {
+    pub fn managed_clusters_client(&self) -> managed_clusters::Client {
         managed_clusters::Client(self.clone())
     }
-    pub fn managed_unsupported_vm_sizes(&self) -> managed_unsupported_vm_sizes::Client {
+    pub fn managed_unsupported_vm_sizes_client(&self) -> managed_unsupported_vm_sizes::Client {
         managed_unsupported_vm_sizes::Client(self.clone())
     }
-    pub fn node_type_skus(&self) -> node_type_skus::Client {
+    pub fn node_type_skus_client(&self) -> node_type_skus::Client {
         node_type_skus::Client(self.clone())
     }
-    pub fn node_types(&self) -> node_types::Client {
+    pub fn node_types_client(&self) -> node_types::Client {
         node_types::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn services(&self) -> services::Client {
+    pub fn services_client(&self) -> services::Client {
         services::Client(self.clone())
     }
 }

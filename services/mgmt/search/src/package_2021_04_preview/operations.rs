@@ -74,25 +74,25 @@ impl Client {
             pipeline,
         }
     }
-    pub fn admin_keys(&self) -> admin_keys::Client {
+    pub fn admin_keys_client(&self) -> admin_keys::Client {
         admin_keys::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn query_keys(&self) -> query_keys::Client {
+    pub fn query_keys_client(&self) -> query_keys::Client {
         query_keys::Client(self.clone())
     }
-    pub fn services(&self) -> services::Client {
+    pub fn services_client(&self) -> services::Client {
         services::Client(self.clone())
     }
-    pub fn shared_private_link_resources(&self) -> shared_private_link_resources::Client {
+    pub fn shared_private_link_resources_client(&self) -> shared_private_link_resources::Client {
         shared_private_link_resources::Client(self.clone())
     }
 }

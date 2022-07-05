@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn quota(&self) -> quota::Client {
+    pub fn quota_client(&self) -> quota::Client {
         quota::Client(self.clone())
     }
-    pub fn quota_operation(&self) -> quota_operation::Client {
+    pub fn quota_operation_client(&self) -> quota_operation::Client {
         quota_operation::Client(self.clone())
     }
-    pub fn quota_request_status(&self) -> quota_request_status::Client {
+    pub fn quota_request_status_client(&self) -> quota_request_status::Client {
         quota_request_status::Client(self.clone())
     }
-    pub fn usages(&self) -> usages::Client {
+    pub fn usages_client(&self) -> usages::Client {
         usages::Client(self.clone())
     }
 }

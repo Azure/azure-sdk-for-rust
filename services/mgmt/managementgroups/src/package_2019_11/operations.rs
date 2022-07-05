@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn entities(&self) -> entities::Client {
+    pub fn entities_client(&self) -> entities::Client {
         entities::Client(self.clone())
     }
-    pub fn management_group_subscriptions(&self) -> management_group_subscriptions::Client {
+    pub fn management_group_subscriptions_client(&self) -> management_group_subscriptions::Client {
         management_group_subscriptions::Client(self.clone())
     }
-    pub fn management_groups(&self) -> management_groups::Client {
+    pub fn management_groups_client(&self) -> management_groups::Client {
         management_groups::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

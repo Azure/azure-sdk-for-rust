@@ -74,37 +74,37 @@ impl Client {
             pipeline,
         }
     }
-    pub fn agent_pools(&self) -> agent_pools::Client {
+    pub fn agent_pools_client(&self) -> agent_pools::Client {
         agent_pools::Client(self.clone())
     }
-    pub fn maintenance_configurations(&self) -> maintenance_configurations::Client {
+    pub fn maintenance_configurations_client(&self) -> maintenance_configurations::Client {
         maintenance_configurations::Client(self.clone())
     }
-    pub fn managed_cluster_snapshots(&self) -> managed_cluster_snapshots::Client {
+    pub fn managed_cluster_snapshots_client(&self) -> managed_cluster_snapshots::Client {
         managed_cluster_snapshots::Client(self.clone())
     }
-    pub fn managed_clusters(&self) -> managed_clusters::Client {
+    pub fn managed_clusters_client(&self) -> managed_clusters::Client {
         managed_clusters::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn resolve_private_link_service_id(&self) -> resolve_private_link_service_id::Client {
+    pub fn resolve_private_link_service_id_client(&self) -> resolve_private_link_service_id::Client {
         resolve_private_link_service_id::Client(self.clone())
     }
-    pub fn snapshots(&self) -> snapshots::Client {
+    pub fn snapshots_client(&self) -> snapshots::Client {
         snapshots::Client(self.clone())
     }
-    pub fn trusted_access_role_bindings(&self) -> trusted_access_role_bindings::Client {
+    pub fn trusted_access_role_bindings_client(&self) -> trusted_access_role_bindings::Client {
         trusted_access_role_bindings::Client(self.clone())
     }
-    pub fn trusted_access_roles(&self) -> trusted_access_roles::Client {
+    pub fn trusted_access_roles_client(&self) -> trusted_access_roles::Client {
         trusted_access_roles::Client(self.clone())
     }
 }

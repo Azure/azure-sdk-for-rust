@@ -74,25 +74,25 @@ impl Client {
             pipeline,
         }
     }
-    pub fn application(&self) -> application::Client {
+    pub fn application_client(&self) -> application::Client {
         application::Client(self.clone())
     }
-    pub fn code_package(&self) -> code_package::Client {
+    pub fn code_package_client(&self) -> code_package::Client {
         code_package::Client(self.clone())
     }
-    pub fn network(&self) -> network::Client {
+    pub fn network_client(&self) -> network::Client {
         network::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn replica(&self) -> replica::Client {
+    pub fn replica_client(&self) -> replica::Client {
         replica::Client(self.clone())
     }
-    pub fn service(&self) -> service::Client {
+    pub fn service_client(&self) -> service::Client {
         service::Client(self.clone())
     }
-    pub fn volume(&self) -> volume::Client {
+    pub fn volume_client(&self) -> volume::Client {
         volume::Client(self.clone())
     }
 }

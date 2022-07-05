@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn diagnostic_settings(&self) -> diagnostic_settings::Client {
+    pub fn diagnostic_settings_client(&self) -> diagnostic_settings::Client {
         diagnostic_settings::Client(self.clone())
     }
-    pub fn diagnostic_settings_category(&self) -> diagnostic_settings_category::Client {
+    pub fn diagnostic_settings_category_client(&self) -> diagnostic_settings_category::Client {
         diagnostic_settings_category::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

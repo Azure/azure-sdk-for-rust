@@ -74,75 +74,75 @@ impl Client {
             pipeline,
         }
     }
-    pub fn advisors(&self) -> advisors::Client {
+    pub fn advisors_client(&self) -> advisors::Client {
         advisors::Client(self.clone())
     }
-    pub fn check_name_availability(&self) -> check_name_availability::Client {
+    pub fn check_name_availability_client(&self) -> check_name_availability::Client {
         check_name_availability::Client(self.clone())
     }
-    pub fn configurations(&self) -> configurations::Client {
+    pub fn configurations_client(&self) -> configurations::Client {
         configurations::Client(self.clone())
     }
-    pub fn databases(&self) -> databases::Client {
+    pub fn databases_client(&self) -> databases::Client {
         databases::Client(self.clone())
     }
-    pub fn firewall_rules(&self) -> firewall_rules::Client {
+    pub fn firewall_rules_client(&self) -> firewall_rules::Client {
         firewall_rules::Client(self.clone())
     }
-    pub fn location_based_performance_tier(&self) -> location_based_performance_tier::Client {
+    pub fn location_based_performance_tier_client(&self) -> location_based_performance_tier::Client {
         location_based_performance_tier::Client(self.clone())
     }
-    pub fn location_based_recommended_action_sessions_operation_status(
+    pub fn location_based_recommended_action_sessions_operation_status_client(
         &self,
     ) -> location_based_recommended_action_sessions_operation_status::Client {
         location_based_recommended_action_sessions_operation_status::Client(self.clone())
     }
-    pub fn location_based_recommended_action_sessions_result(&self) -> location_based_recommended_action_sessions_result::Client {
+    pub fn location_based_recommended_action_sessions_result_client(&self) -> location_based_recommended_action_sessions_result::Client {
         location_based_recommended_action_sessions_result::Client(self.clone())
     }
-    pub fn log_files(&self) -> log_files::Client {
+    pub fn log_files_client(&self) -> log_files::Client {
         log_files::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn query_texts(&self) -> query_texts::Client {
+    pub fn query_texts_client(&self) -> query_texts::Client {
         query_texts::Client(self.clone())
     }
-    pub fn recommended_actions(&self) -> recommended_actions::Client {
+    pub fn recommended_actions_client(&self) -> recommended_actions::Client {
         recommended_actions::Client(self.clone())
     }
-    pub fn recoverable_servers(&self) -> recoverable_servers::Client {
+    pub fn recoverable_servers_client(&self) -> recoverable_servers::Client {
         recoverable_servers::Client(self.clone())
     }
-    pub fn replicas(&self) -> replicas::Client {
+    pub fn replicas_client(&self) -> replicas::Client {
         replicas::Client(self.clone())
     }
-    pub fn server_based_performance_tier(&self) -> server_based_performance_tier::Client {
+    pub fn server_based_performance_tier_client(&self) -> server_based_performance_tier::Client {
         server_based_performance_tier::Client(self.clone())
     }
-    pub fn server_parameters(&self) -> server_parameters::Client {
+    pub fn server_parameters_client(&self) -> server_parameters::Client {
         server_parameters::Client(self.clone())
     }
-    pub fn server_security_alert_policies(&self) -> server_security_alert_policies::Client {
+    pub fn server_security_alert_policies_client(&self) -> server_security_alert_policies::Client {
         server_security_alert_policies::Client(self.clone())
     }
-    pub fn servers(&self) -> servers::Client {
+    pub fn servers_client(&self) -> servers::Client {
         servers::Client(self.clone())
     }
-    pub fn top_query_statistics(&self) -> top_query_statistics::Client {
+    pub fn top_query_statistics_client(&self) -> top_query_statistics::Client {
         top_query_statistics::Client(self.clone())
     }
-    pub fn virtual_network_rules(&self) -> virtual_network_rules::Client {
+    pub fn virtual_network_rules_client(&self) -> virtual_network_rules::Client {
         virtual_network_rules::Client(self.clone())
     }
-    pub fn wait_statistics(&self) -> wait_statistics::Client {
+    pub fn wait_statistics_client(&self) -> wait_statistics::Client {
         wait_statistics::Client(self.clone())
     }
 }

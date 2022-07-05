@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn directory(&self) -> directory::Client {
+    pub fn directory_client(&self) -> directory::Client {
         directory::Client(self.clone())
     }
-    pub fn file(&self) -> file::Client {
+    pub fn file_client(&self) -> file::Client {
         file::Client(self.clone())
     }
-    pub fn service(&self) -> service::Client {
+    pub fn service_client(&self) -> service::Client {
         service::Client(self.clone())
     }
-    pub fn share(&self) -> share::Client {
+    pub fn share_client(&self) -> share::Client {
         share::Client(self.clone())
     }
 }

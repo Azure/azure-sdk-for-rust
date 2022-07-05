@@ -74,7 +74,7 @@ impl Client {
             pipeline,
         }
     }
-    pub fn server_keys(&self) -> server_keys::Client {
+    pub fn server_keys_client(&self) -> server_keys::Client {
         server_keys::Client(self.clone())
     }
 }

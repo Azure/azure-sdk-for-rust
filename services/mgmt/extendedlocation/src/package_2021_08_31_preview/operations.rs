@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn custom_locations(&self) -> custom_locations::Client {
+    pub fn custom_locations_client(&self) -> custom_locations::Client {
         custom_locations::Client(self.clone())
     }
-    pub fn resource_sync_rules(&self) -> resource_sync_rules::Client {
+    pub fn resource_sync_rules_client(&self) -> resource_sync_rules::Client {
         resource_sync_rules::Client(self.clone())
     }
 }

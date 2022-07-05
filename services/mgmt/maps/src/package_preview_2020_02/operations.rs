@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn accounts(&self) -> accounts::Client {
+    pub fn accounts_client(&self) -> accounts::Client {
         accounts::Client(self.clone())
     }
-    pub fn creators(&self) -> creators::Client {
+    pub fn creators_client(&self) -> creators::Client {
         creators::Client(self.clone())
     }
-    pub fn maps(&self) -> maps::Client {
+    pub fn maps_client(&self) -> maps::Client {
         maps::Client(self.clone())
     }
-    pub fn private_atlases(&self) -> private_atlases::Client {
+    pub fn private_atlases_client(&self) -> private_atlases::Client {
         private_atlases::Client(self.clone())
     }
 }

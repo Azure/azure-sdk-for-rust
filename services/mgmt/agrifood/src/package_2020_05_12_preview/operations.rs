@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn extensions(&self) -> extensions::Client {
+    pub fn extensions_client(&self) -> extensions::Client {
         extensions::Client(self.clone())
     }
-    pub fn farm_beats_extensions(&self) -> farm_beats_extensions::Client {
+    pub fn farm_beats_extensions_client(&self) -> farm_beats_extensions::Client {
         farm_beats_extensions::Client(self.clone())
     }
-    pub fn farm_beats_models(&self) -> farm_beats_models::Client {
+    pub fn farm_beats_models_client(&self) -> farm_beats_models::Client {
         farm_beats_models::Client(self.clone())
     }
-    pub fn locations(&self) -> locations::Client {
+    pub fn locations_client(&self) -> locations::Client {
         locations::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

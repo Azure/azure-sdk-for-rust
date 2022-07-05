@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn machine_extensions(&self) -> machine_extensions::Client {
+    pub fn machine_extensions_client(&self) -> machine_extensions::Client {
         machine_extensions::Client(self.clone())
     }
-    pub fn machines(&self) -> machines::Client {
+    pub fn machines_client(&self) -> machines::Client {
         machines::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn private_link_scopes(&self) -> private_link_scopes::Client {
+    pub fn private_link_scopes_client(&self) -> private_link_scopes::Client {
         private_link_scopes::Client(self.clone())
     }
 }

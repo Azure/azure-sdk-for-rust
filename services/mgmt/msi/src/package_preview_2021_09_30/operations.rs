@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn system_assigned_identities(&self) -> system_assigned_identities::Client {
+    pub fn system_assigned_identities_client(&self) -> system_assigned_identities::Client {
         system_assigned_identities::Client(self.clone())
     }
-    pub fn user_assigned_identities(&self) -> user_assigned_identities::Client {
+    pub fn user_assigned_identities_client(&self) -> user_assigned_identities::Client {
         user_assigned_identities::Client(self.clone())
     }
 }

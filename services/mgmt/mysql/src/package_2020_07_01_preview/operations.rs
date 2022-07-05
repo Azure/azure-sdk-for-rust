@@ -74,34 +74,34 @@ impl Client {
             pipeline,
         }
     }
-    pub fn check_name_availability(&self) -> check_name_availability::Client {
+    pub fn check_name_availability_client(&self) -> check_name_availability::Client {
         check_name_availability::Client(self.clone())
     }
-    pub fn check_virtual_network_subnet_usage(&self) -> check_virtual_network_subnet_usage::Client {
+    pub fn check_virtual_network_subnet_usage_client(&self) -> check_virtual_network_subnet_usage::Client {
         check_virtual_network_subnet_usage::Client(self.clone())
     }
-    pub fn configurations(&self) -> configurations::Client {
+    pub fn configurations_client(&self) -> configurations::Client {
         configurations::Client(self.clone())
     }
-    pub fn databases(&self) -> databases::Client {
+    pub fn databases_client(&self) -> databases::Client {
         databases::Client(self.clone())
     }
-    pub fn firewall_rules(&self) -> firewall_rules::Client {
+    pub fn firewall_rules_client(&self) -> firewall_rules::Client {
         firewall_rules::Client(self.clone())
     }
-    pub fn location_based_capabilities(&self) -> location_based_capabilities::Client {
+    pub fn location_based_capabilities_client(&self) -> location_based_capabilities::Client {
         location_based_capabilities::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn replicas(&self) -> replicas::Client {
+    pub fn replicas_client(&self) -> replicas::Client {
         replicas::Client(self.clone())
     }
-    pub fn server_keys(&self) -> server_keys::Client {
+    pub fn server_keys_client(&self) -> server_keys::Client {
         server_keys::Client(self.clone())
     }
-    pub fn servers(&self) -> servers::Client {
+    pub fn servers_client(&self) -> servers::Client {
         servers::Client(self.clone())
     }
 }

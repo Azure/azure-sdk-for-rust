@@ -74,31 +74,31 @@ impl Client {
             pipeline,
         }
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn recovery_services(&self) -> recovery_services::Client {
+    pub fn recovery_services_client(&self) -> recovery_services::Client {
         recovery_services::Client(self.clone())
     }
-    pub fn registered_identities(&self) -> registered_identities::Client {
+    pub fn registered_identities_client(&self) -> registered_identities::Client {
         registered_identities::Client(self.clone())
     }
-    pub fn replication_usages(&self) -> replication_usages::Client {
+    pub fn replication_usages_client(&self) -> replication_usages::Client {
         replication_usages::Client(self.clone())
     }
-    pub fn usages(&self) -> usages::Client {
+    pub fn usages_client(&self) -> usages::Client {
         usages::Client(self.clone())
     }
-    pub fn vault_certificates(&self) -> vault_certificates::Client {
+    pub fn vault_certificates_client(&self) -> vault_certificates::Client {
         vault_certificates::Client(self.clone())
     }
-    pub fn vault_extended_info(&self) -> vault_extended_info::Client {
+    pub fn vault_extended_info_client(&self) -> vault_extended_info::Client {
         vault_extended_info::Client(self.clone())
     }
-    pub fn vaults(&self) -> vaults::Client {
+    pub fn vaults_client(&self) -> vaults::Client {
         vaults::Client(self.clone())
     }
 }

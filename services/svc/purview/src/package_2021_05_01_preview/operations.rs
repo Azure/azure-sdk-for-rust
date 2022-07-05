@@ -74,25 +74,25 @@ impl Client {
             pipeline,
         }
     }
-    pub fn collection(&self) -> collection::Client {
+    pub fn collection_client(&self) -> collection::Client {
         collection::Client(self.clone())
     }
-    pub fn discovery(&self) -> discovery::Client {
+    pub fn discovery_client(&self) -> discovery::Client {
         discovery::Client(self.clone())
     }
-    pub fn entity(&self) -> entity::Client {
+    pub fn entity_client(&self) -> entity::Client {
         entity::Client(self.clone())
     }
-    pub fn glossary(&self) -> glossary::Client {
+    pub fn glossary_client(&self) -> glossary::Client {
         glossary::Client(self.clone())
     }
-    pub fn lineage(&self) -> lineage::Client {
+    pub fn lineage_client(&self) -> lineage::Client {
         lineage::Client(self.clone())
     }
-    pub fn relationship(&self) -> relationship::Client {
+    pub fn relationship_client(&self) -> relationship::Client {
         relationship::Client(self.clone())
     }
-    pub fn types(&self) -> types::Client {
+    pub fn types_client(&self) -> types::Client {
         types::Client(self.clone())
     }
 }

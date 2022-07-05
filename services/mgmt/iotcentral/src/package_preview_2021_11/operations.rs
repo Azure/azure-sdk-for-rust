@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn apps(&self) -> apps::Client {
+    pub fn apps_client(&self) -> apps::Client {
         apps::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_links(&self) -> private_links::Client {
+    pub fn private_links_client(&self) -> private_links::Client {
         private_links::Client(self.clone())
     }
 }

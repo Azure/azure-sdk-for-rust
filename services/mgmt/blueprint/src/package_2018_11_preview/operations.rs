@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn artifacts(&self) -> artifacts::Client {
+    pub fn artifacts_client(&self) -> artifacts::Client {
         artifacts::Client(self.clone())
     }
-    pub fn assignment_operations(&self) -> assignment_operations::Client {
+    pub fn assignment_operations_client(&self) -> assignment_operations::Client {
         assignment_operations::Client(self.clone())
     }
-    pub fn assignments(&self) -> assignments::Client {
+    pub fn assignments_client(&self) -> assignments::Client {
         assignments::Client(self.clone())
     }
-    pub fn blueprints(&self) -> blueprints::Client {
+    pub fn blueprints_client(&self) -> blueprints::Client {
         blueprints::Client(self.clone())
     }
-    pub fn published_artifacts(&self) -> published_artifacts::Client {
+    pub fn published_artifacts_client(&self) -> published_artifacts::Client {
         published_artifacts::Client(self.clone())
     }
-    pub fn published_blueprints(&self) -> published_blueprints::Client {
+    pub fn published_blueprints_client(&self) -> published_blueprints::Client {
         published_blueprints::Client(self.clone())
     }
 }

@@ -74,28 +74,28 @@ impl Client {
             pipeline,
         }
     }
-    pub fn deployment_operations(&self) -> deployment_operations::Client {
+    pub fn deployment_operations_client(&self) -> deployment_operations::Client {
         deployment_operations::Client(self.clone())
     }
-    pub fn deployments(&self) -> deployments::Client {
+    pub fn deployments_client(&self) -> deployments::Client {
         deployments::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn provider_resource_types(&self) -> provider_resource_types::Client {
+    pub fn provider_resource_types_client(&self) -> provider_resource_types::Client {
         provider_resource_types::Client(self.clone())
     }
-    pub fn providers(&self) -> providers::Client {
+    pub fn providers_client(&self) -> providers::Client {
         providers::Client(self.clone())
     }
-    pub fn resource_groups(&self) -> resource_groups::Client {
+    pub fn resource_groups_client(&self) -> resource_groups::Client {
         resource_groups::Client(self.clone())
     }
-    pub fn resources(&self) -> resources::Client {
+    pub fn resources_client(&self) -> resources::Client {
         resources::Client(self.clone())
     }
-    pub fn tags(&self) -> tags::Client {
+    pub fn tags_client(&self) -> tags::Client {
         tags::Client(self.clone())
     }
 }

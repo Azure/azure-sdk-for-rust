@@ -74,64 +74,64 @@ impl Client {
             pipeline,
         }
     }
-    pub fn addons(&self) -> addons::Client {
+    pub fn addons_client(&self) -> addons::Client {
         addons::Client(self.clone())
     }
-    pub fn alerts(&self) -> alerts::Client {
+    pub fn alerts_client(&self) -> alerts::Client {
         alerts::Client(self.clone())
     }
-    pub fn available_skus(&self) -> available_skus::Client {
+    pub fn available_skus_client(&self) -> available_skus::Client {
         available_skus::Client(self.clone())
     }
-    pub fn bandwidth_schedules(&self) -> bandwidth_schedules::Client {
+    pub fn bandwidth_schedules_client(&self) -> bandwidth_schedules::Client {
         bandwidth_schedules::Client(self.clone())
     }
-    pub fn containers(&self) -> containers::Client {
+    pub fn containers_client(&self) -> containers::Client {
         containers::Client(self.clone())
     }
-    pub fn devices(&self) -> devices::Client {
+    pub fn devices_client(&self) -> devices::Client {
         devices::Client(self.clone())
     }
-    pub fn diagnostic_settings(&self) -> diagnostic_settings::Client {
+    pub fn diagnostic_settings_client(&self) -> diagnostic_settings::Client {
         diagnostic_settings::Client(self.clone())
     }
-    pub fn jobs(&self) -> jobs::Client {
+    pub fn jobs_client(&self) -> jobs::Client {
         jobs::Client(self.clone())
     }
-    pub fn monitoring_config(&self) -> monitoring_config::Client {
+    pub fn monitoring_config_client(&self) -> monitoring_config::Client {
         monitoring_config::Client(self.clone())
     }
-    pub fn nodes(&self) -> nodes::Client {
+    pub fn nodes_client(&self) -> nodes::Client {
         nodes::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn operations_status(&self) -> operations_status::Client {
+    pub fn operations_status_client(&self) -> operations_status::Client {
         operations_status::Client(self.clone())
     }
-    pub fn orders(&self) -> orders::Client {
+    pub fn orders_client(&self) -> orders::Client {
         orders::Client(self.clone())
     }
-    pub fn roles(&self) -> roles::Client {
+    pub fn roles_client(&self) -> roles::Client {
         roles::Client(self.clone())
     }
-    pub fn shares(&self) -> shares::Client {
+    pub fn shares_client(&self) -> shares::Client {
         shares::Client(self.clone())
     }
-    pub fn storage_account_credentials(&self) -> storage_account_credentials::Client {
+    pub fn storage_account_credentials_client(&self) -> storage_account_credentials::Client {
         storage_account_credentials::Client(self.clone())
     }
-    pub fn storage_accounts(&self) -> storage_accounts::Client {
+    pub fn storage_accounts_client(&self) -> storage_accounts::Client {
         storage_accounts::Client(self.clone())
     }
-    pub fn support_packages(&self) -> support_packages::Client {
+    pub fn support_packages_client(&self) -> support_packages::Client {
         support_packages::Client(self.clone())
     }
-    pub fn triggers(&self) -> triggers::Client {
+    pub fn triggers_client(&self) -> triggers::Client {
         triggers::Client(self.clone())
     }
-    pub fn users(&self) -> users::Client {
+    pub fn users_client(&self) -> users::Client {
         users::Client(self.clone())
     }
 }

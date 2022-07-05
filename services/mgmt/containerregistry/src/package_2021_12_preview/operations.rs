@@ -74,49 +74,49 @@ impl Client {
             pipeline,
         }
     }
-    pub fn agent_pools(&self) -> agent_pools::Client {
+    pub fn agent_pools_client(&self) -> agent_pools::Client {
         agent_pools::Client(self.clone())
     }
-    pub fn connected_registries(&self) -> connected_registries::Client {
+    pub fn connected_registries_client(&self) -> connected_registries::Client {
         connected_registries::Client(self.clone())
     }
-    pub fn export_pipelines(&self) -> export_pipelines::Client {
+    pub fn export_pipelines_client(&self) -> export_pipelines::Client {
         export_pipelines::Client(self.clone())
     }
-    pub fn import_pipelines(&self) -> import_pipelines::Client {
+    pub fn import_pipelines_client(&self) -> import_pipelines::Client {
         import_pipelines::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn pipeline_runs(&self) -> pipeline_runs::Client {
+    pub fn pipeline_runs_client(&self) -> pipeline_runs::Client {
         pipeline_runs::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn registries(&self) -> registries::Client {
+    pub fn registries_client(&self) -> registries::Client {
         registries::Client(self.clone())
     }
-    pub fn replications(&self) -> replications::Client {
+    pub fn replications_client(&self) -> replications::Client {
         replications::Client(self.clone())
     }
-    pub fn runs(&self) -> runs::Client {
+    pub fn runs_client(&self) -> runs::Client {
         runs::Client(self.clone())
     }
-    pub fn scope_maps(&self) -> scope_maps::Client {
+    pub fn scope_maps_client(&self) -> scope_maps::Client {
         scope_maps::Client(self.clone())
     }
-    pub fn task_runs(&self) -> task_runs::Client {
+    pub fn task_runs_client(&self) -> task_runs::Client {
         task_runs::Client(self.clone())
     }
-    pub fn tasks(&self) -> tasks::Client {
+    pub fn tasks_client(&self) -> tasks::Client {
         tasks::Client(self.clone())
     }
-    pub fn tokens(&self) -> tokens::Client {
+    pub fn tokens_client(&self) -> tokens::Client {
         tokens::Client(self.clone())
     }
-    pub fn webhooks(&self) -> webhooks::Client {
+    pub fn webhooks_client(&self) -> webhooks::Client {
         webhooks::Client(self.clone())
     }
 }

@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn schema(&self) -> schema::Client {
+    pub fn schema_client(&self) -> schema::Client {
         schema::Client(self.clone())
     }
-    pub fn schema_groups(&self) -> schema_groups::Client {
+    pub fn schema_groups_client(&self) -> schema_groups::Client {
         schema_groups::Client(self.clone())
     }
 }

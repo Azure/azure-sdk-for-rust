@@ -74,25 +74,25 @@ impl Client {
             pipeline,
         }
     }
-    pub fn database_instances(&self) -> database_instances::Client {
+    pub fn database_instances_client(&self) -> database_instances::Client {
         database_instances::Client(self.clone())
     }
-    pub fn databases(&self) -> databases::Client {
+    pub fn databases_client(&self) -> databases::Client {
         databases::Client(self.clone())
     }
-    pub fn events(&self) -> events::Client {
+    pub fn events_client(&self) -> events::Client {
         events::Client(self.clone())
     }
-    pub fn machines(&self) -> machines::Client {
+    pub fn machines_client(&self) -> machines::Client {
         machines::Client(self.clone())
     }
-    pub fn migrate_projects(&self) -> migrate_projects::Client {
+    pub fn migrate_projects_client(&self) -> migrate_projects::Client {
         migrate_projects::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn solutions(&self) -> solutions::Client {
+    pub fn solutions_client(&self) -> solutions::Client {
         solutions::Client(self.clone())
     }
 }

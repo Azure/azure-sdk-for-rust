@@ -74,31 +74,31 @@ impl Client {
             pipeline,
         }
     }
-    pub fn account(&self) -> account::Client {
+    pub fn account_client(&self) -> account::Client {
         account::Client(self.clone())
     }
-    pub fn application(&self) -> application::Client {
+    pub fn application_client(&self) -> application::Client {
         application::Client(self.clone())
     }
-    pub fn certificate(&self) -> certificate::Client {
+    pub fn certificate_client(&self) -> certificate::Client {
         certificate::Client(self.clone())
     }
-    pub fn compute_node(&self) -> compute_node::Client {
+    pub fn compute_node_client(&self) -> compute_node::Client {
         compute_node::Client(self.clone())
     }
-    pub fn file(&self) -> file::Client {
+    pub fn file_client(&self) -> file::Client {
         file::Client(self.clone())
     }
-    pub fn job(&self) -> job::Client {
+    pub fn job_client(&self) -> job::Client {
         job::Client(self.clone())
     }
-    pub fn job_schedule(&self) -> job_schedule::Client {
+    pub fn job_schedule_client(&self) -> job_schedule::Client {
         job_schedule::Client(self.clone())
     }
-    pub fn pool(&self) -> pool::Client {
+    pub fn pool_client(&self) -> pool::Client {
         pool::Client(self.clone())
     }
-    pub fn task(&self) -> task::Client {
+    pub fn task_client(&self) -> task::Client {
         task::Client(self.clone())
     }
 }

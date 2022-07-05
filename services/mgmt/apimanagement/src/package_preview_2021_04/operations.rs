@@ -74,229 +74,229 @@ impl Client {
             pipeline,
         }
     }
-    pub fn api(&self) -> api::Client {
+    pub fn api_client(&self) -> api::Client {
         api::Client(self.clone())
     }
-    pub fn api_diagnostic(&self) -> api_diagnostic::Client {
+    pub fn api_diagnostic_client(&self) -> api_diagnostic::Client {
         api_diagnostic::Client(self.clone())
     }
-    pub fn api_export(&self) -> api_export::Client {
+    pub fn api_export_client(&self) -> api_export::Client {
         api_export::Client(self.clone())
     }
-    pub fn api_issue(&self) -> api_issue::Client {
+    pub fn api_issue_client(&self) -> api_issue::Client {
         api_issue::Client(self.clone())
     }
-    pub fn api_issue_attachment(&self) -> api_issue_attachment::Client {
+    pub fn api_issue_attachment_client(&self) -> api_issue_attachment::Client {
         api_issue_attachment::Client(self.clone())
     }
-    pub fn api_issue_comment(&self) -> api_issue_comment::Client {
+    pub fn api_issue_comment_client(&self) -> api_issue_comment::Client {
         api_issue_comment::Client(self.clone())
     }
-    pub fn api_management_operations(&self) -> api_management_operations::Client {
+    pub fn api_management_operations_client(&self) -> api_management_operations::Client {
         api_management_operations::Client(self.clone())
     }
-    pub fn api_management_service(&self) -> api_management_service::Client {
+    pub fn api_management_service_client(&self) -> api_management_service::Client {
         api_management_service::Client(self.clone())
     }
-    pub fn api_management_service_skus(&self) -> api_management_service_skus::Client {
+    pub fn api_management_service_skus_client(&self) -> api_management_service_skus::Client {
         api_management_service_skus::Client(self.clone())
     }
-    pub fn api_management_skus(&self) -> api_management_skus::Client {
+    pub fn api_management_skus_client(&self) -> api_management_skus::Client {
         api_management_skus::Client(self.clone())
     }
-    pub fn api_operation(&self) -> api_operation::Client {
+    pub fn api_operation_client(&self) -> api_operation::Client {
         api_operation::Client(self.clone())
     }
-    pub fn api_operation_policy(&self) -> api_operation_policy::Client {
+    pub fn api_operation_policy_client(&self) -> api_operation_policy::Client {
         api_operation_policy::Client(self.clone())
     }
-    pub fn api_policy(&self) -> api_policy::Client {
+    pub fn api_policy_client(&self) -> api_policy::Client {
         api_policy::Client(self.clone())
     }
-    pub fn api_product(&self) -> api_product::Client {
+    pub fn api_product_client(&self) -> api_product::Client {
         api_product::Client(self.clone())
     }
-    pub fn api_release(&self) -> api_release::Client {
+    pub fn api_release_client(&self) -> api_release::Client {
         api_release::Client(self.clone())
     }
-    pub fn api_revision(&self) -> api_revision::Client {
+    pub fn api_revision_client(&self) -> api_revision::Client {
         api_revision::Client(self.clone())
     }
-    pub fn api_schema(&self) -> api_schema::Client {
+    pub fn api_schema_client(&self) -> api_schema::Client {
         api_schema::Client(self.clone())
     }
-    pub fn api_tag_description(&self) -> api_tag_description::Client {
+    pub fn api_tag_description_client(&self) -> api_tag_description::Client {
         api_tag_description::Client(self.clone())
     }
-    pub fn api_version_set(&self) -> api_version_set::Client {
+    pub fn api_version_set_client(&self) -> api_version_set::Client {
         api_version_set::Client(self.clone())
     }
-    pub fn authorization_server(&self) -> authorization_server::Client {
+    pub fn authorization_server_client(&self) -> authorization_server::Client {
         authorization_server::Client(self.clone())
     }
-    pub fn backend(&self) -> backend::Client {
+    pub fn backend_client(&self) -> backend::Client {
         backend::Client(self.clone())
     }
-    pub fn cache(&self) -> cache::Client {
+    pub fn cache_client(&self) -> cache::Client {
         cache::Client(self.clone())
     }
-    pub fn certificate(&self) -> certificate::Client {
+    pub fn certificate_client(&self) -> certificate::Client {
         certificate::Client(self.clone())
     }
-    pub fn content_item(&self) -> content_item::Client {
+    pub fn content_item_client(&self) -> content_item::Client {
         content_item::Client(self.clone())
     }
-    pub fn content_type(&self) -> content_type::Client {
+    pub fn content_type_client(&self) -> content_type::Client {
         content_type::Client(self.clone())
     }
-    pub fn delegation_settings(&self) -> delegation_settings::Client {
+    pub fn delegation_settings_client(&self) -> delegation_settings::Client {
         delegation_settings::Client(self.clone())
     }
-    pub fn deleted_services(&self) -> deleted_services::Client {
+    pub fn deleted_services_client(&self) -> deleted_services::Client {
         deleted_services::Client(self.clone())
     }
-    pub fn diagnostic(&self) -> diagnostic::Client {
+    pub fn diagnostic_client(&self) -> diagnostic::Client {
         diagnostic::Client(self.clone())
     }
-    pub fn email_template(&self) -> email_template::Client {
+    pub fn email_template_client(&self) -> email_template::Client {
         email_template::Client(self.clone())
     }
-    pub fn gateway(&self) -> gateway::Client {
+    pub fn gateway_client(&self) -> gateway::Client {
         gateway::Client(self.clone())
     }
-    pub fn gateway_api(&self) -> gateway_api::Client {
+    pub fn gateway_api_client(&self) -> gateway_api::Client {
         gateway_api::Client(self.clone())
     }
-    pub fn gateway_certificate_authority(&self) -> gateway_certificate_authority::Client {
+    pub fn gateway_certificate_authority_client(&self) -> gateway_certificate_authority::Client {
         gateway_certificate_authority::Client(self.clone())
     }
-    pub fn gateway_hostname_configuration(&self) -> gateway_hostname_configuration::Client {
+    pub fn gateway_hostname_configuration_client(&self) -> gateway_hostname_configuration::Client {
         gateway_hostname_configuration::Client(self.clone())
     }
-    pub fn group(&self) -> group::Client {
+    pub fn group_client(&self) -> group::Client {
         group::Client(self.clone())
     }
-    pub fn group_user(&self) -> group_user::Client {
+    pub fn group_user_client(&self) -> group_user::Client {
         group_user::Client(self.clone())
     }
-    pub fn identity_provider(&self) -> identity_provider::Client {
+    pub fn identity_provider_client(&self) -> identity_provider::Client {
         identity_provider::Client(self.clone())
     }
-    pub fn issue(&self) -> issue::Client {
+    pub fn issue_client(&self) -> issue::Client {
         issue::Client(self.clone())
     }
-    pub fn logger(&self) -> logger::Client {
+    pub fn logger_client(&self) -> logger::Client {
         logger::Client(self.clone())
     }
-    pub fn named_value(&self) -> named_value::Client {
+    pub fn named_value_client(&self) -> named_value::Client {
         named_value::Client(self.clone())
     }
-    pub fn network_status(&self) -> network_status::Client {
+    pub fn network_status_client(&self) -> network_status::Client {
         network_status::Client(self.clone())
     }
-    pub fn notification(&self) -> notification::Client {
+    pub fn notification_client(&self) -> notification::Client {
         notification::Client(self.clone())
     }
-    pub fn notification_recipient_email(&self) -> notification_recipient_email::Client {
+    pub fn notification_recipient_email_client(&self) -> notification_recipient_email::Client {
         notification_recipient_email::Client(self.clone())
     }
-    pub fn notification_recipient_user(&self) -> notification_recipient_user::Client {
+    pub fn notification_recipient_user_client(&self) -> notification_recipient_user::Client {
         notification_recipient_user::Client(self.clone())
     }
-    pub fn open_id_connect_provider(&self) -> open_id_connect_provider::Client {
+    pub fn open_id_connect_provider_client(&self) -> open_id_connect_provider::Client {
         open_id_connect_provider::Client(self.clone())
     }
-    pub fn operation(&self) -> operation::Client {
+    pub fn operation_client(&self) -> operation::Client {
         operation::Client(self.clone())
     }
-    pub fn outbound_network_dependencies_endpoints(&self) -> outbound_network_dependencies_endpoints::Client {
+    pub fn outbound_network_dependencies_endpoints_client(&self) -> outbound_network_dependencies_endpoints::Client {
         outbound_network_dependencies_endpoints::Client(self.clone())
     }
-    pub fn policy(&self) -> policy::Client {
+    pub fn policy_client(&self) -> policy::Client {
         policy::Client(self.clone())
     }
-    pub fn policy_description(&self) -> policy_description::Client {
+    pub fn policy_description_client(&self) -> policy_description::Client {
         policy_description::Client(self.clone())
     }
-    pub fn portal_revision(&self) -> portal_revision::Client {
+    pub fn portal_revision_client(&self) -> portal_revision::Client {
         portal_revision::Client(self.clone())
     }
-    pub fn portal_settings(&self) -> portal_settings::Client {
+    pub fn portal_settings_client(&self) -> portal_settings::Client {
         portal_settings::Client(self.clone())
     }
-    pub fn private_endpoint_connection(&self) -> private_endpoint_connection::Client {
+    pub fn private_endpoint_connection_client(&self) -> private_endpoint_connection::Client {
         private_endpoint_connection::Client(self.clone())
     }
-    pub fn product(&self) -> product::Client {
+    pub fn product_client(&self) -> product::Client {
         product::Client(self.clone())
     }
-    pub fn product_api(&self) -> product_api::Client {
+    pub fn product_api_client(&self) -> product_api::Client {
         product_api::Client(self.clone())
     }
-    pub fn product_group(&self) -> product_group::Client {
+    pub fn product_group_client(&self) -> product_group::Client {
         product_group::Client(self.clone())
     }
-    pub fn product_policy(&self) -> product_policy::Client {
+    pub fn product_policy_client(&self) -> product_policy::Client {
         product_policy::Client(self.clone())
     }
-    pub fn product_subscriptions(&self) -> product_subscriptions::Client {
+    pub fn product_subscriptions_client(&self) -> product_subscriptions::Client {
         product_subscriptions::Client(self.clone())
     }
-    pub fn quota_by_counter_keys(&self) -> quota_by_counter_keys::Client {
+    pub fn quota_by_counter_keys_client(&self) -> quota_by_counter_keys::Client {
         quota_by_counter_keys::Client(self.clone())
     }
-    pub fn quota_by_period_keys(&self) -> quota_by_period_keys::Client {
+    pub fn quota_by_period_keys_client(&self) -> quota_by_period_keys::Client {
         quota_by_period_keys::Client(self.clone())
     }
-    pub fn region(&self) -> region::Client {
+    pub fn region_client(&self) -> region::Client {
         region::Client(self.clone())
     }
-    pub fn reports(&self) -> reports::Client {
+    pub fn reports_client(&self) -> reports::Client {
         reports::Client(self.clone())
     }
-    pub fn schema(&self) -> schema::Client {
+    pub fn schema_client(&self) -> schema::Client {
         schema::Client(self.clone())
     }
-    pub fn sign_in_settings(&self) -> sign_in_settings::Client {
+    pub fn sign_in_settings_client(&self) -> sign_in_settings::Client {
         sign_in_settings::Client(self.clone())
     }
-    pub fn sign_up_settings(&self) -> sign_up_settings::Client {
+    pub fn sign_up_settings_client(&self) -> sign_up_settings::Client {
         sign_up_settings::Client(self.clone())
     }
-    pub fn subscription(&self) -> subscription::Client {
+    pub fn subscription_client(&self) -> subscription::Client {
         subscription::Client(self.clone())
     }
-    pub fn tag(&self) -> tag::Client {
+    pub fn tag_client(&self) -> tag::Client {
         tag::Client(self.clone())
     }
-    pub fn tag_resource(&self) -> tag_resource::Client {
+    pub fn tag_resource_client(&self) -> tag_resource::Client {
         tag_resource::Client(self.clone())
     }
-    pub fn tenant_access(&self) -> tenant_access::Client {
+    pub fn tenant_access_client(&self) -> tenant_access::Client {
         tenant_access::Client(self.clone())
     }
-    pub fn tenant_access_git(&self) -> tenant_access_git::Client {
+    pub fn tenant_access_git_client(&self) -> tenant_access_git::Client {
         tenant_access_git::Client(self.clone())
     }
-    pub fn tenant_configuration(&self) -> tenant_configuration::Client {
+    pub fn tenant_configuration_client(&self) -> tenant_configuration::Client {
         tenant_configuration::Client(self.clone())
     }
-    pub fn tenant_settings(&self) -> tenant_settings::Client {
+    pub fn tenant_settings_client(&self) -> tenant_settings::Client {
         tenant_settings::Client(self.clone())
     }
-    pub fn user(&self) -> user::Client {
+    pub fn user_client(&self) -> user::Client {
         user::Client(self.clone())
     }
-    pub fn user_confirmation_password(&self) -> user_confirmation_password::Client {
+    pub fn user_confirmation_password_client(&self) -> user_confirmation_password::Client {
         user_confirmation_password::Client(self.clone())
     }
-    pub fn user_group(&self) -> user_group::Client {
+    pub fn user_group_client(&self) -> user_group::Client {
         user_group::Client(self.clone())
     }
-    pub fn user_identities(&self) -> user_identities::Client {
+    pub fn user_identities_client(&self) -> user_identities::Client {
         user_identities::Client(self.clone())
     }
-    pub fn user_subscription(&self) -> user_subscription::Client {
+    pub fn user_subscription_client(&self) -> user_subscription::Client {
         user_subscription::Client(self.clone())
     }
 }

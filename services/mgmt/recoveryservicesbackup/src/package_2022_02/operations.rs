@@ -74,148 +74,148 @@ impl Client {
             pipeline,
         }
     }
-    pub fn backup_engines(&self) -> backup_engines::Client {
+    pub fn backup_engines_client(&self) -> backup_engines::Client {
         backup_engines::Client(self.clone())
     }
-    pub fn backup_jobs(&self) -> backup_jobs::Client {
+    pub fn backup_jobs_client(&self) -> backup_jobs::Client {
         backup_jobs::Client(self.clone())
     }
-    pub fn backup_operation_results(&self) -> backup_operation_results::Client {
+    pub fn backup_operation_results_client(&self) -> backup_operation_results::Client {
         backup_operation_results::Client(self.clone())
     }
-    pub fn backup_operation_statuses(&self) -> backup_operation_statuses::Client {
+    pub fn backup_operation_statuses_client(&self) -> backup_operation_statuses::Client {
         backup_operation_statuses::Client(self.clone())
     }
-    pub fn backup_policies(&self) -> backup_policies::Client {
+    pub fn backup_policies_client(&self) -> backup_policies::Client {
         backup_policies::Client(self.clone())
     }
-    pub fn backup_protectable_items(&self) -> backup_protectable_items::Client {
+    pub fn backup_protectable_items_client(&self) -> backup_protectable_items::Client {
         backup_protectable_items::Client(self.clone())
     }
-    pub fn backup_protected_items(&self) -> backup_protected_items::Client {
+    pub fn backup_protected_items_client(&self) -> backup_protected_items::Client {
         backup_protected_items::Client(self.clone())
     }
-    pub fn backup_protection_containers(&self) -> backup_protection_containers::Client {
+    pub fn backup_protection_containers_client(&self) -> backup_protection_containers::Client {
         backup_protection_containers::Client(self.clone())
     }
-    pub fn backup_protection_intent(&self) -> backup_protection_intent::Client {
+    pub fn backup_protection_intent_client(&self) -> backup_protection_intent::Client {
         backup_protection_intent::Client(self.clone())
     }
-    pub fn backup_resource_encryption_configs(&self) -> backup_resource_encryption_configs::Client {
+    pub fn backup_resource_encryption_configs_client(&self) -> backup_resource_encryption_configs::Client {
         backup_resource_encryption_configs::Client(self.clone())
     }
-    pub fn backup_resource_storage_configs_non_crr(&self) -> backup_resource_storage_configs_non_crr::Client {
+    pub fn backup_resource_storage_configs_non_crr_client(&self) -> backup_resource_storage_configs_non_crr::Client {
         backup_resource_storage_configs_non_crr::Client(self.clone())
     }
-    pub fn backup_resource_vault_configs(&self) -> backup_resource_vault_configs::Client {
+    pub fn backup_resource_vault_configs_client(&self) -> backup_resource_vault_configs::Client {
         backup_resource_vault_configs::Client(self.clone())
     }
-    pub fn backup_status(&self) -> backup_status::Client {
+    pub fn backup_status_client(&self) -> backup_status::Client {
         backup_status::Client(self.clone())
     }
-    pub fn backup_usage_summaries(&self) -> backup_usage_summaries::Client {
+    pub fn backup_usage_summaries_client(&self) -> backup_usage_summaries::Client {
         backup_usage_summaries::Client(self.clone())
     }
-    pub fn backup_workload_items(&self) -> backup_workload_items::Client {
+    pub fn backup_workload_items_client(&self) -> backup_workload_items::Client {
         backup_workload_items::Client(self.clone())
     }
-    pub fn backups(&self) -> backups::Client {
+    pub fn backups_client(&self) -> backups::Client {
         backups::Client(self.clone())
     }
-    pub fn bms_prepare_data_move_operation_result(&self) -> bms_prepare_data_move_operation_result::Client {
+    pub fn bms_prepare_data_move_operation_result_client(&self) -> bms_prepare_data_move_operation_result::Client {
         bms_prepare_data_move_operation_result::Client(self.clone())
     }
-    pub fn export_jobs_operation_results(&self) -> export_jobs_operation_results::Client {
+    pub fn export_jobs_operation_results_client(&self) -> export_jobs_operation_results::Client {
         export_jobs_operation_results::Client(self.clone())
     }
-    pub fn feature_support(&self) -> feature_support::Client {
+    pub fn feature_support_client(&self) -> feature_support::Client {
         feature_support::Client(self.clone())
     }
-    pub fn item_level_recovery_connections(&self) -> item_level_recovery_connections::Client {
+    pub fn item_level_recovery_connections_client(&self) -> item_level_recovery_connections::Client {
         item_level_recovery_connections::Client(self.clone())
     }
-    pub fn job_cancellations(&self) -> job_cancellations::Client {
+    pub fn job_cancellations_client(&self) -> job_cancellations::Client {
         job_cancellations::Client(self.clone())
     }
-    pub fn job_details(&self) -> job_details::Client {
+    pub fn job_details_client(&self) -> job_details::Client {
         job_details::Client(self.clone())
     }
-    pub fn job_operation_results(&self) -> job_operation_results::Client {
+    pub fn job_operation_results_client(&self) -> job_operation_results::Client {
         job_operation_results::Client(self.clone())
     }
-    pub fn jobs(&self) -> jobs::Client {
+    pub fn jobs_client(&self) -> jobs::Client {
         jobs::Client(self.clone())
     }
-    pub fn operation(&self) -> operation::Client {
+    pub fn operation_client(&self) -> operation::Client {
         operation::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint(&self) -> private_endpoint::Client {
+    pub fn private_endpoint_client(&self) -> private_endpoint::Client {
         private_endpoint::Client(self.clone())
     }
-    pub fn private_endpoint_connection(&self) -> private_endpoint_connection::Client {
+    pub fn private_endpoint_connection_client(&self) -> private_endpoint_connection::Client {
         private_endpoint_connection::Client(self.clone())
     }
-    pub fn protectable_containers(&self) -> protectable_containers::Client {
+    pub fn protectable_containers_client(&self) -> protectable_containers::Client {
         protectable_containers::Client(self.clone())
     }
-    pub fn protected_item_operation_results(&self) -> protected_item_operation_results::Client {
+    pub fn protected_item_operation_results_client(&self) -> protected_item_operation_results::Client {
         protected_item_operation_results::Client(self.clone())
     }
-    pub fn protected_item_operation_statuses(&self) -> protected_item_operation_statuses::Client {
+    pub fn protected_item_operation_statuses_client(&self) -> protected_item_operation_statuses::Client {
         protected_item_operation_statuses::Client(self.clone())
     }
-    pub fn protected_items(&self) -> protected_items::Client {
+    pub fn protected_items_client(&self) -> protected_items::Client {
         protected_items::Client(self.clone())
     }
-    pub fn protection_container_operation_results(&self) -> protection_container_operation_results::Client {
+    pub fn protection_container_operation_results_client(&self) -> protection_container_operation_results::Client {
         protection_container_operation_results::Client(self.clone())
     }
-    pub fn protection_container_refresh_operation_results(&self) -> protection_container_refresh_operation_results::Client {
+    pub fn protection_container_refresh_operation_results_client(&self) -> protection_container_refresh_operation_results::Client {
         protection_container_refresh_operation_results::Client(self.clone())
     }
-    pub fn protection_containers(&self) -> protection_containers::Client {
+    pub fn protection_containers_client(&self) -> protection_containers::Client {
         protection_containers::Client(self.clone())
     }
-    pub fn protection_intent(&self) -> protection_intent::Client {
+    pub fn protection_intent_client(&self) -> protection_intent::Client {
         protection_intent::Client(self.clone())
     }
-    pub fn protection_policies(&self) -> protection_policies::Client {
+    pub fn protection_policies_client(&self) -> protection_policies::Client {
         protection_policies::Client(self.clone())
     }
-    pub fn protection_policy_operation_results(&self) -> protection_policy_operation_results::Client {
+    pub fn protection_policy_operation_results_client(&self) -> protection_policy_operation_results::Client {
         protection_policy_operation_results::Client(self.clone())
     }
-    pub fn protection_policy_operation_statuses(&self) -> protection_policy_operation_statuses::Client {
+    pub fn protection_policy_operation_statuses_client(&self) -> protection_policy_operation_statuses::Client {
         protection_policy_operation_statuses::Client(self.clone())
     }
-    pub fn recovery_points(&self) -> recovery_points::Client {
+    pub fn recovery_points_client(&self) -> recovery_points::Client {
         recovery_points::Client(self.clone())
     }
-    pub fn recovery_points_recommended_for_move(&self) -> recovery_points_recommended_for_move::Client {
+    pub fn recovery_points_recommended_for_move_client(&self) -> recovery_points_recommended_for_move::Client {
         recovery_points_recommended_for_move::Client(self.clone())
     }
-    pub fn resource_guard_proxies(&self) -> resource_guard_proxies::Client {
+    pub fn resource_guard_proxies_client(&self) -> resource_guard_proxies::Client {
         resource_guard_proxies::Client(self.clone())
     }
-    pub fn resource_guard_proxy(&self) -> resource_guard_proxy::Client {
+    pub fn resource_guard_proxy_client(&self) -> resource_guard_proxy::Client {
         resource_guard_proxy::Client(self.clone())
     }
-    pub fn restores(&self) -> restores::Client {
+    pub fn restores_client(&self) -> restores::Client {
         restores::Client(self.clone())
     }
-    pub fn security_pi_ns(&self) -> security_pi_ns::Client {
+    pub fn security_pi_ns_client(&self) -> security_pi_ns::Client {
         security_pi_ns::Client(self.clone())
     }
-    pub fn validate_operation(&self) -> validate_operation::Client {
+    pub fn validate_operation_client(&self) -> validate_operation::Client {
         validate_operation::Client(self.clone())
     }
-    pub fn validate_operation_results(&self) -> validate_operation_results::Client {
+    pub fn validate_operation_results_client(&self) -> validate_operation_results::Client {
         validate_operation_results::Client(self.clone())
     }
-    pub fn validate_operation_statuses(&self) -> validate_operation_statuses::Client {
+    pub fn validate_operation_statuses_client(&self) -> validate_operation_statuses::Client {
         validate_operation_statuses::Client(self.clone())
     }
 }

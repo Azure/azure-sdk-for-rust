@@ -74,43 +74,43 @@ impl Client {
             pipeline,
         }
     }
-    pub fn aggregated_cost(&self) -> aggregated_cost::Client {
+    pub fn aggregated_cost_client(&self) -> aggregated_cost::Client {
         aggregated_cost::Client(self.clone())
     }
-    pub fn balances(&self) -> balances::Client {
+    pub fn balances_client(&self) -> balances::Client {
         balances::Client(self.clone())
     }
-    pub fn budgets(&self) -> budgets::Client {
+    pub fn budgets_client(&self) -> budgets::Client {
         budgets::Client(self.clone())
     }
-    pub fn charges(&self) -> charges::Client {
+    pub fn charges_client(&self) -> charges::Client {
         charges::Client(self.clone())
     }
-    pub fn forecasts(&self) -> forecasts::Client {
+    pub fn forecasts_client(&self) -> forecasts::Client {
         forecasts::Client(self.clone())
     }
-    pub fn marketplaces(&self) -> marketplaces::Client {
+    pub fn marketplaces_client(&self) -> marketplaces::Client {
         marketplaces::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn price_sheet(&self) -> price_sheet::Client {
+    pub fn price_sheet_client(&self) -> price_sheet::Client {
         price_sheet::Client(self.clone())
     }
-    pub fn reservation_recommendations(&self) -> reservation_recommendations::Client {
+    pub fn reservation_recommendations_client(&self) -> reservation_recommendations::Client {
         reservation_recommendations::Client(self.clone())
     }
-    pub fn reservations_details(&self) -> reservations_details::Client {
+    pub fn reservations_details_client(&self) -> reservations_details::Client {
         reservations_details::Client(self.clone())
     }
-    pub fn reservations_summaries(&self) -> reservations_summaries::Client {
+    pub fn reservations_summaries_client(&self) -> reservations_summaries::Client {
         reservations_summaries::Client(self.clone())
     }
-    pub fn tags(&self) -> tags::Client {
+    pub fn tags_client(&self) -> tags::Client {
         tags::Client(self.clone())
     }
-    pub fn usage_details(&self) -> usage_details::Client {
+    pub fn usage_details_client(&self) -> usage_details::Client {
         usage_details::Client(self.clone())
     }
 }

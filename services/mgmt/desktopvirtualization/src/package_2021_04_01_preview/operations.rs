@@ -74,46 +74,46 @@ impl Client {
             pipeline,
         }
     }
-    pub fn application_groups(&self) -> application_groups::Client {
+    pub fn application_groups_client(&self) -> application_groups::Client {
         application_groups::Client(self.clone())
     }
-    pub fn applications(&self) -> applications::Client {
+    pub fn applications_client(&self) -> applications::Client {
         applications::Client(self.clone())
     }
-    pub fn desktops(&self) -> desktops::Client {
+    pub fn desktops_client(&self) -> desktops::Client {
         desktops::Client(self.clone())
     }
-    pub fn host_pools(&self) -> host_pools::Client {
+    pub fn host_pools_client(&self) -> host_pools::Client {
         host_pools::Client(self.clone())
     }
-    pub fn msix_images(&self) -> msix_images::Client {
+    pub fn msix_images_client(&self) -> msix_images::Client {
         msix_images::Client(self.clone())
     }
-    pub fn msix_packages(&self) -> msix_packages::Client {
+    pub fn msix_packages_client(&self) -> msix_packages::Client {
         msix_packages::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn scaling_plans(&self) -> scaling_plans::Client {
+    pub fn scaling_plans_client(&self) -> scaling_plans::Client {
         scaling_plans::Client(self.clone())
     }
-    pub fn session_hosts(&self) -> session_hosts::Client {
+    pub fn session_hosts_client(&self) -> session_hosts::Client {
         session_hosts::Client(self.clone())
     }
-    pub fn start_menu_items(&self) -> start_menu_items::Client {
+    pub fn start_menu_items_client(&self) -> start_menu_items::Client {
         start_menu_items::Client(self.clone())
     }
-    pub fn user_sessions(&self) -> user_sessions::Client {
+    pub fn user_sessions_client(&self) -> user_sessions::Client {
         user_sessions::Client(self.clone())
     }
-    pub fn workspaces(&self) -> workspaces::Client {
+    pub fn workspaces_client(&self) -> workspaces::Client {
         workspaces::Client(self.clone())
     }
 }

@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn custom_assessment_automations(&self) -> custom_assessment_automations::Client {
+    pub fn custom_assessment_automations_client(&self) -> custom_assessment_automations::Client {
         custom_assessment_automations::Client(self.clone())
     }
-    pub fn custom_entity_store_assignments(&self) -> custom_entity_store_assignments::Client {
+    pub fn custom_entity_store_assignments_client(&self) -> custom_entity_store_assignments::Client {
         custom_entity_store_assignments::Client(self.clone())
     }
 }

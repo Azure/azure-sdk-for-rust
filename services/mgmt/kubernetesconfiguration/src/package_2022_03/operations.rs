@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn extensions(&self) -> extensions::Client {
+    pub fn extensions_client(&self) -> extensions::Client {
         extensions::Client(self.clone())
     }
-    pub fn flux_config_operation_status(&self) -> flux_config_operation_status::Client {
+    pub fn flux_config_operation_status_client(&self) -> flux_config_operation_status::Client {
         flux_config_operation_status::Client(self.clone())
     }
-    pub fn flux_configurations(&self) -> flux_configurations::Client {
+    pub fn flux_configurations_client(&self) -> flux_configurations::Client {
         flux_configurations::Client(self.clone())
     }
-    pub fn operation_status(&self) -> operation_status::Client {
+    pub fn operation_status_client(&self) -> operation_status::Client {
         operation_status::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn source_control_configurations(&self) -> source_control_configurations::Client {
+    pub fn source_control_configurations_client(&self) -> source_control_configurations::Client {
         source_control_configurations::Client(self.clone())
     }
 }

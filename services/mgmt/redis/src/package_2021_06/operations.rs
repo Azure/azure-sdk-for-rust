@@ -74,28 +74,28 @@ impl Client {
             pipeline,
         }
     }
-    pub fn async_operation_status(&self) -> async_operation_status::Client {
+    pub fn async_operation_status_client(&self) -> async_operation_status::Client {
         async_operation_status::Client(self.clone())
     }
-    pub fn firewall_rules(&self) -> firewall_rules::Client {
+    pub fn firewall_rules_client(&self) -> firewall_rules::Client {
         firewall_rules::Client(self.clone())
     }
-    pub fn linked_server(&self) -> linked_server::Client {
+    pub fn linked_server_client(&self) -> linked_server::Client {
         linked_server::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn patch_schedules(&self) -> patch_schedules::Client {
+    pub fn patch_schedules_client(&self) -> patch_schedules::Client {
         patch_schedules::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn redis(&self) -> redis::Client {
+    pub fn redis_client(&self) -> redis::Client {
         redis::Client(self.clone())
     }
 }

@@ -74,103 +74,103 @@ impl Client {
             pipeline,
         }
     }
-    pub fn actions(&self) -> actions::Client {
+    pub fn actions_client(&self) -> actions::Client {
         actions::Client(self.clone())
     }
-    pub fn alert_rule_templates(&self) -> alert_rule_templates::Client {
+    pub fn alert_rule_templates_client(&self) -> alert_rule_templates::Client {
         alert_rule_templates::Client(self.clone())
     }
-    pub fn alert_rules(&self) -> alert_rules::Client {
+    pub fn alert_rules_client(&self) -> alert_rules::Client {
         alert_rules::Client(self.clone())
     }
-    pub fn automation_rules(&self) -> automation_rules::Client {
+    pub fn automation_rules_client(&self) -> automation_rules::Client {
         automation_rules::Client(self.clone())
     }
-    pub fn bookmark(&self) -> bookmark::Client {
+    pub fn bookmark_client(&self) -> bookmark::Client {
         bookmark::Client(self.clone())
     }
-    pub fn bookmark_relations(&self) -> bookmark_relations::Client {
+    pub fn bookmark_relations_client(&self) -> bookmark_relations::Client {
         bookmark_relations::Client(self.clone())
     }
-    pub fn bookmarks(&self) -> bookmarks::Client {
+    pub fn bookmarks_client(&self) -> bookmarks::Client {
         bookmarks::Client(self.clone())
     }
-    pub fn data_connectors(&self) -> data_connectors::Client {
+    pub fn data_connectors_client(&self) -> data_connectors::Client {
         data_connectors::Client(self.clone())
     }
-    pub fn data_connectors_check_requirements(&self) -> data_connectors_check_requirements::Client {
+    pub fn data_connectors_check_requirements_client(&self) -> data_connectors_check_requirements::Client {
         data_connectors_check_requirements::Client(self.clone())
     }
-    pub fn domain_whois(&self) -> domain_whois::Client {
+    pub fn domain_whois_client(&self) -> domain_whois::Client {
         domain_whois::Client(self.clone())
     }
-    pub fn entities(&self) -> entities::Client {
+    pub fn entities_client(&self) -> entities::Client {
         entities::Client(self.clone())
     }
-    pub fn entities_get_timeline(&self) -> entities_get_timeline::Client {
+    pub fn entities_get_timeline_client(&self) -> entities_get_timeline::Client {
         entities_get_timeline::Client(self.clone())
     }
-    pub fn entities_relations(&self) -> entities_relations::Client {
+    pub fn entities_relations_client(&self) -> entities_relations::Client {
         entities_relations::Client(self.clone())
     }
-    pub fn entity_queries(&self) -> entity_queries::Client {
+    pub fn entity_queries_client(&self) -> entity_queries::Client {
         entity_queries::Client(self.clone())
     }
-    pub fn entity_query_templates(&self) -> entity_query_templates::Client {
+    pub fn entity_query_templates_client(&self) -> entity_query_templates::Client {
         entity_query_templates::Client(self.clone())
     }
-    pub fn entity_relations(&self) -> entity_relations::Client {
+    pub fn entity_relations_client(&self) -> entity_relations::Client {
         entity_relations::Client(self.clone())
     }
-    pub fn incident_comments(&self) -> incident_comments::Client {
+    pub fn incident_comments_client(&self) -> incident_comments::Client {
         incident_comments::Client(self.clone())
     }
-    pub fn incident_relations(&self) -> incident_relations::Client {
+    pub fn incident_relations_client(&self) -> incident_relations::Client {
         incident_relations::Client(self.clone())
     }
-    pub fn incidents(&self) -> incidents::Client {
+    pub fn incidents_client(&self) -> incidents::Client {
         incidents::Client(self.clone())
     }
-    pub fn ip_geodata(&self) -> ip_geodata::Client {
+    pub fn ip_geodata_client(&self) -> ip_geodata::Client {
         ip_geodata::Client(self.clone())
     }
-    pub fn metadata(&self) -> metadata::Client {
+    pub fn metadata_client(&self) -> metadata::Client {
         metadata::Client(self.clone())
     }
-    pub fn office_consents(&self) -> office_consents::Client {
+    pub fn office_consents_client(&self) -> office_consents::Client {
         office_consents::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn product_settings(&self) -> product_settings::Client {
+    pub fn product_settings_client(&self) -> product_settings::Client {
         product_settings::Client(self.clone())
     }
-    pub fn security_ml_analytics_settings(&self) -> security_ml_analytics_settings::Client {
+    pub fn security_ml_analytics_settings_client(&self) -> security_ml_analytics_settings::Client {
         security_ml_analytics_settings::Client(self.clone())
     }
-    pub fn sentinel_onboarding_states(&self) -> sentinel_onboarding_states::Client {
+    pub fn sentinel_onboarding_states_client(&self) -> sentinel_onboarding_states::Client {
         sentinel_onboarding_states::Client(self.clone())
     }
-    pub fn source_control(&self) -> source_control::Client {
+    pub fn source_control_client(&self) -> source_control::Client {
         source_control::Client(self.clone())
     }
-    pub fn source_controls(&self) -> source_controls::Client {
+    pub fn source_controls_client(&self) -> source_controls::Client {
         source_controls::Client(self.clone())
     }
-    pub fn threat_intelligence_indicator(&self) -> threat_intelligence_indicator::Client {
+    pub fn threat_intelligence_indicator_client(&self) -> threat_intelligence_indicator::Client {
         threat_intelligence_indicator::Client(self.clone())
     }
-    pub fn threat_intelligence_indicator_metrics(&self) -> threat_intelligence_indicator_metrics::Client {
+    pub fn threat_intelligence_indicator_metrics_client(&self) -> threat_intelligence_indicator_metrics::Client {
         threat_intelligence_indicator_metrics::Client(self.clone())
     }
-    pub fn threat_intelligence_indicators(&self) -> threat_intelligence_indicators::Client {
+    pub fn threat_intelligence_indicators_client(&self) -> threat_intelligence_indicators::Client {
         threat_intelligence_indicators::Client(self.clone())
     }
-    pub fn watchlist_items(&self) -> watchlist_items::Client {
+    pub fn watchlist_items_client(&self) -> watchlist_items::Client {
         watchlist_items::Client(self.clone())
     }
-    pub fn watchlists(&self) -> watchlists::Client {
+    pub fn watchlists_client(&self) -> watchlists::Client {
         watchlists::Client(self.clone())
     }
 }

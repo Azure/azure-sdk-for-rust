@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn data_connections(&self) -> data_connections::Client {
+    pub fn data_connections_client(&self) -> data_connections::Client {
         data_connections::Client(self.clone())
     }
-    pub fn database_principal_assignments(&self) -> database_principal_assignments::Client {
+    pub fn database_principal_assignments_client(&self) -> database_principal_assignments::Client {
         database_principal_assignments::Client(self.clone())
     }
-    pub fn databases(&self) -> databases::Client {
+    pub fn databases_client(&self) -> databases::Client {
         databases::Client(self.clone())
     }
-    pub fn kusto_operations(&self) -> kusto_operations::Client {
+    pub fn kusto_operations_client(&self) -> kusto_operations::Client {
         kusto_operations::Client(self.clone())
     }
-    pub fn kusto_pool_principal_assignments(&self) -> kusto_pool_principal_assignments::Client {
+    pub fn kusto_pool_principal_assignments_client(&self) -> kusto_pool_principal_assignments::Client {
         kusto_pool_principal_assignments::Client(self.clone())
     }
-    pub fn kusto_pools(&self) -> kusto_pools::Client {
+    pub fn kusto_pools_client(&self) -> kusto_pools::Client {
         kusto_pools::Client(self.clone())
     }
 }

@@ -74,25 +74,25 @@ impl Client {
             pipeline,
         }
     }
-    pub fn alias(&self) -> alias::Client {
+    pub fn alias_client(&self) -> alias::Client {
         alias::Client(self.clone())
     }
-    pub fn billing_account(&self) -> billing_account::Client {
+    pub fn billing_account_client(&self) -> billing_account::Client {
         billing_account::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn subscription(&self) -> subscription::Client {
+    pub fn subscription_client(&self) -> subscription::Client {
         subscription::Client(self.clone())
     }
-    pub fn subscription_policy(&self) -> subscription_policy::Client {
+    pub fn subscription_policy_client(&self) -> subscription_policy::Client {
         subscription_policy::Client(self.clone())
     }
-    pub fn subscriptions(&self) -> subscriptions::Client {
+    pub fn subscriptions_client(&self) -> subscriptions::Client {
         subscriptions::Client(self.clone())
     }
-    pub fn tenants(&self) -> tenants::Client {
+    pub fn tenants_client(&self) -> tenants::Client {
         tenants::Client(self.clone())
     }
 }

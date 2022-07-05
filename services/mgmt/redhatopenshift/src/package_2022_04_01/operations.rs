@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn open_shift_clusters(&self) -> open_shift_clusters::Client {
+    pub fn open_shift_clusters_client(&self) -> open_shift_clusters::Client {
         open_shift_clusters::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

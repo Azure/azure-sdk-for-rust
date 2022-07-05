@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn availability_group_listeners(&self) -> availability_group_listeners::Client {
+    pub fn availability_group_listeners_client(&self) -> availability_group_listeners::Client {
         availability_group_listeners::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn sql_virtual_machine_groups(&self) -> sql_virtual_machine_groups::Client {
+    pub fn sql_virtual_machine_groups_client(&self) -> sql_virtual_machine_groups::Client {
         sql_virtual_machine_groups::Client(self.clone())
     }
-    pub fn sql_virtual_machines(&self) -> sql_virtual_machines::Client {
+    pub fn sql_virtual_machines_client(&self) -> sql_virtual_machines::Client {
         sql_virtual_machines::Client(self.clone())
     }
 }

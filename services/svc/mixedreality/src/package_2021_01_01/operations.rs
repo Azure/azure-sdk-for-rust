@@ -74,7 +74,7 @@ impl Client {
             pipeline,
         }
     }
-    pub fn remote_rendering(&self) -> remote_rendering::Client {
+    pub fn remote_rendering_client(&self) -> remote_rendering::Client {
         remote_rendering::Client(self.clone())
     }
 }

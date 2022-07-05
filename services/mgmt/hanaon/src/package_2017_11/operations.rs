@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn hana_instances(&self) -> hana_instances::Client {
+    pub fn hana_instances_client(&self) -> hana_instances::Client {
         hana_instances::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

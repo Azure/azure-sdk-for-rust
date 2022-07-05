@@ -74,37 +74,37 @@ impl Client {
             pipeline,
         }
     }
-    pub fn aad_properties(&self) -> aad_properties::Client {
+    pub fn aad_properties_client(&self) -> aad_properties::Client {
         aad_properties::Client(self.clone())
     }
-    pub fn backup_crr_job_details(&self) -> backup_crr_job_details::Client {
+    pub fn backup_crr_job_details_client(&self) -> backup_crr_job_details::Client {
         backup_crr_job_details::Client(self.clone())
     }
-    pub fn backup_crr_jobs(&self) -> backup_crr_jobs::Client {
+    pub fn backup_crr_jobs_client(&self) -> backup_crr_jobs::Client {
         backup_crr_jobs::Client(self.clone())
     }
-    pub fn backup_protected_items_crr(&self) -> backup_protected_items_crr::Client {
+    pub fn backup_protected_items_crr_client(&self) -> backup_protected_items_crr::Client {
         backup_protected_items_crr::Client(self.clone())
     }
-    pub fn backup_resource_storage_configs(&self) -> backup_resource_storage_configs::Client {
+    pub fn backup_resource_storage_configs_client(&self) -> backup_resource_storage_configs::Client {
         backup_resource_storage_configs::Client(self.clone())
     }
-    pub fn backup_usage_summaries_crr(&self) -> backup_usage_summaries_crr::Client {
+    pub fn backup_usage_summaries_crr_client(&self) -> backup_usage_summaries_crr::Client {
         backup_usage_summaries_crr::Client(self.clone())
     }
-    pub fn cross_region_restore(&self) -> cross_region_restore::Client {
+    pub fn cross_region_restore_client(&self) -> cross_region_restore::Client {
         cross_region_restore::Client(self.clone())
     }
-    pub fn crr_operation_results(&self) -> crr_operation_results::Client {
+    pub fn crr_operation_results_client(&self) -> crr_operation_results::Client {
         crr_operation_results::Client(self.clone())
     }
-    pub fn crr_operation_status(&self) -> crr_operation_status::Client {
+    pub fn crr_operation_status_client(&self) -> crr_operation_status::Client {
         crr_operation_status::Client(self.clone())
     }
-    pub fn recovery_points(&self) -> recovery_points::Client {
+    pub fn recovery_points_client(&self) -> recovery_points::Client {
         recovery_points::Client(self.clone())
     }
-    pub fn recovery_points_crr(&self) -> recovery_points_crr::Client {
+    pub fn recovery_points_crr_client(&self) -> recovery_points_crr::Client {
         recovery_points_crr::Client(self.clone())
     }
 }

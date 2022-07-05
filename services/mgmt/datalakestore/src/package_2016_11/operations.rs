@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn accounts(&self) -> accounts::Client {
+    pub fn accounts_client(&self) -> accounts::Client {
         accounts::Client(self.clone())
     }
-    pub fn firewall_rules(&self) -> firewall_rules::Client {
+    pub fn firewall_rules_client(&self) -> firewall_rules::Client {
         firewall_rules::Client(self.clone())
     }
-    pub fn locations(&self) -> locations::Client {
+    pub fn locations_client(&self) -> locations::Client {
         locations::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn trusted_id_providers(&self) -> trusted_id_providers::Client {
+    pub fn trusted_id_providers_client(&self) -> trusted_id_providers::Client {
         trusted_id_providers::Client(self.clone())
     }
-    pub fn virtual_network_rules(&self) -> virtual_network_rules::Client {
+    pub fn virtual_network_rules_client(&self) -> virtual_network_rules::Client {
         virtual_network_rules::Client(self.clone())
     }
 }

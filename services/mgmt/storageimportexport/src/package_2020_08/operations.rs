@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn bit_locker_keys(&self) -> bit_locker_keys::Client {
+    pub fn bit_locker_keys_client(&self) -> bit_locker_keys::Client {
         bit_locker_keys::Client(self.clone())
     }
-    pub fn jobs(&self) -> jobs::Client {
+    pub fn jobs_client(&self) -> jobs::Client {
         jobs::Client(self.clone())
     }
-    pub fn locations(&self) -> locations::Client {
+    pub fn locations_client(&self) -> locations::Client {
         locations::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

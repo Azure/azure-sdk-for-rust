@@ -74,55 +74,55 @@ impl Client {
             pipeline,
         }
     }
-    pub fn ad_domain_service_members(&self) -> ad_domain_service_members::Client {
+    pub fn ad_domain_service_members_client(&self) -> ad_domain_service_members::Client {
         ad_domain_service_members::Client(self.clone())
     }
-    pub fn adds_service(&self) -> adds_service::Client {
+    pub fn adds_service_client(&self) -> adds_service::Client {
         adds_service::Client(self.clone())
     }
-    pub fn adds_service_members(&self) -> adds_service_members::Client {
+    pub fn adds_service_members_client(&self) -> adds_service_members::Client {
         adds_service_members::Client(self.clone())
     }
-    pub fn adds_services(&self) -> adds_services::Client {
+    pub fn adds_services_client(&self) -> adds_services::Client {
         adds_services::Client(self.clone())
     }
-    pub fn adds_services_replication_status(&self) -> adds_services_replication_status::Client {
+    pub fn adds_services_replication_status_client(&self) -> adds_services_replication_status::Client {
         adds_services_replication_status::Client(self.clone())
     }
-    pub fn adds_services_service_members(&self) -> adds_services_service_members::Client {
+    pub fn adds_services_service_members_client(&self) -> adds_services_service_members::Client {
         adds_services_service_members::Client(self.clone())
     }
-    pub fn adds_services_user_preference(&self) -> adds_services_user_preference::Client {
+    pub fn adds_services_user_preference_client(&self) -> adds_services_user_preference::Client {
         adds_services_user_preference::Client(self.clone())
     }
-    pub fn alerts(&self) -> alerts::Client {
+    pub fn alerts_client(&self) -> alerts::Client {
         alerts::Client(self.clone())
     }
-    pub fn configuration(&self) -> configuration::Client {
+    pub fn configuration_client(&self) -> configuration::Client {
         configuration::Client(self.clone())
     }
-    pub fn dimensions(&self) -> dimensions::Client {
+    pub fn dimensions_client(&self) -> dimensions::Client {
         dimensions::Client(self.clone())
     }
-    pub fn list(&self) -> list::Client {
+    pub fn list_client(&self) -> list::Client {
         list::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn reports(&self) -> reports::Client {
+    pub fn reports_client(&self) -> reports::Client {
         reports::Client(self.clone())
     }
-    pub fn service(&self) -> service::Client {
+    pub fn service_client(&self) -> service::Client {
         service::Client(self.clone())
     }
-    pub fn service_members(&self) -> service_members::Client {
+    pub fn service_members_client(&self) -> service_members::Client {
         service_members::Client(self.clone())
     }
-    pub fn services(&self) -> services::Client {
+    pub fn services_client(&self) -> services::Client {
         services::Client(self.clone())
     }
-    pub fn update(&self) -> update::Client {
+    pub fn update_client(&self) -> update::Client {
         update::Client(self.clone())
     }
 }

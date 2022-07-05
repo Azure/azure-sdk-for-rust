@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn migrate_from_smart_detection(&self) -> migrate_from_smart_detection::Client {
+    pub fn migrate_from_smart_detection_client(&self) -> migrate_from_smart_detection::Client {
         migrate_from_smart_detection::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

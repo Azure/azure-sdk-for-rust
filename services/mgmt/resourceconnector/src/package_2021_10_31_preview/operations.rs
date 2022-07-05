@@ -74,7 +74,7 @@ impl Client {
             pipeline,
         }
     }
-    pub fn appliances(&self) -> appliances::Client {
+    pub fn appliances_client(&self) -> appliances::Client {
         appliances::Client(self.clone())
     }
 }

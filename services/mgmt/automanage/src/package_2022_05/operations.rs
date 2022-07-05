@@ -74,40 +74,40 @@ impl Client {
             pipeline,
         }
     }
-    pub fn best_practices(&self) -> best_practices::Client {
+    pub fn best_practices_client(&self) -> best_practices::Client {
         best_practices::Client(self.clone())
     }
-    pub fn best_practices_versions(&self) -> best_practices_versions::Client {
+    pub fn best_practices_versions_client(&self) -> best_practices_versions::Client {
         best_practices_versions::Client(self.clone())
     }
-    pub fn configuration_profile_assignments(&self) -> configuration_profile_assignments::Client {
+    pub fn configuration_profile_assignments_client(&self) -> configuration_profile_assignments::Client {
         configuration_profile_assignments::Client(self.clone())
     }
-    pub fn configuration_profile_hci_assignments(&self) -> configuration_profile_hci_assignments::Client {
+    pub fn configuration_profile_hci_assignments_client(&self) -> configuration_profile_hci_assignments::Client {
         configuration_profile_hci_assignments::Client(self.clone())
     }
-    pub fn configuration_profile_hcrp_assignments(&self) -> configuration_profile_hcrp_assignments::Client {
+    pub fn configuration_profile_hcrp_assignments_client(&self) -> configuration_profile_hcrp_assignments::Client {
         configuration_profile_hcrp_assignments::Client(self.clone())
     }
-    pub fn configuration_profiles(&self) -> configuration_profiles::Client {
+    pub fn configuration_profiles_client(&self) -> configuration_profiles::Client {
         configuration_profiles::Client(self.clone())
     }
-    pub fn configuration_profiles_versions(&self) -> configuration_profiles_versions::Client {
+    pub fn configuration_profiles_versions_client(&self) -> configuration_profiles_versions::Client {
         configuration_profiles_versions::Client(self.clone())
     }
-    pub fn hci_reports(&self) -> hci_reports::Client {
+    pub fn hci_reports_client(&self) -> hci_reports::Client {
         hci_reports::Client(self.clone())
     }
-    pub fn hcrp_reports(&self) -> hcrp_reports::Client {
+    pub fn hcrp_reports_client(&self) -> hcrp_reports::Client {
         hcrp_reports::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn reports(&self) -> reports::Client {
+    pub fn reports_client(&self) -> reports::Client {
         reports::Client(self.clone())
     }
-    pub fn service_principals(&self) -> service_principals::Client {
+    pub fn service_principals_client(&self) -> service_principals::Client {
         service_principals::Client(self.clone())
     }
 }

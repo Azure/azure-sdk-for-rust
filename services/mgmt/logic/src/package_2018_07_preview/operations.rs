@@ -74,70 +74,70 @@ impl Client {
             pipeline,
         }
     }
-    pub fn integration_account_agreements(&self) -> integration_account_agreements::Client {
+    pub fn integration_account_agreements_client(&self) -> integration_account_agreements::Client {
         integration_account_agreements::Client(self.clone())
     }
-    pub fn integration_account_assemblies(&self) -> integration_account_assemblies::Client {
+    pub fn integration_account_assemblies_client(&self) -> integration_account_assemblies::Client {
         integration_account_assemblies::Client(self.clone())
     }
-    pub fn integration_account_batch_configurations(&self) -> integration_account_batch_configurations::Client {
+    pub fn integration_account_batch_configurations_client(&self) -> integration_account_batch_configurations::Client {
         integration_account_batch_configurations::Client(self.clone())
     }
-    pub fn integration_account_certificates(&self) -> integration_account_certificates::Client {
+    pub fn integration_account_certificates_client(&self) -> integration_account_certificates::Client {
         integration_account_certificates::Client(self.clone())
     }
-    pub fn integration_account_maps(&self) -> integration_account_maps::Client {
+    pub fn integration_account_maps_client(&self) -> integration_account_maps::Client {
         integration_account_maps::Client(self.clone())
     }
-    pub fn integration_account_partners(&self) -> integration_account_partners::Client {
+    pub fn integration_account_partners_client(&self) -> integration_account_partners::Client {
         integration_account_partners::Client(self.clone())
     }
-    pub fn integration_account_schemas(&self) -> integration_account_schemas::Client {
+    pub fn integration_account_schemas_client(&self) -> integration_account_schemas::Client {
         integration_account_schemas::Client(self.clone())
     }
-    pub fn integration_account_sessions(&self) -> integration_account_sessions::Client {
+    pub fn integration_account_sessions_client(&self) -> integration_account_sessions::Client {
         integration_account_sessions::Client(self.clone())
     }
-    pub fn integration_accounts(&self) -> integration_accounts::Client {
+    pub fn integration_accounts_client(&self) -> integration_accounts::Client {
         integration_accounts::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn workflow_run_action_repetitions(&self) -> workflow_run_action_repetitions::Client {
+    pub fn workflow_run_action_repetitions_client(&self) -> workflow_run_action_repetitions::Client {
         workflow_run_action_repetitions::Client(self.clone())
     }
-    pub fn workflow_run_action_repetitions_request_histories(&self) -> workflow_run_action_repetitions_request_histories::Client {
+    pub fn workflow_run_action_repetitions_request_histories_client(&self) -> workflow_run_action_repetitions_request_histories::Client {
         workflow_run_action_repetitions_request_histories::Client(self.clone())
     }
-    pub fn workflow_run_action_request_histories(&self) -> workflow_run_action_request_histories::Client {
+    pub fn workflow_run_action_request_histories_client(&self) -> workflow_run_action_request_histories::Client {
         workflow_run_action_request_histories::Client(self.clone())
     }
-    pub fn workflow_run_action_scope_repetitions(&self) -> workflow_run_action_scope_repetitions::Client {
+    pub fn workflow_run_action_scope_repetitions_client(&self) -> workflow_run_action_scope_repetitions::Client {
         workflow_run_action_scope_repetitions::Client(self.clone())
     }
-    pub fn workflow_run_actions(&self) -> workflow_run_actions::Client {
+    pub fn workflow_run_actions_client(&self) -> workflow_run_actions::Client {
         workflow_run_actions::Client(self.clone())
     }
-    pub fn workflow_run_operations(&self) -> workflow_run_operations::Client {
+    pub fn workflow_run_operations_client(&self) -> workflow_run_operations::Client {
         workflow_run_operations::Client(self.clone())
     }
-    pub fn workflow_runs(&self) -> workflow_runs::Client {
+    pub fn workflow_runs_client(&self) -> workflow_runs::Client {
         workflow_runs::Client(self.clone())
     }
-    pub fn workflow_trigger_histories(&self) -> workflow_trigger_histories::Client {
+    pub fn workflow_trigger_histories_client(&self) -> workflow_trigger_histories::Client {
         workflow_trigger_histories::Client(self.clone())
     }
-    pub fn workflow_triggers(&self) -> workflow_triggers::Client {
+    pub fn workflow_triggers_client(&self) -> workflow_triggers::Client {
         workflow_triggers::Client(self.clone())
     }
-    pub fn workflow_version_triggers(&self) -> workflow_version_triggers::Client {
+    pub fn workflow_version_triggers_client(&self) -> workflow_version_triggers::Client {
         workflow_version_triggers::Client(self.clone())
     }
-    pub fn workflow_versions(&self) -> workflow_versions::Client {
+    pub fn workflow_versions_client(&self) -> workflow_versions::Client {
         workflow_versions::Client(self.clone())
     }
-    pub fn workflows(&self) -> workflows::Client {
+    pub fn workflows_client(&self) -> workflows::Client {
         workflows::Client(self.clone())
     }
 }

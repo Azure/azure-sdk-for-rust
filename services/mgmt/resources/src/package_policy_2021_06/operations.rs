@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn data_policy_manifests(&self) -> data_policy_manifests::Client {
+    pub fn data_policy_manifests_client(&self) -> data_policy_manifests::Client {
         data_policy_manifests::Client(self.clone())
     }
-    pub fn policy_assignments(&self) -> policy_assignments::Client {
+    pub fn policy_assignments_client(&self) -> policy_assignments::Client {
         policy_assignments::Client(self.clone())
     }
-    pub fn policy_definitions(&self) -> policy_definitions::Client {
+    pub fn policy_definitions_client(&self) -> policy_definitions::Client {
         policy_definitions::Client(self.clone())
     }
-    pub fn policy_exemptions(&self) -> policy_exemptions::Client {
+    pub fn policy_exemptions_client(&self) -> policy_exemptions::Client {
         policy_exemptions::Client(self.clone())
     }
-    pub fn policy_set_definitions(&self) -> policy_set_definitions::Client {
+    pub fn policy_set_definitions_client(&self) -> policy_set_definitions::Client {
         policy_set_definitions::Client(self.clone())
     }
 }

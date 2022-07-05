@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn price_sheet(&self) -> price_sheet::Client {
+    pub fn price_sheet_client(&self) -> price_sheet::Client {
         price_sheet::Client(self.clone())
     }
 }

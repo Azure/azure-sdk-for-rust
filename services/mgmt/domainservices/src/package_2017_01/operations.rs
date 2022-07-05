@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn domain_service_operations(&self) -> domain_service_operations::Client {
+    pub fn domain_service_operations_client(&self) -> domain_service_operations::Client {
         domain_service_operations::Client(self.clone())
     }
-    pub fn domain_services(&self) -> domain_services::Client {
+    pub fn domain_services_client(&self) -> domain_services::Client {
         domain_services::Client(self.clone())
     }
 }

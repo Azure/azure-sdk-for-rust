@@ -74,151 +74,151 @@ impl Client {
             pipeline,
         }
     }
-    pub fn availability_sets(&self) -> availability_sets::Client {
+    pub fn availability_sets_client(&self) -> availability_sets::Client {
         availability_sets::Client(self.clone())
     }
-    pub fn capacity_reservation_groups(&self) -> capacity_reservation_groups::Client {
+    pub fn capacity_reservation_groups_client(&self) -> capacity_reservation_groups::Client {
         capacity_reservation_groups::Client(self.clone())
     }
-    pub fn capacity_reservations(&self) -> capacity_reservations::Client {
+    pub fn capacity_reservations_client(&self) -> capacity_reservations::Client {
         capacity_reservations::Client(self.clone())
     }
-    pub fn cloud_service_operating_systems(&self) -> cloud_service_operating_systems::Client {
+    pub fn cloud_service_operating_systems_client(&self) -> cloud_service_operating_systems::Client {
         cloud_service_operating_systems::Client(self.clone())
     }
-    pub fn cloud_service_role_instances(&self) -> cloud_service_role_instances::Client {
+    pub fn cloud_service_role_instances_client(&self) -> cloud_service_role_instances::Client {
         cloud_service_role_instances::Client(self.clone())
     }
-    pub fn cloud_service_roles(&self) -> cloud_service_roles::Client {
+    pub fn cloud_service_roles_client(&self) -> cloud_service_roles::Client {
         cloud_service_roles::Client(self.clone())
     }
-    pub fn cloud_services(&self) -> cloud_services::Client {
+    pub fn cloud_services_client(&self) -> cloud_services::Client {
         cloud_services::Client(self.clone())
     }
-    pub fn cloud_services_update_domain(&self) -> cloud_services_update_domain::Client {
+    pub fn cloud_services_update_domain_client(&self) -> cloud_services_update_domain::Client {
         cloud_services_update_domain::Client(self.clone())
     }
-    pub fn community_galleries(&self) -> community_galleries::Client {
+    pub fn community_galleries_client(&self) -> community_galleries::Client {
         community_galleries::Client(self.clone())
     }
-    pub fn community_gallery_image_versions(&self) -> community_gallery_image_versions::Client {
+    pub fn community_gallery_image_versions_client(&self) -> community_gallery_image_versions::Client {
         community_gallery_image_versions::Client(self.clone())
     }
-    pub fn community_gallery_images(&self) -> community_gallery_images::Client {
+    pub fn community_gallery_images_client(&self) -> community_gallery_images::Client {
         community_gallery_images::Client(self.clone())
     }
-    pub fn dedicated_host_groups(&self) -> dedicated_host_groups::Client {
+    pub fn dedicated_host_groups_client(&self) -> dedicated_host_groups::Client {
         dedicated_host_groups::Client(self.clone())
     }
-    pub fn dedicated_hosts(&self) -> dedicated_hosts::Client {
+    pub fn dedicated_hosts_client(&self) -> dedicated_hosts::Client {
         dedicated_hosts::Client(self.clone())
     }
-    pub fn disk_accesses(&self) -> disk_accesses::Client {
+    pub fn disk_accesses_client(&self) -> disk_accesses::Client {
         disk_accesses::Client(self.clone())
     }
-    pub fn disk_encryption_sets(&self) -> disk_encryption_sets::Client {
+    pub fn disk_encryption_sets_client(&self) -> disk_encryption_sets::Client {
         disk_encryption_sets::Client(self.clone())
     }
-    pub fn disk_restore_point(&self) -> disk_restore_point::Client {
+    pub fn disk_restore_point_client(&self) -> disk_restore_point::Client {
         disk_restore_point::Client(self.clone())
     }
-    pub fn disks(&self) -> disks::Client {
+    pub fn disks_client(&self) -> disks::Client {
         disks::Client(self.clone())
     }
-    pub fn galleries(&self) -> galleries::Client {
+    pub fn galleries_client(&self) -> galleries::Client {
         galleries::Client(self.clone())
     }
-    pub fn gallery_application_versions(&self) -> gallery_application_versions::Client {
+    pub fn gallery_application_versions_client(&self) -> gallery_application_versions::Client {
         gallery_application_versions::Client(self.clone())
     }
-    pub fn gallery_applications(&self) -> gallery_applications::Client {
+    pub fn gallery_applications_client(&self) -> gallery_applications::Client {
         gallery_applications::Client(self.clone())
     }
-    pub fn gallery_image_versions(&self) -> gallery_image_versions::Client {
+    pub fn gallery_image_versions_client(&self) -> gallery_image_versions::Client {
         gallery_image_versions::Client(self.clone())
     }
-    pub fn gallery_images(&self) -> gallery_images::Client {
+    pub fn gallery_images_client(&self) -> gallery_images::Client {
         gallery_images::Client(self.clone())
     }
-    pub fn gallery_sharing_profile(&self) -> gallery_sharing_profile::Client {
+    pub fn gallery_sharing_profile_client(&self) -> gallery_sharing_profile::Client {
         gallery_sharing_profile::Client(self.clone())
     }
-    pub fn images(&self) -> images::Client {
+    pub fn images_client(&self) -> images::Client {
         images::Client(self.clone())
     }
-    pub fn log_analytics(&self) -> log_analytics::Client {
+    pub fn log_analytics_client(&self) -> log_analytics::Client {
         log_analytics::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn proximity_placement_groups(&self) -> proximity_placement_groups::Client {
+    pub fn proximity_placement_groups_client(&self) -> proximity_placement_groups::Client {
         proximity_placement_groups::Client(self.clone())
     }
-    pub fn resource_skus(&self) -> resource_skus::Client {
+    pub fn resource_skus_client(&self) -> resource_skus::Client {
         resource_skus::Client(self.clone())
     }
-    pub fn restore_point_collections(&self) -> restore_point_collections::Client {
+    pub fn restore_point_collections_client(&self) -> restore_point_collections::Client {
         restore_point_collections::Client(self.clone())
     }
-    pub fn restore_points(&self) -> restore_points::Client {
+    pub fn restore_points_client(&self) -> restore_points::Client {
         restore_points::Client(self.clone())
     }
-    pub fn shared_galleries(&self) -> shared_galleries::Client {
+    pub fn shared_galleries_client(&self) -> shared_galleries::Client {
         shared_galleries::Client(self.clone())
     }
-    pub fn shared_gallery_image_versions(&self) -> shared_gallery_image_versions::Client {
+    pub fn shared_gallery_image_versions_client(&self) -> shared_gallery_image_versions::Client {
         shared_gallery_image_versions::Client(self.clone())
     }
-    pub fn shared_gallery_images(&self) -> shared_gallery_images::Client {
+    pub fn shared_gallery_images_client(&self) -> shared_gallery_images::Client {
         shared_gallery_images::Client(self.clone())
     }
-    pub fn snapshots(&self) -> snapshots::Client {
+    pub fn snapshots_client(&self) -> snapshots::Client {
         snapshots::Client(self.clone())
     }
-    pub fn ssh_public_keys(&self) -> ssh_public_keys::Client {
+    pub fn ssh_public_keys_client(&self) -> ssh_public_keys::Client {
         ssh_public_keys::Client(self.clone())
     }
-    pub fn usage(&self) -> usage::Client {
+    pub fn usage_client(&self) -> usage::Client {
         usage::Client(self.clone())
     }
-    pub fn virtual_machine_extension_images(&self) -> virtual_machine_extension_images::Client {
+    pub fn virtual_machine_extension_images_client(&self) -> virtual_machine_extension_images::Client {
         virtual_machine_extension_images::Client(self.clone())
     }
-    pub fn virtual_machine_extensions(&self) -> virtual_machine_extensions::Client {
+    pub fn virtual_machine_extensions_client(&self) -> virtual_machine_extensions::Client {
         virtual_machine_extensions::Client(self.clone())
     }
-    pub fn virtual_machine_images(&self) -> virtual_machine_images::Client {
+    pub fn virtual_machine_images_client(&self) -> virtual_machine_images::Client {
         virtual_machine_images::Client(self.clone())
     }
-    pub fn virtual_machine_images_edge_zone(&self) -> virtual_machine_images_edge_zone::Client {
+    pub fn virtual_machine_images_edge_zone_client(&self) -> virtual_machine_images_edge_zone::Client {
         virtual_machine_images_edge_zone::Client(self.clone())
     }
-    pub fn virtual_machine_run_commands(&self) -> virtual_machine_run_commands::Client {
+    pub fn virtual_machine_run_commands_client(&self) -> virtual_machine_run_commands::Client {
         virtual_machine_run_commands::Client(self.clone())
     }
-    pub fn virtual_machine_scale_set_extensions(&self) -> virtual_machine_scale_set_extensions::Client {
+    pub fn virtual_machine_scale_set_extensions_client(&self) -> virtual_machine_scale_set_extensions::Client {
         virtual_machine_scale_set_extensions::Client(self.clone())
     }
-    pub fn virtual_machine_scale_set_rolling_upgrades(&self) -> virtual_machine_scale_set_rolling_upgrades::Client {
+    pub fn virtual_machine_scale_set_rolling_upgrades_client(&self) -> virtual_machine_scale_set_rolling_upgrades::Client {
         virtual_machine_scale_set_rolling_upgrades::Client(self.clone())
     }
-    pub fn virtual_machine_scale_set_v_ms(&self) -> virtual_machine_scale_set_v_ms::Client {
+    pub fn virtual_machine_scale_set_v_ms_client(&self) -> virtual_machine_scale_set_v_ms::Client {
         virtual_machine_scale_set_v_ms::Client(self.clone())
     }
-    pub fn virtual_machine_scale_set_vm_extensions(&self) -> virtual_machine_scale_set_vm_extensions::Client {
+    pub fn virtual_machine_scale_set_vm_extensions_client(&self) -> virtual_machine_scale_set_vm_extensions::Client {
         virtual_machine_scale_set_vm_extensions::Client(self.clone())
     }
-    pub fn virtual_machine_scale_set_vm_run_commands(&self) -> virtual_machine_scale_set_vm_run_commands::Client {
+    pub fn virtual_machine_scale_set_vm_run_commands_client(&self) -> virtual_machine_scale_set_vm_run_commands::Client {
         virtual_machine_scale_set_vm_run_commands::Client(self.clone())
     }
-    pub fn virtual_machine_scale_sets(&self) -> virtual_machine_scale_sets::Client {
+    pub fn virtual_machine_scale_sets_client(&self) -> virtual_machine_scale_sets::Client {
         virtual_machine_scale_sets::Client(self.clone())
     }
-    pub fn virtual_machine_sizes(&self) -> virtual_machine_sizes::Client {
+    pub fn virtual_machine_sizes_client(&self) -> virtual_machine_sizes::Client {
         virtual_machine_sizes::Client(self.clone())
     }
-    pub fn virtual_machines(&self) -> virtual_machines::Client {
+    pub fn virtual_machines_client(&self) -> virtual_machines::Client {
         virtual_machines::Client(self.clone())
     }
 }

@@ -74,79 +74,79 @@ impl Client {
             pipeline,
         }
     }
-    pub fn arm_templates(&self) -> arm_templates::Client {
+    pub fn arm_templates_client(&self) -> arm_templates::Client {
         arm_templates::Client(self.clone())
     }
-    pub fn artifact_sources(&self) -> artifact_sources::Client {
+    pub fn artifact_sources_client(&self) -> artifact_sources::Client {
         artifact_sources::Client(self.clone())
     }
-    pub fn artifacts(&self) -> artifacts::Client {
+    pub fn artifacts_client(&self) -> artifacts::Client {
         artifacts::Client(self.clone())
     }
-    pub fn costs(&self) -> costs::Client {
+    pub fn costs_client(&self) -> costs::Client {
         costs::Client(self.clone())
     }
-    pub fn custom_images(&self) -> custom_images::Client {
+    pub fn custom_images_client(&self) -> custom_images::Client {
         custom_images::Client(self.clone())
     }
-    pub fn disks(&self) -> disks::Client {
+    pub fn disks_client(&self) -> disks::Client {
         disks::Client(self.clone())
     }
-    pub fn environments(&self) -> environments::Client {
+    pub fn environments_client(&self) -> environments::Client {
         environments::Client(self.clone())
     }
-    pub fn formulas(&self) -> formulas::Client {
+    pub fn formulas_client(&self) -> formulas::Client {
         formulas::Client(self.clone())
     }
-    pub fn gallery_images(&self) -> gallery_images::Client {
+    pub fn gallery_images_client(&self) -> gallery_images::Client {
         gallery_images::Client(self.clone())
     }
-    pub fn global_schedules(&self) -> global_schedules::Client {
+    pub fn global_schedules_client(&self) -> global_schedules::Client {
         global_schedules::Client(self.clone())
     }
-    pub fn labs(&self) -> labs::Client {
+    pub fn labs_client(&self) -> labs::Client {
         labs::Client(self.clone())
     }
-    pub fn notification_channels(&self) -> notification_channels::Client {
+    pub fn notification_channels_client(&self) -> notification_channels::Client {
         notification_channels::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn policies(&self) -> policies::Client {
+    pub fn policies_client(&self) -> policies::Client {
         policies::Client(self.clone())
     }
-    pub fn policy_sets(&self) -> policy_sets::Client {
+    pub fn policy_sets_client(&self) -> policy_sets::Client {
         policy_sets::Client(self.clone())
     }
-    pub fn provider_operations(&self) -> provider_operations::Client {
+    pub fn provider_operations_client(&self) -> provider_operations::Client {
         provider_operations::Client(self.clone())
     }
-    pub fn schedules(&self) -> schedules::Client {
+    pub fn schedules_client(&self) -> schedules::Client {
         schedules::Client(self.clone())
     }
-    pub fn secrets(&self) -> secrets::Client {
+    pub fn secrets_client(&self) -> secrets::Client {
         secrets::Client(self.clone())
     }
-    pub fn service_fabric_schedules(&self) -> service_fabric_schedules::Client {
+    pub fn service_fabric_schedules_client(&self) -> service_fabric_schedules::Client {
         service_fabric_schedules::Client(self.clone())
     }
-    pub fn service_fabrics(&self) -> service_fabrics::Client {
+    pub fn service_fabrics_client(&self) -> service_fabrics::Client {
         service_fabrics::Client(self.clone())
     }
-    pub fn service_runners(&self) -> service_runners::Client {
+    pub fn service_runners_client(&self) -> service_runners::Client {
         service_runners::Client(self.clone())
     }
-    pub fn users(&self) -> users::Client {
+    pub fn users_client(&self) -> users::Client {
         users::Client(self.clone())
     }
-    pub fn virtual_machine_schedules(&self) -> virtual_machine_schedules::Client {
+    pub fn virtual_machine_schedules_client(&self) -> virtual_machine_schedules::Client {
         virtual_machine_schedules::Client(self.clone())
     }
-    pub fn virtual_machines(&self) -> virtual_machines::Client {
+    pub fn virtual_machines_client(&self) -> virtual_machines::Client {
         virtual_machines::Client(self.clone())
     }
-    pub fn virtual_networks(&self) -> virtual_networks::Client {
+    pub fn virtual_networks_client(&self) -> virtual_networks::Client {
         virtual_networks::Client(self.clone())
     }
 }

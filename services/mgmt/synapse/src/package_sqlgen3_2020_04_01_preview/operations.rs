@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn sql_databases(&self) -> sql_databases::Client {
+    pub fn sql_databases_client(&self) -> sql_databases::Client {
         sql_databases::Client(self.clone())
     }
-    pub fn sql_pools_v3(&self) -> sql_pools_v3::Client {
+    pub fn sql_pools_v3_client(&self) -> sql_pools_v3::Client {
         sql_pools_v3::Client(self.clone())
     }
-    pub fn sql_v3_operations(&self) -> sql_v3_operations::Client {
+    pub fn sql_v3_operations_client(&self) -> sql_v3_operations::Client {
         sql_v3_operations::Client(self.clone())
     }
 }

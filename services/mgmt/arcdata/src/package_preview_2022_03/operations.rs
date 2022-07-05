@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn active_directory_connectors(&self) -> active_directory_connectors::Client {
+    pub fn active_directory_connectors_client(&self) -> active_directory_connectors::Client {
         active_directory_connectors::Client(self.clone())
     }
-    pub fn data_controllers(&self) -> data_controllers::Client {
+    pub fn data_controllers_client(&self) -> data_controllers::Client {
         data_controllers::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn postgres_instances(&self) -> postgres_instances::Client {
+    pub fn postgres_instances_client(&self) -> postgres_instances::Client {
         postgres_instances::Client(self.clone())
     }
-    pub fn sql_managed_instances(&self) -> sql_managed_instances::Client {
+    pub fn sql_managed_instances_client(&self) -> sql_managed_instances::Client {
         sql_managed_instances::Client(self.clone())
     }
-    pub fn sql_server_instances(&self) -> sql_server_instances::Client {
+    pub fn sql_server_instances_client(&self) -> sql_server_instances::Client {
         sql_server_instances::Client(self.clone())
     }
 }

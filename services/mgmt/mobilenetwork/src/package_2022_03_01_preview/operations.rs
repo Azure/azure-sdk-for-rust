@@ -74,37 +74,37 @@ impl Client {
             pipeline,
         }
     }
-    pub fn attached_data_networks(&self) -> attached_data_networks::Client {
+    pub fn attached_data_networks_client(&self) -> attached_data_networks::Client {
         attached_data_networks::Client(self.clone())
     }
-    pub fn data_networks(&self) -> data_networks::Client {
+    pub fn data_networks_client(&self) -> data_networks::Client {
         data_networks::Client(self.clone())
     }
-    pub fn mobile_networks(&self) -> mobile_networks::Client {
+    pub fn mobile_networks_client(&self) -> mobile_networks::Client {
         mobile_networks::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn packet_core_control_planes(&self) -> packet_core_control_planes::Client {
+    pub fn packet_core_control_planes_client(&self) -> packet_core_control_planes::Client {
         packet_core_control_planes::Client(self.clone())
     }
-    pub fn packet_core_data_planes(&self) -> packet_core_data_planes::Client {
+    pub fn packet_core_data_planes_client(&self) -> packet_core_data_planes::Client {
         packet_core_data_planes::Client(self.clone())
     }
-    pub fn services(&self) -> services::Client {
+    pub fn services_client(&self) -> services::Client {
         services::Client(self.clone())
     }
-    pub fn sim_policies(&self) -> sim_policies::Client {
+    pub fn sim_policies_client(&self) -> sim_policies::Client {
         sim_policies::Client(self.clone())
     }
-    pub fn sims(&self) -> sims::Client {
+    pub fn sims_client(&self) -> sims::Client {
         sims::Client(self.clone())
     }
-    pub fn sites(&self) -> sites::Client {
+    pub fn sites_client(&self) -> sites::Client {
         sites::Client(self.clone())
     }
-    pub fn slices(&self) -> slices::Client {
+    pub fn slices_client(&self) -> slices::Client {
         slices::Client(self.clone())
     }
 }

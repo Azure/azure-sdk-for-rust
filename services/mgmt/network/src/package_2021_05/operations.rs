@@ -74,340 +74,342 @@ impl Client {
             pipeline,
         }
     }
-    pub fn application_gateway_private_endpoint_connections(&self) -> application_gateway_private_endpoint_connections::Client {
+    pub fn application_gateway_private_endpoint_connections_client(&self) -> application_gateway_private_endpoint_connections::Client {
         application_gateway_private_endpoint_connections::Client(self.clone())
     }
-    pub fn application_gateway_private_link_resources(&self) -> application_gateway_private_link_resources::Client {
+    pub fn application_gateway_private_link_resources_client(&self) -> application_gateway_private_link_resources::Client {
         application_gateway_private_link_resources::Client(self.clone())
     }
-    pub fn application_gateways(&self) -> application_gateways::Client {
+    pub fn application_gateways_client(&self) -> application_gateways::Client {
         application_gateways::Client(self.clone())
     }
-    pub fn application_security_groups(&self) -> application_security_groups::Client {
+    pub fn application_security_groups_client(&self) -> application_security_groups::Client {
         application_security_groups::Client(self.clone())
     }
-    pub fn available_delegations(&self) -> available_delegations::Client {
+    pub fn available_delegations_client(&self) -> available_delegations::Client {
         available_delegations::Client(self.clone())
     }
-    pub fn available_endpoint_services(&self) -> available_endpoint_services::Client {
+    pub fn available_endpoint_services_client(&self) -> available_endpoint_services::Client {
         available_endpoint_services::Client(self.clone())
     }
-    pub fn available_private_endpoint_types(&self) -> available_private_endpoint_types::Client {
+    pub fn available_private_endpoint_types_client(&self) -> available_private_endpoint_types::Client {
         available_private_endpoint_types::Client(self.clone())
     }
-    pub fn available_resource_group_delegations(&self) -> available_resource_group_delegations::Client {
+    pub fn available_resource_group_delegations_client(&self) -> available_resource_group_delegations::Client {
         available_resource_group_delegations::Client(self.clone())
     }
-    pub fn available_service_aliases(&self) -> available_service_aliases::Client {
+    pub fn available_service_aliases_client(&self) -> available_service_aliases::Client {
         available_service_aliases::Client(self.clone())
     }
-    pub fn azure_firewall_fqdn_tags(&self) -> azure_firewall_fqdn_tags::Client {
+    pub fn azure_firewall_fqdn_tags_client(&self) -> azure_firewall_fqdn_tags::Client {
         azure_firewall_fqdn_tags::Client(self.clone())
     }
-    pub fn azure_firewalls(&self) -> azure_firewalls::Client {
+    pub fn azure_firewalls_client(&self) -> azure_firewalls::Client {
         azure_firewalls::Client(self.clone())
     }
-    pub fn bastion_hosts(&self) -> bastion_hosts::Client {
+    pub fn bastion_hosts_client(&self) -> bastion_hosts::Client {
         bastion_hosts::Client(self.clone())
     }
-    pub fn bgp_service_communities(&self) -> bgp_service_communities::Client {
+    pub fn bgp_service_communities_client(&self) -> bgp_service_communities::Client {
         bgp_service_communities::Client(self.clone())
     }
-    pub fn connection_monitors(&self) -> connection_monitors::Client {
+    pub fn connection_monitors_client(&self) -> connection_monitors::Client {
         connection_monitors::Client(self.clone())
     }
-    pub fn custom_ip_prefixes(&self) -> custom_ip_prefixes::Client {
+    pub fn custom_ip_prefixes_client(&self) -> custom_ip_prefixes::Client {
         custom_ip_prefixes::Client(self.clone())
     }
-    pub fn ddos_custom_policies(&self) -> ddos_custom_policies::Client {
+    pub fn ddos_custom_policies_client(&self) -> ddos_custom_policies::Client {
         ddos_custom_policies::Client(self.clone())
     }
-    pub fn ddos_protection_plans(&self) -> ddos_protection_plans::Client {
+    pub fn ddos_protection_plans_client(&self) -> ddos_protection_plans::Client {
         ddos_protection_plans::Client(self.clone())
     }
-    pub fn default_security_rules(&self) -> default_security_rules::Client {
+    pub fn default_security_rules_client(&self) -> default_security_rules::Client {
         default_security_rules::Client(self.clone())
     }
-    pub fn dscp_configuration(&self) -> dscp_configuration::Client {
+    pub fn dscp_configuration_client(&self) -> dscp_configuration::Client {
         dscp_configuration::Client(self.clone())
     }
-    pub fn express_route_circuit_authorizations(&self) -> express_route_circuit_authorizations::Client {
+    pub fn express_route_circuit_authorizations_client(&self) -> express_route_circuit_authorizations::Client {
         express_route_circuit_authorizations::Client(self.clone())
     }
-    pub fn express_route_circuit_connections(&self) -> express_route_circuit_connections::Client {
+    pub fn express_route_circuit_connections_client(&self) -> express_route_circuit_connections::Client {
         express_route_circuit_connections::Client(self.clone())
     }
-    pub fn express_route_circuit_peerings(&self) -> express_route_circuit_peerings::Client {
+    pub fn express_route_circuit_peerings_client(&self) -> express_route_circuit_peerings::Client {
         express_route_circuit_peerings::Client(self.clone())
     }
-    pub fn express_route_circuits(&self) -> express_route_circuits::Client {
+    pub fn express_route_circuits_client(&self) -> express_route_circuits::Client {
         express_route_circuits::Client(self.clone())
     }
-    pub fn express_route_connections(&self) -> express_route_connections::Client {
+    pub fn express_route_connections_client(&self) -> express_route_connections::Client {
         express_route_connections::Client(self.clone())
     }
-    pub fn express_route_cross_connection_peerings(&self) -> express_route_cross_connection_peerings::Client {
+    pub fn express_route_cross_connection_peerings_client(&self) -> express_route_cross_connection_peerings::Client {
         express_route_cross_connection_peerings::Client(self.clone())
     }
-    pub fn express_route_cross_connections(&self) -> express_route_cross_connections::Client {
+    pub fn express_route_cross_connections_client(&self) -> express_route_cross_connections::Client {
         express_route_cross_connections::Client(self.clone())
     }
-    pub fn express_route_gateways(&self) -> express_route_gateways::Client {
+    pub fn express_route_gateways_client(&self) -> express_route_gateways::Client {
         express_route_gateways::Client(self.clone())
     }
-    pub fn express_route_links(&self) -> express_route_links::Client {
+    pub fn express_route_links_client(&self) -> express_route_links::Client {
         express_route_links::Client(self.clone())
     }
-    pub fn express_route_ports(&self) -> express_route_ports::Client {
+    pub fn express_route_ports_client(&self) -> express_route_ports::Client {
         express_route_ports::Client(self.clone())
     }
-    pub fn express_route_ports_locations(&self) -> express_route_ports_locations::Client {
+    pub fn express_route_ports_locations_client(&self) -> express_route_ports_locations::Client {
         express_route_ports_locations::Client(self.clone())
     }
-    pub fn express_route_service_providers(&self) -> express_route_service_providers::Client {
+    pub fn express_route_service_providers_client(&self) -> express_route_service_providers::Client {
         express_route_service_providers::Client(self.clone())
     }
-    pub fn firewall_policies(&self) -> firewall_policies::Client {
+    pub fn firewall_policies_client(&self) -> firewall_policies::Client {
         firewall_policies::Client(self.clone())
     }
-    pub fn firewall_policy_idps_signatures(&self) -> firewall_policy_idps_signatures::Client {
+    pub fn firewall_policy_idps_signatures_client(&self) -> firewall_policy_idps_signatures::Client {
         firewall_policy_idps_signatures::Client(self.clone())
     }
-    pub fn firewall_policy_idps_signatures_filter_values(&self) -> firewall_policy_idps_signatures_filter_values::Client {
+    pub fn firewall_policy_idps_signatures_filter_values_client(&self) -> firewall_policy_idps_signatures_filter_values::Client {
         firewall_policy_idps_signatures_filter_values::Client(self.clone())
     }
-    pub fn firewall_policy_idps_signatures_overrides(&self) -> firewall_policy_idps_signatures_overrides::Client {
+    pub fn firewall_policy_idps_signatures_overrides_client(&self) -> firewall_policy_idps_signatures_overrides::Client {
         firewall_policy_idps_signatures_overrides::Client(self.clone())
     }
-    pub fn firewall_policy_rule_collection_groups(&self) -> firewall_policy_rule_collection_groups::Client {
+    pub fn firewall_policy_rule_collection_groups_client(&self) -> firewall_policy_rule_collection_groups::Client {
         firewall_policy_rule_collection_groups::Client(self.clone())
     }
-    pub fn flow_logs(&self) -> flow_logs::Client {
+    pub fn flow_logs_client(&self) -> flow_logs::Client {
         flow_logs::Client(self.clone())
     }
-    pub fn hub_route_tables(&self) -> hub_route_tables::Client {
+    pub fn hub_route_tables_client(&self) -> hub_route_tables::Client {
         hub_route_tables::Client(self.clone())
     }
-    pub fn hub_virtual_network_connections(&self) -> hub_virtual_network_connections::Client {
+    pub fn hub_virtual_network_connections_client(&self) -> hub_virtual_network_connections::Client {
         hub_virtual_network_connections::Client(self.clone())
     }
-    pub fn inbound_nat_rules(&self) -> inbound_nat_rules::Client {
+    pub fn inbound_nat_rules_client(&self) -> inbound_nat_rules::Client {
         inbound_nat_rules::Client(self.clone())
     }
-    pub fn inbound_security_rule(&self) -> inbound_security_rule::Client {
+    pub fn inbound_security_rule_client(&self) -> inbound_security_rule::Client {
         inbound_security_rule::Client(self.clone())
     }
-    pub fn ip_allocations(&self) -> ip_allocations::Client {
+    pub fn ip_allocations_client(&self) -> ip_allocations::Client {
         ip_allocations::Client(self.clone())
     }
-    pub fn ip_groups(&self) -> ip_groups::Client {
+    pub fn ip_groups_client(&self) -> ip_groups::Client {
         ip_groups::Client(self.clone())
     }
-    pub fn load_balancer_backend_address_pools(&self) -> load_balancer_backend_address_pools::Client {
+    pub fn load_balancer_backend_address_pools_client(&self) -> load_balancer_backend_address_pools::Client {
         load_balancer_backend_address_pools::Client(self.clone())
     }
-    pub fn load_balancer_frontend_ip_configurations(&self) -> load_balancer_frontend_ip_configurations::Client {
+    pub fn load_balancer_frontend_ip_configurations_client(&self) -> load_balancer_frontend_ip_configurations::Client {
         load_balancer_frontend_ip_configurations::Client(self.clone())
     }
-    pub fn load_balancer_load_balancing_rules(&self) -> load_balancer_load_balancing_rules::Client {
+    pub fn load_balancer_load_balancing_rules_client(&self) -> load_balancer_load_balancing_rules::Client {
         load_balancer_load_balancing_rules::Client(self.clone())
     }
-    pub fn load_balancer_network_interfaces(&self) -> load_balancer_network_interfaces::Client {
+    pub fn load_balancer_network_interfaces_client(&self) -> load_balancer_network_interfaces::Client {
         load_balancer_network_interfaces::Client(self.clone())
     }
-    pub fn load_balancer_outbound_rules(&self) -> load_balancer_outbound_rules::Client {
+    pub fn load_balancer_outbound_rules_client(&self) -> load_balancer_outbound_rules::Client {
         load_balancer_outbound_rules::Client(self.clone())
     }
-    pub fn load_balancer_probes(&self) -> load_balancer_probes::Client {
+    pub fn load_balancer_probes_client(&self) -> load_balancer_probes::Client {
         load_balancer_probes::Client(self.clone())
     }
-    pub fn load_balancers(&self) -> load_balancers::Client {
+    pub fn load_balancers_client(&self) -> load_balancers::Client {
         load_balancers::Client(self.clone())
     }
-    pub fn local_network_gateways(&self) -> local_network_gateways::Client {
+    pub fn local_network_gateways_client(&self) -> local_network_gateways::Client {
         local_network_gateways::Client(self.clone())
     }
-    pub fn nat_gateways(&self) -> nat_gateways::Client {
+    pub fn nat_gateways_client(&self) -> nat_gateways::Client {
         nat_gateways::Client(self.clone())
     }
-    pub fn nat_rules(&self) -> nat_rules::Client {
+    pub fn nat_rules_client(&self) -> nat_rules::Client {
         nat_rules::Client(self.clone())
     }
-    pub fn network_interface_ip_configurations(&self) -> network_interface_ip_configurations::Client {
+    pub fn network_interface_ip_configurations_client(&self) -> network_interface_ip_configurations::Client {
         network_interface_ip_configurations::Client(self.clone())
     }
-    pub fn network_interface_load_balancers(&self) -> network_interface_load_balancers::Client {
+    pub fn network_interface_load_balancers_client(&self) -> network_interface_load_balancers::Client {
         network_interface_load_balancers::Client(self.clone())
     }
-    pub fn network_interface_tap_configurations(&self) -> network_interface_tap_configurations::Client {
+    pub fn network_interface_tap_configurations_client(&self) -> network_interface_tap_configurations::Client {
         network_interface_tap_configurations::Client(self.clone())
     }
-    pub fn network_interfaces(&self) -> network_interfaces::Client {
+    pub fn network_interfaces_client(&self) -> network_interfaces::Client {
         network_interfaces::Client(self.clone())
     }
-    pub fn network_profiles(&self) -> network_profiles::Client {
+    pub fn network_profiles_client(&self) -> network_profiles::Client {
         network_profiles::Client(self.clone())
     }
-    pub fn network_security_groups(&self) -> network_security_groups::Client {
+    pub fn network_security_groups_client(&self) -> network_security_groups::Client {
         network_security_groups::Client(self.clone())
     }
-    pub fn network_virtual_appliances(&self) -> network_virtual_appliances::Client {
+    pub fn network_virtual_appliances_client(&self) -> network_virtual_appliances::Client {
         network_virtual_appliances::Client(self.clone())
     }
-    pub fn network_watchers(&self) -> network_watchers::Client {
+    pub fn network_watchers_client(&self) -> network_watchers::Client {
         network_watchers::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn p2s_vpn_gateways(&self) -> p2s_vpn_gateways::Client {
+    pub fn p2s_vpn_gateways_client(&self) -> p2s_vpn_gateways::Client {
         p2s_vpn_gateways::Client(self.clone())
     }
-    pub fn packet_captures(&self) -> packet_captures::Client {
+    pub fn packet_captures_client(&self) -> packet_captures::Client {
         packet_captures::Client(self.clone())
     }
-    pub fn peer_express_route_circuit_connections(&self) -> peer_express_route_circuit_connections::Client {
+    pub fn peer_express_route_circuit_connections_client(&self) -> peer_express_route_circuit_connections::Client {
         peer_express_route_circuit_connections::Client(self.clone())
     }
-    pub fn private_dns_zone_groups(&self) -> private_dns_zone_groups::Client {
+    pub fn private_dns_zone_groups_client(&self) -> private_dns_zone_groups::Client {
         private_dns_zone_groups::Client(self.clone())
     }
-    pub fn private_endpoints(&self) -> private_endpoints::Client {
+    pub fn private_endpoints_client(&self) -> private_endpoints::Client {
         private_endpoints::Client(self.clone())
     }
-    pub fn private_link_services(&self) -> private_link_services::Client {
+    pub fn private_link_services_client(&self) -> private_link_services::Client {
         private_link_services::Client(self.clone())
     }
-    pub fn public_ip_addresses(&self) -> public_ip_addresses::Client {
+    pub fn public_ip_addresses_client(&self) -> public_ip_addresses::Client {
         public_ip_addresses::Client(self.clone())
     }
-    pub fn public_ip_prefixes(&self) -> public_ip_prefixes::Client {
+    pub fn public_ip_prefixes_client(&self) -> public_ip_prefixes::Client {
         public_ip_prefixes::Client(self.clone())
     }
-    pub fn resource_navigation_links(&self) -> resource_navigation_links::Client {
+    pub fn resource_navigation_links_client(&self) -> resource_navigation_links::Client {
         resource_navigation_links::Client(self.clone())
     }
-    pub fn route_filter_rules(&self) -> route_filter_rules::Client {
+    pub fn route_filter_rules_client(&self) -> route_filter_rules::Client {
         route_filter_rules::Client(self.clone())
     }
-    pub fn route_filters(&self) -> route_filters::Client {
+    pub fn route_filters_client(&self) -> route_filters::Client {
         route_filters::Client(self.clone())
     }
-    pub fn route_tables(&self) -> route_tables::Client {
+    pub fn route_tables_client(&self) -> route_tables::Client {
         route_tables::Client(self.clone())
     }
-    pub fn routes(&self) -> routes::Client {
+    pub fn routes_client(&self) -> routes::Client {
         routes::Client(self.clone())
     }
-    pub fn routing_intent(&self) -> routing_intent::Client {
+    pub fn routing_intent_client(&self) -> routing_intent::Client {
         routing_intent::Client(self.clone())
     }
-    pub fn security_partner_providers(&self) -> security_partner_providers::Client {
+    pub fn security_partner_providers_client(&self) -> security_partner_providers::Client {
         security_partner_providers::Client(self.clone())
     }
-    pub fn security_rules(&self) -> security_rules::Client {
+    pub fn security_rules_client(&self) -> security_rules::Client {
         security_rules::Client(self.clone())
     }
-    pub fn service_association_links(&self) -> service_association_links::Client {
+    pub fn service_association_links_client(&self) -> service_association_links::Client {
         service_association_links::Client(self.clone())
     }
-    pub fn service_endpoint_policies(&self) -> service_endpoint_policies::Client {
+    pub fn service_endpoint_policies_client(&self) -> service_endpoint_policies::Client {
         service_endpoint_policies::Client(self.clone())
     }
-    pub fn service_endpoint_policy_definitions(&self) -> service_endpoint_policy_definitions::Client {
+    pub fn service_endpoint_policy_definitions_client(&self) -> service_endpoint_policy_definitions::Client {
         service_endpoint_policy_definitions::Client(self.clone())
     }
-    pub fn service_tag_information(&self) -> service_tag_information::Client {
+    pub fn service_tag_information_client(&self) -> service_tag_information::Client {
         service_tag_information::Client(self.clone())
     }
-    pub fn service_tags(&self) -> service_tags::Client {
+    pub fn service_tags_client(&self) -> service_tags::Client {
         service_tags::Client(self.clone())
     }
-    pub fn subnets(&self) -> subnets::Client {
+    pub fn subnets_client(&self) -> subnets::Client {
         subnets::Client(self.clone())
     }
-    pub fn usages(&self) -> usages::Client {
+    pub fn usages_client(&self) -> usages::Client {
         usages::Client(self.clone())
     }
-    pub fn virtual_appliance_sites(&self) -> virtual_appliance_sites::Client {
+    pub fn virtual_appliance_sites_client(&self) -> virtual_appliance_sites::Client {
         virtual_appliance_sites::Client(self.clone())
     }
-    pub fn virtual_appliance_skus(&self) -> virtual_appliance_skus::Client {
+    pub fn virtual_appliance_skus_client(&self) -> virtual_appliance_skus::Client {
         virtual_appliance_skus::Client(self.clone())
     }
-    pub fn virtual_hub_bgp_connection(&self) -> virtual_hub_bgp_connection::Client {
+    pub fn virtual_hub_bgp_connection_client(&self) -> virtual_hub_bgp_connection::Client {
         virtual_hub_bgp_connection::Client(self.clone())
     }
-    pub fn virtual_hub_bgp_connections(&self) -> virtual_hub_bgp_connections::Client {
+    pub fn virtual_hub_bgp_connections_client(&self) -> virtual_hub_bgp_connections::Client {
         virtual_hub_bgp_connections::Client(self.clone())
     }
-    pub fn virtual_hub_ip_configuration(&self) -> virtual_hub_ip_configuration::Client {
+    pub fn virtual_hub_ip_configuration_client(&self) -> virtual_hub_ip_configuration::Client {
         virtual_hub_ip_configuration::Client(self.clone())
     }
-    pub fn virtual_hub_route_table_v2s(&self) -> virtual_hub_route_table_v2s::Client {
+    pub fn virtual_hub_route_table_v2s_client(&self) -> virtual_hub_route_table_v2s::Client {
         virtual_hub_route_table_v2s::Client(self.clone())
     }
-    pub fn virtual_hubs(&self) -> virtual_hubs::Client {
+    pub fn virtual_hubs_client(&self) -> virtual_hubs::Client {
         virtual_hubs::Client(self.clone())
     }
-    pub fn virtual_network_gateway_connections(&self) -> virtual_network_gateway_connections::Client {
+    pub fn virtual_network_gateway_connections_client(&self) -> virtual_network_gateway_connections::Client {
         virtual_network_gateway_connections::Client(self.clone())
     }
-    pub fn virtual_network_gateway_nat_rules(&self) -> virtual_network_gateway_nat_rules::Client {
+    pub fn virtual_network_gateway_nat_rules_client(&self) -> virtual_network_gateway_nat_rules::Client {
         virtual_network_gateway_nat_rules::Client(self.clone())
     }
-    pub fn virtual_network_gateways(&self) -> virtual_network_gateways::Client {
+    pub fn virtual_network_gateways_client(&self) -> virtual_network_gateways::Client {
         virtual_network_gateways::Client(self.clone())
     }
-    pub fn virtual_network_peerings(&self) -> virtual_network_peerings::Client {
+    pub fn virtual_network_peerings_client(&self) -> virtual_network_peerings::Client {
         virtual_network_peerings::Client(self.clone())
     }
-    pub fn virtual_network_taps(&self) -> virtual_network_taps::Client {
+    pub fn virtual_network_taps_client(&self) -> virtual_network_taps::Client {
         virtual_network_taps::Client(self.clone())
     }
-    pub fn virtual_networks(&self) -> virtual_networks::Client {
+    pub fn virtual_networks_client(&self) -> virtual_networks::Client {
         virtual_networks::Client(self.clone())
     }
-    pub fn virtual_router_peerings(&self) -> virtual_router_peerings::Client {
+    pub fn virtual_router_peerings_client(&self) -> virtual_router_peerings::Client {
         virtual_router_peerings::Client(self.clone())
     }
-    pub fn virtual_routers(&self) -> virtual_routers::Client {
+    pub fn virtual_routers_client(&self) -> virtual_routers::Client {
         virtual_routers::Client(self.clone())
     }
-    pub fn virtual_wans(&self) -> virtual_wans::Client {
+    pub fn virtual_wans_client(&self) -> virtual_wans::Client {
         virtual_wans::Client(self.clone())
     }
-    pub fn vpn_connections(&self) -> vpn_connections::Client {
+    pub fn vpn_connections_client(&self) -> vpn_connections::Client {
         vpn_connections::Client(self.clone())
     }
-    pub fn vpn_gateways(&self) -> vpn_gateways::Client {
+    pub fn vpn_gateways_client(&self) -> vpn_gateways::Client {
         vpn_gateways::Client(self.clone())
     }
-    pub fn vpn_link_connections(&self) -> vpn_link_connections::Client {
+    pub fn vpn_link_connections_client(&self) -> vpn_link_connections::Client {
         vpn_link_connections::Client(self.clone())
     }
-    pub fn vpn_server_configurations(&self) -> vpn_server_configurations::Client {
+    pub fn vpn_server_configurations_client(&self) -> vpn_server_configurations::Client {
         vpn_server_configurations::Client(self.clone())
     }
-    pub fn vpn_server_configurations_associated_with_virtual_wan(&self) -> vpn_server_configurations_associated_with_virtual_wan::Client {
+    pub fn vpn_server_configurations_associated_with_virtual_wan_client(
+        &self,
+    ) -> vpn_server_configurations_associated_with_virtual_wan::Client {
         vpn_server_configurations_associated_with_virtual_wan::Client(self.clone())
     }
-    pub fn vpn_site_link_connections(&self) -> vpn_site_link_connections::Client {
+    pub fn vpn_site_link_connections_client(&self) -> vpn_site_link_connections::Client {
         vpn_site_link_connections::Client(self.clone())
     }
-    pub fn vpn_site_links(&self) -> vpn_site_links::Client {
+    pub fn vpn_site_links_client(&self) -> vpn_site_links::Client {
         vpn_site_links::Client(self.clone())
     }
-    pub fn vpn_sites(&self) -> vpn_sites::Client {
+    pub fn vpn_sites_client(&self) -> vpn_sites::Client {
         vpn_sites::Client(self.clone())
     }
-    pub fn vpn_sites_configuration(&self) -> vpn_sites_configuration::Client {
+    pub fn vpn_sites_configuration_client(&self) -> vpn_sites_configuration::Client {
         vpn_sites_configuration::Client(self.clone())
     }
-    pub fn web_application_firewall_policies(&self) -> web_application_firewall_policies::Client {
+    pub fn web_application_firewall_policies_client(&self) -> web_application_firewall_policies::Client {
         web_application_firewall_policies::Client(self.clone())
     }
-    pub fn web_categories(&self) -> web_categories::Client {
+    pub fn web_categories_client(&self) -> web_categories::Client {
         web_categories::Client(self.clone())
     }
 }

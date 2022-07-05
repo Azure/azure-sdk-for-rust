@@ -74,55 +74,55 @@ impl Client {
             pipeline,
         }
     }
-    pub fn authorization_policies(&self) -> authorization_policies::Client {
+    pub fn authorization_policies_client(&self) -> authorization_policies::Client {
         authorization_policies::Client(self.clone())
     }
-    pub fn connector_mappings(&self) -> connector_mappings::Client {
+    pub fn connector_mappings_client(&self) -> connector_mappings::Client {
         connector_mappings::Client(self.clone())
     }
-    pub fn connectors(&self) -> connectors::Client {
+    pub fn connectors_client(&self) -> connectors::Client {
         connectors::Client(self.clone())
     }
-    pub fn hubs(&self) -> hubs::Client {
+    pub fn hubs_client(&self) -> hubs::Client {
         hubs::Client(self.clone())
     }
-    pub fn images(&self) -> images::Client {
+    pub fn images_client(&self) -> images::Client {
         images::Client(self.clone())
     }
-    pub fn interactions(&self) -> interactions::Client {
+    pub fn interactions_client(&self) -> interactions::Client {
         interactions::Client(self.clone())
     }
-    pub fn kpi(&self) -> kpi::Client {
+    pub fn kpi_client(&self) -> kpi::Client {
         kpi::Client(self.clone())
     }
-    pub fn links(&self) -> links::Client {
+    pub fn links_client(&self) -> links::Client {
         links::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn predictions(&self) -> predictions::Client {
+    pub fn predictions_client(&self) -> predictions::Client {
         predictions::Client(self.clone())
     }
-    pub fn profiles(&self) -> profiles::Client {
+    pub fn profiles_client(&self) -> profiles::Client {
         profiles::Client(self.clone())
     }
-    pub fn relationship_links(&self) -> relationship_links::Client {
+    pub fn relationship_links_client(&self) -> relationship_links::Client {
         relationship_links::Client(self.clone())
     }
-    pub fn relationships(&self) -> relationships::Client {
+    pub fn relationships_client(&self) -> relationships::Client {
         relationships::Client(self.clone())
     }
-    pub fn role_assignments(&self) -> role_assignments::Client {
+    pub fn role_assignments_client(&self) -> role_assignments::Client {
         role_assignments::Client(self.clone())
     }
-    pub fn roles(&self) -> roles::Client {
+    pub fn roles_client(&self) -> roles::Client {
         roles::Client(self.clone())
     }
-    pub fn views(&self) -> views::Client {
+    pub fn views_client(&self) -> views::Client {
         views::Client(self.clone())
     }
-    pub fn widget_types(&self) -> widget_types::Client {
+    pub fn widget_types_client(&self) -> widget_types::Client {
         widget_types::Client(self.clone())
     }
 }

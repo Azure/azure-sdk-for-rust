@@ -74,31 +74,31 @@ impl Client {
             pipeline,
         }
     }
-    pub fn billing_profile_pricesheet(&self) -> billing_profile_pricesheet::Client {
+    pub fn billing_profile_pricesheet_client(&self) -> billing_profile_pricesheet::Client {
         billing_profile_pricesheet::Client(self.clone())
     }
-    pub fn charges_by_billing_account(&self) -> charges_by_billing_account::Client {
+    pub fn charges_by_billing_account_client(&self) -> charges_by_billing_account::Client {
         charges_by_billing_account::Client(self.clone())
     }
-    pub fn charges_by_billing_profile(&self) -> charges_by_billing_profile::Client {
+    pub fn charges_by_billing_profile_client(&self) -> charges_by_billing_profile::Client {
         charges_by_billing_profile::Client(self.clone())
     }
-    pub fn charges_by_invoice_section(&self) -> charges_by_invoice_section::Client {
+    pub fn charges_by_invoice_section_client(&self) -> charges_by_invoice_section::Client {
         charges_by_invoice_section::Client(self.clone())
     }
-    pub fn credit_summary_by_billing_profile(&self) -> credit_summary_by_billing_profile::Client {
+    pub fn credit_summary_by_billing_profile_client(&self) -> credit_summary_by_billing_profile::Client {
         credit_summary_by_billing_profile::Client(self.clone())
     }
-    pub fn events_by_billing_profile(&self) -> events_by_billing_profile::Client {
+    pub fn events_by_billing_profile_client(&self) -> events_by_billing_profile::Client {
         events_by_billing_profile::Client(self.clone())
     }
-    pub fn invoice_pricesheet(&self) -> invoice_pricesheet::Client {
+    pub fn invoice_pricesheet_client(&self) -> invoice_pricesheet::Client {
         invoice_pricesheet::Client(self.clone())
     }
-    pub fn lots_by_billing_profile(&self) -> lots_by_billing_profile::Client {
+    pub fn lots_by_billing_profile_client(&self) -> lots_by_billing_profile::Client {
         lots_by_billing_profile::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }
