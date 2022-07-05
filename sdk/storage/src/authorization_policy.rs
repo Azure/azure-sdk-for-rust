@@ -62,8 +62,9 @@ impl Policy for AuthorizationPolicy {
                 request
             }
             StorageCredentials::TokenCredential(token_credential) => {
-                let bearer_token_future = token_credential.get_token(STORAGE_TOKEN_SCOPE);
-                let bearer_token = futures::executor::block_on(bearer_token_future)
+                let bearer_token = token_credential
+                    .get_token(STORAGE_TOKEN_SCOPE)
+                    .await
                     .context(ErrorKind::Credential, "failed to get bearer token")?;
 
                 request.insert_header(
