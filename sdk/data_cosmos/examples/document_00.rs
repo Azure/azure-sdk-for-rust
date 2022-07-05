@@ -4,17 +4,9 @@ use serde::{Deserialize, Serialize};
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos DB.
 use azure_core::prelude::*;
 
-use azure_data_cosmos::prelude::*;
+mod util;
 
-#[derive(Debug, Parser)]
-struct Args {
-    /// Cosmos primary key name
-    #[clap(env = "COSMOS_PRIMARY_KEY")]
-    primary_key: String,
-    /// The cosmos account your're using
-    #[clap(env = "COSMOS_ACCOUNT")]
-    account: String,
-}
+use azure_data_cosmos::prelude::*;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 struct MySampleStruct {
@@ -43,22 +35,7 @@ const COLLECTION: &str = "azuresdktc";
 // 4. Delete everything.
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    // Let's get Cosmos account and access key from env variables.
-    // This helps automated testing.
-    let args = Args::parse();
-
-    // First, we create an authorization token. There are two types of tokens, master and resource
-    // constrained. Please check the Azure documentation for details. You can change tokens
-    // at will and it's a good practice to raise your privileges only when needed.
-    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
-
-    // Next we will create a Cosmos client. You need an authorization_token but you can later
-    // change it if needed.
-    let client = CosmosClient::new(
-        args.account.clone(),
-        authorization_token.clone(),
-        CosmosOptions::default(),
-    );
+    let client = util::Auth::parse().into_client()?;
 
     // list_databases will give us the databases available in our account. If there is
     // an error (for example, the given key is not valid) you will receive a
