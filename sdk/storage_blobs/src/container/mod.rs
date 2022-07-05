@@ -90,7 +90,7 @@ impl Container {
             DateTime::parse_from_rfc2822(last_modified).map_kind(ErrorKind::DataConversion)?;
         let last_modified = DateTime::from_utc(last_modified.naive_utc(), Utc);
 
-        let e_tag = headers.get_string(&headers::ETAG)?;
+        let e_tag = headers.get_as(&headers::ETAG)?;
 
         let lease_status = headers.get_as(&LEASE_STATUS)?;
         let lease_state = headers.get_as(&LEASE_STATE)?;

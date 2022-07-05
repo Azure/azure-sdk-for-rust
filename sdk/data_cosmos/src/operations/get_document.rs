@@ -157,15 +157,15 @@ where
         Ok(Self {
             document: serde_json::from_slice(&body)?,
 
-            content_location: content_location_from_headers(headers)?.to_owned(),
+            content_location: content_location_from_headers(headers)?,
             last_state_change: last_state_change_from_headers(headers)?,
             etag: etag_from_headers(headers)?,
             resource_quota: resource_quota_from_headers(headers)?,
             resource_usage: resource_usage_from_headers(headers)?,
             lsn: lsn_from_headers(headers)?,
-            schema_version: schema_version_from_headers(headers)?.to_owned(),
-            alt_content_path: alt_content_path_from_headers(headers)?.to_owned(),
-            content_path: content_path_from_headers(headers)?.to_owned(),
+            schema_version: schema_version_from_headers(headers)?,
+            alt_content_path: alt_content_path_from_headers(headers)?,
+            content_path: content_path_from_headers(headers)?,
             role: role_from_headers(headers)?,
             global_committed_lsn: global_committed_lsn_from_headers(headers)?,
             number_of_read_regions: number_of_read_regions_from_headers(headers)?,
@@ -175,9 +175,9 @@ where
             cosmos_item_llsn: cosmos_item_llsn_from_headers(headers)?,
             session_token: session_token_from_headers(headers)?,
             charge: request_charge_from_headers(headers)?,
-            service_version: service_version_from_headers(headers)?.to_owned(),
+            service_version: service_version_from_headers(headers)?,
             activity_id: activity_id_from_headers(headers)?,
-            gateway_version: gateway_version_from_headers(headers)?.to_owned(),
+            gateway_version: gateway_version_from_headers(headers)?,
             date: date_from_headers(headers)?,
         })
     }
@@ -208,10 +208,10 @@ pub struct NotFoundDocumentResponse {
 impl NotFoundDocumentResponse {
     async fn try_from(headers: &Headers) -> azure_core::Result<Self> {
         Ok(Self {
-            content_location: content_location_from_headers(headers)?.to_owned(),
+            content_location: content_location_from_headers(headers)?,
             last_state_change: last_state_change_from_headers(headers)?,
             lsn: lsn_from_headers(headers)?,
-            schema_version: schema_version_from_headers(headers)?.to_owned(),
+            schema_version: schema_version_from_headers(headers)?,
             current_write_quorum: current_write_quorum_from_headers_optional(headers)?,
             current_replica_set_size: current_replica_set_size_from_headers_optional(headers)?,
             role: role_from_headers(headers)?,
@@ -222,9 +222,9 @@ impl NotFoundDocumentResponse {
             cosmos_quorum_acked_llsn: cosmos_quorum_acked_llsn_from_headers_optional(headers)?,
             session_token: session_token_from_headers(headers)?,
             charge: request_charge_from_headers(headers)?,
-            service_version: service_version_from_headers(headers)?.to_owned(),
+            service_version: service_version_from_headers(headers)?,
             activity_id: activity_id_from_headers(headers)?,
-            gateway_version: gateway_version_from_headers(headers)?.to_owned(),
+            gateway_version: gateway_version_from_headers(headers)?,
             date: date_from_headers(headers)?,
         })
     }

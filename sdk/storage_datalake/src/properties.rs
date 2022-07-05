@@ -4,6 +4,7 @@ use azure_core::headers::{self, Header, PROPERTIES};
 use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
+use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Properties(BTreeMap<Cow<'static, str>, Cow<'static, str>>);
@@ -110,5 +111,12 @@ impl TryFrom<&str> for Properties {
             });
 
         Ok(properties)
+    }
+}
+
+impl FromStr for Properties {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        TryFrom::try_from(s)
     }
 }

@@ -84,8 +84,8 @@ impl ListPermissionsResponse {
             charge: request_charge_from_headers(&headers)?,
             activity_id: activity_id_from_headers(&headers)?,
             session_token: session_token_from_headers(&headers)?,
-            content_path: content_path_from_headers(&headers)?.to_owned(),
-            alt_content_path: alt_content_path_from_headers(&headers)?.to_owned(),
+            content_path: content_path_from_headers(&headers)?,
+            alt_content_path: alt_content_path_from_headers(&headers)?,
             continuation_token: continuation_token_from_headers_optional(&headers)?,
         })
     }

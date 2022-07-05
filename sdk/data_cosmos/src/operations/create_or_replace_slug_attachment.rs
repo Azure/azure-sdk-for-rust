@@ -117,7 +117,7 @@ impl CreateOrReplaceSlugAttachmentResponse {
             resource_quota: resource_quota_from_headers(&headers)?,
             resource_usage: resource_usage_from_headers(&headers)?,
             lsn: lsn_from_headers(&headers)?,
-            alt_content_path: alt_content_path_from_headers(&headers)?.to_owned(),
+            alt_content_path: alt_content_path_from_headers(&headers)?,
             quorum_acked_lsn: quorum_acked_lsn_from_headers(&headers)?,
             current_write_quorum: current_write_quorum_from_headers(&headers)?,
             current_replica_set_size: current_replica_set_size_from_headers(&headers)?,
@@ -128,9 +128,9 @@ impl CreateOrReplaceSlugAttachmentResponse {
             cosmos_quorum_acked_llsn: cosmos_quorum_acked_llsn_from_headers(&headers)?,
             session_token: session_token_from_headers(&headers)?,
             request_charge: request_charge_from_headers(&headers)?,
-            service_version: service_version_from_headers(&headers)?.to_owned(),
+            service_version: service_version_from_headers(&headers)?,
             activity_id: activity_id_from_headers(&headers)?,
-            gateway_version: gateway_version_from_headers(&headers)?.to_owned(),
+            gateway_version: gateway_version_from_headers(&headers)?,
             date: date_from_headers(&headers)?,
         })
     }

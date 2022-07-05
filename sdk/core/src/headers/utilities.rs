@@ -76,11 +76,11 @@ pub fn continuation_token_from_headers_optional(
 }
 
 pub fn sku_name_from_headers(headers: &Headers) -> crate::Result<String> {
-    headers.get_string(&SKU_NAME)
+    headers.get_as(&SKU_NAME)
 }
 
 pub fn account_kind_from_headers(headers: &Headers) -> crate::Result<String> {
-    headers.get_string(&ACCOUNT_KIND)
+    headers.get_as(&ACCOUNT_KIND)
 }
 
 pub fn etag_from_headers_optional(headers: &Headers) -> crate::Result<Option<String>> {
@@ -88,7 +88,7 @@ pub fn etag_from_headers_optional(headers: &Headers) -> crate::Result<Option<Str
 }
 
 pub fn etag_from_headers(headers: &Headers) -> crate::Result<String> {
-    headers.get_string(&ETAG)
+    headers.get_as(&ETAG)
 }
 
 pub fn lease_time_from_headers(headers: &Headers) -> crate::Result<u8> {
@@ -110,23 +110,23 @@ pub fn sequence_number_from_headers(headers: &Headers) -> crate::Result<u64> {
 }
 
 pub fn session_token_from_headers(headers: &Headers) -> crate::Result<SessionToken> {
-    headers.get_string(&SESSION_TOKEN)
+    headers.get_as(&SESSION_TOKEN)
 }
 
-pub fn server_from_headers(headers: &Headers) -> crate::Result<&str> {
-    headers.get_str(&SERVER)
+pub fn server_from_headers(headers: &Headers) -> crate::Result<String> {
+    headers.get_as(&SERVER)
 }
 
-pub fn version_from_headers(headers: &Headers) -> crate::Result<&str> {
-    headers.get_str(&VERSION)
+pub fn version_from_headers(headers: &Headers) -> crate::Result<String> {
+    headers.get_as(&VERSION)
 }
 
 pub fn request_server_encrypted_from_headers(headers: &Headers) -> crate::Result<bool> {
     headers.get_as(&REQUEST_SERVER_ENCRYPTED)
 }
 
-pub fn content_type_from_headers(headers: &Headers) -> crate::Result<&str> {
-    headers.get_str(&CONTENT_TYPE)
+pub fn content_type_from_headers(headers: &Headers) -> crate::Result<String> {
+    headers.get_as(&CONTENT_TYPE)
 }
 
 pub fn item_count_from_headers(headers: &Headers) -> crate::Result<u32> {
