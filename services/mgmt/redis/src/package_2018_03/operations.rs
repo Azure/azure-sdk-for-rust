@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn firewall_rules(&self) -> firewall_rules::Client {
+    pub fn firewall_rules_client(&self) -> firewall_rules::Client {
         firewall_rules::Client(self.clone())
     }
-    pub fn linked_server(&self) -> linked_server::Client {
+    pub fn linked_server_client(&self) -> linked_server::Client {
         linked_server::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn patch_schedules(&self) -> patch_schedules::Client {
+    pub fn patch_schedules_client(&self) -> patch_schedules::Client {
         patch_schedules::Client(self.clone())
     }
-    pub fn redis(&self) -> redis::Client {
+    pub fn redis_client(&self) -> redis::Client {
         redis::Client(self.clone())
     }
 }

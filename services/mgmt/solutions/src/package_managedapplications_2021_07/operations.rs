@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn application_definitions(&self) -> application_definitions::Client {
+    pub fn application_definitions_client(&self) -> application_definitions::Client {
         application_definitions::Client(self.clone())
     }
-    pub fn applications(&self) -> applications::Client {
+    pub fn applications_client(&self) -> applications::Client {
         applications::Client(self.clone())
     }
-    pub fn jit_requests(&self) -> jit_requests::Client {
+    pub fn jit_requests_client(&self) -> jit_requests::Client {
         jit_requests::Client(self.clone())
     }
 }

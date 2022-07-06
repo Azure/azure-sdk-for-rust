@@ -74,40 +74,40 @@ impl Client {
             pipeline,
         }
     }
-    pub fn assessed_machines(&self) -> assessed_machines::Client {
+    pub fn assessed_machines_client(&self) -> assessed_machines::Client {
         assessed_machines::Client(self.clone())
     }
-    pub fn assessments(&self) -> assessments::Client {
+    pub fn assessments_client(&self) -> assessments::Client {
         assessments::Client(self.clone())
     }
-    pub fn groups(&self) -> groups::Client {
+    pub fn groups_client(&self) -> groups::Client {
         groups::Client(self.clone())
     }
-    pub fn hyper_v_collectors(&self) -> hyper_v_collectors::Client {
+    pub fn hyper_v_collectors_client(&self) -> hyper_v_collectors::Client {
         hyper_v_collectors::Client(self.clone())
     }
-    pub fn import_collectors(&self) -> import_collectors::Client {
+    pub fn import_collectors_client(&self) -> import_collectors::Client {
         import_collectors::Client(self.clone())
     }
-    pub fn machines(&self) -> machines::Client {
+    pub fn machines_client(&self) -> machines::Client {
         machines::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connection(&self) -> private_endpoint_connection::Client {
+    pub fn private_endpoint_connection_client(&self) -> private_endpoint_connection::Client {
         private_endpoint_connection::Client(self.clone())
     }
-    pub fn private_link_resource(&self) -> private_link_resource::Client {
+    pub fn private_link_resource_client(&self) -> private_link_resource::Client {
         private_link_resource::Client(self.clone())
     }
-    pub fn projects(&self) -> projects::Client {
+    pub fn projects_client(&self) -> projects::Client {
         projects::Client(self.clone())
     }
-    pub fn server_collectors(&self) -> server_collectors::Client {
+    pub fn server_collectors_client(&self) -> server_collectors::Client {
         server_collectors::Client(self.clone())
     }
-    pub fn v_mware_collectors(&self) -> v_mware_collectors::Client {
+    pub fn v_mware_collectors_client(&self) -> v_mware_collectors::Client {
         v_mware_collectors::Client(self.clone())
     }
 }

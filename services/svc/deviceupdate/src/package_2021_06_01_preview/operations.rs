@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn device_management(&self) -> device_management::Client {
+    pub fn device_management_client(&self) -> device_management::Client {
         device_management::Client(self.clone())
     }
-    pub fn device_update(&self) -> device_update::Client {
+    pub fn device_update_client(&self) -> device_update::Client {
         device_update::Client(self.clone())
     }
 }

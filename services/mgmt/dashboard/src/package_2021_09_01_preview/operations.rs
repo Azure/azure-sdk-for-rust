@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn grafana(&self) -> grafana::Client {
+    pub fn grafana_client(&self) -> grafana::Client {
         grafana::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

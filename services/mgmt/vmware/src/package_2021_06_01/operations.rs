@@ -74,46 +74,46 @@ impl Client {
             pipeline,
         }
     }
-    pub fn addons(&self) -> addons::Client {
+    pub fn addons_client(&self) -> addons::Client {
         addons::Client(self.clone())
     }
-    pub fn authorizations(&self) -> authorizations::Client {
+    pub fn authorizations_client(&self) -> authorizations::Client {
         authorizations::Client(self.clone())
     }
-    pub fn cloud_links(&self) -> cloud_links::Client {
+    pub fn cloud_links_client(&self) -> cloud_links::Client {
         cloud_links::Client(self.clone())
     }
-    pub fn clusters(&self) -> clusters::Client {
+    pub fn clusters_client(&self) -> clusters::Client {
         clusters::Client(self.clone())
     }
-    pub fn datastores(&self) -> datastores::Client {
+    pub fn datastores_client(&self) -> datastores::Client {
         datastores::Client(self.clone())
     }
-    pub fn global_reach_connections(&self) -> global_reach_connections::Client {
+    pub fn global_reach_connections_client(&self) -> global_reach_connections::Client {
         global_reach_connections::Client(self.clone())
     }
-    pub fn hcx_enterprise_sites(&self) -> hcx_enterprise_sites::Client {
+    pub fn hcx_enterprise_sites_client(&self) -> hcx_enterprise_sites::Client {
         hcx_enterprise_sites::Client(self.clone())
     }
-    pub fn locations(&self) -> locations::Client {
+    pub fn locations_client(&self) -> locations::Client {
         locations::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_clouds(&self) -> private_clouds::Client {
+    pub fn private_clouds_client(&self) -> private_clouds::Client {
         private_clouds::Client(self.clone())
     }
-    pub fn script_cmdlets(&self) -> script_cmdlets::Client {
+    pub fn script_cmdlets_client(&self) -> script_cmdlets::Client {
         script_cmdlets::Client(self.clone())
     }
-    pub fn script_executions(&self) -> script_executions::Client {
+    pub fn script_executions_client(&self) -> script_executions::Client {
         script_executions::Client(self.clone())
     }
-    pub fn script_packages(&self) -> script_packages::Client {
+    pub fn script_packages_client(&self) -> script_packages::Client {
         script_packages::Client(self.clone())
     }
-    pub fn workload_networks(&self) -> workload_networks::Client {
+    pub fn workload_networks_client(&self) -> workload_networks::Client {
         workload_networks::Client(self.clone())
     }
 }

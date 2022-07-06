@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn marketplace_agreements(&self) -> marketplace_agreements::Client {
+    pub fn marketplace_agreements_client(&self) -> marketplace_agreements::Client {
         marketplace_agreements::Client(self.clone())
     }
-    pub fn monitors(&self) -> monitors::Client {
+    pub fn monitors_client(&self) -> monitors::Client {
         monitors::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn single_sign_on_configurations(&self) -> single_sign_on_configurations::Client {
+    pub fn single_sign_on_configurations_client(&self) -> single_sign_on_configurations::Client {
         single_sign_on_configurations::Client(self.clone())
     }
-    pub fn tag_rules(&self) -> tag_rules::Client {
+    pub fn tag_rules_client(&self) -> tag_rules::Client {
         tag_rules::Client(self.clone())
     }
 }

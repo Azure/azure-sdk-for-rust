@@ -74,7 +74,7 @@ impl Client {
             pipeline,
         }
     }
-    pub fn account(&self) -> account::Client {
+    pub fn account_client(&self) -> account::Client {
         account::Client(self.clone())
     }
 }

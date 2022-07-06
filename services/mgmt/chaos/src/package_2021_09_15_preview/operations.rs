@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn capabilities(&self) -> capabilities::Client {
+    pub fn capabilities_client(&self) -> capabilities::Client {
         capabilities::Client(self.clone())
     }
-    pub fn capability_types(&self) -> capability_types::Client {
+    pub fn capability_types_client(&self) -> capability_types::Client {
         capability_types::Client(self.clone())
     }
-    pub fn experiments(&self) -> experiments::Client {
+    pub fn experiments_client(&self) -> experiments::Client {
         experiments::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn target_types(&self) -> target_types::Client {
+    pub fn target_types_client(&self) -> target_types::Client {
         target_types::Client(self.clone())
     }
-    pub fn targets(&self) -> targets::Client {
+    pub fn targets_client(&self) -> targets::Client {
         targets::Client(self.clone())
     }
 }

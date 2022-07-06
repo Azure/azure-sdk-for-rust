@@ -74,70 +74,70 @@ impl Client {
             pipeline,
         }
     }
-    pub fn activate(&self) -> activate::Client {
+    pub fn activate_client(&self) -> activate::Client {
         activate::Client(self.clone())
     }
-    pub fn address(&self) -> address::Client {
+    pub fn address_client(&self) -> address::Client {
         address::Client(self.clone())
     }
-    pub fn agreements(&self) -> agreements::Client {
+    pub fn agreements_client(&self) -> agreements::Client {
         agreements::Client(self.clone())
     }
-    pub fn available_balances(&self) -> available_balances::Client {
+    pub fn available_balances_client(&self) -> available_balances::Client {
         available_balances::Client(self.clone())
     }
-    pub fn billing_accounts(&self) -> billing_accounts::Client {
+    pub fn billing_accounts_client(&self) -> billing_accounts::Client {
         billing_accounts::Client(self.clone())
     }
-    pub fn billing_permissions(&self) -> billing_permissions::Client {
+    pub fn billing_permissions_client(&self) -> billing_permissions::Client {
         billing_permissions::Client(self.clone())
     }
-    pub fn billing_profiles(&self) -> billing_profiles::Client {
+    pub fn billing_profiles_client(&self) -> billing_profiles::Client {
         billing_profiles::Client(self.clone())
     }
-    pub fn billing_property(&self) -> billing_property::Client {
+    pub fn billing_property_client(&self) -> billing_property::Client {
         billing_property::Client(self.clone())
     }
-    pub fn billing_role_assignments(&self) -> billing_role_assignments::Client {
+    pub fn billing_role_assignments_client(&self) -> billing_role_assignments::Client {
         billing_role_assignments::Client(self.clone())
     }
-    pub fn billing_role_definitions(&self) -> billing_role_definitions::Client {
+    pub fn billing_role_definitions_client(&self) -> billing_role_definitions::Client {
         billing_role_definitions::Client(self.clone())
     }
-    pub fn billing_subscriptions(&self) -> billing_subscriptions::Client {
+    pub fn billing_subscriptions_client(&self) -> billing_subscriptions::Client {
         billing_subscriptions::Client(self.clone())
     }
-    pub fn customers(&self) -> customers::Client {
+    pub fn customers_client(&self) -> customers::Client {
         customers::Client(self.clone())
     }
-    pub fn instructions(&self) -> instructions::Client {
+    pub fn instructions_client(&self) -> instructions::Client {
         instructions::Client(self.clone())
     }
-    pub fn invoice_sections(&self) -> invoice_sections::Client {
+    pub fn invoice_sections_client(&self) -> invoice_sections::Client {
         invoice_sections::Client(self.clone())
     }
-    pub fn invoices(&self) -> invoices::Client {
+    pub fn invoices_client(&self) -> invoices::Client {
         invoices::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn policies(&self) -> policies::Client {
+    pub fn policies_client(&self) -> policies::Client {
         policies::Client(self.clone())
     }
-    pub fn products(&self) -> products::Client {
+    pub fn products_client(&self) -> products::Client {
         products::Client(self.clone())
     }
-    pub fn promotion(&self) -> promotion::Client {
+    pub fn promotion_client(&self) -> promotion::Client {
         promotion::Client(self.clone())
     }
-    pub fn promotions(&self) -> promotions::Client {
+    pub fn promotions_client(&self) -> promotions::Client {
         promotions::Client(self.clone())
     }
-    pub fn reservations(&self) -> reservations::Client {
+    pub fn reservations_client(&self) -> reservations::Client {
         reservations::Client(self.clone())
     }
-    pub fn transactions(&self) -> transactions::Client {
+    pub fn transactions_client(&self) -> transactions::Client {
         transactions::Client(self.clone())
     }
 }

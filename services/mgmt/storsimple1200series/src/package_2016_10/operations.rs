@@ -74,49 +74,49 @@ impl Client {
             pipeline,
         }
     }
-    pub fn access_control_records(&self) -> access_control_records::Client {
+    pub fn access_control_records_client(&self) -> access_control_records::Client {
         access_control_records::Client(self.clone())
     }
-    pub fn alerts(&self) -> alerts::Client {
+    pub fn alerts_client(&self) -> alerts::Client {
         alerts::Client(self.clone())
     }
-    pub fn available_provider_operations(&self) -> available_provider_operations::Client {
+    pub fn available_provider_operations_client(&self) -> available_provider_operations::Client {
         available_provider_operations::Client(self.clone())
     }
-    pub fn backup_schedule_groups(&self) -> backup_schedule_groups::Client {
+    pub fn backup_schedule_groups_client(&self) -> backup_schedule_groups::Client {
         backup_schedule_groups::Client(self.clone())
     }
-    pub fn backups(&self) -> backups::Client {
+    pub fn backups_client(&self) -> backups::Client {
         backups::Client(self.clone())
     }
-    pub fn chap_settings(&self) -> chap_settings::Client {
+    pub fn chap_settings_client(&self) -> chap_settings::Client {
         chap_settings::Client(self.clone())
     }
-    pub fn devices(&self) -> devices::Client {
+    pub fn devices_client(&self) -> devices::Client {
         devices::Client(self.clone())
     }
-    pub fn file_servers(&self) -> file_servers::Client {
+    pub fn file_servers_client(&self) -> file_servers::Client {
         file_servers::Client(self.clone())
     }
-    pub fn file_shares(&self) -> file_shares::Client {
+    pub fn file_shares_client(&self) -> file_shares::Client {
         file_shares::Client(self.clone())
     }
-    pub fn iscsi_disks(&self) -> iscsi_disks::Client {
+    pub fn iscsi_disks_client(&self) -> iscsi_disks::Client {
         iscsi_disks::Client(self.clone())
     }
-    pub fn iscsi_servers(&self) -> iscsi_servers::Client {
+    pub fn iscsi_servers_client(&self) -> iscsi_servers::Client {
         iscsi_servers::Client(self.clone())
     }
-    pub fn jobs(&self) -> jobs::Client {
+    pub fn jobs_client(&self) -> jobs::Client {
         jobs::Client(self.clone())
     }
-    pub fn managers(&self) -> managers::Client {
+    pub fn managers_client(&self) -> managers::Client {
         managers::Client(self.clone())
     }
-    pub fn storage_account_credentials(&self) -> storage_account_credentials::Client {
+    pub fn storage_account_credentials_client(&self) -> storage_account_credentials::Client {
         storage_account_credentials::Client(self.clone())
     }
-    pub fn storage_domains(&self) -> storage_domains::Client {
+    pub fn storage_domains_client(&self) -> storage_domains::Client {
         storage_domains::Client(self.clone())
     }
 }

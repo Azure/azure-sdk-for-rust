@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn bot_connection(&self) -> bot_connection::Client {
+    pub fn bot_connection_client(&self) -> bot_connection::Client {
         bot_connection::Client(self.clone())
     }
-    pub fn bots(&self) -> bots::Client {
+    pub fn bots_client(&self) -> bots::Client {
         bots::Client(self.clone())
     }
-    pub fn channels(&self) -> channels::Client {
+    pub fn channels_client(&self) -> channels::Client {
         channels::Client(self.clone())
     }
-    pub fn enterprise_channels(&self) -> enterprise_channels::Client {
+    pub fn enterprise_channels_client(&self) -> enterprise_channels::Client {
         enterprise_channels::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

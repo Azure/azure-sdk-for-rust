@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn certificates(&self) -> certificates::Client {
+    pub fn certificates_client(&self) -> certificates::Client {
         certificates::Client(self.clone())
     }
-    pub fn iot_hub(&self) -> iot_hub::Client {
+    pub fn iot_hub_client(&self) -> iot_hub::Client {
         iot_hub::Client(self.clone())
     }
-    pub fn iot_hub_resource(&self) -> iot_hub_resource::Client {
+    pub fn iot_hub_resource_client(&self) -> iot_hub_resource::Client {
         iot_hub_resource::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn resource_provider_common(&self) -> resource_provider_common::Client {
+    pub fn resource_provider_common_client(&self) -> resource_provider_common::Client {
         resource_provider_common::Client(self.clone())
     }
 }

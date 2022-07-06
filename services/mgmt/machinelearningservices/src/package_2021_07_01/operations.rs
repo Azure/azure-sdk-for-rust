@@ -74,37 +74,37 @@ impl Client {
             pipeline,
         }
     }
-    pub fn compute(&self) -> compute::Client {
+    pub fn compute_client(&self) -> compute::Client {
         compute::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn quotas(&self) -> quotas::Client {
+    pub fn quotas_client(&self) -> quotas::Client {
         quotas::Client(self.clone())
     }
-    pub fn usages(&self) -> usages::Client {
+    pub fn usages_client(&self) -> usages::Client {
         usages::Client(self.clone())
     }
-    pub fn virtual_machine_sizes(&self) -> virtual_machine_sizes::Client {
+    pub fn virtual_machine_sizes_client(&self) -> virtual_machine_sizes::Client {
         virtual_machine_sizes::Client(self.clone())
     }
-    pub fn workspace_connections(&self) -> workspace_connections::Client {
+    pub fn workspace_connections_client(&self) -> workspace_connections::Client {
         workspace_connections::Client(self.clone())
     }
-    pub fn workspace_features(&self) -> workspace_features::Client {
+    pub fn workspace_features_client(&self) -> workspace_features::Client {
         workspace_features::Client(self.clone())
     }
-    pub fn workspace_skus(&self) -> workspace_skus::Client {
+    pub fn workspace_skus_client(&self) -> workspace_skus::Client {
         workspace_skus::Client(self.clone())
     }
-    pub fn workspaces(&self) -> workspaces::Client {
+    pub fn workspaces_client(&self) -> workspaces::Client {
         workspaces::Client(self.clone())
     }
 }

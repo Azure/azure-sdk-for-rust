@@ -74,88 +74,88 @@ impl Client {
             pipeline,
         }
     }
-    pub fn migration_recovery_points(&self) -> migration_recovery_points::Client {
+    pub fn migration_recovery_points_client(&self) -> migration_recovery_points::Client {
         migration_recovery_points::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn recovery_points(&self) -> recovery_points::Client {
+    pub fn recovery_points_client(&self) -> recovery_points::Client {
         recovery_points::Client(self.clone())
     }
-    pub fn replication_alert_settings(&self) -> replication_alert_settings::Client {
+    pub fn replication_alert_settings_client(&self) -> replication_alert_settings::Client {
         replication_alert_settings::Client(self.clone())
     }
-    pub fn replication_appliances(&self) -> replication_appliances::Client {
+    pub fn replication_appliances_client(&self) -> replication_appliances::Client {
         replication_appliances::Client(self.clone())
     }
-    pub fn replication_eligibility_results(&self) -> replication_eligibility_results::Client {
+    pub fn replication_eligibility_results_client(&self) -> replication_eligibility_results::Client {
         replication_eligibility_results::Client(self.clone())
     }
-    pub fn replication_events(&self) -> replication_events::Client {
+    pub fn replication_events_client(&self) -> replication_events::Client {
         replication_events::Client(self.clone())
     }
-    pub fn replication_fabrics(&self) -> replication_fabrics::Client {
+    pub fn replication_fabrics_client(&self) -> replication_fabrics::Client {
         replication_fabrics::Client(self.clone())
     }
-    pub fn replication_jobs(&self) -> replication_jobs::Client {
+    pub fn replication_jobs_client(&self) -> replication_jobs::Client {
         replication_jobs::Client(self.clone())
     }
-    pub fn replication_logical_networks(&self) -> replication_logical_networks::Client {
+    pub fn replication_logical_networks_client(&self) -> replication_logical_networks::Client {
         replication_logical_networks::Client(self.clone())
     }
-    pub fn replication_migration_items(&self) -> replication_migration_items::Client {
+    pub fn replication_migration_items_client(&self) -> replication_migration_items::Client {
         replication_migration_items::Client(self.clone())
     }
-    pub fn replication_network_mappings(&self) -> replication_network_mappings::Client {
+    pub fn replication_network_mappings_client(&self) -> replication_network_mappings::Client {
         replication_network_mappings::Client(self.clone())
     }
-    pub fn replication_networks(&self) -> replication_networks::Client {
+    pub fn replication_networks_client(&self) -> replication_networks::Client {
         replication_networks::Client(self.clone())
     }
-    pub fn replication_policies(&self) -> replication_policies::Client {
+    pub fn replication_policies_client(&self) -> replication_policies::Client {
         replication_policies::Client(self.clone())
     }
-    pub fn replication_protectable_items(&self) -> replication_protectable_items::Client {
+    pub fn replication_protectable_items_client(&self) -> replication_protectable_items::Client {
         replication_protectable_items::Client(self.clone())
     }
-    pub fn replication_protected_items(&self) -> replication_protected_items::Client {
+    pub fn replication_protected_items_client(&self) -> replication_protected_items::Client {
         replication_protected_items::Client(self.clone())
     }
-    pub fn replication_protection_container_mappings(&self) -> replication_protection_container_mappings::Client {
+    pub fn replication_protection_container_mappings_client(&self) -> replication_protection_container_mappings::Client {
         replication_protection_container_mappings::Client(self.clone())
     }
-    pub fn replication_protection_containers(&self) -> replication_protection_containers::Client {
+    pub fn replication_protection_containers_client(&self) -> replication_protection_containers::Client {
         replication_protection_containers::Client(self.clone())
     }
-    pub fn replication_protection_intents(&self) -> replication_protection_intents::Client {
+    pub fn replication_protection_intents_client(&self) -> replication_protection_intents::Client {
         replication_protection_intents::Client(self.clone())
     }
-    pub fn replication_recovery_plans(&self) -> replication_recovery_plans::Client {
+    pub fn replication_recovery_plans_client(&self) -> replication_recovery_plans::Client {
         replication_recovery_plans::Client(self.clone())
     }
-    pub fn replication_recovery_services_providers(&self) -> replication_recovery_services_providers::Client {
+    pub fn replication_recovery_services_providers_client(&self) -> replication_recovery_services_providers::Client {
         replication_recovery_services_providers::Client(self.clone())
     }
-    pub fn replication_storage_classification_mappings(&self) -> replication_storage_classification_mappings::Client {
+    pub fn replication_storage_classification_mappings_client(&self) -> replication_storage_classification_mappings::Client {
         replication_storage_classification_mappings::Client(self.clone())
     }
-    pub fn replication_storage_classifications(&self) -> replication_storage_classifications::Client {
+    pub fn replication_storage_classifications_client(&self) -> replication_storage_classifications::Client {
         replication_storage_classifications::Client(self.clone())
     }
-    pub fn replication_vault_health(&self) -> replication_vault_health::Client {
+    pub fn replication_vault_health_client(&self) -> replication_vault_health::Client {
         replication_vault_health::Client(self.clone())
     }
-    pub fn replication_vault_setting(&self) -> replication_vault_setting::Client {
+    pub fn replication_vault_setting_client(&self) -> replication_vault_setting::Client {
         replication_vault_setting::Client(self.clone())
     }
-    pub fn replicationv_centers(&self) -> replicationv_centers::Client {
+    pub fn replicationv_centers_client(&self) -> replicationv_centers::Client {
         replicationv_centers::Client(self.clone())
     }
-    pub fn supported_operating_systems(&self) -> supported_operating_systems::Client {
+    pub fn supported_operating_systems_client(&self) -> supported_operating_systems::Client {
         supported_operating_systems::Client(self.clone())
     }
-    pub fn target_compute_sizes(&self) -> target_compute_sizes::Client {
+    pub fn target_compute_sizes_client(&self) -> target_compute_sizes::Client {
         target_compute_sizes::Client(self.clone())
     }
 }

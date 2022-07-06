@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn grants(&self) -> grants::Client {
+    pub fn grants_client(&self) -> grants::Client {
         grants::Client(self.clone())
     }
-    pub fn join_requests(&self) -> join_requests::Client {
+    pub fn join_requests_client(&self) -> join_requests::Client {
         join_requests::Client(self.clone())
     }
-    pub fn labs(&self) -> labs::Client {
+    pub fn labs_client(&self) -> labs::Client {
         labs::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn student_labs(&self) -> student_labs::Client {
+    pub fn student_labs_client(&self) -> student_labs::Client {
         student_labs::Client(self.clone())
     }
-    pub fn students(&self) -> students::Client {
+    pub fn students_client(&self) -> students::Client {
         students::Client(self.clone())
     }
 }

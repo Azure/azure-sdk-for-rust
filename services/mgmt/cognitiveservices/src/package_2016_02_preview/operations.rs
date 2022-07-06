@@ -74,7 +74,7 @@ impl Client {
             pipeline,
         }
     }
-    pub fn cognitive_services_accounts(&self) -> cognitive_services_accounts::Client {
+    pub fn cognitive_services_accounts_client(&self) -> cognitive_services_accounts::Client {
         cognitive_services_accounts::Client(self.clone())
     }
 }

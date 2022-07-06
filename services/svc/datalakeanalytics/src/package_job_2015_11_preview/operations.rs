@@ -74,7 +74,7 @@ impl Client {
             pipeline,
         }
     }
-    pub fn job(&self) -> job::Client {
+    pub fn job_client(&self) -> job::Client {
         job::Client(self.clone())
     }
 }

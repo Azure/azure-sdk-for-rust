@@ -74,7 +74,7 @@ impl Client {
             pipeline,
         }
     }
-    pub fn serial_ports(&self) -> serial_ports::Client {
+    pub fn serial_ports_client(&self) -> serial_ports::Client {
         serial_ports::Client(self.clone())
     }
 }

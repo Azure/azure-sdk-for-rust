@@ -74,7 +74,7 @@ impl Client {
             pipeline,
         }
     }
-    pub fn catalog(&self) -> catalog::Client {
+    pub fn catalog_client(&self) -> catalog::Client {
         catalog::Client(self.clone())
     }
 }

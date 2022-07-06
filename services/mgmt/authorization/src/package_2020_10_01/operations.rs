@@ -74,49 +74,49 @@ impl Client {
             pipeline,
         }
     }
-    pub fn classic_administrators(&self) -> classic_administrators::Client {
+    pub fn classic_administrators_client(&self) -> classic_administrators::Client {
         classic_administrators::Client(self.clone())
     }
-    pub fn eligible_child_resources(&self) -> eligible_child_resources::Client {
+    pub fn eligible_child_resources_client(&self) -> eligible_child_resources::Client {
         eligible_child_resources::Client(self.clone())
     }
-    pub fn global_administrator(&self) -> global_administrator::Client {
+    pub fn global_administrator_client(&self) -> global_administrator::Client {
         global_administrator::Client(self.clone())
     }
-    pub fn permissions(&self) -> permissions::Client {
+    pub fn permissions_client(&self) -> permissions::Client {
         permissions::Client(self.clone())
     }
-    pub fn provider_operations_metadata(&self) -> provider_operations_metadata::Client {
+    pub fn provider_operations_metadata_client(&self) -> provider_operations_metadata::Client {
         provider_operations_metadata::Client(self.clone())
     }
-    pub fn role_assignment_schedule_instances(&self) -> role_assignment_schedule_instances::Client {
+    pub fn role_assignment_schedule_instances_client(&self) -> role_assignment_schedule_instances::Client {
         role_assignment_schedule_instances::Client(self.clone())
     }
-    pub fn role_assignment_schedule_requests(&self) -> role_assignment_schedule_requests::Client {
+    pub fn role_assignment_schedule_requests_client(&self) -> role_assignment_schedule_requests::Client {
         role_assignment_schedule_requests::Client(self.clone())
     }
-    pub fn role_assignment_schedules(&self) -> role_assignment_schedules::Client {
+    pub fn role_assignment_schedules_client(&self) -> role_assignment_schedules::Client {
         role_assignment_schedules::Client(self.clone())
     }
-    pub fn role_assignments(&self) -> role_assignments::Client {
+    pub fn role_assignments_client(&self) -> role_assignments::Client {
         role_assignments::Client(self.clone())
     }
-    pub fn role_definitions(&self) -> role_definitions::Client {
+    pub fn role_definitions_client(&self) -> role_definitions::Client {
         role_definitions::Client(self.clone())
     }
-    pub fn role_eligibility_schedule_instances(&self) -> role_eligibility_schedule_instances::Client {
+    pub fn role_eligibility_schedule_instances_client(&self) -> role_eligibility_schedule_instances::Client {
         role_eligibility_schedule_instances::Client(self.clone())
     }
-    pub fn role_eligibility_schedule_requests(&self) -> role_eligibility_schedule_requests::Client {
+    pub fn role_eligibility_schedule_requests_client(&self) -> role_eligibility_schedule_requests::Client {
         role_eligibility_schedule_requests::Client(self.clone())
     }
-    pub fn role_eligibility_schedules(&self) -> role_eligibility_schedules::Client {
+    pub fn role_eligibility_schedules_client(&self) -> role_eligibility_schedules::Client {
         role_eligibility_schedules::Client(self.clone())
     }
-    pub fn role_management_policies(&self) -> role_management_policies::Client {
+    pub fn role_management_policies_client(&self) -> role_management_policies::Client {
         role_management_policies::Client(self.clone())
     }
-    pub fn role_management_policy_assignments(&self) -> role_management_policy_assignments::Client {
+    pub fn role_management_policy_assignments_client(&self) -> role_management_policy_assignments::Client {
         role_management_policy_assignments::Client(self.clone())
     }
 }

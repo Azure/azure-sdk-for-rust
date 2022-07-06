@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn clusters(&self) -> clusters::Client {
+    pub fn clusters_client(&self) -> clusters::Client {
         clusters::Client(self.clone())
     }
-    pub fn private_endpoints(&self) -> private_endpoints::Client {
+    pub fn private_endpoints_client(&self) -> private_endpoints::Client {
         private_endpoints::Client(self.clone())
     }
 }

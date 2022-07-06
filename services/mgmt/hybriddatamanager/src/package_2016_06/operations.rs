@@ -74,28 +74,28 @@ impl Client {
             pipeline,
         }
     }
-    pub fn data_managers(&self) -> data_managers::Client {
+    pub fn data_managers_client(&self) -> data_managers::Client {
         data_managers::Client(self.clone())
     }
-    pub fn data_services(&self) -> data_services::Client {
+    pub fn data_services_client(&self) -> data_services::Client {
         data_services::Client(self.clone())
     }
-    pub fn data_store_types(&self) -> data_store_types::Client {
+    pub fn data_store_types_client(&self) -> data_store_types::Client {
         data_store_types::Client(self.clone())
     }
-    pub fn data_stores(&self) -> data_stores::Client {
+    pub fn data_stores_client(&self) -> data_stores::Client {
         data_stores::Client(self.clone())
     }
-    pub fn job_definitions(&self) -> job_definitions::Client {
+    pub fn job_definitions_client(&self) -> job_definitions::Client {
         job_definitions::Client(self.clone())
     }
-    pub fn jobs(&self) -> jobs::Client {
+    pub fn jobs_client(&self) -> jobs::Client {
         jobs::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn public_keys(&self) -> public_keys::Client {
+    pub fn public_keys_client(&self) -> public_keys::Client {
         public_keys::Client(self.clone())
     }
 }

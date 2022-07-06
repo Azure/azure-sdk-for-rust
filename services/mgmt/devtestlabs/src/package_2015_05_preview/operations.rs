@@ -74,43 +74,43 @@ impl Client {
             pipeline,
         }
     }
-    pub fn artifact(&self) -> artifact::Client {
+    pub fn artifact_client(&self) -> artifact::Client {
         artifact::Client(self.clone())
     }
-    pub fn artifact_source(&self) -> artifact_source::Client {
+    pub fn artifact_source_client(&self) -> artifact_source::Client {
         artifact_source::Client(self.clone())
     }
-    pub fn cost(&self) -> cost::Client {
+    pub fn cost_client(&self) -> cost::Client {
         cost::Client(self.clone())
     }
-    pub fn cost_insight(&self) -> cost_insight::Client {
+    pub fn cost_insight_client(&self) -> cost_insight::Client {
         cost_insight::Client(self.clone())
     }
-    pub fn custom_image(&self) -> custom_image::Client {
+    pub fn custom_image_client(&self) -> custom_image::Client {
         custom_image::Client(self.clone())
     }
-    pub fn formula(&self) -> formula::Client {
+    pub fn formula_client(&self) -> formula::Client {
         formula::Client(self.clone())
     }
-    pub fn gallery_image(&self) -> gallery_image::Client {
+    pub fn gallery_image_client(&self) -> gallery_image::Client {
         gallery_image::Client(self.clone())
     }
-    pub fn lab(&self) -> lab::Client {
+    pub fn lab_client(&self) -> lab::Client {
         lab::Client(self.clone())
     }
-    pub fn policy(&self) -> policy::Client {
+    pub fn policy_client(&self) -> policy::Client {
         policy::Client(self.clone())
     }
-    pub fn policy_set(&self) -> policy_set::Client {
+    pub fn policy_set_client(&self) -> policy_set::Client {
         policy_set::Client(self.clone())
     }
-    pub fn schedule(&self) -> schedule::Client {
+    pub fn schedule_client(&self) -> schedule::Client {
         schedule::Client(self.clone())
     }
-    pub fn virtual_machine(&self) -> virtual_machine::Client {
+    pub fn virtual_machine_client(&self) -> virtual_machine::Client {
         virtual_machine::Client(self.clone())
     }
-    pub fn virtual_network(&self) -> virtual_network::Client {
+    pub fn virtual_network_client(&self) -> virtual_network::Client {
         virtual_network::Client(self.clone())
     }
 }

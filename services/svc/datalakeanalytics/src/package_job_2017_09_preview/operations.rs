@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn job(&self) -> job::Client {
+    pub fn job_client(&self) -> job::Client {
         job::Client(self.clone())
     }
-    pub fn pipeline(&self) -> pipeline::Client {
+    pub fn pipeline_client(&self) -> pipeline::Client {
         pipeline::Client(self.clone())
     }
-    pub fn recurrence(&self) -> recurrence::Client {
+    pub fn recurrence_client(&self) -> recurrence::Client {
         recurrence::Client(self.clone())
     }
 }

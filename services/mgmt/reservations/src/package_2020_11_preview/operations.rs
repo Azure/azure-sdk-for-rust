@@ -74,28 +74,28 @@ impl Client {
             pipeline,
         }
     }
-    pub fn auto_quota_increase(&self) -> auto_quota_increase::Client {
+    pub fn auto_quota_increase_client(&self) -> auto_quota_increase::Client {
         auto_quota_increase::Client(self.clone())
     }
-    pub fn calculate_exchange(&self) -> calculate_exchange::Client {
+    pub fn calculate_exchange_client(&self) -> calculate_exchange::Client {
         calculate_exchange::Client(self.clone())
     }
-    pub fn exchange(&self) -> exchange::Client {
+    pub fn exchange_client(&self) -> exchange::Client {
         exchange::Client(self.clone())
     }
-    pub fn operation(&self) -> operation::Client {
+    pub fn operation_client(&self) -> operation::Client {
         operation::Client(self.clone())
     }
-    pub fn quota(&self) -> quota::Client {
+    pub fn quota_client(&self) -> quota::Client {
         quota::Client(self.clone())
     }
-    pub fn quota_request_status(&self) -> quota_request_status::Client {
+    pub fn quota_request_status_client(&self) -> quota_request_status::Client {
         quota_request_status::Client(self.clone())
     }
-    pub fn reservation(&self) -> reservation::Client {
+    pub fn reservation_client(&self) -> reservation::Client {
         reservation::Client(self.clone())
     }
-    pub fn reservation_order(&self) -> reservation_order::Client {
+    pub fn reservation_order_client(&self) -> reservation_order::Client {
         reservation_order::Client(self.clone())
     }
 }

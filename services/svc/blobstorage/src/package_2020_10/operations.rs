@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn append_blob(&self) -> append_blob::Client {
+    pub fn append_blob_client(&self) -> append_blob::Client {
         append_blob::Client(self.clone())
     }
-    pub fn blob(&self) -> blob::Client {
+    pub fn blob_client(&self) -> blob::Client {
         blob::Client(self.clone())
     }
-    pub fn block_blob(&self) -> block_blob::Client {
+    pub fn block_blob_client(&self) -> block_blob::Client {
         block_blob::Client(self.clone())
     }
-    pub fn container(&self) -> container::Client {
+    pub fn container_client(&self) -> container::Client {
         container::Client(self.clone())
     }
-    pub fn page_blob(&self) -> page_blob::Client {
+    pub fn page_blob_client(&self) -> page_blob::Client {
         page_blob::Client(self.clone())
     }
-    pub fn service(&self) -> service::Client {
+    pub fn service_client(&self) -> service::Client {
         service::Client(self.clone())
     }
 }

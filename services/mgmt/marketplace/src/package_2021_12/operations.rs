@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_store(&self) -> private_store::Client {
+    pub fn private_store_client(&self) -> private_store::Client {
         private_store::Client(self.clone())
     }
-    pub fn private_store_collection(&self) -> private_store_collection::Client {
+    pub fn private_store_collection_client(&self) -> private_store_collection::Client {
         private_store_collection::Client(self.clone())
     }
-    pub fn private_store_collection_offer(&self) -> private_store_collection_offer::Client {
+    pub fn private_store_collection_offer_client(&self) -> private_store_collection_offer::Client {
         private_store_collection_offer::Client(self.clone())
     }
 }

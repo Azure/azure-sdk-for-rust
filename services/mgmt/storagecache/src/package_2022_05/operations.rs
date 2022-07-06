@@ -74,28 +74,28 @@ impl Client {
             pipeline,
         }
     }
-    pub fn asc_operations(&self) -> asc_operations::Client {
+    pub fn asc_operations_client(&self) -> asc_operations::Client {
         asc_operations::Client(self.clone())
     }
-    pub fn asc_usages(&self) -> asc_usages::Client {
+    pub fn asc_usages_client(&self) -> asc_usages::Client {
         asc_usages::Client(self.clone())
     }
-    pub fn caches(&self) -> caches::Client {
+    pub fn caches_client(&self) -> caches::Client {
         caches::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn skus(&self) -> skus::Client {
+    pub fn skus_client(&self) -> skus::Client {
         skus::Client(self.clone())
     }
-    pub fn storage_target(&self) -> storage_target::Client {
+    pub fn storage_target_client(&self) -> storage_target::Client {
         storage_target::Client(self.clone())
     }
-    pub fn storage_targets(&self) -> storage_targets::Client {
+    pub fn storage_targets_client(&self) -> storage_targets::Client {
         storage_targets::Client(self.clone())
     }
-    pub fn usage_models(&self) -> usage_models::Client {
+    pub fn usage_models_client(&self) -> usage_models::Client {
         usage_models::Client(self.clone())
     }
 }

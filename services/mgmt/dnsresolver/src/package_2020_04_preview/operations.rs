@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn dns_forwarding_rulesets(&self) -> dns_forwarding_rulesets::Client {
+    pub fn dns_forwarding_rulesets_client(&self) -> dns_forwarding_rulesets::Client {
         dns_forwarding_rulesets::Client(self.clone())
     }
-    pub fn dns_resolvers(&self) -> dns_resolvers::Client {
+    pub fn dns_resolvers_client(&self) -> dns_resolvers::Client {
         dns_resolvers::Client(self.clone())
     }
-    pub fn forwarding_rules(&self) -> forwarding_rules::Client {
+    pub fn forwarding_rules_client(&self) -> forwarding_rules::Client {
         forwarding_rules::Client(self.clone())
     }
-    pub fn inbound_endpoints(&self) -> inbound_endpoints::Client {
+    pub fn inbound_endpoints_client(&self) -> inbound_endpoints::Client {
         inbound_endpoints::Client(self.clone())
     }
-    pub fn outbound_endpoints(&self) -> outbound_endpoints::Client {
+    pub fn outbound_endpoints_client(&self) -> outbound_endpoints::Client {
         outbound_endpoints::Client(self.clone())
     }
-    pub fn virtual_network_links(&self) -> virtual_network_links::Client {
+    pub fn virtual_network_links_client(&self) -> virtual_network_links::Client {
         virtual_network_links::Client(self.clone())
     }
 }

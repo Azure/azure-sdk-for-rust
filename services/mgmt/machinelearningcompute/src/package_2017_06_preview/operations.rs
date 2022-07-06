@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn machine_learning_compute(&self) -> machine_learning_compute::Client {
+    pub fn machine_learning_compute_client(&self) -> machine_learning_compute::Client {
         machine_learning_compute::Client(self.clone())
     }
-    pub fn operationalization_clusters(&self) -> operationalization_clusters::Client {
+    pub fn operationalization_clusters_client(&self) -> operationalization_clusters::Client {
         operationalization_clusters::Client(self.clone())
     }
 }

@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn availability_statuses(&self) -> availability_statuses::Client {
+    pub fn availability_statuses_client(&self) -> availability_statuses::Client {
         availability_statuses::Client(self.clone())
     }
-    pub fn emerging_issues(&self) -> emerging_issues::Client {
+    pub fn emerging_issues_client(&self) -> emerging_issues::Client {
         emerging_issues::Client(self.clone())
     }
-    pub fn events(&self) -> events::Client {
+    pub fn events_client(&self) -> events::Client {
         events::Client(self.clone())
     }
-    pub fn metadata(&self) -> metadata::Client {
+    pub fn metadata_client(&self) -> metadata::Client {
         metadata::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

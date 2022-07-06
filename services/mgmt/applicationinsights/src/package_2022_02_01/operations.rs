@@ -74,64 +74,64 @@ impl Client {
             pipeline,
         }
     }
-    pub fn analytics_items(&self) -> analytics_items::Client {
+    pub fn analytics_items_client(&self) -> analytics_items::Client {
         analytics_items::Client(self.clone())
     }
-    pub fn annotations(&self) -> annotations::Client {
+    pub fn annotations_client(&self) -> annotations::Client {
         annotations::Client(self.clone())
     }
-    pub fn api_keys(&self) -> api_keys::Client {
+    pub fn api_keys_client(&self) -> api_keys::Client {
         api_keys::Client(self.clone())
     }
-    pub fn component_available_features(&self) -> component_available_features::Client {
+    pub fn component_available_features_client(&self) -> component_available_features::Client {
         component_available_features::Client(self.clone())
     }
-    pub fn component_current_billing_features(&self) -> component_current_billing_features::Client {
+    pub fn component_current_billing_features_client(&self) -> component_current_billing_features::Client {
         component_current_billing_features::Client(self.clone())
     }
-    pub fn component_feature_capabilities(&self) -> component_feature_capabilities::Client {
+    pub fn component_feature_capabilities_client(&self) -> component_feature_capabilities::Client {
         component_feature_capabilities::Client(self.clone())
     }
-    pub fn component_linked_storage_accounts(&self) -> component_linked_storage_accounts::Client {
+    pub fn component_linked_storage_accounts_client(&self) -> component_linked_storage_accounts::Client {
         component_linked_storage_accounts::Client(self.clone())
     }
-    pub fn component_quota_status(&self) -> component_quota_status::Client {
+    pub fn component_quota_status_client(&self) -> component_quota_status::Client {
         component_quota_status::Client(self.clone())
     }
-    pub fn components(&self) -> components::Client {
+    pub fn components_client(&self) -> components::Client {
         components::Client(self.clone())
     }
-    pub fn export_configurations(&self) -> export_configurations::Client {
+    pub fn export_configurations_client(&self) -> export_configurations::Client {
         export_configurations::Client(self.clone())
     }
-    pub fn favorites(&self) -> favorites::Client {
+    pub fn favorites_client(&self) -> favorites::Client {
         favorites::Client(self.clone())
     }
-    pub fn live_token(&self) -> live_token::Client {
+    pub fn live_token_client(&self) -> live_token::Client {
         live_token::Client(self.clone())
     }
-    pub fn my_workbooks(&self) -> my_workbooks::Client {
+    pub fn my_workbooks_client(&self) -> my_workbooks::Client {
         my_workbooks::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn proactive_detection_configurations(&self) -> proactive_detection_configurations::Client {
+    pub fn proactive_detection_configurations_client(&self) -> proactive_detection_configurations::Client {
         proactive_detection_configurations::Client(self.clone())
     }
-    pub fn web_test_locations(&self) -> web_test_locations::Client {
+    pub fn web_test_locations_client(&self) -> web_test_locations::Client {
         web_test_locations::Client(self.clone())
     }
-    pub fn web_tests(&self) -> web_tests::Client {
+    pub fn web_tests_client(&self) -> web_tests::Client {
         web_tests::Client(self.clone())
     }
-    pub fn work_item_configurations(&self) -> work_item_configurations::Client {
+    pub fn work_item_configurations_client(&self) -> work_item_configurations::Client {
         work_item_configurations::Client(self.clone())
     }
-    pub fn workbook_templates(&self) -> workbook_templates::Client {
+    pub fn workbook_templates_client(&self) -> workbook_templates::Client {
         workbook_templates::Client(self.clone())
     }
-    pub fn workbooks(&self) -> workbooks::Client {
+    pub fn workbooks_client(&self) -> workbooks::Client {
         workbooks::Client(self.clone())
     }
 }

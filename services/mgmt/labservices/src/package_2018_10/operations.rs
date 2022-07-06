@@ -74,31 +74,31 @@ impl Client {
             pipeline,
         }
     }
-    pub fn environment_settings(&self) -> environment_settings::Client {
+    pub fn environment_settings_client(&self) -> environment_settings::Client {
         environment_settings::Client(self.clone())
     }
-    pub fn environments(&self) -> environments::Client {
+    pub fn environments_client(&self) -> environments::Client {
         environments::Client(self.clone())
     }
-    pub fn gallery_images(&self) -> gallery_images::Client {
+    pub fn gallery_images_client(&self) -> gallery_images::Client {
         gallery_images::Client(self.clone())
     }
-    pub fn global_users(&self) -> global_users::Client {
+    pub fn global_users_client(&self) -> global_users::Client {
         global_users::Client(self.clone())
     }
-    pub fn lab_accounts(&self) -> lab_accounts::Client {
+    pub fn lab_accounts_client(&self) -> lab_accounts::Client {
         lab_accounts::Client(self.clone())
     }
-    pub fn labs(&self) -> labs::Client {
+    pub fn labs_client(&self) -> labs::Client {
         labs::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn provider_operations(&self) -> provider_operations::Client {
+    pub fn provider_operations_client(&self) -> provider_operations::Client {
         provider_operations::Client(self.clone())
     }
-    pub fn users(&self) -> users::Client {
+    pub fn users_client(&self) -> users::Client {
         users::Client(self.clone())
     }
 }

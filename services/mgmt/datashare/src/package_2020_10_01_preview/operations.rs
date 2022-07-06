@@ -74,40 +74,40 @@ impl Client {
             pipeline,
         }
     }
-    pub fn accounts(&self) -> accounts::Client {
+    pub fn accounts_client(&self) -> accounts::Client {
         accounts::Client(self.clone())
     }
-    pub fn consumer_invitations(&self) -> consumer_invitations::Client {
+    pub fn consumer_invitations_client(&self) -> consumer_invitations::Client {
         consumer_invitations::Client(self.clone())
     }
-    pub fn consumer_source_data_sets(&self) -> consumer_source_data_sets::Client {
+    pub fn consumer_source_data_sets_client(&self) -> consumer_source_data_sets::Client {
         consumer_source_data_sets::Client(self.clone())
     }
-    pub fn data_set_mappings(&self) -> data_set_mappings::Client {
+    pub fn data_set_mappings_client(&self) -> data_set_mappings::Client {
         data_set_mappings::Client(self.clone())
     }
-    pub fn data_sets(&self) -> data_sets::Client {
+    pub fn data_sets_client(&self) -> data_sets::Client {
         data_sets::Client(self.clone())
     }
-    pub fn invitations(&self) -> invitations::Client {
+    pub fn invitations_client(&self) -> invitations::Client {
         invitations::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn provider_share_subscriptions(&self) -> provider_share_subscriptions::Client {
+    pub fn provider_share_subscriptions_client(&self) -> provider_share_subscriptions::Client {
         provider_share_subscriptions::Client(self.clone())
     }
-    pub fn share_subscriptions(&self) -> share_subscriptions::Client {
+    pub fn share_subscriptions_client(&self) -> share_subscriptions::Client {
         share_subscriptions::Client(self.clone())
     }
-    pub fn shares(&self) -> shares::Client {
+    pub fn shares_client(&self) -> shares::Client {
         shares::Client(self.clone())
     }
-    pub fn synchronization_settings(&self) -> synchronization_settings::Client {
+    pub fn synchronization_settings_client(&self) -> synchronization_settings::Client {
         synchronization_settings::Client(self.clone())
     }
-    pub fn triggers(&self) -> triggers::Client {
+    pub fn triggers_client(&self) -> triggers::Client {
         triggers::Client(self.clone())
     }
 }

@@ -74,25 +74,25 @@ impl Client {
             pipeline,
         }
     }
-    pub fn consumer_groups(&self) -> consumer_groups::Client {
+    pub fn consumer_groups_client(&self) -> consumer_groups::Client {
         consumer_groups::Client(self.clone())
     }
-    pub fn disaster_recovery_configs(&self) -> disaster_recovery_configs::Client {
+    pub fn disaster_recovery_configs_client(&self) -> disaster_recovery_configs::Client {
         disaster_recovery_configs::Client(self.clone())
     }
-    pub fn event_hubs(&self) -> event_hubs::Client {
+    pub fn event_hubs_client(&self) -> event_hubs::Client {
         event_hubs::Client(self.clone())
     }
-    pub fn namespaces(&self) -> namespaces::Client {
+    pub fn namespaces_client(&self) -> namespaces::Client {
         namespaces::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
 }

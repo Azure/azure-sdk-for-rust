@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn health_api(&self) -> health_api::Client {
+    pub fn health_api_client(&self) -> health_api::Client {
         health_api::Client(self.clone())
     }
-    pub fn web_pub_sub(&self) -> web_pub_sub::Client {
+    pub fn web_pub_sub_client(&self) -> web_pub_sub::Client {
         web_pub_sub::Client(self.clone())
     }
 }

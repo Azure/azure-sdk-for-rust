@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn look_up_resource_id(&self) -> look_up_resource_id::Client {
+    pub fn look_up_resource_id_client(&self) -> look_up_resource_id::Client {
         look_up_resource_id::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

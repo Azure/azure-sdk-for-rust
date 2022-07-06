@@ -74,49 +74,49 @@ impl Client {
             pipeline,
         }
     }
-    pub fn account_backups(&self) -> account_backups::Client {
+    pub fn account_backups_client(&self) -> account_backups::Client {
         account_backups::Client(self.clone())
     }
-    pub fn accounts(&self) -> accounts::Client {
+    pub fn accounts_client(&self) -> accounts::Client {
         accounts::Client(self.clone())
     }
-    pub fn backup_policies(&self) -> backup_policies::Client {
+    pub fn backup_policies_client(&self) -> backup_policies::Client {
         backup_policies::Client(self.clone())
     }
-    pub fn backups(&self) -> backups::Client {
+    pub fn backups_client(&self) -> backups::Client {
         backups::Client(self.clone())
     }
-    pub fn net_app_resource(&self) -> net_app_resource::Client {
+    pub fn net_app_resource_client(&self) -> net_app_resource::Client {
         net_app_resource::Client(self.clone())
     }
-    pub fn net_app_resource_quota_limits(&self) -> net_app_resource_quota_limits::Client {
+    pub fn net_app_resource_quota_limits_client(&self) -> net_app_resource_quota_limits::Client {
         net_app_resource_quota_limits::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn pools(&self) -> pools::Client {
+    pub fn pools_client(&self) -> pools::Client {
         pools::Client(self.clone())
     }
-    pub fn snapshot_policies(&self) -> snapshot_policies::Client {
+    pub fn snapshot_policies_client(&self) -> snapshot_policies::Client {
         snapshot_policies::Client(self.clone())
     }
-    pub fn snapshots(&self) -> snapshots::Client {
+    pub fn snapshots_client(&self) -> snapshots::Client {
         snapshots::Client(self.clone())
     }
-    pub fn subvolumes(&self) -> subvolumes::Client {
+    pub fn subvolumes_client(&self) -> subvolumes::Client {
         subvolumes::Client(self.clone())
     }
-    pub fn vaults(&self) -> vaults::Client {
+    pub fn vaults_client(&self) -> vaults::Client {
         vaults::Client(self.clone())
     }
-    pub fn volume_groups(&self) -> volume_groups::Client {
+    pub fn volume_groups_client(&self) -> volume_groups::Client {
         volume_groups::Client(self.clone())
     }
-    pub fn volume_quota_rules(&self) -> volume_quota_rules::Client {
+    pub fn volume_quota_rules_client(&self) -> volume_quota_rules::Client {
         volume_quota_rules::Client(self.clone())
     }
-    pub fn volumes(&self) -> volumes::Client {
+    pub fn volumes_client(&self) -> volumes::Client {
         volumes::Client(self.clone())
     }
 }

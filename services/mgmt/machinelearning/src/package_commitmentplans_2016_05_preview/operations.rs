@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn commitment_associations(&self) -> commitment_associations::Client {
+    pub fn commitment_associations_client(&self) -> commitment_associations::Client {
         commitment_associations::Client(self.clone())
     }
-    pub fn commitment_plans(&self) -> commitment_plans::Client {
+    pub fn commitment_plans_client(&self) -> commitment_plans::Client {
         commitment_plans::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn skus(&self) -> skus::Client {
+    pub fn skus_client(&self) -> skus::Client {
         skus::Client(self.clone())
     }
-    pub fn usage_history(&self) -> usage_history::Client {
+    pub fn usage_history_client(&self) -> usage_history::Client {
         usage_history::Client(self.clone())
     }
 }

@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn attached_database_configurations(&self) -> attached_database_configurations::Client {
+    pub fn attached_database_configurations_client(&self) -> attached_database_configurations::Client {
         attached_database_configurations::Client(self.clone())
     }
-    pub fn clusters(&self) -> clusters::Client {
+    pub fn clusters_client(&self) -> clusters::Client {
         clusters::Client(self.clone())
     }
-    pub fn data_connections(&self) -> data_connections::Client {
+    pub fn data_connections_client(&self) -> data_connections::Client {
         data_connections::Client(self.clone())
     }
-    pub fn databases(&self) -> databases::Client {
+    pub fn databases_client(&self) -> databases::Client {
         databases::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

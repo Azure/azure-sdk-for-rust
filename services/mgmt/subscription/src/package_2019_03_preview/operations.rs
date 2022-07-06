@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn subscription_factory(&self) -> subscription_factory::Client {
+    pub fn subscription_factory_client(&self) -> subscription_factory::Client {
         subscription_factory::Client(self.clone())
     }
-    pub fn subscription_operation(&self) -> subscription_operation::Client {
+    pub fn subscription_operation_client(&self) -> subscription_operation::Client {
         subscription_operation::Client(self.clone())
     }
-    pub fn subscriptions(&self) -> subscriptions::Client {
+    pub fn subscriptions_client(&self) -> subscriptions::Client {
         subscriptions::Client(self.clone())
     }
-    pub fn tenants(&self) -> tenants::Client {
+    pub fn tenants_client(&self) -> tenants::Client {
         tenants::Client(self.clone())
     }
 }

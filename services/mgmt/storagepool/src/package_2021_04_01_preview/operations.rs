@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn disk_pool_zones(&self) -> disk_pool_zones::Client {
+    pub fn disk_pool_zones_client(&self) -> disk_pool_zones::Client {
         disk_pool_zones::Client(self.clone())
     }
-    pub fn disk_pools(&self) -> disk_pools::Client {
+    pub fn disk_pools_client(&self) -> disk_pools::Client {
         disk_pools::Client(self.clone())
     }
-    pub fn iscsi_targets(&self) -> iscsi_targets::Client {
+    pub fn iscsi_targets_client(&self) -> iscsi_targets::Client {
         iscsi_targets::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

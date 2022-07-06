@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn accounts(&self) -> accounts::Client {
+    pub fn accounts_client(&self) -> accounts::Client {
         accounts::Client(self.clone())
     }
-    pub fn configuration_profile_assignments(&self) -> configuration_profile_assignments::Client {
+    pub fn configuration_profile_assignments_client(&self) -> configuration_profile_assignments::Client {
         configuration_profile_assignments::Client(self.clone())
     }
-    pub fn configuration_profile_preferences(&self) -> configuration_profile_preferences::Client {
+    pub fn configuration_profile_preferences_client(&self) -> configuration_profile_preferences::Client {
         configuration_profile_preferences::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

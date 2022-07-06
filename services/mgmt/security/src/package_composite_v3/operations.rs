@@ -74,151 +74,151 @@ impl Client {
             pipeline,
         }
     }
-    pub fn adaptive_application_controls(&self) -> adaptive_application_controls::Client {
+    pub fn adaptive_application_controls_client(&self) -> adaptive_application_controls::Client {
         adaptive_application_controls::Client(self.clone())
     }
-    pub fn adaptive_network_hardenings(&self) -> adaptive_network_hardenings::Client {
+    pub fn adaptive_network_hardenings_client(&self) -> adaptive_network_hardenings::Client {
         adaptive_network_hardenings::Client(self.clone())
     }
-    pub fn advanced_threat_protection(&self) -> advanced_threat_protection::Client {
+    pub fn advanced_threat_protection_client(&self) -> advanced_threat_protection::Client {
         advanced_threat_protection::Client(self.clone())
     }
-    pub fn alerts(&self) -> alerts::Client {
+    pub fn alerts_client(&self) -> alerts::Client {
         alerts::Client(self.clone())
     }
-    pub fn alerts_suppression_rules(&self) -> alerts_suppression_rules::Client {
+    pub fn alerts_suppression_rules_client(&self) -> alerts_suppression_rules::Client {
         alerts_suppression_rules::Client(self.clone())
     }
-    pub fn allowed_connections(&self) -> allowed_connections::Client {
+    pub fn allowed_connections_client(&self) -> allowed_connections::Client {
         allowed_connections::Client(self.clone())
     }
-    pub fn assessments(&self) -> assessments::Client {
+    pub fn assessments_client(&self) -> assessments::Client {
         assessments::Client(self.clone())
     }
-    pub fn assessments_metadata(&self) -> assessments_metadata::Client {
+    pub fn assessments_metadata_client(&self) -> assessments_metadata::Client {
         assessments_metadata::Client(self.clone())
     }
-    pub fn auto_provisioning_settings(&self) -> auto_provisioning_settings::Client {
+    pub fn auto_provisioning_settings_client(&self) -> auto_provisioning_settings::Client {
         auto_provisioning_settings::Client(self.clone())
     }
-    pub fn automations(&self) -> automations::Client {
+    pub fn automations_client(&self) -> automations::Client {
         automations::Client(self.clone())
     }
-    pub fn compliance_results(&self) -> compliance_results::Client {
+    pub fn compliance_results_client(&self) -> compliance_results::Client {
         compliance_results::Client(self.clone())
     }
-    pub fn compliances(&self) -> compliances::Client {
+    pub fn compliances_client(&self) -> compliances::Client {
         compliances::Client(self.clone())
     }
-    pub fn connectors(&self) -> connectors::Client {
+    pub fn connectors_client(&self) -> connectors::Client {
         connectors::Client(self.clone())
     }
-    pub fn custom_assessment_automations(&self) -> custom_assessment_automations::Client {
+    pub fn custom_assessment_automations_client(&self) -> custom_assessment_automations::Client {
         custom_assessment_automations::Client(self.clone())
     }
-    pub fn custom_entity_store_assignments(&self) -> custom_entity_store_assignments::Client {
+    pub fn custom_entity_store_assignments_client(&self) -> custom_entity_store_assignments::Client {
         custom_entity_store_assignments::Client(self.clone())
     }
-    pub fn device_security_groups(&self) -> device_security_groups::Client {
+    pub fn device_security_groups_client(&self) -> device_security_groups::Client {
         device_security_groups::Client(self.clone())
     }
-    pub fn discovered_security_solutions(&self) -> discovered_security_solutions::Client {
+    pub fn discovered_security_solutions_client(&self) -> discovered_security_solutions::Client {
         discovered_security_solutions::Client(self.clone())
     }
-    pub fn external_security_solutions(&self) -> external_security_solutions::Client {
+    pub fn external_security_solutions_client(&self) -> external_security_solutions::Client {
         external_security_solutions::Client(self.clone())
     }
-    pub fn information_protection_policies(&self) -> information_protection_policies::Client {
+    pub fn information_protection_policies_client(&self) -> information_protection_policies::Client {
         information_protection_policies::Client(self.clone())
     }
-    pub fn ingestion_settings(&self) -> ingestion_settings::Client {
+    pub fn ingestion_settings_client(&self) -> ingestion_settings::Client {
         ingestion_settings::Client(self.clone())
     }
-    pub fn iot_security_solution(&self) -> iot_security_solution::Client {
+    pub fn iot_security_solution_client(&self) -> iot_security_solution::Client {
         iot_security_solution::Client(self.clone())
     }
-    pub fn iot_security_solution_analytics(&self) -> iot_security_solution_analytics::Client {
+    pub fn iot_security_solution_analytics_client(&self) -> iot_security_solution_analytics::Client {
         iot_security_solution_analytics::Client(self.clone())
     }
-    pub fn iot_security_solutions_analytics_aggregated_alert(&self) -> iot_security_solutions_analytics_aggregated_alert::Client {
+    pub fn iot_security_solutions_analytics_aggregated_alert_client(&self) -> iot_security_solutions_analytics_aggregated_alert::Client {
         iot_security_solutions_analytics_aggregated_alert::Client(self.clone())
     }
-    pub fn iot_security_solutions_analytics_recommendation(&self) -> iot_security_solutions_analytics_recommendation::Client {
+    pub fn iot_security_solutions_analytics_recommendation_client(&self) -> iot_security_solutions_analytics_recommendation::Client {
         iot_security_solutions_analytics_recommendation::Client(self.clone())
     }
-    pub fn jit_network_access_policies(&self) -> jit_network_access_policies::Client {
+    pub fn jit_network_access_policies_client(&self) -> jit_network_access_policies::Client {
         jit_network_access_policies::Client(self.clone())
     }
-    pub fn locations(&self) -> locations::Client {
+    pub fn locations_client(&self) -> locations::Client {
         locations::Client(self.clone())
     }
-    pub fn mde_onboardings(&self) -> mde_onboardings::Client {
+    pub fn mde_onboardings_client(&self) -> mde_onboardings::Client {
         mde_onboardings::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn pricings(&self) -> pricings::Client {
+    pub fn pricings_client(&self) -> pricings::Client {
         pricings::Client(self.clone())
     }
-    pub fn regulatory_compliance_assessments(&self) -> regulatory_compliance_assessments::Client {
+    pub fn regulatory_compliance_assessments_client(&self) -> regulatory_compliance_assessments::Client {
         regulatory_compliance_assessments::Client(self.clone())
     }
-    pub fn regulatory_compliance_controls(&self) -> regulatory_compliance_controls::Client {
+    pub fn regulatory_compliance_controls_client(&self) -> regulatory_compliance_controls::Client {
         regulatory_compliance_controls::Client(self.clone())
     }
-    pub fn regulatory_compliance_standards(&self) -> regulatory_compliance_standards::Client {
+    pub fn regulatory_compliance_standards_client(&self) -> regulatory_compliance_standards::Client {
         regulatory_compliance_standards::Client(self.clone())
     }
-    pub fn secure_score_control_definitions(&self) -> secure_score_control_definitions::Client {
+    pub fn secure_score_control_definitions_client(&self) -> secure_score_control_definitions::Client {
         secure_score_control_definitions::Client(self.clone())
     }
-    pub fn secure_score_controls(&self) -> secure_score_controls::Client {
+    pub fn secure_score_controls_client(&self) -> secure_score_controls::Client {
         secure_score_controls::Client(self.clone())
     }
-    pub fn secure_scores(&self) -> secure_scores::Client {
+    pub fn secure_scores_client(&self) -> secure_scores::Client {
         secure_scores::Client(self.clone())
     }
-    pub fn security_connectors(&self) -> security_connectors::Client {
+    pub fn security_connectors_client(&self) -> security_connectors::Client {
         security_connectors::Client(self.clone())
     }
-    pub fn security_contacts(&self) -> security_contacts::Client {
+    pub fn security_contacts_client(&self) -> security_contacts::Client {
         security_contacts::Client(self.clone())
     }
-    pub fn security_solutions(&self) -> security_solutions::Client {
+    pub fn security_solutions_client(&self) -> security_solutions::Client {
         security_solutions::Client(self.clone())
     }
-    pub fn security_solutions_reference_data(&self) -> security_solutions_reference_data::Client {
+    pub fn security_solutions_reference_data_client(&self) -> security_solutions_reference_data::Client {
         security_solutions_reference_data::Client(self.clone())
     }
-    pub fn server_vulnerability_assessment(&self) -> server_vulnerability_assessment::Client {
+    pub fn server_vulnerability_assessment_client(&self) -> server_vulnerability_assessment::Client {
         server_vulnerability_assessment::Client(self.clone())
     }
-    pub fn settings(&self) -> settings::Client {
+    pub fn settings_client(&self) -> settings::Client {
         settings::Client(self.clone())
     }
-    pub fn software_inventories(&self) -> software_inventories::Client {
+    pub fn software_inventories_client(&self) -> software_inventories::Client {
         software_inventories::Client(self.clone())
     }
-    pub fn sql_vulnerability_assessment_baseline_rules(&self) -> sql_vulnerability_assessment_baseline_rules::Client {
+    pub fn sql_vulnerability_assessment_baseline_rules_client(&self) -> sql_vulnerability_assessment_baseline_rules::Client {
         sql_vulnerability_assessment_baseline_rules::Client(self.clone())
     }
-    pub fn sql_vulnerability_assessment_scan_results(&self) -> sql_vulnerability_assessment_scan_results::Client {
+    pub fn sql_vulnerability_assessment_scan_results_client(&self) -> sql_vulnerability_assessment_scan_results::Client {
         sql_vulnerability_assessment_scan_results::Client(self.clone())
     }
-    pub fn sql_vulnerability_assessment_scans(&self) -> sql_vulnerability_assessment_scans::Client {
+    pub fn sql_vulnerability_assessment_scans_client(&self) -> sql_vulnerability_assessment_scans::Client {
         sql_vulnerability_assessment_scans::Client(self.clone())
     }
-    pub fn sub_assessments(&self) -> sub_assessments::Client {
+    pub fn sub_assessments_client(&self) -> sub_assessments::Client {
         sub_assessments::Client(self.clone())
     }
-    pub fn tasks(&self) -> tasks::Client {
+    pub fn tasks_client(&self) -> tasks::Client {
         tasks::Client(self.clone())
     }
-    pub fn topology(&self) -> topology::Client {
+    pub fn topology_client(&self) -> topology::Client {
         topology::Client(self.clone())
     }
-    pub fn workspace_settings(&self) -> workspace_settings::Client {
+    pub fn workspace_settings_client(&self) -> workspace_settings::Client {
         workspace_settings::Client(self.clone())
     }
 }

@@ -74,25 +74,25 @@ impl Client {
             pipeline,
         }
     }
-    pub fn artifact_sources(&self) -> artifact_sources::Client {
+    pub fn artifact_sources_client(&self) -> artifact_sources::Client {
         artifact_sources::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn rollouts(&self) -> rollouts::Client {
+    pub fn rollouts_client(&self) -> rollouts::Client {
         rollouts::Client(self.clone())
     }
-    pub fn service_topologies(&self) -> service_topologies::Client {
+    pub fn service_topologies_client(&self) -> service_topologies::Client {
         service_topologies::Client(self.clone())
     }
-    pub fn service_units(&self) -> service_units::Client {
+    pub fn service_units_client(&self) -> service_units::Client {
         service_units::Client(self.clone())
     }
-    pub fn services(&self) -> services::Client {
+    pub fn services_client(&self) -> services::Client {
         services::Client(self.clone())
     }
-    pub fn steps(&self) -> steps::Client {
+    pub fn steps_client(&self) -> steps::Client {
         steps::Client(self.clone())
     }
 }

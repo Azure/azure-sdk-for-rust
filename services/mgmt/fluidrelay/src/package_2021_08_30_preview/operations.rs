@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn fluid_relay_containers(&self) -> fluid_relay_containers::Client {
+    pub fn fluid_relay_containers_client(&self) -> fluid_relay_containers::Client {
         fluid_relay_containers::Client(self.clone())
     }
-    pub fn fluid_relay_operations(&self) -> fluid_relay_operations::Client {
+    pub fn fluid_relay_operations_client(&self) -> fluid_relay_operations::Client {
         fluid_relay_operations::Client(self.clone())
     }
-    pub fn fluid_relay_servers(&self) -> fluid_relay_servers::Client {
+    pub fn fluid_relay_servers_client(&self) -> fluid_relay_servers::Client {
         fluid_relay_servers::Client(self.clone())
     }
 }

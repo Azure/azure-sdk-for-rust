@@ -74,7 +74,7 @@ impl Client {
             pipeline,
         }
     }
-    pub fn web_services(&self) -> web_services::Client {
+    pub fn web_services_client(&self) -> web_services::Client {
         web_services::Client(self.clone())
     }
 }

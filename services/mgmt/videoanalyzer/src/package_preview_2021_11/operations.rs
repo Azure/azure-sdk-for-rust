@@ -74,55 +74,55 @@ impl Client {
             pipeline,
         }
     }
-    pub fn access_policies(&self) -> access_policies::Client {
+    pub fn access_policies_client(&self) -> access_policies::Client {
         access_policies::Client(self.clone())
     }
-    pub fn edge_modules(&self) -> edge_modules::Client {
+    pub fn edge_modules_client(&self) -> edge_modules::Client {
         edge_modules::Client(self.clone())
     }
-    pub fn live_pipeline_operation_statuses(&self) -> live_pipeline_operation_statuses::Client {
+    pub fn live_pipeline_operation_statuses_client(&self) -> live_pipeline_operation_statuses::Client {
         live_pipeline_operation_statuses::Client(self.clone())
     }
-    pub fn live_pipelines(&self) -> live_pipelines::Client {
+    pub fn live_pipelines_client(&self) -> live_pipelines::Client {
         live_pipelines::Client(self.clone())
     }
-    pub fn locations(&self) -> locations::Client {
+    pub fn locations_client(&self) -> locations::Client {
         locations::Client(self.clone())
     }
-    pub fn operation_results(&self) -> operation_results::Client {
+    pub fn operation_results_client(&self) -> operation_results::Client {
         operation_results::Client(self.clone())
     }
-    pub fn operation_statuses(&self) -> operation_statuses::Client {
+    pub fn operation_statuses_client(&self) -> operation_statuses::Client {
         operation_statuses::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn pipeline_job_operation_statuses(&self) -> pipeline_job_operation_statuses::Client {
+    pub fn pipeline_job_operation_statuses_client(&self) -> pipeline_job_operation_statuses::Client {
         pipeline_job_operation_statuses::Client(self.clone())
     }
-    pub fn pipeline_jobs(&self) -> pipeline_jobs::Client {
+    pub fn pipeline_jobs_client(&self) -> pipeline_jobs::Client {
         pipeline_jobs::Client(self.clone())
     }
-    pub fn pipeline_topologies(&self) -> pipeline_topologies::Client {
+    pub fn pipeline_topologies_client(&self) -> pipeline_topologies::Client {
         pipeline_topologies::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn video_analyzer_operation_results(&self) -> video_analyzer_operation_results::Client {
+    pub fn video_analyzer_operation_results_client(&self) -> video_analyzer_operation_results::Client {
         video_analyzer_operation_results::Client(self.clone())
     }
-    pub fn video_analyzer_operation_statuses(&self) -> video_analyzer_operation_statuses::Client {
+    pub fn video_analyzer_operation_statuses_client(&self) -> video_analyzer_operation_statuses::Client {
         video_analyzer_operation_statuses::Client(self.clone())
     }
-    pub fn video_analyzers(&self) -> video_analyzers::Client {
+    pub fn video_analyzers_client(&self) -> video_analyzers::Client {
         video_analyzers::Client(self.clone())
     }
-    pub fn videos(&self) -> videos::Client {
+    pub fn videos_client(&self) -> videos::Client {
         videos::Client(self.clone())
     }
 }

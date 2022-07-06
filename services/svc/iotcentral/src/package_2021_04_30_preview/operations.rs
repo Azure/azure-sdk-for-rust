@@ -74,28 +74,28 @@ impl Client {
             pipeline,
         }
     }
-    pub fn api_tokens(&self) -> api_tokens::Client {
+    pub fn api_tokens_client(&self) -> api_tokens::Client {
         api_tokens::Client(self.clone())
     }
-    pub fn continuous_data_exports(&self) -> continuous_data_exports::Client {
+    pub fn continuous_data_exports_client(&self) -> continuous_data_exports::Client {
         continuous_data_exports::Client(self.clone())
     }
-    pub fn device_groups(&self) -> device_groups::Client {
+    pub fn device_groups_client(&self) -> device_groups::Client {
         device_groups::Client(self.clone())
     }
-    pub fn device_templates(&self) -> device_templates::Client {
+    pub fn device_templates_client(&self) -> device_templates::Client {
         device_templates::Client(self.clone())
     }
-    pub fn devices(&self) -> devices::Client {
+    pub fn devices_client(&self) -> devices::Client {
         devices::Client(self.clone())
     }
-    pub fn jobs(&self) -> jobs::Client {
+    pub fn jobs_client(&self) -> jobs::Client {
         jobs::Client(self.clone())
     }
-    pub fn roles(&self) -> roles::Client {
+    pub fn roles_client(&self) -> roles::Client {
         roles::Client(self.clone())
     }
-    pub fn users(&self) -> users::Client {
+    pub fn users_client(&self) -> users::Client {
         users::Client(self.clone())
     }
 }

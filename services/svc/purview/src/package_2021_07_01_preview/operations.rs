@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn metadata_policy(&self) -> metadata_policy::Client {
+    pub fn metadata_policy_client(&self) -> metadata_policy::Client {
         metadata_policy::Client(self.clone())
     }
-    pub fn metadata_roles(&self) -> metadata_roles::Client {
+    pub fn metadata_roles_client(&self) -> metadata_roles::Client {
         metadata_roles::Client(self.clone())
     }
 }

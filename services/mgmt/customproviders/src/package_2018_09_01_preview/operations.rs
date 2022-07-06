@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn associations(&self) -> associations::Client {
+    pub fn associations_client(&self) -> associations::Client {
         associations::Client(self.clone())
     }
-    pub fn custom_resource_provider(&self) -> custom_resource_provider::Client {
+    pub fn custom_resource_provider_client(&self) -> custom_resource_provider::Client {
         custom_resource_provider::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

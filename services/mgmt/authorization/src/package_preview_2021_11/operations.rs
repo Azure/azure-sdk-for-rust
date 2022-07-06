@@ -74,51 +74,51 @@ impl Client {
             pipeline,
         }
     }
-    pub fn access_review_default_settings(&self) -> access_review_default_settings::Client {
+    pub fn access_review_default_settings_client(&self) -> access_review_default_settings::Client {
         access_review_default_settings::Client(self.clone())
     }
-    pub fn access_review_history_definition(&self) -> access_review_history_definition::Client {
+    pub fn access_review_history_definition_client(&self) -> access_review_history_definition::Client {
         access_review_history_definition::Client(self.clone())
     }
-    pub fn access_review_history_definition_instance(&self) -> access_review_history_definition_instance::Client {
+    pub fn access_review_history_definition_instance_client(&self) -> access_review_history_definition_instance::Client {
         access_review_history_definition_instance::Client(self.clone())
     }
-    pub fn access_review_history_definition_instances(&self) -> access_review_history_definition_instances::Client {
+    pub fn access_review_history_definition_instances_client(&self) -> access_review_history_definition_instances::Client {
         access_review_history_definition_instances::Client(self.clone())
     }
-    pub fn access_review_history_definitions(&self) -> access_review_history_definitions::Client {
+    pub fn access_review_history_definitions_client(&self) -> access_review_history_definitions::Client {
         access_review_history_definitions::Client(self.clone())
     }
-    pub fn access_review_instance(&self) -> access_review_instance::Client {
+    pub fn access_review_instance_client(&self) -> access_review_instance::Client {
         access_review_instance::Client(self.clone())
     }
-    pub fn access_review_instance_contacted_reviewers(&self) -> access_review_instance_contacted_reviewers::Client {
+    pub fn access_review_instance_contacted_reviewers_client(&self) -> access_review_instance_contacted_reviewers::Client {
         access_review_instance_contacted_reviewers::Client(self.clone())
     }
-    pub fn access_review_instance_decisions(&self) -> access_review_instance_decisions::Client {
+    pub fn access_review_instance_decisions_client(&self) -> access_review_instance_decisions::Client {
         access_review_instance_decisions::Client(self.clone())
     }
-    pub fn access_review_instance_my_decisions(&self) -> access_review_instance_my_decisions::Client {
+    pub fn access_review_instance_my_decisions_client(&self) -> access_review_instance_my_decisions::Client {
         access_review_instance_my_decisions::Client(self.clone())
     }
-    pub fn access_review_instances(&self) -> access_review_instances::Client {
+    pub fn access_review_instances_client(&self) -> access_review_instances::Client {
         access_review_instances::Client(self.clone())
     }
-    pub fn access_review_instances_assigned_for_my_approval(&self) -> access_review_instances_assigned_for_my_approval::Client {
+    pub fn access_review_instances_assigned_for_my_approval_client(&self) -> access_review_instances_assigned_for_my_approval::Client {
         access_review_instances_assigned_for_my_approval::Client(self.clone())
     }
-    pub fn access_review_schedule_definitions(&self) -> access_review_schedule_definitions::Client {
+    pub fn access_review_schedule_definitions_client(&self) -> access_review_schedule_definitions::Client {
         access_review_schedule_definitions::Client(self.clone())
     }
-    pub fn access_review_schedule_definitions_assigned_for_my_approval(
+    pub fn access_review_schedule_definitions_assigned_for_my_approval_client(
         &self,
     ) -> access_review_schedule_definitions_assigned_for_my_approval::Client {
         access_review_schedule_definitions_assigned_for_my_approval::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn tenant_level_access_review_instance_contacted_reviewers(
+    pub fn tenant_level_access_review_instance_contacted_reviewers_client(
         &self,
     ) -> tenant_level_access_review_instance_contacted_reviewers::Client {
         tenant_level_access_review_instance_contacted_reviewers::Client(self.clone())

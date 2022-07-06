@@ -74,37 +74,37 @@ impl Client {
             pipeline,
         }
     }
-    pub fn certificates(&self) -> certificates::Client {
+    pub fn certificates_client(&self) -> certificates::Client {
         certificates::Client(self.clone())
     }
-    pub fn container_apps(&self) -> container_apps::Client {
+    pub fn container_apps_client(&self) -> container_apps::Client {
         container_apps::Client(self.clone())
     }
-    pub fn container_apps_auth_configs(&self) -> container_apps_auth_configs::Client {
+    pub fn container_apps_auth_configs_client(&self) -> container_apps_auth_configs::Client {
         container_apps_auth_configs::Client(self.clone())
     }
-    pub fn container_apps_revision_replicas(&self) -> container_apps_revision_replicas::Client {
+    pub fn container_apps_revision_replicas_client(&self) -> container_apps_revision_replicas::Client {
         container_apps_revision_replicas::Client(self.clone())
     }
-    pub fn container_apps_revisions(&self) -> container_apps_revisions::Client {
+    pub fn container_apps_revisions_client(&self) -> container_apps_revisions::Client {
         container_apps_revisions::Client(self.clone())
     }
-    pub fn container_apps_source_controls(&self) -> container_apps_source_controls::Client {
+    pub fn container_apps_source_controls_client(&self) -> container_apps_source_controls::Client {
         container_apps_source_controls::Client(self.clone())
     }
-    pub fn dapr_components(&self) -> dapr_components::Client {
+    pub fn dapr_components_client(&self) -> dapr_components::Client {
         dapr_components::Client(self.clone())
     }
-    pub fn managed_environments(&self) -> managed_environments::Client {
+    pub fn managed_environments_client(&self) -> managed_environments::Client {
         managed_environments::Client(self.clone())
     }
-    pub fn managed_environments_storages(&self) -> managed_environments_storages::Client {
+    pub fn managed_environments_storages_client(&self) -> managed_environments_storages::Client {
         managed_environments_storages::Client(self.clone())
     }
-    pub fn namespaces(&self) -> namespaces::Client {
+    pub fn namespaces_client(&self) -> namespaces::Client {
         namespaces::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

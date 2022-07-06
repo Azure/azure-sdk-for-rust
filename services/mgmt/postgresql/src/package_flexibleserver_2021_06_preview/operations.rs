@@ -74,49 +74,49 @@ impl Client {
             pipeline,
         }
     }
-    pub fn advisors(&self) -> advisors::Client {
+    pub fn advisors_client(&self) -> advisors::Client {
         advisors::Client(self.clone())
     }
-    pub fn check_name_availability(&self) -> check_name_availability::Client {
+    pub fn check_name_availability_client(&self) -> check_name_availability::Client {
         check_name_availability::Client(self.clone())
     }
-    pub fn configurations(&self) -> configurations::Client {
+    pub fn configurations_client(&self) -> configurations::Client {
         configurations::Client(self.clone())
     }
-    pub fn databases(&self) -> databases::Client {
+    pub fn databases_client(&self) -> databases::Client {
         databases::Client(self.clone())
     }
-    pub fn firewall_rules(&self) -> firewall_rules::Client {
+    pub fn firewall_rules_client(&self) -> firewall_rules::Client {
         firewall_rules::Client(self.clone())
     }
-    pub fn get_private_dns_zone_suffix(&self) -> get_private_dns_zone_suffix::Client {
+    pub fn get_private_dns_zone_suffix_client(&self) -> get_private_dns_zone_suffix::Client {
         get_private_dns_zone_suffix::Client(self.clone())
     }
-    pub fn location_based_capabilities(&self) -> location_based_capabilities::Client {
+    pub fn location_based_capabilities_client(&self) -> location_based_capabilities::Client {
         location_based_capabilities::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn query_performance_insight_data(&self) -> query_performance_insight_data::Client {
+    pub fn query_performance_insight_data_client(&self) -> query_performance_insight_data::Client {
         query_performance_insight_data::Client(self.clone())
     }
-    pub fn query_texts(&self) -> query_texts::Client {
+    pub fn query_texts_client(&self) -> query_texts::Client {
         query_texts::Client(self.clone())
     }
-    pub fn recommended_actions(&self) -> recommended_actions::Client {
+    pub fn recommended_actions_client(&self) -> recommended_actions::Client {
         recommended_actions::Client(self.clone())
     }
-    pub fn servers(&self) -> servers::Client {
+    pub fn servers_client(&self) -> servers::Client {
         servers::Client(self.clone())
     }
-    pub fn top_query_statistics(&self) -> top_query_statistics::Client {
+    pub fn top_query_statistics_client(&self) -> top_query_statistics::Client {
         top_query_statistics::Client(self.clone())
     }
-    pub fn virtual_network_subnet_usage(&self) -> virtual_network_subnet_usage::Client {
+    pub fn virtual_network_subnet_usage_client(&self) -> virtual_network_subnet_usage::Client {
         virtual_network_subnet_usage::Client(self.clone())
     }
-    pub fn wait_statistics(&self) -> wait_statistics::Client {
+    pub fn wait_statistics_client(&self) -> wait_statistics::Client {
         wait_statistics::Client(self.clone())
     }
 }

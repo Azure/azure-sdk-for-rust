@@ -74,25 +74,25 @@ impl Client {
             pipeline,
         }
     }
-    pub fn access_tokens(&self) -> access_tokens::Client {
+    pub fn access_tokens_client(&self) -> access_tokens::Client {
         access_tokens::Client(self.clone())
     }
-    pub fn blob(&self) -> blob::Client {
+    pub fn blob_client(&self) -> blob::Client {
         blob::Client(self.clone())
     }
-    pub fn manifests(&self) -> manifests::Client {
+    pub fn manifests_client(&self) -> manifests::Client {
         manifests::Client(self.clone())
     }
-    pub fn refresh_tokens(&self) -> refresh_tokens::Client {
+    pub fn refresh_tokens_client(&self) -> refresh_tokens::Client {
         refresh_tokens::Client(self.clone())
     }
-    pub fn repository(&self) -> repository::Client {
+    pub fn repository_client(&self) -> repository::Client {
         repository::Client(self.clone())
     }
-    pub fn tag(&self) -> tag::Client {
+    pub fn tag_client(&self) -> tag::Client {
         tag::Client(self.clone())
     }
-    pub fn v2_support(&self) -> v2_support::Client {
+    pub fn v2_support_client(&self) -> v2_support::Client {
         v2_support::Client(self.clone())
     }
 }

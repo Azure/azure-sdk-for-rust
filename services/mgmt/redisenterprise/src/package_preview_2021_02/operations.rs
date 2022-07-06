@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn databases(&self) -> databases::Client {
+    pub fn databases_client(&self) -> databases::Client {
         databases::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn operations_status(&self) -> operations_status::Client {
+    pub fn operations_status_client(&self) -> operations_status::Client {
         operations_status::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn redis_enterprise(&self) -> redis_enterprise::Client {
+    pub fn redis_enterprise_client(&self) -> redis_enterprise::Client {
         redis_enterprise::Client(self.clone())
     }
 }

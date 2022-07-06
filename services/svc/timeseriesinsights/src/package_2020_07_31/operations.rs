@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn model_settings(&self) -> model_settings::Client {
+    pub fn model_settings_client(&self) -> model_settings::Client {
         model_settings::Client(self.clone())
     }
-    pub fn query(&self) -> query::Client {
+    pub fn query_client(&self) -> query::Client {
         query::Client(self.clone())
     }
-    pub fn time_series_hierarchies(&self) -> time_series_hierarchies::Client {
+    pub fn time_series_hierarchies_client(&self) -> time_series_hierarchies::Client {
         time_series_hierarchies::Client(self.clone())
     }
-    pub fn time_series_instances(&self) -> time_series_instances::Client {
+    pub fn time_series_instances_client(&self) -> time_series_instances::Client {
         time_series_instances::Client(self.clone())
     }
-    pub fn time_series_types(&self) -> time_series_types::Client {
+    pub fn time_series_types_client(&self) -> time_series_types::Client {
         time_series_types::Client(self.clone())
     }
 }

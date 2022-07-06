@@ -74,70 +74,70 @@ impl Client {
             pipeline,
         }
     }
-    pub fn afd_custom_domains(&self) -> afd_custom_domains::Client {
+    pub fn afd_custom_domains_client(&self) -> afd_custom_domains::Client {
         afd_custom_domains::Client(self.clone())
     }
-    pub fn afd_endpoints(&self) -> afd_endpoints::Client {
+    pub fn afd_endpoints_client(&self) -> afd_endpoints::Client {
         afd_endpoints::Client(self.clone())
     }
-    pub fn afd_origin_groups(&self) -> afd_origin_groups::Client {
+    pub fn afd_origin_groups_client(&self) -> afd_origin_groups::Client {
         afd_origin_groups::Client(self.clone())
     }
-    pub fn afd_origins(&self) -> afd_origins::Client {
+    pub fn afd_origins_client(&self) -> afd_origins::Client {
         afd_origins::Client(self.clone())
     }
-    pub fn afd_profiles(&self) -> afd_profiles::Client {
+    pub fn afd_profiles_client(&self) -> afd_profiles::Client {
         afd_profiles::Client(self.clone())
     }
-    pub fn custom_domains(&self) -> custom_domains::Client {
+    pub fn custom_domains_client(&self) -> custom_domains::Client {
         custom_domains::Client(self.clone())
     }
-    pub fn edge_nodes(&self) -> edge_nodes::Client {
+    pub fn edge_nodes_client(&self) -> edge_nodes::Client {
         edge_nodes::Client(self.clone())
     }
-    pub fn endpoints(&self) -> endpoints::Client {
+    pub fn endpoints_client(&self) -> endpoints::Client {
         endpoints::Client(self.clone())
     }
-    pub fn log_analytics(&self) -> log_analytics::Client {
+    pub fn log_analytics_client(&self) -> log_analytics::Client {
         log_analytics::Client(self.clone())
     }
-    pub fn managed_rule_sets(&self) -> managed_rule_sets::Client {
+    pub fn managed_rule_sets_client(&self) -> managed_rule_sets::Client {
         managed_rule_sets::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn origin_groups(&self) -> origin_groups::Client {
+    pub fn origin_groups_client(&self) -> origin_groups::Client {
         origin_groups::Client(self.clone())
     }
-    pub fn origins(&self) -> origins::Client {
+    pub fn origins_client(&self) -> origins::Client {
         origins::Client(self.clone())
     }
-    pub fn policies(&self) -> policies::Client {
+    pub fn policies_client(&self) -> policies::Client {
         policies::Client(self.clone())
     }
-    pub fn profiles(&self) -> profiles::Client {
+    pub fn profiles_client(&self) -> profiles::Client {
         profiles::Client(self.clone())
     }
-    pub fn resource_usage(&self) -> resource_usage::Client {
+    pub fn resource_usage_client(&self) -> resource_usage::Client {
         resource_usage::Client(self.clone())
     }
-    pub fn routes(&self) -> routes::Client {
+    pub fn routes_client(&self) -> routes::Client {
         routes::Client(self.clone())
     }
-    pub fn rule_sets(&self) -> rule_sets::Client {
+    pub fn rule_sets_client(&self) -> rule_sets::Client {
         rule_sets::Client(self.clone())
     }
-    pub fn rules(&self) -> rules::Client {
+    pub fn rules_client(&self) -> rules::Client {
         rules::Client(self.clone())
     }
-    pub fn secrets(&self) -> secrets::Client {
+    pub fn secrets_client(&self) -> secrets::Client {
         secrets::Client(self.clone())
     }
-    pub fn security_policies(&self) -> security_policies::Client {
+    pub fn security_policies_client(&self) -> security_policies::Client {
         security_policies::Client(self.clone())
     }
-    pub fn validate(&self) -> validate::Client {
+    pub fn validate_client(&self) -> validate::Client {
         validate::Client(self.clone())
     }
 }

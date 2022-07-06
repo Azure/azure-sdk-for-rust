@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn namespaces(&self) -> namespaces::Client {
+    pub fn namespaces_client(&self) -> namespaces::Client {
         namespaces::Client(self.clone())
     }
-    pub fn operation_status_private_endpoint_connections(&self) -> operation_status_private_endpoint_connections::Client {
+    pub fn operation_status_private_endpoint_connections_client(&self) -> operation_status_private_endpoint_connections::Client {
         operation_status_private_endpoint_connections::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
 }

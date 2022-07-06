@@ -74,34 +74,34 @@ impl Client {
             pipeline,
         }
     }
-    pub fn devices(&self) -> devices::Client {
+    pub fn devices_client(&self) -> devices::Client {
         devices::Client(self.clone())
     }
-    pub fn network_function_vendor_skus(&self) -> network_function_vendor_skus::Client {
+    pub fn network_function_vendor_skus_client(&self) -> network_function_vendor_skus::Client {
         network_function_vendor_skus::Client(self.clone())
     }
-    pub fn network_function_vendors(&self) -> network_function_vendors::Client {
+    pub fn network_function_vendors_client(&self) -> network_function_vendors::Client {
         network_function_vendors::Client(self.clone())
     }
-    pub fn network_functions(&self) -> network_functions::Client {
+    pub fn network_functions_client(&self) -> network_functions::Client {
         network_functions::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn role_instances(&self) -> role_instances::Client {
+    pub fn role_instances_client(&self) -> role_instances::Client {
         role_instances::Client(self.clone())
     }
-    pub fn vendor_network_functions(&self) -> vendor_network_functions::Client {
+    pub fn vendor_network_functions_client(&self) -> vendor_network_functions::Client {
         vendor_network_functions::Client(self.clone())
     }
-    pub fn vendor_sku_preview(&self) -> vendor_sku_preview::Client {
+    pub fn vendor_sku_preview_client(&self) -> vendor_sku_preview::Client {
         vendor_sku_preview::Client(self.clone())
     }
-    pub fn vendor_skus(&self) -> vendor_skus::Client {
+    pub fn vendor_skus_client(&self) -> vendor_skus::Client {
         vendor_skus::Client(self.clone())
     }
-    pub fn vendors(&self) -> vendors::Client {
+    pub fn vendors_client(&self) -> vendors::Client {
         vendors::Client(self.clone())
     }
 }

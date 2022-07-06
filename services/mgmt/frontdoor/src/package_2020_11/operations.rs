@@ -74,40 +74,40 @@ impl Client {
             pipeline,
         }
     }
-    pub fn endpoints(&self) -> endpoints::Client {
+    pub fn endpoints_client(&self) -> endpoints::Client {
         endpoints::Client(self.clone())
     }
-    pub fn experiments(&self) -> experiments::Client {
+    pub fn experiments_client(&self) -> experiments::Client {
         experiments::Client(self.clone())
     }
-    pub fn front_door_name_availability(&self) -> front_door_name_availability::Client {
+    pub fn front_door_name_availability_client(&self) -> front_door_name_availability::Client {
         front_door_name_availability::Client(self.clone())
     }
-    pub fn front_door_name_availability_with_subscription(&self) -> front_door_name_availability_with_subscription::Client {
+    pub fn front_door_name_availability_with_subscription_client(&self) -> front_door_name_availability_with_subscription::Client {
         front_door_name_availability_with_subscription::Client(self.clone())
     }
-    pub fn front_doors(&self) -> front_doors::Client {
+    pub fn front_doors_client(&self) -> front_doors::Client {
         front_doors::Client(self.clone())
     }
-    pub fn frontend_endpoints(&self) -> frontend_endpoints::Client {
+    pub fn frontend_endpoints_client(&self) -> frontend_endpoints::Client {
         frontend_endpoints::Client(self.clone())
     }
-    pub fn managed_rule_sets(&self) -> managed_rule_sets::Client {
+    pub fn managed_rule_sets_client(&self) -> managed_rule_sets::Client {
         managed_rule_sets::Client(self.clone())
     }
-    pub fn network_experiment_profiles(&self) -> network_experiment_profiles::Client {
+    pub fn network_experiment_profiles_client(&self) -> network_experiment_profiles::Client {
         network_experiment_profiles::Client(self.clone())
     }
-    pub fn policies(&self) -> policies::Client {
+    pub fn policies_client(&self) -> policies::Client {
         policies::Client(self.clone())
     }
-    pub fn preconfigured_endpoints(&self) -> preconfigured_endpoints::Client {
+    pub fn preconfigured_endpoints_client(&self) -> preconfigured_endpoints::Client {
         preconfigured_endpoints::Client(self.clone())
     }
-    pub fn reports(&self) -> reports::Client {
+    pub fn reports_client(&self) -> reports::Client {
         reports::Client(self.clone())
     }
-    pub fn rules_engines(&self) -> rules_engines::Client {
+    pub fn rules_engines_client(&self) -> rules_engines::Client {
         rules_engines::Client(self.clone())
     }
 }

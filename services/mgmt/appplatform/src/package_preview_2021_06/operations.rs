@@ -74,37 +74,37 @@ impl Client {
             pipeline,
         }
     }
-    pub fn apps(&self) -> apps::Client {
+    pub fn apps_client(&self) -> apps::Client {
         apps::Client(self.clone())
     }
-    pub fn bindings(&self) -> bindings::Client {
+    pub fn bindings_client(&self) -> bindings::Client {
         bindings::Client(self.clone())
     }
-    pub fn certificates(&self) -> certificates::Client {
+    pub fn certificates_client(&self) -> certificates::Client {
         certificates::Client(self.clone())
     }
-    pub fn config_servers(&self) -> config_servers::Client {
+    pub fn config_servers_client(&self) -> config_servers::Client {
         config_servers::Client(self.clone())
     }
-    pub fn custom_domains(&self) -> custom_domains::Client {
+    pub fn custom_domains_client(&self) -> custom_domains::Client {
         custom_domains::Client(self.clone())
     }
-    pub fn deployments(&self) -> deployments::Client {
+    pub fn deployments_client(&self) -> deployments::Client {
         deployments::Client(self.clone())
     }
-    pub fn monitoring_settings(&self) -> monitoring_settings::Client {
+    pub fn monitoring_settings_client(&self) -> monitoring_settings::Client {
         monitoring_settings::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn runtime_versions(&self) -> runtime_versions::Client {
+    pub fn runtime_versions_client(&self) -> runtime_versions::Client {
         runtime_versions::Client(self.clone())
     }
-    pub fn services(&self) -> services::Client {
+    pub fn services_client(&self) -> services::Client {
         services::Client(self.clone())
     }
-    pub fn skus(&self) -> skus::Client {
+    pub fn skus_client(&self) -> skus::Client {
         skus::Client(self.clone())
     }
 }

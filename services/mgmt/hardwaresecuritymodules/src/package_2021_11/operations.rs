@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn dedicated_hsm(&self) -> dedicated_hsm::Client {
+    pub fn dedicated_hsm_client(&self) -> dedicated_hsm::Client {
         dedicated_hsm::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

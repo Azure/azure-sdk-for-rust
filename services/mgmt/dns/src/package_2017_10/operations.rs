@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn record_sets(&self) -> record_sets::Client {
+    pub fn record_sets_client(&self) -> record_sets::Client {
         record_sets::Client(self.clone())
     }
-    pub fn zones(&self) -> zones::Client {
+    pub fn zones_client(&self) -> zones::Client {
         zones::Client(self.clone())
     }
 }

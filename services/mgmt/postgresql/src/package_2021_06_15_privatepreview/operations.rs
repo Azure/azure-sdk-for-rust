@@ -74,28 +74,28 @@ impl Client {
             pipeline,
         }
     }
-    pub fn check_name_availability(&self) -> check_name_availability::Client {
+    pub fn check_name_availability_client(&self) -> check_name_availability::Client {
         check_name_availability::Client(self.clone())
     }
-    pub fn configurations(&self) -> configurations::Client {
+    pub fn configurations_client(&self) -> configurations::Client {
         configurations::Client(self.clone())
     }
-    pub fn firewall_rules(&self) -> firewall_rules::Client {
+    pub fn firewall_rules_client(&self) -> firewall_rules::Client {
         firewall_rules::Client(self.clone())
     }
-    pub fn location_based_capabilities(&self) -> location_based_capabilities::Client {
+    pub fn location_based_capabilities_client(&self) -> location_based_capabilities::Client {
         location_based_capabilities::Client(self.clone())
     }
-    pub fn migrations(&self) -> migrations::Client {
+    pub fn migrations_client(&self) -> migrations::Client {
         migrations::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn servers(&self) -> servers::Client {
+    pub fn servers_client(&self) -> servers::Client {
         servers::Client(self.clone())
     }
-    pub fn virtual_network_subnet_usage(&self) -> virtual_network_subnet_usage::Client {
+    pub fn virtual_network_subnet_usage_client(&self) -> virtual_network_subnet_usage::Client {
         virtual_network_subnet_usage::Client(self.clone())
     }
 }

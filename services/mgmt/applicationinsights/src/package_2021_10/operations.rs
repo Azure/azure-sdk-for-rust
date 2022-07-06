@@ -74,7 +74,7 @@ impl Client {
             pipeline,
         }
     }
-    pub fn live_token(&self) -> live_token::Client {
+    pub fn live_token_client(&self) -> live_token::Client {
         live_token::Client(self.clone())
     }
 }

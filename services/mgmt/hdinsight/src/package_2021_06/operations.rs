@@ -74,37 +74,37 @@ impl Client {
             pipeline,
         }
     }
-    pub fn applications(&self) -> applications::Client {
+    pub fn applications_client(&self) -> applications::Client {
         applications::Client(self.clone())
     }
-    pub fn clusters(&self) -> clusters::Client {
+    pub fn clusters_client(&self) -> clusters::Client {
         clusters::Client(self.clone())
     }
-    pub fn configurations(&self) -> configurations::Client {
+    pub fn configurations_client(&self) -> configurations::Client {
         configurations::Client(self.clone())
     }
-    pub fn extensions(&self) -> extensions::Client {
+    pub fn extensions_client(&self) -> extensions::Client {
         extensions::Client(self.clone())
     }
-    pub fn locations(&self) -> locations::Client {
+    pub fn locations_client(&self) -> locations::Client {
         locations::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn script_actions(&self) -> script_actions::Client {
+    pub fn script_actions_client(&self) -> script_actions::Client {
         script_actions::Client(self.clone())
     }
-    pub fn script_execution_history(&self) -> script_execution_history::Client {
+    pub fn script_execution_history_client(&self) -> script_execution_history::Client {
         script_execution_history::Client(self.clone())
     }
-    pub fn virtual_machines(&self) -> virtual_machines::Client {
+    pub fn virtual_machines_client(&self) -> virtual_machines::Client {
         virtual_machines::Client(self.clone())
     }
 }

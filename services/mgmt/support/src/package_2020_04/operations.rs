@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn communications(&self) -> communications::Client {
+    pub fn communications_client(&self) -> communications::Client {
         communications::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn problem_classifications(&self) -> problem_classifications::Client {
+    pub fn problem_classifications_client(&self) -> problem_classifications::Client {
         problem_classifications::Client(self.clone())
     }
-    pub fn services(&self) -> services::Client {
+    pub fn services_client(&self) -> services::Client {
         services::Client(self.clone())
     }
-    pub fn support_tickets(&self) -> support_tickets::Client {
+    pub fn support_tickets_client(&self) -> support_tickets::Client {
         support_tickets::Client(self.clone())
     }
 }

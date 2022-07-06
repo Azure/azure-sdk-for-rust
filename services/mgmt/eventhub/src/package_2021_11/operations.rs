@@ -74,34 +74,34 @@ impl Client {
             pipeline,
         }
     }
-    pub fn clusters(&self) -> clusters::Client {
+    pub fn clusters_client(&self) -> clusters::Client {
         clusters::Client(self.clone())
     }
-    pub fn configuration(&self) -> configuration::Client {
+    pub fn configuration_client(&self) -> configuration::Client {
         configuration::Client(self.clone())
     }
-    pub fn consumer_groups(&self) -> consumer_groups::Client {
+    pub fn consumer_groups_client(&self) -> consumer_groups::Client {
         consumer_groups::Client(self.clone())
     }
-    pub fn disaster_recovery_configs(&self) -> disaster_recovery_configs::Client {
+    pub fn disaster_recovery_configs_client(&self) -> disaster_recovery_configs::Client {
         disaster_recovery_configs::Client(self.clone())
     }
-    pub fn event_hubs(&self) -> event_hubs::Client {
+    pub fn event_hubs_client(&self) -> event_hubs::Client {
         event_hubs::Client(self.clone())
     }
-    pub fn namespaces(&self) -> namespaces::Client {
+    pub fn namespaces_client(&self) -> namespaces::Client {
         namespaces::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn schema_registry(&self) -> schema_registry::Client {
+    pub fn schema_registry_client(&self) -> schema_registry::Client {
         schema_registry::Client(self.clone())
     }
 }

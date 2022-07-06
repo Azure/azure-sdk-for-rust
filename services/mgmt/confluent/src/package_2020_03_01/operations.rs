@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn marketplace_agreements(&self) -> marketplace_agreements::Client {
+    pub fn marketplace_agreements_client(&self) -> marketplace_agreements::Client {
         marketplace_agreements::Client(self.clone())
     }
-    pub fn organization(&self) -> organization::Client {
+    pub fn organization_client(&self) -> organization::Client {
         organization::Client(self.clone())
     }
-    pub fn organization_operations(&self) -> organization_operations::Client {
+    pub fn organization_operations_client(&self) -> organization_operations::Client {
         organization_operations::Client(self.clone())
     }
 }

@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn events(&self) -> events::Client {
+    pub fn events_client(&self) -> events::Client {
         events::Client(self.clone())
     }
-    pub fn metadata(&self) -> metadata::Client {
+    pub fn metadata_client(&self) -> metadata::Client {
         metadata::Client(self.clone())
     }
-    pub fn metrics(&self) -> metrics::Client {
+    pub fn metrics_client(&self) -> metrics::Client {
         metrics::Client(self.clone())
     }
-    pub fn query(&self) -> query::Client {
+    pub fn query_client(&self) -> query::Client {
         query::Client(self.clone())
     }
 }

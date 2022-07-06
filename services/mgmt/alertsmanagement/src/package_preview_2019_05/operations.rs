@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn action_rules(&self) -> action_rules::Client {
+    pub fn action_rules_client(&self) -> action_rules::Client {
         action_rules::Client(self.clone())
     }
-    pub fn alerts(&self) -> alerts::Client {
+    pub fn alerts_client(&self) -> alerts::Client {
         alerts::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn smart_groups(&self) -> smart_groups::Client {
+    pub fn smart_groups_client(&self) -> smart_groups::Client {
         smart_groups::Client(self.clone())
     }
 }

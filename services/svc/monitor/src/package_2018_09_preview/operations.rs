@@ -74,7 +74,7 @@ impl Client {
             pipeline,
         }
     }
-    pub fn metrics(&self) -> metrics::Client {
+    pub fn metrics_client(&self) -> metrics::Client {
         metrics::Client(self.clone())
     }
 }

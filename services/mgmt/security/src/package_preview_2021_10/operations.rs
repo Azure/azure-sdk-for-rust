@@ -74,7 +74,7 @@ impl Client {
             pipeline,
         }
     }
-    pub fn mde_onboardings(&self) -> mde_onboardings::Client {
+    pub fn mde_onboardings_client(&self) -> mde_onboardings::Client {
         mde_onboardings::Client(self.clone())
     }
 }

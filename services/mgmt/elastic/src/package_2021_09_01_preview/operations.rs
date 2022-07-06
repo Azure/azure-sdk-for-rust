@@ -74,31 +74,31 @@ impl Client {
             pipeline,
         }
     }
-    pub fn deployment_info(&self) -> deployment_info::Client {
+    pub fn deployment_info_client(&self) -> deployment_info::Client {
         deployment_info::Client(self.clone())
     }
-    pub fn external_user(&self) -> external_user::Client {
+    pub fn external_user_client(&self) -> external_user::Client {
         external_user::Client(self.clone())
     }
-    pub fn monitored_resources(&self) -> monitored_resources::Client {
+    pub fn monitored_resources_client(&self) -> monitored_resources::Client {
         monitored_resources::Client(self.clone())
     }
-    pub fn monitors(&self) -> monitors::Client {
+    pub fn monitors_client(&self) -> monitors::Client {
         monitors::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn tag_rules(&self) -> tag_rules::Client {
+    pub fn tag_rules_client(&self) -> tag_rules::Client {
         tag_rules::Client(self.clone())
     }
-    pub fn vm_collection(&self) -> vm_collection::Client {
+    pub fn vm_collection_client(&self) -> vm_collection::Client {
         vm_collection::Client(self.clone())
     }
-    pub fn vm_host(&self) -> vm_host::Client {
+    pub fn vm_host_client(&self) -> vm_host::Client {
         vm_host::Client(self.clone())
     }
-    pub fn vm_ingestion(&self) -> vm_ingestion::Client {
+    pub fn vm_ingestion_client(&self) -> vm_ingestion::Client {
         vm_ingestion::Client(self.clone())
     }
 }

@@ -74,7 +74,7 @@ impl Client {
             pipeline,
         }
     }
-    pub fn instances(&self) -> instances::Client {
+    pub fn instances_client(&self) -> instances::Client {
         instances::Client(self.clone())
     }
 }

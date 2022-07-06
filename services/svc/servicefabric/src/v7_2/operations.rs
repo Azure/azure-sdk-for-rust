@@ -74,31 +74,31 @@ impl Client {
             pipeline,
         }
     }
-    pub fn mesh_application(&self) -> mesh_application::Client {
+    pub fn mesh_application_client(&self) -> mesh_application::Client {
         mesh_application::Client(self.clone())
     }
-    pub fn mesh_code_package(&self) -> mesh_code_package::Client {
+    pub fn mesh_code_package_client(&self) -> mesh_code_package::Client {
         mesh_code_package::Client(self.clone())
     }
-    pub fn mesh_gateway(&self) -> mesh_gateway::Client {
+    pub fn mesh_gateway_client(&self) -> mesh_gateway::Client {
         mesh_gateway::Client(self.clone())
     }
-    pub fn mesh_network(&self) -> mesh_network::Client {
+    pub fn mesh_network_client(&self) -> mesh_network::Client {
         mesh_network::Client(self.clone())
     }
-    pub fn mesh_secret(&self) -> mesh_secret::Client {
+    pub fn mesh_secret_client(&self) -> mesh_secret::Client {
         mesh_secret::Client(self.clone())
     }
-    pub fn mesh_secret_value(&self) -> mesh_secret_value::Client {
+    pub fn mesh_secret_value_client(&self) -> mesh_secret_value::Client {
         mesh_secret_value::Client(self.clone())
     }
-    pub fn mesh_service(&self) -> mesh_service::Client {
+    pub fn mesh_service_client(&self) -> mesh_service::Client {
         mesh_service::Client(self.clone())
     }
-    pub fn mesh_service_replica(&self) -> mesh_service_replica::Client {
+    pub fn mesh_service_replica_client(&self) -> mesh_service_replica::Client {
         mesh_service_replica::Client(self.clone())
     }
-    pub fn mesh_volume(&self) -> mesh_volume::Client {
+    pub fn mesh_volume_client(&self) -> mesh_volume::Client {
         mesh_volume::Client(self.clone())
     }
 }

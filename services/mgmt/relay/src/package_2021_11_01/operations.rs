@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn hybrid_connections(&self) -> hybrid_connections::Client {
+    pub fn hybrid_connections_client(&self) -> hybrid_connections::Client {
         hybrid_connections::Client(self.clone())
     }
-    pub fn namespaces(&self) -> namespaces::Client {
+    pub fn namespaces_client(&self) -> namespaces::Client {
         namespaces::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn wcf_relays(&self) -> wcf_relays::Client {
+    pub fn wcf_relays_client(&self) -> wcf_relays::Client {
         wcf_relays::Client(self.clone())
     }
 }

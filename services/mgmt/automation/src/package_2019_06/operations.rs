@@ -74,127 +74,127 @@ impl Client {
             pipeline,
         }
     }
-    pub fn activity(&self) -> activity::Client {
+    pub fn activity_client(&self) -> activity::Client {
         activity::Client(self.clone())
     }
-    pub fn agent_registration_information(&self) -> agent_registration_information::Client {
+    pub fn agent_registration_information_client(&self) -> agent_registration_information::Client {
         agent_registration_information::Client(self.clone())
     }
-    pub fn automation_account(&self) -> automation_account::Client {
+    pub fn automation_account_client(&self) -> automation_account::Client {
         automation_account::Client(self.clone())
     }
-    pub fn certificate(&self) -> certificate::Client {
+    pub fn certificate_client(&self) -> certificate::Client {
         certificate::Client(self.clone())
     }
-    pub fn connection(&self) -> connection::Client {
+    pub fn connection_client(&self) -> connection::Client {
         connection::Client(self.clone())
     }
-    pub fn connection_type(&self) -> connection_type::Client {
+    pub fn connection_type_client(&self) -> connection_type::Client {
         connection_type::Client(self.clone())
     }
-    pub fn credential(&self) -> credential::Client {
+    pub fn credential_client(&self) -> credential::Client {
         credential::Client(self.clone())
     }
-    pub fn dsc_compilation_job(&self) -> dsc_compilation_job::Client {
+    pub fn dsc_compilation_job_client(&self) -> dsc_compilation_job::Client {
         dsc_compilation_job::Client(self.clone())
     }
-    pub fn dsc_compilation_job_stream(&self) -> dsc_compilation_job_stream::Client {
+    pub fn dsc_compilation_job_stream_client(&self) -> dsc_compilation_job_stream::Client {
         dsc_compilation_job_stream::Client(self.clone())
     }
-    pub fn dsc_configuration(&self) -> dsc_configuration::Client {
+    pub fn dsc_configuration_client(&self) -> dsc_configuration::Client {
         dsc_configuration::Client(self.clone())
     }
-    pub fn dsc_node(&self) -> dsc_node::Client {
+    pub fn dsc_node_client(&self) -> dsc_node::Client {
         dsc_node::Client(self.clone())
     }
-    pub fn dsc_node_configuration(&self) -> dsc_node_configuration::Client {
+    pub fn dsc_node_configuration_client(&self) -> dsc_node_configuration::Client {
         dsc_node_configuration::Client(self.clone())
     }
-    pub fn fields(&self) -> fields::Client {
+    pub fn fields_client(&self) -> fields::Client {
         fields::Client(self.clone())
     }
-    pub fn hybrid_runbook_worker_group(&self) -> hybrid_runbook_worker_group::Client {
+    pub fn hybrid_runbook_worker_group_client(&self) -> hybrid_runbook_worker_group::Client {
         hybrid_runbook_worker_group::Client(self.clone())
     }
-    pub fn job(&self) -> job::Client {
+    pub fn job_client(&self) -> job::Client {
         job::Client(self.clone())
     }
-    pub fn job_schedule(&self) -> job_schedule::Client {
+    pub fn job_schedule_client(&self) -> job_schedule::Client {
         job_schedule::Client(self.clone())
     }
-    pub fn job_stream(&self) -> job_stream::Client {
+    pub fn job_stream_client(&self) -> job_stream::Client {
         job_stream::Client(self.clone())
     }
-    pub fn keys(&self) -> keys::Client {
+    pub fn keys_client(&self) -> keys::Client {
         keys::Client(self.clone())
     }
-    pub fn linked_workspace(&self) -> linked_workspace::Client {
+    pub fn linked_workspace_client(&self) -> linked_workspace::Client {
         linked_workspace::Client(self.clone())
     }
-    pub fn module(&self) -> module::Client {
+    pub fn module_client(&self) -> module::Client {
         module::Client(self.clone())
     }
-    pub fn node_count_information(&self) -> node_count_information::Client {
+    pub fn node_count_information_client(&self) -> node_count_information::Client {
         node_count_information::Client(self.clone())
     }
-    pub fn node_reports(&self) -> node_reports::Client {
+    pub fn node_reports_client(&self) -> node_reports::Client {
         node_reports::Client(self.clone())
     }
-    pub fn object_data_types(&self) -> object_data_types::Client {
+    pub fn object_data_types_client(&self) -> object_data_types::Client {
         object_data_types::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn python2_package(&self) -> python2_package::Client {
+    pub fn python2_package_client(&self) -> python2_package::Client {
         python2_package::Client(self.clone())
     }
-    pub fn runbook(&self) -> runbook::Client {
+    pub fn runbook_client(&self) -> runbook::Client {
         runbook::Client(self.clone())
     }
-    pub fn runbook_draft(&self) -> runbook_draft::Client {
+    pub fn runbook_draft_client(&self) -> runbook_draft::Client {
         runbook_draft::Client(self.clone())
     }
-    pub fn schedule(&self) -> schedule::Client {
+    pub fn schedule_client(&self) -> schedule::Client {
         schedule::Client(self.clone())
     }
-    pub fn software_update_configuration_machine_runs(&self) -> software_update_configuration_machine_runs::Client {
+    pub fn software_update_configuration_machine_runs_client(&self) -> software_update_configuration_machine_runs::Client {
         software_update_configuration_machine_runs::Client(self.clone())
     }
-    pub fn software_update_configuration_runs(&self) -> software_update_configuration_runs::Client {
+    pub fn software_update_configuration_runs_client(&self) -> software_update_configuration_runs::Client {
         software_update_configuration_runs::Client(self.clone())
     }
-    pub fn software_update_configurations(&self) -> software_update_configurations::Client {
+    pub fn software_update_configurations_client(&self) -> software_update_configurations::Client {
         software_update_configurations::Client(self.clone())
     }
-    pub fn source_control(&self) -> source_control::Client {
+    pub fn source_control_client(&self) -> source_control::Client {
         source_control::Client(self.clone())
     }
-    pub fn source_control_sync_job(&self) -> source_control_sync_job::Client {
+    pub fn source_control_sync_job_client(&self) -> source_control_sync_job::Client {
         source_control_sync_job::Client(self.clone())
     }
-    pub fn source_control_sync_job_streams(&self) -> source_control_sync_job_streams::Client {
+    pub fn source_control_sync_job_streams_client(&self) -> source_control_sync_job_streams::Client {
         source_control_sync_job_streams::Client(self.clone())
     }
-    pub fn statistics(&self) -> statistics::Client {
+    pub fn statistics_client(&self) -> statistics::Client {
         statistics::Client(self.clone())
     }
-    pub fn test_job(&self) -> test_job::Client {
+    pub fn test_job_client(&self) -> test_job::Client {
         test_job::Client(self.clone())
     }
-    pub fn test_job_streams(&self) -> test_job_streams::Client {
+    pub fn test_job_streams_client(&self) -> test_job_streams::Client {
         test_job_streams::Client(self.clone())
     }
-    pub fn usages(&self) -> usages::Client {
+    pub fn usages_client(&self) -> usages::Client {
         usages::Client(self.clone())
     }
-    pub fn variable(&self) -> variable::Client {
+    pub fn variable_client(&self) -> variable::Client {
         variable::Client(self.clone())
     }
-    pub fn watcher(&self) -> watcher::Client {
+    pub fn watcher_client(&self) -> watcher::Client {
         watcher::Client(self.clone())
     }
-    pub fn webhook(&self) -> webhook::Client {
+    pub fn webhook_client(&self) -> webhook::Client {
         webhook::Client(self.clone())
     }
 }

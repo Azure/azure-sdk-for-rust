@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn sql_server_registrations(&self) -> sql_server_registrations::Client {
+    pub fn sql_server_registrations_client(&self) -> sql_server_registrations::Client {
         sql_server_registrations::Client(self.clone())
     }
-    pub fn sql_servers(&self) -> sql_servers::Client {
+    pub fn sql_servers_client(&self) -> sql_servers::Client {
         sql_servers::Client(self.clone())
     }
 }

@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn enterprise_knowledge_graph(&self) -> enterprise_knowledge_graph::Client {
+    pub fn enterprise_knowledge_graph_client(&self) -> enterprise_knowledge_graph::Client {
         enterprise_knowledge_graph::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

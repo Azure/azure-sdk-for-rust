@@ -74,28 +74,28 @@ impl Client {
             pipeline,
         }
     }
-    pub fn cloud_endpoints(&self) -> cloud_endpoints::Client {
+    pub fn cloud_endpoints_client(&self) -> cloud_endpoints::Client {
         cloud_endpoints::Client(self.clone())
     }
-    pub fn operation_status(&self) -> operation_status::Client {
+    pub fn operation_status_client(&self) -> operation_status::Client {
         operation_status::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn registered_servers(&self) -> registered_servers::Client {
+    pub fn registered_servers_client(&self) -> registered_servers::Client {
         registered_servers::Client(self.clone())
     }
-    pub fn server_endpoints(&self) -> server_endpoints::Client {
+    pub fn server_endpoints_client(&self) -> server_endpoints::Client {
         server_endpoints::Client(self.clone())
     }
-    pub fn storage_sync_services(&self) -> storage_sync_services::Client {
+    pub fn storage_sync_services_client(&self) -> storage_sync_services::Client {
         storage_sync_services::Client(self.clone())
     }
-    pub fn sync_groups(&self) -> sync_groups::Client {
+    pub fn sync_groups_client(&self) -> sync_groups::Client {
         sync_groups::Client(self.clone())
     }
-    pub fn workflows(&self) -> workflows::Client {
+    pub fn workflows_client(&self) -> workflows::Client {
         workflows::Client(self.clone())
     }
 }

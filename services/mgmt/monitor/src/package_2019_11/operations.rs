@@ -74,82 +74,82 @@ impl Client {
             pipeline,
         }
     }
-    pub fn action_groups(&self) -> action_groups::Client {
+    pub fn action_groups_client(&self) -> action_groups::Client {
         action_groups::Client(self.clone())
     }
-    pub fn activity_log_alerts(&self) -> activity_log_alerts::Client {
+    pub fn activity_log_alerts_client(&self) -> activity_log_alerts::Client {
         activity_log_alerts::Client(self.clone())
     }
-    pub fn activity_logs(&self) -> activity_logs::Client {
+    pub fn activity_logs_client(&self) -> activity_logs::Client {
         activity_logs::Client(self.clone())
     }
-    pub fn alert_rule_incidents(&self) -> alert_rule_incidents::Client {
+    pub fn alert_rule_incidents_client(&self) -> alert_rule_incidents::Client {
         alert_rule_incidents::Client(self.clone())
     }
-    pub fn alert_rules(&self) -> alert_rules::Client {
+    pub fn alert_rules_client(&self) -> alert_rules::Client {
         alert_rules::Client(self.clone())
     }
-    pub fn autoscale_settings(&self) -> autoscale_settings::Client {
+    pub fn autoscale_settings_client(&self) -> autoscale_settings::Client {
         autoscale_settings::Client(self.clone())
     }
-    pub fn baselines(&self) -> baselines::Client {
+    pub fn baselines_client(&self) -> baselines::Client {
         baselines::Client(self.clone())
     }
-    pub fn diagnostic_settings(&self) -> diagnostic_settings::Client {
+    pub fn diagnostic_settings_client(&self) -> diagnostic_settings::Client {
         diagnostic_settings::Client(self.clone())
     }
-    pub fn diagnostic_settings_category(&self) -> diagnostic_settings_category::Client {
+    pub fn diagnostic_settings_category_client(&self) -> diagnostic_settings_category::Client {
         diagnostic_settings_category::Client(self.clone())
     }
-    pub fn event_categories(&self) -> event_categories::Client {
+    pub fn event_categories_client(&self) -> event_categories::Client {
         event_categories::Client(self.clone())
     }
-    pub fn log_profiles(&self) -> log_profiles::Client {
+    pub fn log_profiles_client(&self) -> log_profiles::Client {
         log_profiles::Client(self.clone())
     }
-    pub fn metric_alerts(&self) -> metric_alerts::Client {
+    pub fn metric_alerts_client(&self) -> metric_alerts::Client {
         metric_alerts::Client(self.clone())
     }
-    pub fn metric_alerts_status(&self) -> metric_alerts_status::Client {
+    pub fn metric_alerts_status_client(&self) -> metric_alerts_status::Client {
         metric_alerts_status::Client(self.clone())
     }
-    pub fn metric_definitions(&self) -> metric_definitions::Client {
+    pub fn metric_definitions_client(&self) -> metric_definitions::Client {
         metric_definitions::Client(self.clone())
     }
-    pub fn metric_namespaces(&self) -> metric_namespaces::Client {
+    pub fn metric_namespaces_client(&self) -> metric_namespaces::Client {
         metric_namespaces::Client(self.clone())
     }
-    pub fn metrics(&self) -> metrics::Client {
+    pub fn metrics_client(&self) -> metrics::Client {
         metrics::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn private_link_scope_operation_status(&self) -> private_link_scope_operation_status::Client {
+    pub fn private_link_scope_operation_status_client(&self) -> private_link_scope_operation_status::Client {
         private_link_scope_operation_status::Client(self.clone())
     }
-    pub fn private_link_scoped_resources(&self) -> private_link_scoped_resources::Client {
+    pub fn private_link_scoped_resources_client(&self) -> private_link_scoped_resources::Client {
         private_link_scoped_resources::Client(self.clone())
     }
-    pub fn private_link_scopes(&self) -> private_link_scopes::Client {
+    pub fn private_link_scopes_client(&self) -> private_link_scopes::Client {
         private_link_scopes::Client(self.clone())
     }
-    pub fn scheduled_query_rules(&self) -> scheduled_query_rules::Client {
+    pub fn scheduled_query_rules_client(&self) -> scheduled_query_rules::Client {
         scheduled_query_rules::Client(self.clone())
     }
-    pub fn subscription_diagnostic_settings(&self) -> subscription_diagnostic_settings::Client {
+    pub fn subscription_diagnostic_settings_client(&self) -> subscription_diagnostic_settings::Client {
         subscription_diagnostic_settings::Client(self.clone())
     }
-    pub fn tenant_activity_logs(&self) -> tenant_activity_logs::Client {
+    pub fn tenant_activity_logs_client(&self) -> tenant_activity_logs::Client {
         tenant_activity_logs::Client(self.clone())
     }
-    pub fn vm_insights(&self) -> vm_insights::Client {
+    pub fn vm_insights_client(&self) -> vm_insights::Client {
         vm_insights::Client(self.clone())
     }
 }

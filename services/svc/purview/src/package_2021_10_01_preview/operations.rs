@@ -74,31 +74,31 @@ impl Client {
             pipeline,
         }
     }
-    pub fn classification_rules(&self) -> classification_rules::Client {
+    pub fn classification_rules_client(&self) -> classification_rules::Client {
         classification_rules::Client(self.clone())
     }
-    pub fn data_sources(&self) -> data_sources::Client {
+    pub fn data_sources_client(&self) -> data_sources::Client {
         data_sources::Client(self.clone())
     }
-    pub fn filters(&self) -> filters::Client {
+    pub fn filters_client(&self) -> filters::Client {
         filters::Client(self.clone())
     }
-    pub fn key_vault_connections(&self) -> key_vault_connections::Client {
+    pub fn key_vault_connections_client(&self) -> key_vault_connections::Client {
         key_vault_connections::Client(self.clone())
     }
-    pub fn scan_result(&self) -> scan_result::Client {
+    pub fn scan_result_client(&self) -> scan_result::Client {
         scan_result::Client(self.clone())
     }
-    pub fn scan_rulesets(&self) -> scan_rulesets::Client {
+    pub fn scan_rulesets_client(&self) -> scan_rulesets::Client {
         scan_rulesets::Client(self.clone())
     }
-    pub fn scans(&self) -> scans::Client {
+    pub fn scans_client(&self) -> scans::Client {
         scans::Client(self.clone())
     }
-    pub fn system_scan_rulesets(&self) -> system_scan_rulesets::Client {
+    pub fn system_scan_rulesets_client(&self) -> system_scan_rulesets::Client {
         system_scan_rulesets::Client(self.clone())
     }
-    pub fn triggers(&self) -> triggers::Client {
+    pub fn triggers_client(&self) -> triggers::Client {
         triggers::Client(self.clone())
     }
 }

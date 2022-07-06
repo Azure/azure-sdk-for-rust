@@ -74,64 +74,64 @@ impl Client {
             pipeline,
         }
     }
-    pub fn available_service_tiers(&self) -> available_service_tiers::Client {
+    pub fn available_service_tiers_client(&self) -> available_service_tiers::Client {
         available_service_tiers::Client(self.clone())
     }
-    pub fn clusters(&self) -> clusters::Client {
+    pub fn clusters_client(&self) -> clusters::Client {
         clusters::Client(self.clone())
     }
-    pub fn data_exports(&self) -> data_exports::Client {
+    pub fn data_exports_client(&self) -> data_exports::Client {
         data_exports::Client(self.clone())
     }
-    pub fn data_sources(&self) -> data_sources::Client {
+    pub fn data_sources_client(&self) -> data_sources::Client {
         data_sources::Client(self.clone())
     }
-    pub fn deleted_workspaces(&self) -> deleted_workspaces::Client {
+    pub fn deleted_workspaces_client(&self) -> deleted_workspaces::Client {
         deleted_workspaces::Client(self.clone())
     }
-    pub fn gateways(&self) -> gateways::Client {
+    pub fn gateways_client(&self) -> gateways::Client {
         gateways::Client(self.clone())
     }
-    pub fn intelligence_packs(&self) -> intelligence_packs::Client {
+    pub fn intelligence_packs_client(&self) -> intelligence_packs::Client {
         intelligence_packs::Client(self.clone())
     }
-    pub fn linked_services(&self) -> linked_services::Client {
+    pub fn linked_services_client(&self) -> linked_services::Client {
         linked_services::Client(self.clone())
     }
-    pub fn linked_storage_accounts(&self) -> linked_storage_accounts::Client {
+    pub fn linked_storage_accounts_client(&self) -> linked_storage_accounts::Client {
         linked_storage_accounts::Client(self.clone())
     }
-    pub fn management_groups(&self) -> management_groups::Client {
+    pub fn management_groups_client(&self) -> management_groups::Client {
         management_groups::Client(self.clone())
     }
-    pub fn operation_statuses(&self) -> operation_statuses::Client {
+    pub fn operation_statuses_client(&self) -> operation_statuses::Client {
         operation_statuses::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn saved_searches(&self) -> saved_searches::Client {
+    pub fn saved_searches_client(&self) -> saved_searches::Client {
         saved_searches::Client(self.clone())
     }
-    pub fn schema(&self) -> schema::Client {
+    pub fn schema_client(&self) -> schema::Client {
         schema::Client(self.clone())
     }
-    pub fn shared_keys(&self) -> shared_keys::Client {
+    pub fn shared_keys_client(&self) -> shared_keys::Client {
         shared_keys::Client(self.clone())
     }
-    pub fn storage_insight_configs(&self) -> storage_insight_configs::Client {
+    pub fn storage_insight_configs_client(&self) -> storage_insight_configs::Client {
         storage_insight_configs::Client(self.clone())
     }
-    pub fn tables(&self) -> tables::Client {
+    pub fn tables_client(&self) -> tables::Client {
         tables::Client(self.clone())
     }
-    pub fn usages(&self) -> usages::Client {
+    pub fn usages_client(&self) -> usages::Client {
         usages::Client(self.clone())
     }
-    pub fn workspace_purge(&self) -> workspace_purge::Client {
+    pub fn workspace_purge_client(&self) -> workspace_purge::Client {
         workspace_purge::Client(self.clone())
     }
-    pub fn workspaces(&self) -> workspaces::Client {
+    pub fn workspaces_client(&self) -> workspaces::Client {
         workspaces::Client(self.clone())
     }
 }

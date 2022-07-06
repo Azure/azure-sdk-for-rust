@@ -74,34 +74,34 @@ impl Client {
             pipeline,
         }
     }
-    pub fn activity_runs(&self) -> activity_runs::Client {
+    pub fn activity_runs_client(&self) -> activity_runs::Client {
         activity_runs::Client(self.clone())
     }
-    pub fn datasets(&self) -> datasets::Client {
+    pub fn datasets_client(&self) -> datasets::Client {
         datasets::Client(self.clone())
     }
-    pub fn factories(&self) -> factories::Client {
+    pub fn factories_client(&self) -> factories::Client {
         factories::Client(self.clone())
     }
-    pub fn integration_runtime_nodes(&self) -> integration_runtime_nodes::Client {
+    pub fn integration_runtime_nodes_client(&self) -> integration_runtime_nodes::Client {
         integration_runtime_nodes::Client(self.clone())
     }
-    pub fn integration_runtimes(&self) -> integration_runtimes::Client {
+    pub fn integration_runtimes_client(&self) -> integration_runtimes::Client {
         integration_runtimes::Client(self.clone())
     }
-    pub fn linked_services(&self) -> linked_services::Client {
+    pub fn linked_services_client(&self) -> linked_services::Client {
         linked_services::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn pipeline_runs(&self) -> pipeline_runs::Client {
+    pub fn pipeline_runs_client(&self) -> pipeline_runs::Client {
         pipeline_runs::Client(self.clone())
     }
-    pub fn pipelines(&self) -> pipelines::Client {
+    pub fn pipelines_client(&self) -> pipelines::Client {
         pipelines::Client(self.clone())
     }
-    pub fn triggers(&self) -> triggers::Client {
+    pub fn triggers_client(&self) -> triggers::Client {
         triggers::Client(self.clone())
     }
 }

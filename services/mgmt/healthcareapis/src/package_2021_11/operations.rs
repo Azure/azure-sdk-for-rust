@@ -74,43 +74,43 @@ impl Client {
             pipeline,
         }
     }
-    pub fn dicom_services(&self) -> dicom_services::Client {
+    pub fn dicom_services_client(&self) -> dicom_services::Client {
         dicom_services::Client(self.clone())
     }
-    pub fn fhir_destinations(&self) -> fhir_destinations::Client {
+    pub fn fhir_destinations_client(&self) -> fhir_destinations::Client {
         fhir_destinations::Client(self.clone())
     }
-    pub fn fhir_services(&self) -> fhir_services::Client {
+    pub fn fhir_services_client(&self) -> fhir_services::Client {
         fhir_services::Client(self.clone())
     }
-    pub fn iot_connector_fhir_destination(&self) -> iot_connector_fhir_destination::Client {
+    pub fn iot_connector_fhir_destination_client(&self) -> iot_connector_fhir_destination::Client {
         iot_connector_fhir_destination::Client(self.clone())
     }
-    pub fn iot_connectors(&self) -> iot_connectors::Client {
+    pub fn iot_connectors_client(&self) -> iot_connectors::Client {
         iot_connectors::Client(self.clone())
     }
-    pub fn operation_results(&self) -> operation_results::Client {
+    pub fn operation_results_client(&self) -> operation_results::Client {
         operation_results::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn services(&self) -> services::Client {
+    pub fn services_client(&self) -> services::Client {
         services::Client(self.clone())
     }
-    pub fn workspace_private_endpoint_connections(&self) -> workspace_private_endpoint_connections::Client {
+    pub fn workspace_private_endpoint_connections_client(&self) -> workspace_private_endpoint_connections::Client {
         workspace_private_endpoint_connections::Client(self.clone())
     }
-    pub fn workspace_private_link_resources(&self) -> workspace_private_link_resources::Client {
+    pub fn workspace_private_link_resources_client(&self) -> workspace_private_link_resources::Client {
         workspace_private_link_resources::Client(self.clone())
     }
-    pub fn workspaces(&self) -> workspaces::Client {
+    pub fn workspaces_client(&self) -> workspaces::Client {
         workspaces::Client(self.clone())
     }
 }

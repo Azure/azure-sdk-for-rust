@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn jobs(&self) -> jobs::Client {
+    pub fn jobs_client(&self) -> jobs::Client {
         jobs::Client(self.clone())
     }
-    pub fn providers(&self) -> providers::Client {
+    pub fn providers_client(&self) -> providers::Client {
         providers::Client(self.clone())
     }
-    pub fn quotas(&self) -> quotas::Client {
+    pub fn quotas_client(&self) -> quotas::Client {
         quotas::Client(self.clone())
     }
-    pub fn storage(&self) -> storage::Client {
+    pub fn storage_client(&self) -> storage::Client {
         storage::Client(self.clone())
     }
 }

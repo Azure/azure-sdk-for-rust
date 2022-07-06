@@ -74,58 +74,58 @@ impl Client {
             pipeline,
         }
     }
-    pub fn hyper_v_cluster(&self) -> hyper_v_cluster::Client {
+    pub fn hyper_v_cluster_client(&self) -> hyper_v_cluster::Client {
         hyper_v_cluster::Client(self.clone())
     }
-    pub fn hyper_v_host(&self) -> hyper_v_host::Client {
+    pub fn hyper_v_host_client(&self) -> hyper_v_host::Client {
         hyper_v_host::Client(self.clone())
     }
-    pub fn hyper_v_jobs(&self) -> hyper_v_jobs::Client {
+    pub fn hyper_v_jobs_client(&self) -> hyper_v_jobs::Client {
         hyper_v_jobs::Client(self.clone())
     }
-    pub fn hyper_v_machines(&self) -> hyper_v_machines::Client {
+    pub fn hyper_v_machines_client(&self) -> hyper_v_machines::Client {
         hyper_v_machines::Client(self.clone())
     }
-    pub fn hyper_v_operations_status(&self) -> hyper_v_operations_status::Client {
+    pub fn hyper_v_operations_status_client(&self) -> hyper_v_operations_status::Client {
         hyper_v_operations_status::Client(self.clone())
     }
-    pub fn hyper_v_run_as_accounts(&self) -> hyper_v_run_as_accounts::Client {
+    pub fn hyper_v_run_as_accounts_client(&self) -> hyper_v_run_as_accounts::Client {
         hyper_v_run_as_accounts::Client(self.clone())
     }
-    pub fn hyper_v_sites(&self) -> hyper_v_sites::Client {
+    pub fn hyper_v_sites_client(&self) -> hyper_v_sites::Client {
         hyper_v_sites::Client(self.clone())
     }
-    pub fn jobs(&self) -> jobs::Client {
+    pub fn jobs_client(&self) -> jobs::Client {
         jobs::Client(self.clone())
     }
-    pub fn machines(&self) -> machines::Client {
+    pub fn machines_client(&self) -> machines::Client {
         machines::Client(self.clone())
     }
-    pub fn master_sites(&self) -> master_sites::Client {
+    pub fn master_sites_client(&self) -> master_sites::Client {
         master_sites::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connection(&self) -> private_endpoint_connection::Client {
+    pub fn private_endpoint_connection_client(&self) -> private_endpoint_connection::Client {
         private_endpoint_connection::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn run_as_accounts(&self) -> run_as_accounts::Client {
+    pub fn run_as_accounts_client(&self) -> run_as_accounts::Client {
         run_as_accounts::Client(self.clone())
     }
-    pub fn sites(&self) -> sites::Client {
+    pub fn sites_client(&self) -> sites::Client {
         sites::Client(self.clone())
     }
-    pub fn v_center(&self) -> v_center::Client {
+    pub fn v_center_client(&self) -> v_center::Client {
         v_center::Client(self.clone())
     }
-    pub fn v_mware_operations_status(&self) -> v_mware_operations_status::Client {
+    pub fn v_mware_operations_status_client(&self) -> v_mware_operations_status::Client {
         v_mware_operations_status::Client(self.clone())
     }
-    pub fn v_mware_sites(&self) -> v_mware_sites::Client {
+    pub fn v_mware_sites_client(&self) -> v_mware_sites::Client {
         v_mware_sites::Client(self.clone())
     }
 }

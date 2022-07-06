@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn digital_twin_models(&self) -> digital_twin_models::Client {
+    pub fn digital_twin_models_client(&self) -> digital_twin_models::Client {
         digital_twin_models::Client(self.clone())
     }
-    pub fn digital_twins(&self) -> digital_twins::Client {
+    pub fn digital_twins_client(&self) -> digital_twins::Client {
         digital_twins::Client(self.clone())
     }
-    pub fn event_routes(&self) -> event_routes::Client {
+    pub fn event_routes_client(&self) -> event_routes::Client {
         event_routes::Client(self.clone())
     }
-    pub fn query(&self) -> query::Client {
+    pub fn query_client(&self) -> query::Client {
         query::Client(self.clone())
     }
 }

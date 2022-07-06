@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn connected_cluster(&self) -> connected_cluster::Client {
+    pub fn connected_cluster_client(&self) -> connected_cluster::Client {
         connected_cluster::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

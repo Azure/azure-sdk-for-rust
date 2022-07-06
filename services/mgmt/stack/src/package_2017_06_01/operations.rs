@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn cloud_manifest_file(&self) -> cloud_manifest_file::Client {
+    pub fn cloud_manifest_file_client(&self) -> cloud_manifest_file::Client {
         cloud_manifest_file::Client(self.clone())
     }
-    pub fn customer_subscriptions(&self) -> customer_subscriptions::Client {
+    pub fn customer_subscriptions_client(&self) -> customer_subscriptions::Client {
         customer_subscriptions::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn products(&self) -> products::Client {
+    pub fn products_client(&self) -> products::Client {
         products::Client(self.clone())
     }
-    pub fn registrations(&self) -> registrations::Client {
+    pub fn registrations_client(&self) -> registrations::Client {
         registrations::Client(self.clone())
     }
 }

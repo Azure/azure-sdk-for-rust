@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn changes(&self) -> changes::Client {
+    pub fn changes_client(&self) -> changes::Client {
         changes::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn resource_changes(&self) -> resource_changes::Client {
+    pub fn resource_changes_client(&self) -> resource_changes::Client {
         resource_changes::Client(self.clone())
     }
 }

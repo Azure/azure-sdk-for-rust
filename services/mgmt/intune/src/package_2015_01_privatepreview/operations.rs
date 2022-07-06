@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn android(&self) -> android::Client {
+    pub fn android_client(&self) -> android::Client {
         android::Client(self.clone())
     }
-    pub fn ios(&self) -> ios::Client {
+    pub fn ios_client(&self) -> ios::Client {
         ios::Client(self.clone())
     }
 }

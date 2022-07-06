@@ -74,203 +74,207 @@ impl Client {
             pipeline,
         }
     }
-    pub fn azure_ad_only_authentications(&self) -> azure_ad_only_authentications::Client {
+    pub fn azure_ad_only_authentications_client(&self) -> azure_ad_only_authentications::Client {
         azure_ad_only_authentications::Client(self.clone())
     }
-    pub fn big_data_pools(&self) -> big_data_pools::Client {
+    pub fn big_data_pools_client(&self) -> big_data_pools::Client {
         big_data_pools::Client(self.clone())
     }
-    pub fn data_masking_policies(&self) -> data_masking_policies::Client {
+    pub fn data_masking_policies_client(&self) -> data_masking_policies::Client {
         data_masking_policies::Client(self.clone())
     }
-    pub fn data_masking_rules(&self) -> data_masking_rules::Client {
+    pub fn data_masking_rules_client(&self) -> data_masking_rules::Client {
         data_masking_rules::Client(self.clone())
     }
-    pub fn extended_sql_pool_blob_auditing_policies(&self) -> extended_sql_pool_blob_auditing_policies::Client {
+    pub fn extended_sql_pool_blob_auditing_policies_client(&self) -> extended_sql_pool_blob_auditing_policies::Client {
         extended_sql_pool_blob_auditing_policies::Client(self.clone())
     }
-    pub fn integration_runtime_auth_keys(&self) -> integration_runtime_auth_keys::Client {
+    pub fn integration_runtime_auth_keys_client(&self) -> integration_runtime_auth_keys::Client {
         integration_runtime_auth_keys::Client(self.clone())
     }
-    pub fn integration_runtime_connection_infos(&self) -> integration_runtime_connection_infos::Client {
+    pub fn integration_runtime_connection_infos_client(&self) -> integration_runtime_connection_infos::Client {
         integration_runtime_connection_infos::Client(self.clone())
     }
-    pub fn integration_runtime_credentials(&self) -> integration_runtime_credentials::Client {
+    pub fn integration_runtime_credentials_client(&self) -> integration_runtime_credentials::Client {
         integration_runtime_credentials::Client(self.clone())
     }
-    pub fn integration_runtime_monitoring_data(&self) -> integration_runtime_monitoring_data::Client {
+    pub fn integration_runtime_monitoring_data_client(&self) -> integration_runtime_monitoring_data::Client {
         integration_runtime_monitoring_data::Client(self.clone())
     }
-    pub fn integration_runtime_node_ip_address(&self) -> integration_runtime_node_ip_address::Client {
+    pub fn integration_runtime_node_ip_address_client(&self) -> integration_runtime_node_ip_address::Client {
         integration_runtime_node_ip_address::Client(self.clone())
     }
-    pub fn integration_runtime_nodes(&self) -> integration_runtime_nodes::Client {
+    pub fn integration_runtime_nodes_client(&self) -> integration_runtime_nodes::Client {
         integration_runtime_nodes::Client(self.clone())
     }
-    pub fn integration_runtime_object_metadata(&self) -> integration_runtime_object_metadata::Client {
+    pub fn integration_runtime_object_metadata_client(&self) -> integration_runtime_object_metadata::Client {
         integration_runtime_object_metadata::Client(self.clone())
     }
-    pub fn integration_runtime_status(&self) -> integration_runtime_status::Client {
+    pub fn integration_runtime_status_client(&self) -> integration_runtime_status::Client {
         integration_runtime_status::Client(self.clone())
     }
-    pub fn integration_runtimes(&self) -> integration_runtimes::Client {
+    pub fn integration_runtimes_client(&self) -> integration_runtimes::Client {
         integration_runtimes::Client(self.clone())
     }
-    pub fn ip_firewall_rules(&self) -> ip_firewall_rules::Client {
+    pub fn ip_firewall_rules_client(&self) -> ip_firewall_rules::Client {
         ip_firewall_rules::Client(self.clone())
     }
-    pub fn keys(&self) -> keys::Client {
+    pub fn keys_client(&self) -> keys::Client {
         keys::Client(self.clone())
     }
-    pub fn libraries(&self) -> libraries::Client {
+    pub fn libraries_client(&self) -> libraries::Client {
         libraries::Client(self.clone())
     }
-    pub fn library(&self) -> library::Client {
+    pub fn library_client(&self) -> library::Client {
         library::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_endpoint_connections_private_link_hub(&self) -> private_endpoint_connections_private_link_hub::Client {
+    pub fn private_endpoint_connections_private_link_hub_client(&self) -> private_endpoint_connections_private_link_hub::Client {
         private_endpoint_connections_private_link_hub::Client(self.clone())
     }
-    pub fn private_link_hub_private_link_resources(&self) -> private_link_hub_private_link_resources::Client {
+    pub fn private_link_hub_private_link_resources_client(&self) -> private_link_hub_private_link_resources::Client {
         private_link_hub_private_link_resources::Client(self.clone())
     }
-    pub fn private_link_hubs(&self) -> private_link_hubs::Client {
+    pub fn private_link_hubs_client(&self) -> private_link_hubs::Client {
         private_link_hubs::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn restorable_dropped_sql_pools(&self) -> restorable_dropped_sql_pools::Client {
+    pub fn restorable_dropped_sql_pools_client(&self) -> restorable_dropped_sql_pools::Client {
         restorable_dropped_sql_pools::Client(self.clone())
     }
-    pub fn spark_configuration(&self) -> spark_configuration::Client {
+    pub fn spark_configuration_client(&self) -> spark_configuration::Client {
         spark_configuration::Client(self.clone())
     }
-    pub fn spark_configurations(&self) -> spark_configurations::Client {
+    pub fn spark_configurations_client(&self) -> spark_configurations::Client {
         spark_configurations::Client(self.clone())
     }
-    pub fn sql_pool_blob_auditing_policies(&self) -> sql_pool_blob_auditing_policies::Client {
+    pub fn sql_pool_blob_auditing_policies_client(&self) -> sql_pool_blob_auditing_policies::Client {
         sql_pool_blob_auditing_policies::Client(self.clone())
     }
-    pub fn sql_pool_columns(&self) -> sql_pool_columns::Client {
+    pub fn sql_pool_columns_client(&self) -> sql_pool_columns::Client {
         sql_pool_columns::Client(self.clone())
     }
-    pub fn sql_pool_connection_policies(&self) -> sql_pool_connection_policies::Client {
+    pub fn sql_pool_connection_policies_client(&self) -> sql_pool_connection_policies::Client {
         sql_pool_connection_policies::Client(self.clone())
     }
-    pub fn sql_pool_data_warehouse_user_activities(&self) -> sql_pool_data_warehouse_user_activities::Client {
+    pub fn sql_pool_data_warehouse_user_activities_client(&self) -> sql_pool_data_warehouse_user_activities::Client {
         sql_pool_data_warehouse_user_activities::Client(self.clone())
     }
-    pub fn sql_pool_geo_backup_policies(&self) -> sql_pool_geo_backup_policies::Client {
+    pub fn sql_pool_geo_backup_policies_client(&self) -> sql_pool_geo_backup_policies::Client {
         sql_pool_geo_backup_policies::Client(self.clone())
     }
-    pub fn sql_pool_maintenance_window_options(&self) -> sql_pool_maintenance_window_options::Client {
+    pub fn sql_pool_maintenance_window_options_client(&self) -> sql_pool_maintenance_window_options::Client {
         sql_pool_maintenance_window_options::Client(self.clone())
     }
-    pub fn sql_pool_maintenance_windows(&self) -> sql_pool_maintenance_windows::Client {
+    pub fn sql_pool_maintenance_windows_client(&self) -> sql_pool_maintenance_windows::Client {
         sql_pool_maintenance_windows::Client(self.clone())
     }
-    pub fn sql_pool_metadata_sync_configs(&self) -> sql_pool_metadata_sync_configs::Client {
+    pub fn sql_pool_metadata_sync_configs_client(&self) -> sql_pool_metadata_sync_configs::Client {
         sql_pool_metadata_sync_configs::Client(self.clone())
     }
-    pub fn sql_pool_operation_results(&self) -> sql_pool_operation_results::Client {
+    pub fn sql_pool_operation_results_client(&self) -> sql_pool_operation_results::Client {
         sql_pool_operation_results::Client(self.clone())
     }
-    pub fn sql_pool_operations(&self) -> sql_pool_operations::Client {
+    pub fn sql_pool_operations_client(&self) -> sql_pool_operations::Client {
         sql_pool_operations::Client(self.clone())
     }
-    pub fn sql_pool_recommended_sensitivity_labels(&self) -> sql_pool_recommended_sensitivity_labels::Client {
+    pub fn sql_pool_recommended_sensitivity_labels_client(&self) -> sql_pool_recommended_sensitivity_labels::Client {
         sql_pool_recommended_sensitivity_labels::Client(self.clone())
     }
-    pub fn sql_pool_replication_links(&self) -> sql_pool_replication_links::Client {
+    pub fn sql_pool_replication_links_client(&self) -> sql_pool_replication_links::Client {
         sql_pool_replication_links::Client(self.clone())
     }
-    pub fn sql_pool_restore_points(&self) -> sql_pool_restore_points::Client {
+    pub fn sql_pool_restore_points_client(&self) -> sql_pool_restore_points::Client {
         sql_pool_restore_points::Client(self.clone())
     }
-    pub fn sql_pool_schemas(&self) -> sql_pool_schemas::Client {
+    pub fn sql_pool_schemas_client(&self) -> sql_pool_schemas::Client {
         sql_pool_schemas::Client(self.clone())
     }
-    pub fn sql_pool_security_alert_policies(&self) -> sql_pool_security_alert_policies::Client {
+    pub fn sql_pool_security_alert_policies_client(&self) -> sql_pool_security_alert_policies::Client {
         sql_pool_security_alert_policies::Client(self.clone())
     }
-    pub fn sql_pool_sensitivity_labels(&self) -> sql_pool_sensitivity_labels::Client {
+    pub fn sql_pool_sensitivity_labels_client(&self) -> sql_pool_sensitivity_labels::Client {
         sql_pool_sensitivity_labels::Client(self.clone())
     }
-    pub fn sql_pool_table_columns(&self) -> sql_pool_table_columns::Client {
+    pub fn sql_pool_table_columns_client(&self) -> sql_pool_table_columns::Client {
         sql_pool_table_columns::Client(self.clone())
     }
-    pub fn sql_pool_tables(&self) -> sql_pool_tables::Client {
+    pub fn sql_pool_tables_client(&self) -> sql_pool_tables::Client {
         sql_pool_tables::Client(self.clone())
     }
-    pub fn sql_pool_transparent_data_encryptions(&self) -> sql_pool_transparent_data_encryptions::Client {
+    pub fn sql_pool_transparent_data_encryptions_client(&self) -> sql_pool_transparent_data_encryptions::Client {
         sql_pool_transparent_data_encryptions::Client(self.clone())
     }
-    pub fn sql_pool_usages(&self) -> sql_pool_usages::Client {
+    pub fn sql_pool_usages_client(&self) -> sql_pool_usages::Client {
         sql_pool_usages::Client(self.clone())
     }
-    pub fn sql_pool_vulnerability_assessment_rule_baselines(&self) -> sql_pool_vulnerability_assessment_rule_baselines::Client {
+    pub fn sql_pool_vulnerability_assessment_rule_baselines_client(&self) -> sql_pool_vulnerability_assessment_rule_baselines::Client {
         sql_pool_vulnerability_assessment_rule_baselines::Client(self.clone())
     }
-    pub fn sql_pool_vulnerability_assessment_scans(&self) -> sql_pool_vulnerability_assessment_scans::Client {
+    pub fn sql_pool_vulnerability_assessment_scans_client(&self) -> sql_pool_vulnerability_assessment_scans::Client {
         sql_pool_vulnerability_assessment_scans::Client(self.clone())
     }
-    pub fn sql_pool_vulnerability_assessments(&self) -> sql_pool_vulnerability_assessments::Client {
+    pub fn sql_pool_vulnerability_assessments_client(&self) -> sql_pool_vulnerability_assessments::Client {
         sql_pool_vulnerability_assessments::Client(self.clone())
     }
-    pub fn sql_pool_workload_classifier(&self) -> sql_pool_workload_classifier::Client {
+    pub fn sql_pool_workload_classifier_client(&self) -> sql_pool_workload_classifier::Client {
         sql_pool_workload_classifier::Client(self.clone())
     }
-    pub fn sql_pool_workload_group(&self) -> sql_pool_workload_group::Client {
+    pub fn sql_pool_workload_group_client(&self) -> sql_pool_workload_group::Client {
         sql_pool_workload_group::Client(self.clone())
     }
-    pub fn sql_pools(&self) -> sql_pools::Client {
+    pub fn sql_pools_client(&self) -> sql_pools::Client {
         sql_pools::Client(self.clone())
     }
-    pub fn workspace_aad_admins(&self) -> workspace_aad_admins::Client {
+    pub fn workspace_aad_admins_client(&self) -> workspace_aad_admins::Client {
         workspace_aad_admins::Client(self.clone())
     }
-    pub fn workspace_managed_identity_sql_control_settings(&self) -> workspace_managed_identity_sql_control_settings::Client {
+    pub fn workspace_managed_identity_sql_control_settings_client(&self) -> workspace_managed_identity_sql_control_settings::Client {
         workspace_managed_identity_sql_control_settings::Client(self.clone())
     }
-    pub fn workspace_managed_sql_server_blob_auditing_policies(&self) -> workspace_managed_sql_server_blob_auditing_policies::Client {
+    pub fn workspace_managed_sql_server_blob_auditing_policies_client(
+        &self,
+    ) -> workspace_managed_sql_server_blob_auditing_policies::Client {
         workspace_managed_sql_server_blob_auditing_policies::Client(self.clone())
     }
-    pub fn workspace_managed_sql_server_dedicated_sql_minimal_tls_settings(
+    pub fn workspace_managed_sql_server_dedicated_sql_minimal_tls_settings_client(
         &self,
     ) -> workspace_managed_sql_server_dedicated_sql_minimal_tls_settings::Client {
         workspace_managed_sql_server_dedicated_sql_minimal_tls_settings::Client(self.clone())
     }
-    pub fn workspace_managed_sql_server_encryption_protector(&self) -> workspace_managed_sql_server_encryption_protector::Client {
+    pub fn workspace_managed_sql_server_encryption_protector_client(&self) -> workspace_managed_sql_server_encryption_protector::Client {
         workspace_managed_sql_server_encryption_protector::Client(self.clone())
     }
-    pub fn workspace_managed_sql_server_extended_blob_auditing_policies(
+    pub fn workspace_managed_sql_server_extended_blob_auditing_policies_client(
         &self,
     ) -> workspace_managed_sql_server_extended_blob_auditing_policies::Client {
         workspace_managed_sql_server_extended_blob_auditing_policies::Client(self.clone())
     }
-    pub fn workspace_managed_sql_server_recoverable_sql_pools(&self) -> workspace_managed_sql_server_recoverable_sql_pools::Client {
+    pub fn workspace_managed_sql_server_recoverable_sql_pools_client(&self) -> workspace_managed_sql_server_recoverable_sql_pools::Client {
         workspace_managed_sql_server_recoverable_sql_pools::Client(self.clone())
     }
-    pub fn workspace_managed_sql_server_security_alert_policy(&self) -> workspace_managed_sql_server_security_alert_policy::Client {
+    pub fn workspace_managed_sql_server_security_alert_policy_client(&self) -> workspace_managed_sql_server_security_alert_policy::Client {
         workspace_managed_sql_server_security_alert_policy::Client(self.clone())
     }
-    pub fn workspace_managed_sql_server_usages(&self) -> workspace_managed_sql_server_usages::Client {
+    pub fn workspace_managed_sql_server_usages_client(&self) -> workspace_managed_sql_server_usages::Client {
         workspace_managed_sql_server_usages::Client(self.clone())
     }
-    pub fn workspace_managed_sql_server_vulnerability_assessments(&self) -> workspace_managed_sql_server_vulnerability_assessments::Client {
+    pub fn workspace_managed_sql_server_vulnerability_assessments_client(
+        &self,
+    ) -> workspace_managed_sql_server_vulnerability_assessments::Client {
         workspace_managed_sql_server_vulnerability_assessments::Client(self.clone())
     }
-    pub fn workspace_sql_aad_admins(&self) -> workspace_sql_aad_admins::Client {
+    pub fn workspace_sql_aad_admins_client(&self) -> workspace_sql_aad_admins::Client {
         workspace_sql_aad_admins::Client(self.clone())
     }
-    pub fn workspaces(&self) -> workspaces::Client {
+    pub fn workspaces_client(&self) -> workspaces::Client {
         workspaces::Client(self.clone())
     }
 }

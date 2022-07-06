@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn hybrid_use_benefit(&self) -> hybrid_use_benefit::Client {
+    pub fn hybrid_use_benefit_client(&self) -> hybrid_use_benefit::Client {
         hybrid_use_benefit::Client(self.clone())
     }
-    pub fn hybrid_use_benefit_revision(&self) -> hybrid_use_benefit_revision::Client {
+    pub fn hybrid_use_benefit_revision_client(&self) -> hybrid_use_benefit_revision::Client {
         hybrid_use_benefit_revision::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn software_plan(&self) -> software_plan::Client {
+    pub fn software_plan_client(&self) -> software_plan::Client {
         software_plan::Client(self.clone())
     }
 }

@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn availability_statuses(&self) -> availability_statuses::Client {
+    pub fn availability_statuses_client(&self) -> availability_statuses::Client {
         availability_statuses::Client(self.clone())
     }
-    pub fn child_availability_statuses(&self) -> child_availability_statuses::Client {
+    pub fn child_availability_statuses_client(&self) -> child_availability_statuses::Client {
         child_availability_statuses::Client(self.clone())
     }
-    pub fn child_resources(&self) -> child_resources::Client {
+    pub fn child_resources_client(&self) -> child_resources::Client {
         child_resources::Client(self.clone())
     }
-    pub fn emerging_issues(&self) -> emerging_issues::Client {
+    pub fn emerging_issues_client(&self) -> emerging_issues::Client {
         emerging_issues::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

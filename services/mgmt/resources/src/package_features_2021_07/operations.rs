@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn features(&self) -> features::Client {
+    pub fn features_client(&self) -> features::Client {
         features::Client(self.clone())
     }
-    pub fn subscription_feature_registrations(&self) -> subscription_feature_registrations::Client {
+    pub fn subscription_feature_registrations_client(&self) -> subscription_feature_registrations::Client {
         subscription_feature_registrations::Client(self.clone())
     }
 }

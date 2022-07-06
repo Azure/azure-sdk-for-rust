@@ -74,25 +74,25 @@ impl Client {
             pipeline,
         }
     }
-    pub fn guest_configuration_assignment_reports(&self) -> guest_configuration_assignment_reports::Client {
+    pub fn guest_configuration_assignment_reports_client(&self) -> guest_configuration_assignment_reports::Client {
         guest_configuration_assignment_reports::Client(self.clone())
     }
-    pub fn guest_configuration_assignment_reports_vmss(&self) -> guest_configuration_assignment_reports_vmss::Client {
+    pub fn guest_configuration_assignment_reports_vmss_client(&self) -> guest_configuration_assignment_reports_vmss::Client {
         guest_configuration_assignment_reports_vmss::Client(self.clone())
     }
-    pub fn guest_configuration_assignments(&self) -> guest_configuration_assignments::Client {
+    pub fn guest_configuration_assignments_client(&self) -> guest_configuration_assignments::Client {
         guest_configuration_assignments::Client(self.clone())
     }
-    pub fn guest_configuration_assignments_vmss(&self) -> guest_configuration_assignments_vmss::Client {
+    pub fn guest_configuration_assignments_vmss_client(&self) -> guest_configuration_assignments_vmss::Client {
         guest_configuration_assignments_vmss::Client(self.clone())
     }
-    pub fn guest_configuration_hcrp_assignment_reports(&self) -> guest_configuration_hcrp_assignment_reports::Client {
+    pub fn guest_configuration_hcrp_assignment_reports_client(&self) -> guest_configuration_hcrp_assignment_reports::Client {
         guest_configuration_hcrp_assignment_reports::Client(self.clone())
     }
-    pub fn guest_configuration_hcrp_assignments(&self) -> guest_configuration_hcrp_assignments::Client {
+    pub fn guest_configuration_hcrp_assignments_client(&self) -> guest_configuration_hcrp_assignments::Client {
         guest_configuration_hcrp_assignments::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

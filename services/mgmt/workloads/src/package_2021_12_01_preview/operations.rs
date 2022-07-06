@@ -74,34 +74,34 @@ impl Client {
             pipeline,
         }
     }
-    pub fn monitors(&self) -> monitors::Client {
+    pub fn monitors_client(&self) -> monitors::Client {
         monitors::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn php_workloads(&self) -> php_workloads::Client {
+    pub fn php_workloads_client(&self) -> php_workloads::Client {
         php_workloads::Client(self.clone())
     }
-    pub fn provider_instances(&self) -> provider_instances::Client {
+    pub fn provider_instances_client(&self) -> provider_instances::Client {
         provider_instances::Client(self.clone())
     }
-    pub fn sap_application_server_instances(&self) -> sap_application_server_instances::Client {
+    pub fn sap_application_server_instances_client(&self) -> sap_application_server_instances::Client {
         sap_application_server_instances::Client(self.clone())
     }
-    pub fn sap_central_instances(&self) -> sap_central_instances::Client {
+    pub fn sap_central_instances_client(&self) -> sap_central_instances::Client {
         sap_central_instances::Client(self.clone())
     }
-    pub fn sap_database_instances(&self) -> sap_database_instances::Client {
+    pub fn sap_database_instances_client(&self) -> sap_database_instances::Client {
         sap_database_instances::Client(self.clone())
     }
-    pub fn sap_virtual_instances(&self) -> sap_virtual_instances::Client {
+    pub fn sap_virtual_instances_client(&self) -> sap_virtual_instances::Client {
         sap_virtual_instances::Client(self.clone())
     }
-    pub fn skus(&self) -> skus::Client {
+    pub fn skus_client(&self) -> skus::Client {
         skus::Client(self.clone())
     }
-    pub fn wordpress_instances(&self) -> wordpress_instances::Client {
+    pub fn wordpress_instances_client(&self) -> wordpress_instances::Client {
         wordpress_instances::Client(self.clone())
     }
 }

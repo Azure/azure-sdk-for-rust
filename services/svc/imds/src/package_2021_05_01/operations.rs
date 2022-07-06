@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn attested(&self) -> attested::Client {
+    pub fn attested_client(&self) -> attested::Client {
         attested::Client(self.clone())
     }
-    pub fn identity(&self) -> identity::Client {
+    pub fn identity_client(&self) -> identity::Client {
         identity::Client(self.clone())
     }
-    pub fn instances(&self) -> instances::Client {
+    pub fn instances_client(&self) -> instances::Client {
         instances::Client(self.clone())
     }
 }

@@ -74,25 +74,25 @@ impl Client {
             pipeline,
         }
     }
-    pub fn certificates(&self) -> certificates::Client {
+    pub fn certificates_client(&self) -> certificates::Client {
         certificates::Client(self.clone())
     }
-    pub fn iot_hub(&self) -> iot_hub::Client {
+    pub fn iot_hub_client(&self) -> iot_hub::Client {
         iot_hub::Client(self.clone())
     }
-    pub fn iot_hub_resource(&self) -> iot_hub_resource::Client {
+    pub fn iot_hub_resource_client(&self) -> iot_hub_resource::Client {
         iot_hub_resource::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn resource_provider_common(&self) -> resource_provider_common::Client {
+    pub fn resource_provider_common_client(&self) -> resource_provider_common::Client {
         resource_provider_common::Client(self.clone())
     }
 }

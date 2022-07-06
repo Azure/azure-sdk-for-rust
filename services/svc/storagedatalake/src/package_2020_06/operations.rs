@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn file_system(&self) -> file_system::Client {
+    pub fn file_system_client(&self) -> file_system::Client {
         file_system::Client(self.clone())
     }
-    pub fn path(&self) -> path::Client {
+    pub fn path_client(&self) -> path::Client {
         path::Client(self.clone())
     }
-    pub fn service(&self) -> service::Client {
+    pub fn service_client(&self) -> service::Client {
         service::Client(self.clone())
     }
 }

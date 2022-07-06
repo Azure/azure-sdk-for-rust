@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn applications(&self) -> applications::Client {
+    pub fn applications_client(&self) -> applications::Client {
         applications::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn saa_s(&self) -> saa_s::Client {
+    pub fn saa_s_client(&self) -> saa_s::Client {
         saa_s::Client(self.clone())
     }
-    pub fn saa_s_operation(&self) -> saa_s_operation::Client {
+    pub fn saa_s_operation_client(&self) -> saa_s_operation::Client {
         saa_s_operation::Client(self.clone())
     }
-    pub fn saas_resources(&self) -> saas_resources::Client {
+    pub fn saas_resources_client(&self) -> saas_resources::Client {
         saas_resources::Client(self.clone())
     }
-    pub fn saas_subscription_level(&self) -> saas_subscription_level::Client {
+    pub fn saas_subscription_level_client(&self) -> saas_subscription_level::Client {
         saas_subscription_level::Client(self.clone())
     }
 }

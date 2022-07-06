@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn private_zones(&self) -> private_zones::Client {
+    pub fn private_zones_client(&self) -> private_zones::Client {
         private_zones::Client(self.clone())
     }
-    pub fn record_sets(&self) -> record_sets::Client {
+    pub fn record_sets_client(&self) -> record_sets::Client {
         record_sets::Client(self.clone())
     }
-    pub fn virtual_network_links(&self) -> virtual_network_links::Client {
+    pub fn virtual_network_links_client(&self) -> virtual_network_links::Client {
         virtual_network_links::Client(self.clone())
     }
 }

@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn bots(&self) -> bots::Client {
+    pub fn bots_client(&self) -> bots::Client {
         bots::Client(self.clone())
     }
-    pub fn create(&self) -> create::Client {
+    pub fn create_client(&self) -> create::Client {
         create::Client(self.clone())
     }
-    pub fn delete(&self) -> delete::Client {
+    pub fn delete_client(&self) -> delete::Client {
         delete::Client(self.clone())
     }
-    pub fn get(&self) -> get::Client {
+    pub fn get_client(&self) -> get::Client {
         get::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn patch(&self) -> patch::Client {
+    pub fn patch_client(&self) -> patch::Client {
         patch::Client(self.clone())
     }
 }

@@ -74,284 +74,284 @@ impl Client {
             pipeline,
         }
     }
-    pub fn backup_long_term_retention_policies(&self) -> backup_long_term_retention_policies::Client {
+    pub fn backup_long_term_retention_policies_client(&self) -> backup_long_term_retention_policies::Client {
         backup_long_term_retention_policies::Client(self.clone())
     }
-    pub fn backup_short_term_retention_policies(&self) -> backup_short_term_retention_policies::Client {
+    pub fn backup_short_term_retention_policies_client(&self) -> backup_short_term_retention_policies::Client {
         backup_short_term_retention_policies::Client(self.clone())
     }
-    pub fn capabilities(&self) -> capabilities::Client {
+    pub fn capabilities_client(&self) -> capabilities::Client {
         capabilities::Client(self.clone())
     }
-    pub fn data_masking_policies(&self) -> data_masking_policies::Client {
+    pub fn data_masking_policies_client(&self) -> data_masking_policies::Client {
         data_masking_policies::Client(self.clone())
     }
-    pub fn data_masking_rules(&self) -> data_masking_rules::Client {
+    pub fn data_masking_rules_client(&self) -> data_masking_rules::Client {
         data_masking_rules::Client(self.clone())
     }
-    pub fn database_automatic_tuning(&self) -> database_automatic_tuning::Client {
+    pub fn database_automatic_tuning_client(&self) -> database_automatic_tuning::Client {
         database_automatic_tuning::Client(self.clone())
     }
-    pub fn database_blob_auditing_policies(&self) -> database_blob_auditing_policies::Client {
+    pub fn database_blob_auditing_policies_client(&self) -> database_blob_auditing_policies::Client {
         database_blob_auditing_policies::Client(self.clone())
     }
-    pub fn database_operations(&self) -> database_operations::Client {
+    pub fn database_operations_client(&self) -> database_operations::Client {
         database_operations::Client(self.clone())
     }
-    pub fn database_threat_detection_policies(&self) -> database_threat_detection_policies::Client {
+    pub fn database_threat_detection_policies_client(&self) -> database_threat_detection_policies::Client {
         database_threat_detection_policies::Client(self.clone())
     }
-    pub fn database_usages(&self) -> database_usages::Client {
+    pub fn database_usages_client(&self) -> database_usages::Client {
         database_usages::Client(self.clone())
     }
-    pub fn database_vulnerability_assessment_rule_baselines(&self) -> database_vulnerability_assessment_rule_baselines::Client {
+    pub fn database_vulnerability_assessment_rule_baselines_client(&self) -> database_vulnerability_assessment_rule_baselines::Client {
         database_vulnerability_assessment_rule_baselines::Client(self.clone())
     }
-    pub fn database_vulnerability_assessment_scans(&self) -> database_vulnerability_assessment_scans::Client {
+    pub fn database_vulnerability_assessment_scans_client(&self) -> database_vulnerability_assessment_scans::Client {
         database_vulnerability_assessment_scans::Client(self.clone())
     }
-    pub fn database_vulnerability_assessments(&self) -> database_vulnerability_assessments::Client {
+    pub fn database_vulnerability_assessments_client(&self) -> database_vulnerability_assessments::Client {
         database_vulnerability_assessments::Client(self.clone())
     }
-    pub fn databases(&self) -> databases::Client {
+    pub fn databases_client(&self) -> databases::Client {
         databases::Client(self.clone())
     }
-    pub fn elastic_pool_activities(&self) -> elastic_pool_activities::Client {
+    pub fn elastic_pool_activities_client(&self) -> elastic_pool_activities::Client {
         elastic_pool_activities::Client(self.clone())
     }
-    pub fn elastic_pool_database_activities(&self) -> elastic_pool_database_activities::Client {
+    pub fn elastic_pool_database_activities_client(&self) -> elastic_pool_database_activities::Client {
         elastic_pool_database_activities::Client(self.clone())
     }
-    pub fn elastic_pool_operations(&self) -> elastic_pool_operations::Client {
+    pub fn elastic_pool_operations_client(&self) -> elastic_pool_operations::Client {
         elastic_pool_operations::Client(self.clone())
     }
-    pub fn elastic_pools(&self) -> elastic_pools::Client {
+    pub fn elastic_pools_client(&self) -> elastic_pools::Client {
         elastic_pools::Client(self.clone())
     }
-    pub fn encryption_protectors(&self) -> encryption_protectors::Client {
+    pub fn encryption_protectors_client(&self) -> encryption_protectors::Client {
         encryption_protectors::Client(self.clone())
     }
-    pub fn extended_database_blob_auditing_policies(&self) -> extended_database_blob_auditing_policies::Client {
+    pub fn extended_database_blob_auditing_policies_client(&self) -> extended_database_blob_auditing_policies::Client {
         extended_database_blob_auditing_policies::Client(self.clone())
     }
-    pub fn extended_server_blob_auditing_policies(&self) -> extended_server_blob_auditing_policies::Client {
+    pub fn extended_server_blob_auditing_policies_client(&self) -> extended_server_blob_auditing_policies::Client {
         extended_server_blob_auditing_policies::Client(self.clone())
     }
-    pub fn failover_groups(&self) -> failover_groups::Client {
+    pub fn failover_groups_client(&self) -> failover_groups::Client {
         failover_groups::Client(self.clone())
     }
-    pub fn firewall_rules(&self) -> firewall_rules::Client {
+    pub fn firewall_rules_client(&self) -> firewall_rules::Client {
         firewall_rules::Client(self.clone())
     }
-    pub fn geo_backup_policies(&self) -> geo_backup_policies::Client {
+    pub fn geo_backup_policies_client(&self) -> geo_backup_policies::Client {
         geo_backup_policies::Client(self.clone())
     }
-    pub fn instance_failover_groups(&self) -> instance_failover_groups::Client {
+    pub fn instance_failover_groups_client(&self) -> instance_failover_groups::Client {
         instance_failover_groups::Client(self.clone())
     }
-    pub fn instance_pools(&self) -> instance_pools::Client {
+    pub fn instance_pools_client(&self) -> instance_pools::Client {
         instance_pools::Client(self.clone())
     }
-    pub fn job_agents(&self) -> job_agents::Client {
+    pub fn job_agents_client(&self) -> job_agents::Client {
         job_agents::Client(self.clone())
     }
-    pub fn job_credentials(&self) -> job_credentials::Client {
+    pub fn job_credentials_client(&self) -> job_credentials::Client {
         job_credentials::Client(self.clone())
     }
-    pub fn job_executions(&self) -> job_executions::Client {
+    pub fn job_executions_client(&self) -> job_executions::Client {
         job_executions::Client(self.clone())
     }
-    pub fn job_step_executions(&self) -> job_step_executions::Client {
+    pub fn job_step_executions_client(&self) -> job_step_executions::Client {
         job_step_executions::Client(self.clone())
     }
-    pub fn job_steps(&self) -> job_steps::Client {
+    pub fn job_steps_client(&self) -> job_steps::Client {
         job_steps::Client(self.clone())
     }
-    pub fn job_target_executions(&self) -> job_target_executions::Client {
+    pub fn job_target_executions_client(&self) -> job_target_executions::Client {
         job_target_executions::Client(self.clone())
     }
-    pub fn job_target_groups(&self) -> job_target_groups::Client {
+    pub fn job_target_groups_client(&self) -> job_target_groups::Client {
         job_target_groups::Client(self.clone())
     }
-    pub fn job_versions(&self) -> job_versions::Client {
+    pub fn job_versions_client(&self) -> job_versions::Client {
         job_versions::Client(self.clone())
     }
-    pub fn jobs(&self) -> jobs::Client {
+    pub fn jobs_client(&self) -> jobs::Client {
         jobs::Client(self.clone())
     }
-    pub fn long_term_retention_backups(&self) -> long_term_retention_backups::Client {
+    pub fn long_term_retention_backups_client(&self) -> long_term_retention_backups::Client {
         long_term_retention_backups::Client(self.clone())
     }
-    pub fn long_term_retention_managed_instance_backups(&self) -> long_term_retention_managed_instance_backups::Client {
+    pub fn long_term_retention_managed_instance_backups_client(&self) -> long_term_retention_managed_instance_backups::Client {
         long_term_retention_managed_instance_backups::Client(self.clone())
     }
-    pub fn managed_backup_short_term_retention_policies(&self) -> managed_backup_short_term_retention_policies::Client {
+    pub fn managed_backup_short_term_retention_policies_client(&self) -> managed_backup_short_term_retention_policies::Client {
         managed_backup_short_term_retention_policies::Client(self.clone())
     }
-    pub fn managed_database_security_alert_policies(&self) -> managed_database_security_alert_policies::Client {
+    pub fn managed_database_security_alert_policies_client(&self) -> managed_database_security_alert_policies::Client {
         managed_database_security_alert_policies::Client(self.clone())
     }
-    pub fn managed_database_sensitivity_labels(&self) -> managed_database_sensitivity_labels::Client {
+    pub fn managed_database_sensitivity_labels_client(&self) -> managed_database_sensitivity_labels::Client {
         managed_database_sensitivity_labels::Client(self.clone())
     }
-    pub fn managed_database_vulnerability_assessment_rule_baselines(
+    pub fn managed_database_vulnerability_assessment_rule_baselines_client(
         &self,
     ) -> managed_database_vulnerability_assessment_rule_baselines::Client {
         managed_database_vulnerability_assessment_rule_baselines::Client(self.clone())
     }
-    pub fn managed_database_vulnerability_assessment_scans(&self) -> managed_database_vulnerability_assessment_scans::Client {
+    pub fn managed_database_vulnerability_assessment_scans_client(&self) -> managed_database_vulnerability_assessment_scans::Client {
         managed_database_vulnerability_assessment_scans::Client(self.clone())
     }
-    pub fn managed_database_vulnerability_assessments(&self) -> managed_database_vulnerability_assessments::Client {
+    pub fn managed_database_vulnerability_assessments_client(&self) -> managed_database_vulnerability_assessments::Client {
         managed_database_vulnerability_assessments::Client(self.clone())
     }
-    pub fn managed_databases(&self) -> managed_databases::Client {
+    pub fn managed_databases_client(&self) -> managed_databases::Client {
         managed_databases::Client(self.clone())
     }
-    pub fn managed_instance_administrators(&self) -> managed_instance_administrators::Client {
+    pub fn managed_instance_administrators_client(&self) -> managed_instance_administrators::Client {
         managed_instance_administrators::Client(self.clone())
     }
-    pub fn managed_instance_azure_ad_only_authentications(&self) -> managed_instance_azure_ad_only_authentications::Client {
+    pub fn managed_instance_azure_ad_only_authentications_client(&self) -> managed_instance_azure_ad_only_authentications::Client {
         managed_instance_azure_ad_only_authentications::Client(self.clone())
     }
-    pub fn managed_instance_encryption_protectors(&self) -> managed_instance_encryption_protectors::Client {
+    pub fn managed_instance_encryption_protectors_client(&self) -> managed_instance_encryption_protectors::Client {
         managed_instance_encryption_protectors::Client(self.clone())
     }
-    pub fn managed_instance_keys(&self) -> managed_instance_keys::Client {
+    pub fn managed_instance_keys_client(&self) -> managed_instance_keys::Client {
         managed_instance_keys::Client(self.clone())
     }
-    pub fn managed_instance_long_term_retention_policies(&self) -> managed_instance_long_term_retention_policies::Client {
+    pub fn managed_instance_long_term_retention_policies_client(&self) -> managed_instance_long_term_retention_policies::Client {
         managed_instance_long_term_retention_policies::Client(self.clone())
     }
-    pub fn managed_instance_tde_certificates(&self) -> managed_instance_tde_certificates::Client {
+    pub fn managed_instance_tde_certificates_client(&self) -> managed_instance_tde_certificates::Client {
         managed_instance_tde_certificates::Client(self.clone())
     }
-    pub fn managed_instance_vulnerability_assessments(&self) -> managed_instance_vulnerability_assessments::Client {
+    pub fn managed_instance_vulnerability_assessments_client(&self) -> managed_instance_vulnerability_assessments::Client {
         managed_instance_vulnerability_assessments::Client(self.clone())
     }
-    pub fn managed_instances(&self) -> managed_instances::Client {
+    pub fn managed_instances_client(&self) -> managed_instances::Client {
         managed_instances::Client(self.clone())
     }
-    pub fn managed_restorable_dropped_database_backup_short_term_retention_policies(
+    pub fn managed_restorable_dropped_database_backup_short_term_retention_policies_client(
         &self,
     ) -> managed_restorable_dropped_database_backup_short_term_retention_policies::Client {
         managed_restorable_dropped_database_backup_short_term_retention_policies::Client(self.clone())
     }
-    pub fn managed_server_security_alert_policies(&self) -> managed_server_security_alert_policies::Client {
+    pub fn managed_server_security_alert_policies_client(&self) -> managed_server_security_alert_policies::Client {
         managed_server_security_alert_policies::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn recommended_elastic_pools(&self) -> recommended_elastic_pools::Client {
+    pub fn recommended_elastic_pools_client(&self) -> recommended_elastic_pools::Client {
         recommended_elastic_pools::Client(self.clone())
     }
-    pub fn recoverable_databases(&self) -> recoverable_databases::Client {
+    pub fn recoverable_databases_client(&self) -> recoverable_databases::Client {
         recoverable_databases::Client(self.clone())
     }
-    pub fn recoverable_managed_databases(&self) -> recoverable_managed_databases::Client {
+    pub fn recoverable_managed_databases_client(&self) -> recoverable_managed_databases::Client {
         recoverable_managed_databases::Client(self.clone())
     }
-    pub fn replication_links(&self) -> replication_links::Client {
+    pub fn replication_links_client(&self) -> replication_links::Client {
         replication_links::Client(self.clone())
     }
-    pub fn restorable_dropped_databases(&self) -> restorable_dropped_databases::Client {
+    pub fn restorable_dropped_databases_client(&self) -> restorable_dropped_databases::Client {
         restorable_dropped_databases::Client(self.clone())
     }
-    pub fn restorable_dropped_managed_databases(&self) -> restorable_dropped_managed_databases::Client {
+    pub fn restorable_dropped_managed_databases_client(&self) -> restorable_dropped_managed_databases::Client {
         restorable_dropped_managed_databases::Client(self.clone())
     }
-    pub fn restore_points(&self) -> restore_points::Client {
+    pub fn restore_points_client(&self) -> restore_points::Client {
         restore_points::Client(self.clone())
     }
-    pub fn sensitivity_labels(&self) -> sensitivity_labels::Client {
+    pub fn sensitivity_labels_client(&self) -> sensitivity_labels::Client {
         sensitivity_labels::Client(self.clone())
     }
-    pub fn server_automatic_tuning(&self) -> server_automatic_tuning::Client {
+    pub fn server_automatic_tuning_client(&self) -> server_automatic_tuning::Client {
         server_automatic_tuning::Client(self.clone())
     }
-    pub fn server_azure_ad_administrators(&self) -> server_azure_ad_administrators::Client {
+    pub fn server_azure_ad_administrators_client(&self) -> server_azure_ad_administrators::Client {
         server_azure_ad_administrators::Client(self.clone())
     }
-    pub fn server_azure_ad_only_authentications(&self) -> server_azure_ad_only_authentications::Client {
+    pub fn server_azure_ad_only_authentications_client(&self) -> server_azure_ad_only_authentications::Client {
         server_azure_ad_only_authentications::Client(self.clone())
     }
-    pub fn server_blob_auditing_policies(&self) -> server_blob_auditing_policies::Client {
+    pub fn server_blob_auditing_policies_client(&self) -> server_blob_auditing_policies::Client {
         server_blob_auditing_policies::Client(self.clone())
     }
-    pub fn server_communication_links(&self) -> server_communication_links::Client {
+    pub fn server_communication_links_client(&self) -> server_communication_links::Client {
         server_communication_links::Client(self.clone())
     }
-    pub fn server_connection_policies(&self) -> server_connection_policies::Client {
+    pub fn server_connection_policies_client(&self) -> server_connection_policies::Client {
         server_connection_policies::Client(self.clone())
     }
-    pub fn server_dns_aliases(&self) -> server_dns_aliases::Client {
+    pub fn server_dns_aliases_client(&self) -> server_dns_aliases::Client {
         server_dns_aliases::Client(self.clone())
     }
-    pub fn server_keys(&self) -> server_keys::Client {
+    pub fn server_keys_client(&self) -> server_keys::Client {
         server_keys::Client(self.clone())
     }
-    pub fn server_security_alert_policies(&self) -> server_security_alert_policies::Client {
+    pub fn server_security_alert_policies_client(&self) -> server_security_alert_policies::Client {
         server_security_alert_policies::Client(self.clone())
     }
-    pub fn server_trust_groups(&self) -> server_trust_groups::Client {
+    pub fn server_trust_groups_client(&self) -> server_trust_groups::Client {
         server_trust_groups::Client(self.clone())
     }
-    pub fn server_usages(&self) -> server_usages::Client {
+    pub fn server_usages_client(&self) -> server_usages::Client {
         server_usages::Client(self.clone())
     }
-    pub fn server_vulnerability_assessments(&self) -> server_vulnerability_assessments::Client {
+    pub fn server_vulnerability_assessments_client(&self) -> server_vulnerability_assessments::Client {
         server_vulnerability_assessments::Client(self.clone())
     }
-    pub fn servers(&self) -> servers::Client {
+    pub fn servers_client(&self) -> servers::Client {
         servers::Client(self.clone())
     }
-    pub fn service_objectives(&self) -> service_objectives::Client {
+    pub fn service_objectives_client(&self) -> service_objectives::Client {
         service_objectives::Client(self.clone())
     }
-    pub fn service_tier_advisors(&self) -> service_tier_advisors::Client {
+    pub fn service_tier_advisors_client(&self) -> service_tier_advisors::Client {
         service_tier_advisors::Client(self.clone())
     }
-    pub fn subscription_usages(&self) -> subscription_usages::Client {
+    pub fn subscription_usages_client(&self) -> subscription_usages::Client {
         subscription_usages::Client(self.clone())
     }
-    pub fn sync_agents(&self) -> sync_agents::Client {
+    pub fn sync_agents_client(&self) -> sync_agents::Client {
         sync_agents::Client(self.clone())
     }
-    pub fn sync_groups(&self) -> sync_groups::Client {
+    pub fn sync_groups_client(&self) -> sync_groups::Client {
         sync_groups::Client(self.clone())
     }
-    pub fn sync_members(&self) -> sync_members::Client {
+    pub fn sync_members_client(&self) -> sync_members::Client {
         sync_members::Client(self.clone())
     }
-    pub fn tde_certificates(&self) -> tde_certificates::Client {
+    pub fn tde_certificates_client(&self) -> tde_certificates::Client {
         tde_certificates::Client(self.clone())
     }
-    pub fn transparent_data_encryption_activities(&self) -> transparent_data_encryption_activities::Client {
+    pub fn transparent_data_encryption_activities_client(&self) -> transparent_data_encryption_activities::Client {
         transparent_data_encryption_activities::Client(self.clone())
     }
-    pub fn transparent_data_encryptions(&self) -> transparent_data_encryptions::Client {
+    pub fn transparent_data_encryptions_client(&self) -> transparent_data_encryptions::Client {
         transparent_data_encryptions::Client(self.clone())
     }
-    pub fn usages(&self) -> usages::Client {
+    pub fn usages_client(&self) -> usages::Client {
         usages::Client(self.clone())
     }
-    pub fn virtual_clusters(&self) -> virtual_clusters::Client {
+    pub fn virtual_clusters_client(&self) -> virtual_clusters::Client {
         virtual_clusters::Client(self.clone())
     }
-    pub fn virtual_network_rules(&self) -> virtual_network_rules::Client {
+    pub fn virtual_network_rules_client(&self) -> virtual_network_rules::Client {
         virtual_network_rules::Client(self.clone())
     }
-    pub fn workload_classifiers(&self) -> workload_classifiers::Client {
+    pub fn workload_classifiers_client(&self) -> workload_classifiers::Client {
         workload_classifiers::Client(self.clone())
     }
-    pub fn workload_groups(&self) -> workload_groups::Client {
+    pub fn workload_groups_client(&self) -> workload_groups::Client {
         workload_groups::Client(self.clone())
     }
 }

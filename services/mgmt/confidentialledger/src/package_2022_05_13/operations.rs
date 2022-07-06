@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn ledger(&self) -> ledger::Client {
+    pub fn ledger_client(&self) -> ledger::Client {
         ledger::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

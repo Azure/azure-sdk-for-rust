@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn adc_catalogs(&self) -> adc_catalogs::Client {
+    pub fn adc_catalogs_client(&self) -> adc_catalogs::Client {
         adc_catalogs::Client(self.clone())
     }
-    pub fn adc_operations(&self) -> adc_operations::Client {
+    pub fn adc_operations_client(&self) -> adc_operations::Client {
         adc_operations::Client(self.clone())
     }
 }

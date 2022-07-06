@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = azure_mgmt_batch::ClientBuilder::new(credential).build();
 
     let mut pools = client
-        .pool()
+        .pool_client()
         .list_by_batch_account(resource_group_name, account_name, subscription_id)
         .into_stream();
 

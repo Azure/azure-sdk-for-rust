@@ -74,34 +74,34 @@ impl Client {
             pipeline,
         }
     }
-    pub fn application(&self) -> application::Client {
+    pub fn application_client(&self) -> application::Client {
         application::Client(self.clone())
     }
-    pub fn code_package(&self) -> code_package::Client {
+    pub fn code_package_client(&self) -> code_package::Client {
         code_package::Client(self.clone())
     }
-    pub fn gateway(&self) -> gateway::Client {
+    pub fn gateway_client(&self) -> gateway::Client {
         gateway::Client(self.clone())
     }
-    pub fn network(&self) -> network::Client {
+    pub fn network_client(&self) -> network::Client {
         network::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn secret(&self) -> secret::Client {
+    pub fn secret_client(&self) -> secret::Client {
         secret::Client(self.clone())
     }
-    pub fn secret_value(&self) -> secret_value::Client {
+    pub fn secret_value_client(&self) -> secret_value::Client {
         secret_value::Client(self.clone())
     }
-    pub fn service(&self) -> service::Client {
+    pub fn service_client(&self) -> service::Client {
         service::Client(self.clone())
     }
-    pub fn service_replica(&self) -> service_replica::Client {
+    pub fn service_replica_client(&self) -> service_replica::Client {
         service_replica::Client(self.clone())
     }
-    pub fn volume(&self) -> volume::Client {
+    pub fn volume_client(&self) -> volume::Client {
         volume::Client(self.clone())
     }
 }

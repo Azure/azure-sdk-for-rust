@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn migrate_projects_controller(&self) -> migrate_projects_controller::Client {
+    pub fn migrate_projects_controller_client(&self) -> migrate_projects_controller::Client {
         migrate_projects_controller::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connection_controller(&self) -> private_endpoint_connection_controller::Client {
+    pub fn private_endpoint_connection_controller_client(&self) -> private_endpoint_connection_controller::Client {
         private_endpoint_connection_controller::Client(self.clone())
     }
-    pub fn private_endpoint_connections_controller(&self) -> private_endpoint_connections_controller::Client {
+    pub fn private_endpoint_connections_controller_client(&self) -> private_endpoint_connections_controller::Client {
         private_endpoint_connections_controller::Client(self.clone())
     }
-    pub fn private_link_resource_controller(&self) -> private_link_resource_controller::Client {
+    pub fn private_link_resource_controller_client(&self) -> private_link_resource_controller::Client {
         private_link_resource_controller::Client(self.clone())
     }
-    pub fn projects(&self) -> projects::Client {
+    pub fn projects_client(&self) -> projects::Client {
         projects::Client(self.clone())
     }
 }

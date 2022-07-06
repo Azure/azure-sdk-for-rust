@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn digital_twins(&self) -> digital_twins::Client {
+    pub fn digital_twins_client(&self) -> digital_twins::Client {
         digital_twins::Client(self.clone())
     }
-    pub fn digital_twins_endpoint(&self) -> digital_twins_endpoint::Client {
+    pub fn digital_twins_endpoint_client(&self) -> digital_twins_endpoint::Client {
         digital_twins_endpoint::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn time_series_database_connections(&self) -> time_series_database_connections::Client {
+    pub fn time_series_database_connections_client(&self) -> time_series_database_connections::Client {
         time_series_database_connections::Client(self.clone())
     }
 }

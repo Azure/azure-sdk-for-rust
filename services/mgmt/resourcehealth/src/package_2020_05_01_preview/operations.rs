@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn availability_statuses(&self) -> availability_statuses::Client {
+    pub fn availability_statuses_client(&self) -> availability_statuses::Client {
         availability_statuses::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

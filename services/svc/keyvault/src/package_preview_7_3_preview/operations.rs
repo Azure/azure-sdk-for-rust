@@ -74,13 +74,13 @@ impl Client {
             pipeline,
         }
     }
-    pub fn hsm_security_domain(&self) -> hsm_security_domain::Client {
+    pub fn hsm_security_domain_client(&self) -> hsm_security_domain::Client {
         hsm_security_domain::Client(self.clone())
     }
-    pub fn role_assignments(&self) -> role_assignments::Client {
+    pub fn role_assignments_client(&self) -> role_assignments::Client {
         role_assignments::Client(self.clone())
     }
-    pub fn role_definitions(&self) -> role_definitions::Client {
+    pub fn role_definitions_client(&self) -> role_definitions::Client {
         role_definitions::Client(self.clone())
     }
 }

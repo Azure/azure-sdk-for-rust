@@ -74,28 +74,28 @@ impl Client {
             pipeline,
         }
     }
-    pub fn files(&self) -> files::Client {
+    pub fn files_client(&self) -> files::Client {
         files::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn projects(&self) -> projects::Client {
+    pub fn projects_client(&self) -> projects::Client {
         projects::Client(self.clone())
     }
-    pub fn resource_skus(&self) -> resource_skus::Client {
+    pub fn resource_skus_client(&self) -> resource_skus::Client {
         resource_skus::Client(self.clone())
     }
-    pub fn service_tasks(&self) -> service_tasks::Client {
+    pub fn service_tasks_client(&self) -> service_tasks::Client {
         service_tasks::Client(self.clone())
     }
-    pub fn services(&self) -> services::Client {
+    pub fn services_client(&self) -> services::Client {
         services::Client(self.clone())
     }
-    pub fn tasks(&self) -> tasks::Client {
+    pub fn tasks_client(&self) -> tasks::Client {
         tasks::Client(self.clone())
     }
-    pub fn usages(&self) -> usages::Client {
+    pub fn usages_client(&self) -> usages::Client {
         usages::Client(self.clone())
     }
 }

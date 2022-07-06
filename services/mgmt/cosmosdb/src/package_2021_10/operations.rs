@@ -74,97 +74,97 @@ impl Client {
             pipeline,
         }
     }
-    pub fn cassandra_clusters(&self) -> cassandra_clusters::Client {
+    pub fn cassandra_clusters_client(&self) -> cassandra_clusters::Client {
         cassandra_clusters::Client(self.clone())
     }
-    pub fn cassandra_data_centers(&self) -> cassandra_data_centers::Client {
+    pub fn cassandra_data_centers_client(&self) -> cassandra_data_centers::Client {
         cassandra_data_centers::Client(self.clone())
     }
-    pub fn cassandra_resources(&self) -> cassandra_resources::Client {
+    pub fn cassandra_resources_client(&self) -> cassandra_resources::Client {
         cassandra_resources::Client(self.clone())
     }
-    pub fn collection(&self) -> collection::Client {
+    pub fn collection_client(&self) -> collection::Client {
         collection::Client(self.clone())
     }
-    pub fn collection_partition(&self) -> collection_partition::Client {
+    pub fn collection_partition_client(&self) -> collection_partition::Client {
         collection_partition::Client(self.clone())
     }
-    pub fn collection_partition_region(&self) -> collection_partition_region::Client {
+    pub fn collection_partition_region_client(&self) -> collection_partition_region::Client {
         collection_partition_region::Client(self.clone())
     }
-    pub fn collection_region(&self) -> collection_region::Client {
+    pub fn collection_region_client(&self) -> collection_region::Client {
         collection_region::Client(self.clone())
     }
-    pub fn database(&self) -> database::Client {
+    pub fn database_client(&self) -> database::Client {
         database::Client(self.clone())
     }
-    pub fn database_account_region(&self) -> database_account_region::Client {
+    pub fn database_account_region_client(&self) -> database_account_region::Client {
         database_account_region::Client(self.clone())
     }
-    pub fn database_accounts(&self) -> database_accounts::Client {
+    pub fn database_accounts_client(&self) -> database_accounts::Client {
         database_accounts::Client(self.clone())
     }
-    pub fn gremlin_resources(&self) -> gremlin_resources::Client {
+    pub fn gremlin_resources_client(&self) -> gremlin_resources::Client {
         gremlin_resources::Client(self.clone())
     }
-    pub fn locations(&self) -> locations::Client {
+    pub fn locations_client(&self) -> locations::Client {
         locations::Client(self.clone())
     }
-    pub fn mongo_db_resources(&self) -> mongo_db_resources::Client {
+    pub fn mongo_db_resources_client(&self) -> mongo_db_resources::Client {
         mongo_db_resources::Client(self.clone())
     }
-    pub fn notebook_workspaces(&self) -> notebook_workspaces::Client {
+    pub fn notebook_workspaces_client(&self) -> notebook_workspaces::Client {
         notebook_workspaces::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn partition_key_range_id(&self) -> partition_key_range_id::Client {
+    pub fn partition_key_range_id_client(&self) -> partition_key_range_id::Client {
         partition_key_range_id::Client(self.clone())
     }
-    pub fn partition_key_range_id_region(&self) -> partition_key_range_id_region::Client {
+    pub fn partition_key_range_id_region_client(&self) -> partition_key_range_id_region::Client {
         partition_key_range_id_region::Client(self.clone())
     }
-    pub fn percentile(&self) -> percentile::Client {
+    pub fn percentile_client(&self) -> percentile::Client {
         percentile::Client(self.clone())
     }
-    pub fn percentile_source_target(&self) -> percentile_source_target::Client {
+    pub fn percentile_source_target_client(&self) -> percentile_source_target::Client {
         percentile_source_target::Client(self.clone())
     }
-    pub fn percentile_target(&self) -> percentile_target::Client {
+    pub fn percentile_target_client(&self) -> percentile_target::Client {
         percentile_target::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn restorable_database_accounts(&self) -> restorable_database_accounts::Client {
+    pub fn restorable_database_accounts_client(&self) -> restorable_database_accounts::Client {
         restorable_database_accounts::Client(self.clone())
     }
-    pub fn restorable_mongodb_collections(&self) -> restorable_mongodb_collections::Client {
+    pub fn restorable_mongodb_collections_client(&self) -> restorable_mongodb_collections::Client {
         restorable_mongodb_collections::Client(self.clone())
     }
-    pub fn restorable_mongodb_databases(&self) -> restorable_mongodb_databases::Client {
+    pub fn restorable_mongodb_databases_client(&self) -> restorable_mongodb_databases::Client {
         restorable_mongodb_databases::Client(self.clone())
     }
-    pub fn restorable_mongodb_resources(&self) -> restorable_mongodb_resources::Client {
+    pub fn restorable_mongodb_resources_client(&self) -> restorable_mongodb_resources::Client {
         restorable_mongodb_resources::Client(self.clone())
     }
-    pub fn restorable_sql_containers(&self) -> restorable_sql_containers::Client {
+    pub fn restorable_sql_containers_client(&self) -> restorable_sql_containers::Client {
         restorable_sql_containers::Client(self.clone())
     }
-    pub fn restorable_sql_databases(&self) -> restorable_sql_databases::Client {
+    pub fn restorable_sql_databases_client(&self) -> restorable_sql_databases::Client {
         restorable_sql_databases::Client(self.clone())
     }
-    pub fn restorable_sql_resources(&self) -> restorable_sql_resources::Client {
+    pub fn restorable_sql_resources_client(&self) -> restorable_sql_resources::Client {
         restorable_sql_resources::Client(self.clone())
     }
-    pub fn sql_resources(&self) -> sql_resources::Client {
+    pub fn sql_resources_client(&self) -> sql_resources::Client {
         sql_resources::Client(self.clone())
     }
-    pub fn table_resources(&self) -> table_resources::Client {
+    pub fn table_resources_client(&self) -> table_resources::Client {
         table_resources::Client(self.clone())
     }
 }

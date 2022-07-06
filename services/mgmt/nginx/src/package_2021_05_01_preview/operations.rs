@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn certificates(&self) -> certificates::Client {
+    pub fn certificates_client(&self) -> certificates::Client {
         certificates::Client(self.clone())
     }
-    pub fn configurations(&self) -> configurations::Client {
+    pub fn configurations_client(&self) -> configurations::Client {
         configurations::Client(self.clone())
     }
-    pub fn deployments(&self) -> deployments::Client {
+    pub fn deployments_client(&self) -> deployments::Client {
         deployments::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

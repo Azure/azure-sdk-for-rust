@@ -74,37 +74,37 @@ impl Client {
             pipeline,
         }
     }
-    pub fn domain_topics(&self) -> domain_topics::Client {
+    pub fn domain_topics_client(&self) -> domain_topics::Client {
         domain_topics::Client(self.clone())
     }
-    pub fn domains(&self) -> domains::Client {
+    pub fn domains_client(&self) -> domains::Client {
         domains::Client(self.clone())
     }
-    pub fn event_subscriptions(&self) -> event_subscriptions::Client {
+    pub fn event_subscriptions_client(&self) -> event_subscriptions::Client {
         event_subscriptions::Client(self.clone())
     }
-    pub fn extension_topics(&self) -> extension_topics::Client {
+    pub fn extension_topics_client(&self) -> extension_topics::Client {
         extension_topics::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn system_topic_event_subscriptions(&self) -> system_topic_event_subscriptions::Client {
+    pub fn system_topic_event_subscriptions_client(&self) -> system_topic_event_subscriptions::Client {
         system_topic_event_subscriptions::Client(self.clone())
     }
-    pub fn system_topics(&self) -> system_topics::Client {
+    pub fn system_topics_client(&self) -> system_topics::Client {
         system_topics::Client(self.clone())
     }
-    pub fn topic_types(&self) -> topic_types::Client {
+    pub fn topic_types_client(&self) -> topic_types::Client {
         topic_types::Client(self.clone())
     }
-    pub fn topics(&self) -> topics::Client {
+    pub fn topics_client(&self) -> topics::Client {
         topics::Client(self.clone())
     }
 }

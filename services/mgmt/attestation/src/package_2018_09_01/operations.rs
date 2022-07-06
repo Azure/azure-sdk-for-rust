@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn attestation_providers(&self) -> attestation_providers::Client {
+    pub fn attestation_providers_client(&self) -> attestation_providers::Client {
         attestation_providers::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

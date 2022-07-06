@@ -74,19 +74,19 @@ impl Client {
             pipeline,
         }
     }
-    pub fn apply_updates(&self) -> apply_updates::Client {
+    pub fn apply_updates_client(&self) -> apply_updates::Client {
         apply_updates::Client(self.clone())
     }
-    pub fn configuration_assignments(&self) -> configuration_assignments::Client {
+    pub fn configuration_assignments_client(&self) -> configuration_assignments::Client {
         configuration_assignments::Client(self.clone())
     }
-    pub fn maintenance_configurations(&self) -> maintenance_configurations::Client {
+    pub fn maintenance_configurations_client(&self) -> maintenance_configurations::Client {
         maintenance_configurations::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn updates(&self) -> updates::Client {
+    pub fn updates_client(&self) -> updates::Client {
         updates::Client(self.clone())
     }
 }

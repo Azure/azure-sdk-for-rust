@@ -74,22 +74,22 @@ impl Client {
             pipeline,
         }
     }
-    pub fn blockchain_member_operation_results(&self) -> blockchain_member_operation_results::Client {
+    pub fn blockchain_member_operation_results_client(&self) -> blockchain_member_operation_results::Client {
         blockchain_member_operation_results::Client(self.clone())
     }
-    pub fn blockchain_members(&self) -> blockchain_members::Client {
+    pub fn blockchain_members_client(&self) -> blockchain_members::Client {
         blockchain_members::Client(self.clone())
     }
-    pub fn locations(&self) -> locations::Client {
+    pub fn locations_client(&self) -> locations::Client {
         locations::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn skus(&self) -> skus::Client {
+    pub fn skus_client(&self) -> skus::Client {
         skus::Client(self.clone())
     }
-    pub fn transaction_nodes(&self) -> transaction_nodes::Client {
+    pub fn transaction_nodes_client(&self) -> transaction_nodes::Client {
         transaction_nodes::Client(self.clone())
     }
 }

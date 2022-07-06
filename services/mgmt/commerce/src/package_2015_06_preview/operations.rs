@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn rate_card(&self) -> rate_card::Client {
+    pub fn rate_card_client(&self) -> rate_card::Client {
         rate_card::Client(self.clone())
     }
-    pub fn usage_aggregates(&self) -> usage_aggregates::Client {
+    pub fn usage_aggregates_client(&self) -> usage_aggregates::Client {
         usage_aggregates::Client(self.clone())
     }
 }

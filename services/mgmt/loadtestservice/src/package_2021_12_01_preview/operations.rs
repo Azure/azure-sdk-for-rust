@@ -74,10 +74,10 @@ impl Client {
             pipeline,
         }
     }
-    pub fn load_tests(&self) -> load_tests::Client {
+    pub fn load_tests_client(&self) -> load_tests::Client {
         load_tests::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
 }

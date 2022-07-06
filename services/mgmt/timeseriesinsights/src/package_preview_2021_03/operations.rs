@@ -74,25 +74,25 @@ impl Client {
             pipeline,
         }
     }
-    pub fn access_policies(&self) -> access_policies::Client {
+    pub fn access_policies_client(&self) -> access_policies::Client {
         access_policies::Client(self.clone())
     }
-    pub fn environments(&self) -> environments::Client {
+    pub fn environments_client(&self) -> environments::Client {
         environments::Client(self.clone())
     }
-    pub fn event_sources(&self) -> event_sources::Client {
+    pub fn event_sources_client(&self) -> event_sources::Client {
         event_sources::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
+    pub fn private_endpoint_connections_client(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
-    pub fn private_link_resources(&self) -> private_link_resources::Client {
+    pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
-    pub fn reference_data_sets(&self) -> reference_data_sets::Client {
+    pub fn reference_data_sets_client(&self) -> reference_data_sets::Client {
         reference_data_sets::Client(self.clone())
     }
 }

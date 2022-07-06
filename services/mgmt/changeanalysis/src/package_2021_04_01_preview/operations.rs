@@ -74,16 +74,16 @@ impl Client {
             pipeline,
         }
     }
-    pub fn change_snapshots(&self) -> change_snapshots::Client {
+    pub fn change_snapshots_client(&self) -> change_snapshots::Client {
         change_snapshots::Client(self.clone())
     }
-    pub fn changes(&self) -> changes::Client {
+    pub fn changes_client(&self) -> changes::Client {
         changes::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
+    pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn resource_changes(&self) -> resource_changes::Client {
+    pub fn resource_changes_client(&self) -> resource_changes::Client {
         resource_changes::Client(self.clone())
     }
 }
