@@ -114,7 +114,7 @@ impl TokenCredential for ImdsManagedIdentityCredential {
 
         let mut req = Request::new(url, Method::Get);
 
-        req.insert_header("Metadata", "true");
+        req.insert_header("metadata", "true");
 
         let msi_secret = std::env::var(MSI_SECRET_ENV_KEY);
         if let Ok(val) = msi_secret {
