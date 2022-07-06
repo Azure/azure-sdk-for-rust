@@ -38,11 +38,22 @@ pub enum StorageCredentials {
 impl std::fmt::Debug for StorageCredentials {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self {
+            StorageCredentials::Key(_, _) => f
+                .debug_struct("StorageCredentials")
+                .field("credential", &"Key")
+                .finish(),
+            StorageCredentials::SASToken(_) => f
+                .debug_struct("StorageCredentials")
+                .field("credential", &"SASToken")
+                .finish(),
+            StorageCredentials::BearerToken(_) => f
+                .debug_struct("StorageCredentials")
+                .field("credential", &"BearerToken")
+                .finish(),
             StorageCredentials::TokenCredential(_) => f
                 .debug_struct("StorageCredentials")
                 .field("credential", &"TokenCredential")
                 .finish(),
-            _ => self.fmt(f),
         }
     }
 }
