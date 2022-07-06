@@ -118,7 +118,7 @@ impl TokenCredential for ImdsManagedIdentityCredential {
 
         let msi_secret = std::env::var(MSI_SECRET_ENV_KEY);
         if let Ok(val) = msi_secret {
-            req.insert_header("X-IDENTITY-HEADER", val);
+            req.insert_header("x-identity-header", val);
         };
 
         let rsp = self.http_client.execute_request(&req).await?;
