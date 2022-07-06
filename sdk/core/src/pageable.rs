@@ -52,8 +52,7 @@ where
 
                 let next_state = response
                     .continuation()
-                    .map(State::Continuation)
-                    .unwrap_or(State::Done);
+                    .map_or(State::Done, State::Continuation);
 
                 Some((Ok(response), next_state))
             }

@@ -64,7 +64,7 @@ where
                     let error = Error::full(
                         ErrorKind::http_response(
                             status,
-                            http_error.error_code().map(|s| s.to_owned()),
+                            http_error.error_code().map(std::borrow::ToOwned::to_owned),
                         ),
                         http_error,
                         "server returned error status which will not be retried",

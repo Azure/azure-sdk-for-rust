@@ -32,7 +32,7 @@ impl HttpClient for ::reqwest::Client {
             .context(ErrorKind::Io, "failed to execute `reqwest` request")?;
 
         let status = rsp.status();
-        let headers = to_headers(rsp.headers())?;
+        let headers = to_headers(rsp.headers());
         let body: PinnedStream = Box::pin(rsp.bytes_stream().map_err(|error| {
             Error::full(
                 ErrorKind::Io,
@@ -49,7 +49,7 @@ impl HttpClient for ::reqwest::Client {
     }
 }
 
-fn to_headers(map: &::reqwest::header::HeaderMap) -> crate::Result<crate::headers::Headers> {
+fn to_headers(map: &::reqwest::header::HeaderMap) -> crate::headers::Headers {
     let map = map
         .iter()
         .filter_map(|(k, v)| {
@@ -66,7 +66,7 @@ fn to_headers(map: &::reqwest::header::HeaderMap) -> crate::Result<crate::header
             }
         })
         .collect::<HashMap<_, _>>();
-    Ok(crate::headers::Headers::from(map))
+    crate::headers::Headers::from(map)
 }
 
 fn try_from_method(method: &crate::Method) -> crate::Result<::reqwest::Method> {

@@ -40,7 +40,7 @@ impl super::RetryPolicy for ExponentialRetryPolicy {
 
     fn sleep_duration(&self, retry_count: u32) -> Duration {
         let sleep_ms = self.delay.as_millis() as u64 * u64::pow(2u64, retry_count - 1)
-            + rand::random::<u8>() as u64;
+            + u64::from(rand::random::<u8>());
         Duration::from_millis(sleep_ms)
     }
 }
