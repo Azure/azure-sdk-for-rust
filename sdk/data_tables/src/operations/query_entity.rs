@@ -3,39 +3,22 @@ use azure_core::{
     error::{Error, ErrorKind},
     headers::*,
     prelude::*,
-    AppendToUrlQuery, CollectedResponse, Context, Method, Pageable,
+    AppendToUrlQuery, CollectedResponse, Method, Pageable,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use serde::de::DeserializeOwned;
 use std::convert::{TryFrom, TryInto};
 
-#[derive(Debug, Clone)]
-pub struct QueryEntityBuilder {
-    table_client: TableClient,
-    filter: Option<Filter>,
-    select: Option<Select>,
-    top: Option<Top>,
-    context: Context,
+operation! {
+    #[stream]
+    QueryEntity,
+    client: TableClient,
+    ?filter: Filter,
+    ?select: Select,
+    ?top: Top
 }
 
 impl QueryEntityBuilder {
-    pub(crate) fn new(table_client: TableClient) -> Self {
-        Self {
-            table_client,
-            filter: None,
-            select: None,
-            top: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        filter: Filter => Some(filter),
-        select: Select => Some(select),
-        top: Top => Some(top),
-        context: Context => context,
-    }
-
     pub fn into_stream<E>(self) -> Pageable<QueryEntityResponse<E>, Error>
     where
         E: DeserializeOwned + Send + Sync,
@@ -44,11 +27,11 @@ impl QueryEntityBuilder {
             let this = self.clone();
             let mut ctx = self.context.clone();
             async move {
-                let mut url = this.table_client.url().to_owned();
+                let mut url = this.client.url().to_owned();
                 url.path_segments_mut()
                     .map_err(|()| Error::message(ErrorKind::Other, "invalid table URL"))?
                     .pop()
-                    .push(&format!("{}()", this.table_client.table_name()));
+                    .push(&format!("{}()", this.client.table_name()));
 
                 this.filter.append_to_url_query(&mut url);
                 this.select.append_to_url_query(&mut url);
@@ -66,11 +49,11 @@ impl QueryEntityBuilder {
                 let mut headers = Headers::new();
                 headers.insert(ACCEPT, "application/json;odata=fullmetadata");
 
-                let mut request =
-                    this.table_client
-                        .finalize_request(url, Method::Get, headers, None)?;
+                let mut request = this
+                    .client
+                    .finalize_request(url, Method::Get, headers, None)?;
 
-                let response = this.table_client.send(&mut ctx, &mut request).await?;
+                let response = this.client.send(&mut ctx, &mut request).await?;
 
                 let collected_response = CollectedResponse::from_response(response).await?;
                 collected_response.try_into()
