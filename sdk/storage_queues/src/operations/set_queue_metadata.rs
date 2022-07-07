@@ -35,15 +35,17 @@ impl SetQueueMetadataBuilder {
             url.query_pairs_mut().append_pair("comp", "metadata");
             self.timeout.append_to_url_query(&mut url);
 
+            let mut headers = Headers::new();
+            for m in self.metadata.iter() {
+                headers.add(m);
+            }
+
             let mut request = self.queue_client.storage_client().finalize_request(
                 url,
                 Method::Put,
-                Headers::new(),
+                headers,
                 None,
             )?;
-            for m in self.metadata.iter() {
-                request.add_mandatory_header(&m);
-            }
 
             let response = self
                 .queue_client
