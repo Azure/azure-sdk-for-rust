@@ -27,8 +27,8 @@ impl HttpError {
         error_code = error_code.or_else(|| get_error_code_from_body(&body));
         HttpError {
             status,
-            headers,
             error_code,
+            headers,
             body,
         }
     }

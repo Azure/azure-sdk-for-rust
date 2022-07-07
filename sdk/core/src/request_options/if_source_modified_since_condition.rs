@@ -17,9 +17,8 @@ impl Header for IfSourceModifiedSinceCondition {
 
     fn value(&self) -> headers::HeaderValue {
         match self {
-            IfSourceModifiedSinceCondition::Modified(date) => date.to_rfc2822(),
-            IfSourceModifiedSinceCondition::Unmodified(date) => date.to_rfc2822(),
+            IfSourceModifiedSinceCondition::Modified(date)
+            | IfSourceModifiedSinceCondition::Unmodified(date) => date.to_rfc2822().into(),
         }
-        .into()
     }
 }
