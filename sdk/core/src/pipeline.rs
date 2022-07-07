@@ -29,7 +29,7 @@ use std::sync::Arc;
 ///
 /// The `C` generic contains the pipeline-specific context. Different crates can pass
 /// different contexts using this generic. This way each crate can have its own specific pipeline
-/// context. For example, in CosmosDB, the generic carries the operation-specific information used by
+/// context. For example, in `CosmosDB`, the generic carries the operation-specific information used by
 /// the authorization policy.
 #[derive(Debug, Clone)]
 pub struct Pipeline {

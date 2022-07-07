@@ -138,18 +138,19 @@ impl Error {
     /// Get the `ErrorKind` of this `Error`
     pub fn kind(&self) -> &ErrorKind {
         match &self.context {
-            Context::Simple(kind) => kind,
-            Context::Message { kind, .. } => kind,
-            Context::Custom(Custom { kind, .. }) => kind,
-            Context::Full(Custom { kind, .. }, _) => kind,
+            Context::Simple(kind)
+            | Context::Message { kind, .. }
+            | Context::Custom(Custom { kind, .. })
+            | Context::Full(Custom { kind, .. }, _) => kind,
         }
     }
 
     /// Consumes the Error, returning its inner error (if any).
     pub fn into_inner(self) -> std::result::Result<Box<dyn std::error::Error + Send + Sync>, Self> {
         match self.context {
-            Context::Custom(Custom { error, .. }) => Ok(error),
-            Context::Full(Custom { error, .. }, _) => Ok(error),
+            Context::Custom(Custom { error, .. }) | Context::Full(Custom { error, .. }, _) => {
+                Ok(error)
+            }
             _ => Err(self),
         }
     }
@@ -171,8 +172,9 @@ impl Error {
     /// Returns a reference to the inner error wrapped by this error (if any).
     pub fn get_ref(&self) -> Option<&(dyn std::error::Error + Send + Sync + 'static)> {
         match &self.context {
-            Context::Custom(Custom { error, .. }) => Some(error.as_ref()),
-            Context::Full(Custom { error, .. }, _) => Some(error.as_ref()),
+            Context::Custom(Custom { error, .. }) | Context::Full(Custom { error, .. }, _) => {
+                Some(error.as_ref())
+            }
             _ => None,
         }
     }
@@ -185,8 +187,9 @@ impl Error {
     /// Returns a mutable reference to the inner error wrapped by this error (if any).
     pub fn get_mut(&mut self) -> Option<&mut (dyn std::error::Error + Send + Sync + 'static)> {
         match &mut self.context {
-            Context::Custom(Custom { error, .. }) => Some(error.as_mut()),
-            Context::Full(Custom { error, .. }, _) => Some(error.as_mut()),
+            Context::Custom(Custom { error, .. }) | Context::Full(Custom { error, .. }, _) => {
+                Some(error.as_mut())
+            }
             _ => None,
         }
     }
@@ -200,8 +203,9 @@ impl Error {
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.context {
-            Context::Custom(Custom { error, .. }) => error.source(),
-            Context::Full(Custom { error, .. }, _) => error.source(),
+            Context::Custom(Custom { error, .. }) | Context::Full(Custom { error, .. }, _) => {
+                error.source()
+            }
             _ => None,
         }
     }

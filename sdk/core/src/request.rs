@@ -63,7 +63,7 @@ impl Request {
         let mut result = self.url.path().to_owned();
         if let Some(query) = self.url.query() {
             result.push('?');
-            result.push_str(query)
+            result.push_str(query);
         }
         result
     }
@@ -74,7 +74,7 @@ impl Request {
 
     pub fn insert_headers<T: AsHeaders>(&mut self, headers: &T) {
         for (name, value) in headers.as_headers() {
-            self.insert_header(name, value)
+            self.insert_header(name, value);
         }
     }
 
@@ -95,22 +95,16 @@ impl Request {
         K: Into<crate::headers::HeaderName>,
         V: Into<crate::headers::HeaderValue>,
     {
-        self.headers.insert(key, value)
-    }
-
-    pub fn add_optional_header_ref<T: crate::Header>(&mut self, item: &Option<&T>) {
-        if let Some(item) = item {
-            self.insert_header(item.name(), item.value())
-        }
+        self.headers.insert(key, value);
     }
 
     pub fn add_optional_header<T: crate::Header>(&mut self, item: &Option<T>) {
         if let Some(item) = item {
-            self.insert_header(item.name(), item.value())
+            self.insert_header(item.name(), item.value());
         }
     }
 
     pub fn add_mandatory_header<T: crate::Header>(&mut self, item: &T) {
-        self.insert_header(item.name(), item.value())
+        self.insert_header(item.name(), item.value());
     }
 }

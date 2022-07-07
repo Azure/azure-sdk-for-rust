@@ -17,9 +17,7 @@ impl Header for IfMatchCondition {
 
     fn value(&self) -> headers::HeaderValue {
         match self.clone() {
-            IfMatchCondition::Match(etag) => etag,
-            IfMatchCondition::NotMatch(etag) => etag,
+            IfMatchCondition::Match(etag) | IfMatchCondition::NotMatch(etag) => etag.into(),
         }
-        .into()
     }
 }

@@ -18,10 +18,9 @@ impl Header for SequenceNumberCondition {
 
     fn value(&self) -> headers::HeaderValue {
         match self {
-            SequenceNumberCondition::Equal(val) => val.to_string(),
-            SequenceNumberCondition::LessOrEqual(val) => val.to_string(),
-            SequenceNumberCondition::Less(val) => val.to_string(),
+            SequenceNumberCondition::Equal(val)
+            | SequenceNumberCondition::LessOrEqual(val)
+            | SequenceNumberCondition::Less(val) => val.to_string().into(),
         }
-        .into()
     }
 }

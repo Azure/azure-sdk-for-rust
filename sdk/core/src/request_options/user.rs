@@ -25,6 +25,6 @@ impl Header for User {
     }
 
     fn value(&self) -> headers::HeaderValue {
-        self.0.to_owned().into()
+        self.0.clone().into()
     }
 }
