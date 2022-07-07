@@ -1,55 +1,29 @@
 use crate::clients::PopReceiptClient;
-use azure_core::{error::Error, headers::Headers, Context, Method, Response as AzureResponse};
+use azure_core::{error::Error, headers::Headers, Method, Response as AzureResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
-#[derive(Debug)]
-pub struct DeleteMessageBuilder {
-    pop_receipt_client: PopReceiptClient,
-    context: Context,
+operation! {
+    DeleteMessage,
+    client: PopReceiptClient,
 }
 
 impl DeleteMessageBuilder {
-    pub(crate) fn new(pop_receipt_client: PopReceiptClient) -> Self {
-        DeleteMessageBuilder {
-            pop_receipt_client,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        context: Context => context,
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> DeleteMessage {
         Box::pin(async move {
-            let url = self.pop_receipt_client.pop_receipt_url()?;
+            let url = self.client.pop_receipt_url()?;
 
-            let mut request = self.pop_receipt_client.storage_client().finalize_request(
+            let mut request = self.client.storage_client().finalize_request(
                 url,
                 Method::Delete,
                 Headers::new(),
                 None,
             )?;
 
-            let response = self
-                .pop_receipt_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
 
             response.try_into()
         })
-    }
-}
-
-pub type Response = futures::future::BoxFuture<'static, azure_core::Result<DeleteMessageResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for DeleteMessageBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 

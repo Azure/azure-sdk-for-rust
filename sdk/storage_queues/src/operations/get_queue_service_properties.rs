@@ -1,65 +1,32 @@
 use crate::{QueueServiceClient, QueueServiceProperties};
-use azure_core::{
-    collect_pinned_stream, headers::Headers, Context, Method, Response as AzureResponse,
-};
+use azure_core::{collect_pinned_stream, headers::Headers, Method, Response as AzureResponse};
 use azure_storage::core::{headers::CommonStorageResponseHeaders, xml::read_xml};
 use std::convert::TryInto;
 
-#[derive(Debug, Clone)]
-pub struct GetQueueServicePropertiesBuilder {
-    service_client: QueueServiceClient,
-    context: Context,
+operation! {
+    GetQueueServiceProperties,
+    client: QueueServiceClient,
 }
 
 impl GetQueueServicePropertiesBuilder {
-    pub(crate) fn new(service_client: QueueServiceClient) -> Self {
-        Self {
-            service_client,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        context: Context => context,
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> GetQueueServiceProperties {
         Box::pin(async move {
-            let mut url = self
-                .service_client
-                .storage_client
-                .queue_storage_url()
-                .to_owned();
+            let mut url = self.client.storage_client.queue_storage_url().to_owned();
 
             url.query_pairs_mut().append_pair("restype", "service");
             url.query_pairs_mut().append_pair("comp", "properties");
 
-            let mut request = self.service_client.storage_client.finalize_request(
+            let mut request = self.client.storage_client.finalize_request(
                 url,
                 Method::Get,
                 Headers::new(),
                 None,
             )?;
 
-            let response = self
-                .service_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
 
             GetQueueServicePropertiesResponse::try_from(response).await
         })
-    }
-}
-
-pub type Response =
-    futures::future::BoxFuture<'static, azure_core::Result<GetQueueServicePropertiesResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for GetQueueServicePropertiesBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 

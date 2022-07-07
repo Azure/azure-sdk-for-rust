@@ -3,30 +3,16 @@ use azure_core::{error::Error, headers::Headers, prelude::*, Method, Response as
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
-#[derive(Debug, Clone)]
-pub struct CreateQueueBuilder {
-    queue_client: QueueClient,
-    metadata: Option<Metadata>,
-    context: Context,
+operation! {
+    CreateQueue,
+    client: QueueClient,
+    ?metadata: Metadata
 }
 
 impl CreateQueueBuilder {
-    pub(crate) fn new(queue_client: QueueClient) -> Self {
-        CreateQueueBuilder {
-            queue_client,
-            metadata: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        metadata: Metadata => Some(metadata),
-        context: Context => context,
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> CreateQueue {
         Box::pin(async move {
-            let url = self.queue_client.url_with_segments(None)?;
+            let url = self.client.url_with_segments(None)?;
 
             let mut headers = Headers::new();
             if let Some(metadata) = &self.metadata {
@@ -35,31 +21,15 @@ impl CreateQueueBuilder {
                 }
             }
 
-            let mut request = self.queue_client.storage_client().finalize_request(
-                url,
-                Method::Put,
-                headers,
-                None,
-            )?;
+            let mut request =
+                self.client
+                    .storage_client()
+                    .finalize_request(url, Method::Put, headers, None)?;
 
-            let response = self
-                .queue_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
 
             response.try_into()
         })
-    }
-}
-
-pub type Response = futures::future::BoxFuture<'static, azure_core::Result<CreateQueueResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for CreateQueueBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 

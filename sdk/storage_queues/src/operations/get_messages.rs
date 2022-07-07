@@ -1,68 +1,38 @@
 use crate::{clients::QueueClient, prelude::*, PopReceipt};
 use azure_core::{
-    collect_pinned_stream, headers::Headers, prelude::*, Context, Method, Response as AzureResponse,
+    collect_pinned_stream, headers::Headers, prelude::*, Method, Response as AzureResponse,
 };
 use azure_storage::core::{headers::CommonStorageResponseHeaders, xml::read_xml};
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use std::convert::TryInto;
 
-#[derive(Debug, Clone)]
-pub struct GetMessagesBuilder {
-    queue_client: QueueClient,
-    number_of_messages: Option<NumberOfMessages>,
-    visibility_timeout: Option<VisibilityTimeout>,
-    context: Context,
+operation! {
+    GetMessages,
+    client: QueueClient,
+    ?number_of_messages: NumberOfMessages,
+    ?visibility_timeout: VisibilityTimeout
 }
 
 impl GetMessagesBuilder {
-    pub(crate) fn new(queue_client: QueueClient) -> Self {
-        GetMessagesBuilder {
-            queue_client,
-            number_of_messages: None,
-            visibility_timeout: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        number_of_messages: NumberOfMessages => Some(number_of_messages),
-        visibility_timeout: VisibilityTimeout => Some(visibility_timeout),
-        context: Context => context,
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> GetMessages {
         Box::pin(async move {
-            let mut url = self.queue_client.url_with_segments(Some("messages"))?;
+            let mut url = self.client.url_with_segments(Some("messages"))?;
 
             self.visibility_timeout.append_to_url_query(&mut url);
             self.number_of_messages.append_to_url_query(&mut url);
 
-            let mut request = self.queue_client.storage_client().finalize_request(
+            let mut request = self.client.storage_client().finalize_request(
                 url,
                 Method::Get,
                 Headers::new(),
                 None,
             )?;
 
-            let response = self
-                .queue_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
 
             GetMessagesResponse::try_from(response).await
         })
-    }
-}
-
-pub type Response = futures::future::BoxFuture<'static, azure_core::Result<GetMessagesResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for GetMessagesBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 

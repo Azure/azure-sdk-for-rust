@@ -1,60 +1,31 @@
 use crate::clients::QueueClient;
-use azure_core::{
-    error::Error, headers::Headers, prelude::*, Context, Method, Response as AzureResponse,
-};
+use azure_core::{error::Error, headers::Headers, prelude::*, Method, Response as AzureResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
-#[derive(Debug, Clone)]
-pub struct GetQueueMetadataBuilder {
-    queue_client: QueueClient,
-    context: Context,
+operation! {
+    GetQueueMetadata,
+    client: QueueClient,
 }
 
 impl GetQueueMetadataBuilder {
-    pub(crate) fn new(queue_client: QueueClient) -> Self {
-        Self {
-            queue_client,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        context: Context => context,
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> GetQueueMetadata {
         Box::pin(async move {
-            let mut url = self.queue_client.url_with_segments(None)?;
+            let mut url = self.client.url_with_segments(None)?;
 
             url.query_pairs_mut().append_pair("comp", "metadata");
 
-            let mut request = self.queue_client.storage_client().finalize_request(
+            let mut request = self.client.storage_client().finalize_request(
                 url,
                 Method::Get,
                 Headers::new(),
                 None,
             )?;
 
-            let response = self
-                .queue_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
 
             response.try_into()
         })
-    }
-}
-
-pub type Response =
-    futures::future::BoxFuture<'static, azure_core::Result<GetQueueMetadataResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for GetQueueMetadataBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 
