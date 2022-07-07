@@ -186,6 +186,10 @@ pub struct BlobProperties {
     pub remaining_retention_days: Option<u32>,
     pub tag_count: Option<u32>,
     pub rehydrate_priority: Option<RehydratePriority>,
+    #[serde(default)]
+    #[serde(rename = "Expiry-Time")]
+    #[serde(with = "azure_core::parsing::rfc2822_time_format_optional")]
+    pub expiry_time: Option<DateTime<Utc>>,
     #[serde(flatten)]
     extra: HashMap<String, String>, // For debug purposes, should be compiled out in the future
 }
@@ -298,6 +302,7 @@ impl Blob {
                 remaining_retention_days: None,     // TODO: Not present or documentation bug?
                 tag_count: None,                    // TODO
                 rehydrate_priority: None,           // TODO
+                expiry_time: None,
                 extra: HashMap::new(),
             },
             metadata,

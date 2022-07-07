@@ -106,6 +106,16 @@ impl BlobClient {
         SetBlobTierBuilder::new(self.clone())
     }
 
+    /// Set an expiry time on an existing blob.  
+    ///
+    /// This operation is only allowed on Hierarchical Namespace enabled
+    /// accounts.
+    ///
+    /// Ref: https://docs.microsoft.com/en-us/rest/api/storageservices/set-blob-expiry
+    pub fn set_blob_expiry(&self, blob_expiry: BlobExpiry) -> SetBlobExpiryBuilder {
+        SetBlobExpiryBuilder::new(self.clone(), blob_expiry)
+    }
+
     pub fn update_page(
         &self,
         ba512_range: BA512Range,

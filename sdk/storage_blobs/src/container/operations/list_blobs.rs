@@ -211,6 +211,7 @@ mod tests {
             <Properties>
                 <Creation-Time>Thu, 01 Jul 2021 10:44:59 GMT</Creation-Time>
                 <Last-Modified>Thu, 01 Jul 2021 10:44:59 GMT</Last-Modified>
+                <Expiry-Time>Thu, 07 Jul 2022 14:38:48 GMT</Expiry-Time>
                 <Etag>0x8D93C7D4629C227</Etag>
                 <Content-Length>8</Content-Length>
                 <Content-Type>text/plain</Content-Type>
