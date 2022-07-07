@@ -10,60 +10,29 @@ use azure_core::{
 use azure_storage::xml::read_xml;
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct ListBlobsBuilder {
-    container_client: ContainerClient,
-    prefix: Option<Prefix>,
-    delimiter: Option<Delimiter>,
-    max_results: Option<MaxResults>,
-    include_snapshots: bool,
-    include_metadata: bool,
-    include_uncommitted_blobs: bool,
-    include_copy: bool,
-    include_deleted: bool,
-    include_tags: bool,
-    include_versions: bool,
-    context: Context,
+operation! {
+    #[stream]
+    ListBlobs,
+    client: ContainerClient,
+    ?prefix: Prefix,
+    ?delimiter: Delimiter,
+    ?max_results: MaxResults,
+    ?include_snapshots: bool,
+    ?include_metadata: bool,
+    ?include_uncommitted_blobs: bool,
+    ?include_copy: bool,
+    ?include_deleted: bool,
+    ?include_tags: bool,
+    ?include_versions: bool,
 }
 
 impl ListBlobsBuilder {
-    pub(crate) fn new(container_client: ContainerClient) -> Self {
-        Self {
-            container_client,
-            prefix: None,
-            delimiter: None,
-            max_results: None,
-            include_snapshots: false,
-            include_metadata: false,
-            include_uncommitted_blobs: false,
-            include_copy: false,
-            include_deleted: false,
-            include_tags: false,
-            include_versions: false,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        prefix: Prefix => Some(prefix),
-        delimiter: Delimiter => Some(delimiter),
-        max_results: MaxResults => Some(max_results),
-        include_snapshots: bool => include_snapshots,
-        include_metadata: bool => include_metadata,
-        include_uncommitted_blobs: bool => include_uncommitted_blobs,
-        include_copy: bool => include_copy,
-        include_deleted: bool => include_deleted,
-        include_tags: bool => include_tags,
-        include_versions: bool => include_versions,
-        context: Context => context,
-    }
-
     pub fn into_stream(self) -> Pageable<ListBlobsResponse, Error> {
         let make_request = move |continuation: Option<NextMarker>| {
             let this = self.clone();
             let mut ctx = self.context.clone();
             async move {
-                let mut url = this.container_client.url_with_segments(None)?;
+                let mut url = this.client.url_with_segments(None)?;
 
                 url.query_pairs_mut().append_pair("restype", "container");
                 url.query_pairs_mut().append_pair("comp", "list");
@@ -80,25 +49,25 @@ impl ListBlobsBuilder {
                 // attribute. It only allocates a Vec of references ('static
                 // str) and, finally, a single string.
                 let mut optional_includes = Vec::new();
-                if this.include_snapshots {
+                if this.include_snapshots.unwrap_or(false) {
                     optional_includes.push("snapshots");
                 }
-                if this.include_metadata {
+                if this.include_metadata.unwrap_or(false) {
                     optional_includes.push("metadata");
                 }
-                if this.include_uncommitted_blobs {
+                if this.include_uncommitted_blobs.unwrap_or(false) {
                     optional_includes.push("uncommittedblobs");
                 }
-                if this.include_copy {
+                if this.include_copy.unwrap_or(false) {
                     optional_includes.push("copy");
                 }
-                if this.include_deleted {
+                if this.include_deleted.unwrap_or(false) {
                     optional_includes.push("deleted");
                 }
-                if this.include_tags {
+                if this.include_tags.unwrap_or(false) {
                     optional_includes.push("tags");
                 }
-                if this.include_versions {
+                if this.include_versions.unwrap_or(false) {
                     optional_includes.push("versions");
                 }
                 if !optional_includes.is_empty() {
@@ -106,14 +75,11 @@ impl ListBlobsBuilder {
                         .append_pair("include", &optional_includes.join(","));
                 }
 
-                let mut request = this.container_client.finalize_request(
-                    url,
-                    Method::Get,
-                    Headers::new(),
-                    None,
-                )?;
+                let mut request =
+                    this.client
+                        .finalize_request(url, Method::Get, Headers::new(), None)?;
 
-                let response = this.container_client.send(&mut ctx, &mut request).await?;
+                let response = this.client.send(&mut ctx, &mut request).await?;
 
                 ListBlobsResponse::try_from(response).await
             }

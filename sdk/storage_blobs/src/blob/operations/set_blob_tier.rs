@@ -2,52 +2,33 @@ use crate::prelude::*;
 use azure_core::{headers::*, prelude::*, RequestId};
 use std::convert::{TryFrom, TryInto};
 
-#[derive(Debug, Clone)]
-pub struct SetBlobTierBuilder {
-    blob_client: BlobClient,
-    // Request Headers
+operation! {
+    SetBlobTier,
+    client: BlobClient,
     access_tier: AccessTier,
-    rehydrate_priority: Option<RehydratePriority>,
-    // URI Parameters
-    blob_versioning: Option<BlobVersioning>,
-    context: Context,
+    ?rehydrate_priority: RehydratePriority,
+    ?blob_versioning: BlobVersioning
 }
 
 impl SetBlobTierBuilder {
-    pub(crate) fn new(blob_client: BlobClient) -> Self {
-        Self {
-            blob_client,
-            access_tier: AccessTier::Archive,
-            rehydrate_priority: Some(RehydratePriority::Standard),
-            blob_versioning: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        access_tier: AccessTier => access_tier,
-        rehydrate_priority: RehydratePriority => Some(rehydrate_priority),
-        blob_versioning: BlobVersioning => Some(blob_versioning),
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> SetBlobTier {
         Box::pin(async move {
-            let mut url = self.blob_client.url_with_segments(None)?;
+            let mut url = self.client.url_with_segments(None)?;
             url.query_pairs_mut().append_pair("comp", "tier");
             self.blob_versioning.append_to_url_query(&mut url);
 
             let mut headers = Headers::new();
             headers.add(self.access_tier);
-            headers.add(self.rehydrate_priority);
+            headers.add(
+                self.rehydrate_priority
+                    .unwrap_or(RehydratePriority::Standard),
+            );
 
             let mut request =
-                self.blob_client
+                self.client
                     .finalize_request(url, azure_core::Method::Put, headers, None)?;
 
-            let response = self
-                .blob_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
             response.headers().try_into()
         })
     }
@@ -69,15 +50,5 @@ impl TryFrom<&Headers> for SetBlobTierResponse {
             client_request_id: client_request_id_from_headers_optional(headers),
             version: version_from_headers(headers)?,
         })
-    }
-}
-
-pub type Response = futures::future::BoxFuture<'static, azure_core::Result<SetBlobTierResponse>>;
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for SetBlobTierBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }

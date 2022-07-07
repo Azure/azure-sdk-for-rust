@@ -4,36 +4,19 @@ use azure_storage::{headers::consistency_from_headers, ConsistencyCRC64, Consist
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 
-pub struct PutBlockBuilder {
-    blob_client: BlobClient,
+operation! {
+    PutBlock,
+    client: BlobClient,
     block_id: BlockId,
     body: Bytes,
-    #[allow(unused)]
-    hash: Option<Hash>,
-    lease_id: Option<LeaseId>,
-    context: Context,
+    ?hash: Hash,
+    ?lease_id: LeaseId
 }
 
 impl PutBlockBuilder {
-    pub(crate) fn new(blob_client: BlobClient, block_id: BlockId, body: Bytes) -> Self {
-        Self {
-            blob_client,
-            block_id,
-            body,
-            hash: None,
-            lease_id: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        hash: Hash => Some(hash),
-        lease_id: LeaseId => Some(lease_id),
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> PutBlock {
         Box::pin(async move {
-            let mut url = self.blob_client.url_with_segments(None)?;
+            let mut url = self.client.url_with_segments(None)?;
 
             self.block_id.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("comp", "block");
@@ -41,17 +24,14 @@ impl PutBlockBuilder {
             let mut headers = Headers::new();
             headers.add(self.lease_id);
 
-            let mut request = self.blob_client.finalize_request(
+            let mut request = self.client.finalize_request(
                 url,
                 azure_core::Method::Put,
                 headers,
                 Some(self.body.clone()),
             )?;
 
-            let response = self
-                .blob_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
             PutBlockResponse::from_headers(response.headers())
         })
     }
@@ -80,15 +60,5 @@ impl PutBlockResponse {
             date,
             request_server_encrypted,
         })
-    }
-}
-pub type Response = futures::future::BoxFuture<'static, azure_core::Result<PutBlockResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for PutBlockBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }

@@ -6,50 +6,34 @@ use azure_core::{collect_pinned_stream, headers::*, prelude::*, RequestId};
 use chrono::{DateTime, Utc};
 use std::str::from_utf8;
 
-pub struct GetBlockListBuilder {
-    blob_client: BlobClient,
-    block_list_type: BlockListType,
-    blob_versioning: Option<BlobVersioning>,
-    lease_id: Option<LeaseId>,
-    context: Context,
+operation! {
+    GetBlockList,
+    client: BlobClient,
+    ?block_list_type: BlockListType,
+    ?blob_versioning: BlobVersioning,
+    ?lease_id: LeaseId
 }
 
 impl GetBlockListBuilder {
-    pub(crate) fn new(blob_client: BlobClient) -> Self {
-        Self {
-            blob_client,
-            block_list_type: BlockListType::Committed,
-            blob_versioning: None,
-            lease_id: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        block_list_type: BlockListType => block_list_type,
-        blob_versioning: BlobVersioning => Some(blob_versioning),
-        lease_id: LeaseId => Some(lease_id),
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> GetBlockList {
         Box::pin(async move {
-            let mut url = self.blob_client.url_with_segments(None)?;
+            let mut url = self.client.url_with_segments(None)?;
 
             url.query_pairs_mut().append_pair("comp", "blocklist");
             self.blob_versioning.append_to_url_query(&mut url);
-            self.block_list_type.append_to_url_query(&mut url);
+
+            self.block_list_type
+                .unwrap_or(BlockListType::Committed)
+                .append_to_url_query(&mut url);
 
             let mut headers = Headers::new();
             headers.add(self.lease_id);
 
             let mut request =
-                self.blob_client
+                self.client
                     .finalize_request(url, azure_core::Method::Get, headers, None)?;
 
-            let response = self
-                .blob_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
 
             let (_, headers, body) = response.deconstruct();
             let body = collect_pinned_stream(body).await?;
@@ -88,15 +72,5 @@ impl GetBlockListResponse {
             date,
             block_with_size_list,
         })
-    }
-}
-pub type Response = futures::future::BoxFuture<'static, azure_core::Result<GetBlockListResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for GetBlockListBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }

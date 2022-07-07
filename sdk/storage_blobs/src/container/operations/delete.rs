@@ -1,44 +1,27 @@
 use crate::prelude::*;
 use azure_core::{headers::Headers, prelude::*, Method};
 
-#[derive(Debug, Clone)]
-pub struct DeleteBuilder {
-    container_client: ContainerClient,
-    lease_id: Option<LeaseId>,
-    context: Context,
+operation! {
+    Delete,
+    client: ContainerClient,
+    ?lease_id: LeaseId
 }
 
 impl DeleteBuilder {
-    pub(crate) fn new(container_client: ContainerClient) -> Self {
-        DeleteBuilder {
-            container_client,
-            lease_id: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        lease_id: LeaseId => Some(lease_id),
-        context: Context => context,
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> Delete {
         Box::pin(async move {
-            let mut url = self.container_client.url_with_segments(None)?;
+            let mut url = self.client.url_with_segments(None)?;
 
             url.query_pairs_mut().append_pair("restype", "container");
 
             let mut headers = Headers::new();
             headers.add(self.lease_id);
 
-            let mut request =
-                self.container_client
-                    .finalize_request(url, Method::Delete, headers, None)?;
+            let mut request = self
+                .client
+                .finalize_request(url, Method::Delete, headers, None)?;
 
-            let _response = self
-                .container_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let _response = self.client.send(&mut self.context, &mut request).await?;
 
             // TODO: Capture and return the response headers
             Ok(())
@@ -46,13 +29,4 @@ impl DeleteBuilder {
     }
 }
 
-pub type Response = futures::future::BoxFuture<'static, azure_core::Result<()>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for DeleteBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
-    }
-}
+type DeleteResponse = ();

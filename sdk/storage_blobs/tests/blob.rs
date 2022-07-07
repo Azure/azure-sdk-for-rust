@@ -423,8 +423,7 @@ async fn set_blobtier() {
     //
     // Hot -> Cool
     //
-    blob.set_blob_tier()
-        .access_tier(AccessTier::Cool)
+    blob.set_blob_tier(AccessTier::Cool)
         .into_future()
         .await
         .unwrap();
@@ -434,8 +433,7 @@ async fn set_blobtier() {
     //
     // Cool -> Hot
     //
-    blob.set_blob_tier()
-        .access_tier(AccessTier::Hot)
+    blob.set_blob_tier(AccessTier::Hot)
         .into_future()
         .await
         .unwrap();
@@ -445,8 +443,7 @@ async fn set_blobtier() {
     //
     // Hot -> Archive
     //
-    blob.set_blob_tier()
-        .access_tier(AccessTier::Archive)
+    blob.set_blob_tier(AccessTier::Archive)
         .into_future()
         .await
         .unwrap();
@@ -456,8 +453,7 @@ async fn set_blobtier() {
     //
     // Archive -> Cool
     //
-    blob.set_blob_tier()
-        .access_tier(AccessTier::Cool)
+    blob.set_blob_tier(AccessTier::Cool)
         .into_future()
         .await
         .unwrap();
@@ -467,8 +463,7 @@ async fn set_blobtier() {
     //
     // Archive -> Cool (rehydrating)
     //
-    blob.set_blob_tier()
-        .access_tier(AccessTier::Cool)
+    blob.set_blob_tier(AccessTier::Cool)
         .into_future()
         .await
         .unwrap();

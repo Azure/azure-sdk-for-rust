@@ -3,35 +3,18 @@ use azure_core::Method;
 use azure_core::{headers::*, prelude::*, RequestId};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct AcquireLeaseBuilder {
-    container_client: ContainerClient,
+operation! {
+    AcquireLease,
+    client: ContainerClient,
     lease_duration: LeaseDuration,
-    lease_id: Option<LeaseId>,
-    proposed_lease_id: Option<ProposedLeaseId>,
-    context: Context,
+    ?lease_id: LeaseId,
+    ?proposed_lease_id: ProposedLeaseId
 }
 
 impl AcquireLeaseBuilder {
-    pub(crate) fn new(container_client: ContainerClient, lease_duration: LeaseDuration) -> Self {
-        AcquireLeaseBuilder {
-            container_client,
-            lease_duration,
-            lease_id: None,
-            proposed_lease_id: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        lease_id: LeaseId => Some(lease_id),
-        proposed_lease_id: ProposedLeaseId => Some(proposed_lease_id),
-        context: Context => context,
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> AcquireLease {
         Box::pin(async move {
-            let mut url = self.container_client.url_with_segments(None)?;
+            let mut url = self.client.url_with_segments(None)?;
 
             url.query_pairs_mut().append_pair("restype", "container");
             url.query_pairs_mut().append_pair("comp", "lease");
@@ -42,14 +25,11 @@ impl AcquireLeaseBuilder {
             headers.add(self.lease_id);
             headers.add(self.proposed_lease_id);
 
-            let mut request =
-                self.container_client
-                    .finalize_request(url, Method::Put, headers, None)?;
+            let mut request = self
+                .client
+                .finalize_request(url, Method::Put, headers, None)?;
 
-            let response = self
-                .container_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
 
             AcquireLeaseResponse::from_headers(response.headers())
         })
@@ -63,14 +43,3 @@ azure_storage::response_from_headers!(AcquireLeaseResponse ,
     request_id_from_headers => request_id: RequestId,
     date_from_headers => date: DateTime<Utc>
 );
-
-pub type Response = futures::future::BoxFuture<'static, azure_core::Result<AcquireLeaseResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for AcquireLeaseBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
-    }
-}

@@ -12,55 +12,31 @@ use chrono::{DateTime, Utc};
 use std::convert::{TryFrom, TryInto};
 use url::Url;
 
-pub struct CopyBlobFromUrlBuilder {
-    blob_client: BlobClient,
+operation! {
+    CopyBlobFromUrl,
+    client: BlobClient,
     source_url: Url,
-    is_synchronous: bool,
-    metadata: Option<Metadata>,
-    if_modified_since_condition: Option<IfModifiedSinceCondition>,
-    if_match_condition: Option<IfMatchCondition>,
-    lease_id: Option<LeaseId>,
-    if_source_since_condition: Option<IfSourceModifiedSinceCondition>,
-    if_source_match_condition: Option<IfSourceMatchCondition>,
-    source_content_md5: Option<SourceContentMD5>,
-    context: Context,
+    ?is_synchronous: bool,
+    ?metadata: Metadata,
+    ?if_modified_since_condition: IfModifiedSinceCondition,
+    ?if_match_condition: IfMatchCondition,
+    ?lease_id: LeaseId,
+    ?if_source_since_condition: IfSourceModifiedSinceCondition,
+    ?if_source_match_condition: IfSourceMatchCondition,
+    ?source_content_md5: SourceContentMD5
 }
 
 impl CopyBlobFromUrlBuilder {
-    pub(crate) fn new(blob_client: BlobClient, source_url: Url) -> Self {
-        Self {
-            blob_client,
-            source_url,
-            is_synchronous: false,
-            metadata: None,
-            if_modified_since_condition: None,
-            if_match_condition: None,
-            lease_id: None,
-            if_source_since_condition: None,
-            if_source_match_condition: None,
-            source_content_md5: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        is_synchronous: bool => is_synchronous,
-        metadata: Metadata => Some(metadata),
-        if_modified_since_condition: IfModifiedSinceCondition => Some(if_modified_since_condition),
-        if_match_condition: IfMatchCondition => Some(if_match_condition),
-        lease_id: LeaseId => Some(lease_id),
-        if_source_since_condition: IfSourceModifiedSinceCondition => Some(if_source_since_condition),
-        if_source_match_condition: IfSourceMatchCondition => Some(if_source_match_condition),
-        source_content_md5: SourceContentMD5 => Some(source_content_md5),
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> CopyBlobFromUrl {
         Box::pin(async move {
-            let url = self.blob_client.url_with_segments(None)?;
+            let url = self.client.url_with_segments(None)?;
 
             let mut headers = Headers::new();
             headers.insert(COPY_SOURCE, self.source_url.to_string());
-            headers.insert(REQUIRES_SYNC, format!("{}", self.is_synchronous));
+            headers.insert(
+                REQUIRES_SYNC,
+                format!("{}", self.is_synchronous.unwrap_or(false)),
+            );
             if let Some(metadata) = &self.metadata {
                 for m in metadata.iter() {
                     headers.add(m);
@@ -74,13 +50,10 @@ impl CopyBlobFromUrlBuilder {
             headers.add(self.source_content_md5);
 
             let mut request =
-                self.blob_client
+                self.client
                     .finalize_request(url, azure_core::Method::Put, headers, None)?;
 
-            let response = self
-                .blob_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
 
             (response.headers()).try_into()
         })
@@ -114,17 +87,5 @@ impl TryFrom<&Headers> for CopyBlobFromUrlResponse {
             copy_status: copy_status_from_headers(headers)?,
             date: date_from_headers(headers)?,
         })
-    }
-}
-
-pub type Response =
-    futures::future::BoxFuture<'static, azure_core::Result<CopyBlobFromUrlResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for CopyBlobFromUrlBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
