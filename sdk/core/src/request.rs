@@ -98,12 +98,6 @@ impl Request {
         self.headers.insert(key, value);
     }
 
-    pub fn add_optional_header_ref<T: crate::Header>(&mut self, item: &Option<&T>) {
-        if let Some(item) = item {
-            self.insert_header(item.name(), item.value())
-        }
-    }
-
     pub fn add_optional_header<T: crate::Header>(&mut self, item: &Option<T>) {
         if let Some(item) = item {
             self.insert_header(item.name(), item.value());
