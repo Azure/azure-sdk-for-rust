@@ -1,65 +1,37 @@
 use crate::{clients::QueueClient, prelude::*};
 use azure_core::{
-    collect_pinned_stream, headers::utc_date_from_rfc2822, headers::Headers, prelude::*, Context,
-    Method, Response as AzureResponse,
+    collect_pinned_stream, headers::utc_date_from_rfc2822, headers::Headers, prelude::*, Method,
+    Response as AzureResponse,
 };
 use azure_storage::core::{headers::CommonStorageResponseHeaders, xml::read_xml};
 use chrono::{DateTime, Utc};
 use std::convert::TryInto;
 
-#[derive(Debug, Clone)]
-pub struct PeekMessagesBuilder {
-    queue_client: QueueClient,
-    number_of_messages: Option<NumberOfMessages>,
-    context: Context,
+operation! {
+    PeekMessages,
+    client: QueueClient,
+    ?number_of_messages: NumberOfMessages
 }
 
 impl PeekMessagesBuilder {
-    pub(crate) fn new(queue_client: QueueClient) -> Self {
-        PeekMessagesBuilder {
-            queue_client,
-            number_of_messages: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        number_of_messages: NumberOfMessages => Some(number_of_messages),
-        context: Context => context,
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> PeekMessages {
         Box::pin(async move {
-            let mut url = self.queue_client.url_with_segments(Some("messages"))?;
+            let mut url = self.client.url_with_segments(Some("messages"))?;
 
             url.query_pairs_mut().append_pair("peekonly", "true");
             self.number_of_messages.append_to_url_query(&mut url);
 
-            let mut request = self.queue_client.storage_client().finalize_request(
+            let mut request = self.client.storage_client().finalize_request(
                 url,
                 Method::Get,
                 Headers::new(),
                 None,
             )?;
 
-            let response = self
-                .queue_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
 
             PeekMessagesResponse::try_from(response).await
         })
-    }
-}
-
-pub type Response = futures::future::BoxFuture<'static, azure_core::Result<PeekMessagesResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for CreateQueueBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 

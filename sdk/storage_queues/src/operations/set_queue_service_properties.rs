@@ -2,41 +2,21 @@ use crate::{QueueServiceClient, QueueServiceProperties};
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     headers::Headers,
-    Context, Method, Response as AzureResponse,
+    Method, Response as AzureResponse,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
-#[derive(Debug, Clone)]
-pub struct SetQueueServicePropertiesBuilder {
-    service_client: QueueServiceClient,
+operation! {
+    SetQueueServiceProperties,
+    client: QueueServiceClient,
     properties: QueueServiceProperties,
-    context: Context,
 }
 
 impl SetQueueServicePropertiesBuilder {
-    pub(crate) fn new(
-        service_client: QueueServiceClient,
-        properties: QueueServiceProperties,
-    ) -> Self {
-        SetQueueServicePropertiesBuilder {
-            service_client,
-            properties,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        context: Context => context,
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> SetQueueServiceProperties {
         Box::pin(async move {
-            let mut url = self
-                .service_client
-                .storage_client
-                .queue_storage_url()
-                .to_owned();
+            let mut url = self.client.storage_client.queue_storage_url().to_owned();
 
             url.query_pairs_mut().append_pair("restype", "service");
             url.query_pairs_mut().append_pair("comp", "properties");
@@ -44,32 +24,17 @@ impl SetQueueServicePropertiesBuilder {
             let xml_body =
                 serde_xml_rs::to_string(&self.properties).map_kind(ErrorKind::DataConversion)?;
 
-            let mut request = self.service_client.storage_client.finalize_request(
+            let mut request = self.client.storage_client.finalize_request(
                 url,
                 Method::Put,
                 Headers::new(),
                 Some(xml_body.into()),
             )?;
 
-            let response = self
-                .service_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
 
             response.try_into()
         })
-    }
-}
-
-pub type Response =
-    futures::future::BoxFuture<'static, azure_core::Result<SetQueueServicePropertiesResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for SetQueueServicePropertiesBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 

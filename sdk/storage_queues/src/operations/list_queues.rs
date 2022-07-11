@@ -1,47 +1,26 @@
 use crate::QueueServiceClient;
 use azure_core::{
-    collect_pinned_stream, error::Error, headers::Headers, prelude::*, Context, Method, Pageable,
+    collect_pinned_stream, error::Error, headers::Headers, prelude::*, Method, Pageable,
     Response as AzureResponse,
 };
 use azure_storage::{core::headers::CommonStorageResponseHeaders, xml::read_xml};
 use std::convert::TryInto;
 
-#[derive(Debug, Clone)]
-pub struct ListQueuesBuilder {
-    service_client: QueueServiceClient,
-    prefix: Option<Prefix>,
-    max_results: Option<MaxResults>,
-    include_metadata: bool,
-    context: Context,
+operation! {
+    #[stream]
+    ListQueues,
+    client: QueueServiceClient,
+    ?prefix: Prefix,
+    ?max_results: MaxResults,
+    ?include_metadata: bool,
 }
 
 impl ListQueuesBuilder {
-    pub(crate) fn new(service_client: QueueServiceClient) -> Self {
-        Self {
-            service_client,
-            prefix: None,
-            max_results: None,
-            include_metadata: false,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        prefix: Prefix => Some(prefix),
-        max_results: MaxResults => Some(max_results),
-        include_metadata: bool => include_metadata,
-        context: Context => context,
-    }
-
     pub fn into_stream(self) -> Pageable<ListQueuesResponse, Error> {
         let make_request = move |continuation: Option<NextMarker>| {
             let mut this = self.clone();
             async move {
-                let mut url = this
-                    .service_client
-                    .storage_client
-                    .queue_storage_url()
-                    .to_owned();
+                let mut url = this.client.storage_client.queue_storage_url().to_owned();
 
                 url.query_pairs_mut().append_pair("comp", "list");
 
@@ -53,21 +32,18 @@ impl ListQueuesBuilder {
 
                 this.max_results.append_to_url_query(&mut url);
 
-                if this.include_metadata {
+                if this.include_metadata.unwrap_or(false) {
                     url.query_pairs_mut().append_pair("include", "metadata");
                 }
 
-                let mut request = this.service_client.storage_client.finalize_request(
+                let mut request = this.client.storage_client.finalize_request(
                     url,
                     Method::Get,
                     Headers::new(),
                     None,
                 )?;
 
-                let response = this
-                    .service_client
-                    .send(&mut this.context, &mut request)
-                    .await?;
+                let response = this.client.send(&mut this.context, &mut request).await?;
 
                 ListQueuesResponse::try_from(response).await
             }

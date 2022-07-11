@@ -3,35 +3,22 @@ use azure_core::{
     collect_pinned_stream,
     error::{ErrorKind, ResultExt},
     headers::Headers,
-    prelude::*,
     Method, Response as AzureResponse,
 };
 use azure_storage::core::{headers::CommonStorageResponseHeaders, xml::read_xml};
 use chrono::{DateTime, Utc};
 use std::convert::TryInto;
 
-#[derive(Debug, Clone)]
-pub struct GetQueueServiceStatsBuilder {
-    service_client: QueueServiceClient,
-    context: Context,
+operation! {
+    GetQueueServiceStats,
+    client: QueueServiceClient,
 }
 
 impl GetQueueServiceStatsBuilder {
-    pub(crate) fn new(service_client: QueueServiceClient) -> Self {
-        Self {
-            service_client,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        context: Context => context,
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> GetQueueServiceStats {
         Box::pin(async move {
             let mut url = self
-                .service_client
+                .client
                 .storage_client
                 .queue_storage_secondary_url()
                 .to_owned();
@@ -39,32 +26,17 @@ impl GetQueueServiceStatsBuilder {
             url.query_pairs_mut().append_pair("restype", "service");
             url.query_pairs_mut().append_pair("comp", "stats");
 
-            let mut request = self.service_client.storage_client.finalize_request(
+            let mut request = self.client.storage_client.finalize_request(
                 url,
                 Method::Get,
                 Headers::new(),
                 None,
             )?;
 
-            let response = self
-                .service_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
 
             GetQueueServiceStatsResponse::try_from(response).await
         })
-    }
-}
-
-pub type Response =
-    futures::future::BoxFuture<'static, azure_core::Result<GetQueueServiceStatsResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for GetQueueServiceStatsBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 

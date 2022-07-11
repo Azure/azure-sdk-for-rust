@@ -4,41 +4,23 @@ use azure_core::{
     headers::Headers,
     headers::{rfc2822_from_headers_mandatory, HeaderName},
     prelude::*,
-    Context, Method, Response as AzureResponse,
+    Method, Response as AzureResponse,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use chrono::{DateTime, Utc};
 use std::convert::TryInto;
 
-#[derive(Debug, Clone)]
-pub struct UpdateMessageBuilder {
-    pop_receipt_client: PopReceiptClient,
+operation! {
+    UpdateMessage,
+    client: PopReceiptClient,
     body: String,
     visibility_timeout: VisibilityTimeout,
-    context: Context,
 }
 
 impl UpdateMessageBuilder {
-    pub(crate) fn new(
-        pop_receipt_client: PopReceiptClient,
-        body: String,
-        visibility_timeout: VisibilityTimeout,
-    ) -> Self {
-        UpdateMessageBuilder {
-            pop_receipt_client,
-            body,
-            visibility_timeout,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        context: Context => context,
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> UpdateMessage {
         Box::pin(async move {
-            let mut url = self.pop_receipt_client.pop_receipt_url()?;
+            let mut url = self.client.pop_receipt_url()?;
 
             self.visibility_timeout.append_to_url_query(&mut url);
 
@@ -50,31 +32,17 @@ impl UpdateMessageBuilder {
                 self.body
             );
 
-            let mut request = self.pop_receipt_client.storage_client().finalize_request(
+            let mut request = self.client.storage_client().finalize_request(
                 url,
                 Method::Put,
                 Headers::new(),
                 Some(message.into()),
             )?;
 
-            let response = self
-                .pop_receipt_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
 
             response.try_into()
         })
-    }
-}
-
-pub type Response = futures::future::BoxFuture<'static, azure_core::Result<UpdateMessageResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for UpdateMessageBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 
