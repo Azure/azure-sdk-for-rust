@@ -81,8 +81,8 @@ impl BlobClient {
     }
 
     /// Set the access tier on the blob.
-    pub fn set_blob_tier(&self) -> SetBlobTierBuilder {
-        SetBlobTierBuilder::new(self.clone())
+    pub fn set_blob_tier(&self, access_tier: AccessTier) -> SetBlobTierBuilder {
+        SetBlobTierBuilder::new(self.clone(), access_tier)
     }
 
     /// Set an expiry time on an existing blob.  

@@ -9,34 +9,19 @@ use azure_core::{
 use chrono::{DateTime, Utc};
 use std::convert::{TryFrom, TryInto};
 
-#[derive(Debug, Clone)]
-pub struct SetPropertiesBuilder {
-    blob_client: BlobClient,
-    lease_id: Option<LeaseId>,
-    cache_control: Option<BlobCacheControl>,
-    content_type: Option<BlobContentType>,
-    content_encoding: Option<BlobContentEncoding>,
-    content_language: Option<BlobContentLanguage>,
-    content_disposition: Option<BlobContentDisposition>,
-    content_md5: Option<BlobContentMD5>,
-    context: Context,
+operation! {
+    SetProperties,
+    client: BlobClient,
+    ?lease_id: LeaseId,
+    ?cache_control: BlobCacheControl,
+    ?content_type: BlobContentType,
+    ?content_encoding: BlobContentEncoding,
+    ?content_language: BlobContentLanguage,
+    ?content_disposition: BlobContentDisposition,
+    ?content_md5: BlobContentMD5
 }
 
 impl SetPropertiesBuilder {
-    pub(crate) fn new(blob_client: BlobClient) -> Self {
-        Self {
-            blob_client,
-            lease_id: None,
-            cache_control: None,
-            content_type: None,
-            content_encoding: None,
-            content_language: None,
-            content_disposition: None,
-            content_md5: None,
-            context: Context::new(),
-        }
-    }
-
     pub fn set_from_blob_properties(self, blob_properties: BlobProperties) -> Self {
         let mut s = self;
 
@@ -61,20 +46,10 @@ impl SetPropertiesBuilder {
         s
     }
 
-    setters! {
-        lease_id: LeaseId => Some(lease_id),
-        cache_control: BlobCacheControl => Some(cache_control),
-        content_type: BlobContentType => Some(content_type),
-        content_encoding: BlobContentEncoding => Some(content_encoding),
-        content_language: BlobContentLanguage => Some(content_language),
-        content_disposition: BlobContentDisposition => Some(content_disposition),
-        content_md5: BlobContentMD5 => Some(content_md5),
-        context: Context => context,
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> SetProperties {
         Box::pin(async move {
-            let mut url = self.blob_client.url_with_segments(None)?;
+            let mut url = self.client.url_with_segments(None)?;
+
             url.query_pairs_mut().append_pair("comp", "properties");
 
             let mut headers = Headers::new();
@@ -87,13 +62,10 @@ impl SetPropertiesBuilder {
             headers.add(self.content_md5);
 
             let mut request = self
-                .blob_client
+                .client
                 .finalize_request(url, Method::Put, headers, None)?;
 
-            let response = self
-                .blob_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
             response.headers().try_into()
         })
     }
@@ -117,15 +89,5 @@ impl TryFrom<&Headers> for SetPropertiesResponse {
             server: server_from_headers(headers)?,
             date: date_from_headers(headers)?,
         })
-    }
-}
-pub type Response = futures::future::BoxFuture<'static, azure_core::Result<SetPropertiesResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for SetPropertiesBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }

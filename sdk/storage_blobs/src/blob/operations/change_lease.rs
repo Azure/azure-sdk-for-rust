@@ -2,58 +2,34 @@ use crate::prelude::*;
 use azure_core::{headers::*, prelude::*, RequestId};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct ChangeLeaseBuilder {
-    blob_lease_client: BlobLeaseClient,
+operation! {
+    ChangeLease,
+    client: BlobLeaseClient,
     proposed_lease_id: ProposedLeaseId,
-    context: Context,
 }
 
 impl ChangeLeaseBuilder {
-    pub(crate) fn new(
-        blob_lease_client: BlobLeaseClient,
-        proposed_lease_id: ProposedLeaseId,
-    ) -> Self {
-        Self {
-            blob_lease_client,
-            proposed_lease_id,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        context: Context => context,
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> ChangeLease {
         Box::pin(async move {
-            let mut url = self.blob_lease_client.url_with_segments(None)?;
+            let mut url = self.client.url_with_segments(None)?;
 
             url.query_pairs_mut().append_pair("comp", "lease");
 
             let mut headers = Headers::new();
             headers.insert(LEASE_ACTION, "change");
-            headers.add(self.blob_lease_client.lease_id());
+            headers.add(self.client.lease_id());
             headers.add(self.proposed_lease_id);
 
-            let mut request = self.blob_lease_client.finalize_request(
-                url,
-                azure_core::Method::Put,
-                headers,
-                None,
-            )?;
+            let mut request =
+                self.client
+                    .finalize_request(url, azure_core::Method::Put, headers, None)?;
 
-            let response = self
-                .blob_lease_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
 
             ChangeLeaseResponse::from_headers(response.headers())
         })
     }
 }
-
-pub type Response = futures::future::BoxFuture<'static, azure_core::Result<ChangeLeaseResponse>>;
 
 azure_storage::response_from_headers!(ChangeLeaseResponse ,
     etag_from_headers => etag: String,
@@ -62,12 +38,3 @@ azure_storage::response_from_headers!(ChangeLeaseResponse ,
     request_id_from_headers => request_id: RequestId,
     date_from_headers => date: DateTime<Utc>
 );
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for ChangeLeaseBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
-    }
-}

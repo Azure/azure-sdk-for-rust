@@ -4,53 +4,26 @@ use azure_storage::{headers::content_md5_from_headers, ConsistencyMD5};
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct PutBlockListBuilder {
-    blob_client: BlobClient,
+operation! {
+    PutBlockList,
+    client: BlobClient,
     block_list: BlockList,
-    content_type: Option<ContentType>,
-    content_encoding: Option<ContentEncoding>,
-    content_language: Option<ContentLanguage>,
-    content_disposition: Option<ContentDisposition>,
-    content_md5: Option<BlobContentMD5>,
-    metadata: Option<Metadata>,
-    access_tier: Option<AccessTier>,
+    ?content_type: ContentType,
+    ?content_encoding: ContentEncoding,
+    ?content_language: ContentLanguage,
+    ?content_disposition: ContentDisposition,
+    ?content_md5: BlobContentMD5,
+    ?metadata: Metadata,
+    ?access_tier: AccessTier,
     // TODO: Support tags
-    lease_id: Option<LeaseId>,
-    context: Context,
+    ?lease_id: LeaseId,
+    ?timeout: Timeout
 }
 
 impl PutBlockListBuilder {
-    pub(crate) fn new(blob_client: BlobClient, block_list: BlockList) -> Self {
-        Self {
-            blob_client,
-            block_list,
-            content_type: None,
-            content_encoding: None,
-            content_language: None,
-            content_disposition: None,
-            content_md5: None,
-            metadata: None,
-            access_tier: None,
-            lease_id: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        content_type: ContentType => Some(content_type),
-        content_encoding: ContentEncoding => Some(content_encoding),
-        content_language: ContentLanguage => Some(content_language),
-        content_disposition: ContentDisposition => Some(content_disposition),
-        content_md5: BlobContentMD5 => Some(content_md5),
-        metadata: Metadata => Some(metadata),
-        access_tier: AccessTier => Some(access_tier),
-        lease_id: LeaseId => Some(lease_id),
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> PutBlockList {
         Box::pin(async move {
-            let mut url = self.blob_client.url_with_segments(None)?;
+            let mut url = self.client.url_with_segments(None)?;
 
             url.query_pairs_mut().append_pair("comp", "blocklist");
 
@@ -79,17 +52,14 @@ impl PutBlockListBuilder {
             headers.add(self.access_tier);
             headers.add(self.lease_id);
 
-            let mut request = self.blob_client.finalize_request(
+            let mut request = self.client.finalize_request(
                 url,
                 azure_core::Method::Put,
                 headers,
                 Some(body_bytes),
             )?;
 
-            let response = self
-                .blob_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
             PutBlockListResponse::from_headers(response.headers())
         })
     }
@@ -122,14 +92,5 @@ impl PutBlockListResponse {
             date,
             request_server_encrypted,
         })
-    }
-}
-pub type Response = futures::future::BoxFuture<'static, azure_core::Result<PutBlockListResponse>>;
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for PutBlockListBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }

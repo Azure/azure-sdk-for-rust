@@ -4,35 +4,18 @@ use azure_core::{headers::*, prelude::*};
 use azure_storage::core::StoredAccessPolicyList;
 use bytes::Bytes;
 
-#[derive(Debug, Clone)]
-pub struct SetACLBuilder {
-    container_client: ContainerClient,
+operation! {
+    SetACL,
+    client: ContainerClient,
     public_access: PublicAccess,
-    stored_access_policy_list: Option<StoredAccessPolicyList>,
-    lease_id: Option<LeaseId>,
-    context: Context,
+    ?stored_access_policy_list: StoredAccessPolicyList,
+    ?lease_id: LeaseId
 }
 
 impl SetACLBuilder {
-    pub(crate) fn new(container_client: ContainerClient, public_access: PublicAccess) -> Self {
-        Self {
-            container_client,
-            public_access,
-            stored_access_policy_list: None,
-            lease_id: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        lease_id: LeaseId => Some(lease_id),
-        stored_access_policy_list: StoredAccessPolicyList => Some(stored_access_policy_list),
-        context: Context => context,
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> SetACL {
         Box::pin(async move {
-            let mut url = self.container_client.url_with_segments(None)?;
+            let mut url = self.client.url_with_segments(None)?;
 
             url.query_pairs_mut().append_pair("restype", "container");
             url.query_pairs_mut().append_pair("comp", "acl");
@@ -45,30 +28,15 @@ impl SetACLBuilder {
             }
             headers.add(self.lease_id);
 
-            let mut request = self.container_client.finalize_request(
-                url,
-                Method::Put,
-                headers,
-                xml.map(Bytes::from),
-            )?;
+            let mut request =
+                self.client
+                    .finalize_request(url, Method::Put, headers, xml.map(Bytes::from))?;
 
-            let response = self
-                .container_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
 
             public_access_from_header(response.headers())
         })
     }
 }
 
-pub type Response = futures::future::BoxFuture<'static, azure_core::Result<PublicAccess>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for SetACLBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
-    }
-}
+type SetACLResponse = PublicAccess;

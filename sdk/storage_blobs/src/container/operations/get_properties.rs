@@ -9,45 +9,29 @@ use azure_core::{
 use chrono::{DateTime, FixedOffset};
 use std::convert::{TryFrom, TryInto};
 
-#[derive(Debug, Clone)]
-pub struct GetPropertiesBuilder {
-    container_client: ContainerClient,
-    lease_id: Option<LeaseId>,
-    context: Context,
+operation! {
+    GetProperties,
+    client: ContainerClient,
+    ?lease_id: LeaseId
 }
 
 impl GetPropertiesBuilder {
-    pub(crate) fn new(container_client: ContainerClient) -> Self {
-        Self {
-            container_client,
-            lease_id: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        lease_id: LeaseId => Some(lease_id),
-        context: Context => context,
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> GetProperties {
         Box::pin(async move {
-            let mut url = self.container_client.url_with_segments(None)?;
+            let mut url = self.client.url_with_segments(None)?;
+
             url.query_pairs_mut().append_pair("restype", "container");
 
             let mut headers = Headers::new();
             headers.add(self.lease_id);
 
-            let mut request =
-                self.container_client
-                    .finalize_request(url, Method::Head, headers, None)?;
+            let mut request = self
+                .client
+                .finalize_request(url, Method::Head, headers, None)?;
 
-            let response = self
-                .container_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
 
-            (self.container_client.container_name(), response.headers()).try_into()
+            (self.client.container_name(), response.headers()).try_into()
         })
     }
 }
@@ -84,16 +68,5 @@ impl GetPropertiesResponse {
             request_id,
             date,
         })
-    }
-}
-
-pub type Response = futures::future::BoxFuture<'static, azure_core::Result<GetPropertiesResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for GetPropertiesBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }

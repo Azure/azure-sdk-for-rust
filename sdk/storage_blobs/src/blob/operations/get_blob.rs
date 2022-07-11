@@ -1,6 +1,6 @@
 use crate::{blob::Blob, prelude::*};
 use azure_core::{
-    collect_pinned_stream, error::Error, headers::*, prelude::*, Context, Pageable, RequestId,
+    collect_pinned_stream, error::Error, headers::*, prelude::*, Pageable, RequestId,
     Response as AzureResponse,
 };
 use bytes::Bytes;
@@ -8,45 +8,29 @@ use chrono::{DateTime, Utc};
 
 const DEFAULT_CHUNK_SIZE: u64 = 0x1000 * 0x1000;
 
-#[derive(Clone)]
-pub struct GetBlobBuilder {
-    blob_client: BlobClient,
-    range: Option<Range>,
-    blob_versioning: Option<BlobVersioning>,
-    lease_id: Option<LeaseId>,
-    chunk_size: u64,
-    context: Context,
+operation! {
+    #[stream]
+    GetBlob,
+    client: BlobClient,
+    ?range: Range,
+    ?blob_versioning: BlobVersioning,
+    ?lease_id: LeaseId,
+    ?chunk_size: u64
 }
 
 impl GetBlobBuilder {
-    pub(crate) fn new(blob_client: BlobClient) -> Self {
-        Self {
-            blob_client,
-            blob_versioning: None,
-            range: None,
-            lease_id: None,
-            chunk_size: DEFAULT_CHUNK_SIZE,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        range: Range => Some(range),
-        chunk_size: u64 => chunk_size,
-        blob_versioning: BlobVersioning => Some(blob_versioning),
-        lease_id: LeaseId => Some(lease_id),
-    }
-
     pub fn into_stream(self) -> Pageable<GetBlobResponse, Error> {
         let make_request = move |continuation: Option<Range>| {
             let this = self.clone();
             let mut ctx = self.context.clone();
             async move {
-                let mut url = this.blob_client.url_with_segments(None)?;
+                let mut url = this.client.url_with_segments(None)?;
 
                 let range = match continuation {
                     Some(range) => range,
-                    None => initial_range(this.chunk_size, this.range),
+                    None => {
+                        initial_range(this.chunk_size.unwrap_or(DEFAULT_CHUNK_SIZE), this.range)
+                    }
                 };
 
                 this.blob_versioning.append_to_url_query(&mut url);
@@ -58,14 +42,11 @@ impl GetBlobBuilder {
 
                 headers.add(this.lease_id);
 
-                let mut request = this.blob_client.finalize_request(
-                    url,
-                    azure_core::Method::Get,
-                    headers,
-                    None,
-                )?;
+                let mut request =
+                    this.client
+                        .finalize_request(url, azure_core::Method::Get, headers, None)?;
 
-                let response = this.blob_client.send(&mut ctx, &mut request).await?;
+                let response = this.client.send(&mut ctx, &mut request).await?;
 
                 GetBlobResponse::try_from(this, response).await
             }
@@ -96,11 +77,15 @@ impl GetBlobResponse {
 
         let content_range = headers.get_optional_as(&CONTENT_RANGE)?;
 
-        let remaining_range = remaining_range(request.chunk_size, request.range, content_range);
+        let remaining_range = remaining_range(
+            request.chunk_size.unwrap_or(DEFAULT_CHUNK_SIZE),
+            request.range,
+            content_range,
+        );
 
         Ok(Self {
             request_id,
-            blob: Blob::from_headers(request.blob_client.blob_name(), &headers)?,
+            blob: Blob::from_headers(request.client.blob_name(), &headers)?,
             data,
             date,
             remaining_range,

@@ -3,31 +3,17 @@ use azure_core::{collect_pinned_stream, headers::*, prelude::*, RequestId};
 use chrono::{DateTime, Utc};
 use std::str::from_utf8;
 
-pub struct GetPageRangesBuilder {
-    blob_client: BlobClient,
-    blob_versioning: Option<BlobVersioning>,
-    lease_id: Option<LeaseId>,
-    context: Context,
+operation! {
+    GetPageRanges,
+    client: BlobClient,
+    ?blob_versioning: BlobVersioning,
+    ?lease_id: LeaseId
 }
 
 impl GetPageRangesBuilder {
-    pub(crate) fn new(blob_client: BlobClient) -> Self {
-        Self {
-            blob_client,
-            blob_versioning: None,
-            lease_id: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        blob_versioning: BlobVersioning => Some(blob_versioning),
-        lease_id: LeaseId => Some(lease_id),
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> GetPageRanges {
         Box::pin(async move {
-            let mut url = self.blob_client.url_with_segments(None)?;
+            let mut url = self.client.url_with_segments(None)?;
 
             url.query_pairs_mut().append_pair("comp", "pagelist");
             self.blob_versioning.append_to_url_query(&mut url);
@@ -36,13 +22,10 @@ impl GetPageRangesBuilder {
             headers.add(self.lease_id);
 
             let mut request =
-                self.blob_client
+                self.client
                     .finalize_request(url, azure_core::Method::Get, headers, None)?;
 
-            let response = self
-                .blob_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
 
             let (_, headers, body) = response.deconstruct();
             let body = collect_pinned_stream(body).await?;
@@ -81,16 +64,5 @@ impl GetPageRangesResponse {
             date,
             page_list,
         })
-    }
-}
-
-pub type Response = futures::future::BoxFuture<'static, azure_core::Result<GetPageRangesResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for GetPageRangesBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }

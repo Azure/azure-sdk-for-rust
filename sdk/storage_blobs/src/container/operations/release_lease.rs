@@ -1,45 +1,30 @@
 use crate::prelude::*;
 use azure_core::Method;
-use azure_core::{headers::*, prelude::*, RequestId};
+use azure_core::{headers::*, RequestId};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct ReleaseLeaseBuilder {
-    container_lease_client: ContainerLeaseClient,
-    context: Context,
+operation! {
+    ReleaseLease,
+    client: ContainerLeaseClient,
 }
 
 impl ReleaseLeaseBuilder {
-    pub(crate) fn new(container_lease_client: ContainerLeaseClient) -> Self {
-        Self {
-            container_lease_client,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        context: Context => context,
-    }
-
-    pub fn into_future(mut self) -> Response {
+    pub fn into_future(mut self) -> ReleaseLease {
         Box::pin(async move {
-            let mut url = self.container_lease_client.url_with_segments(None)?;
+            let mut url = self.client.url_with_segments(None)?;
 
             url.query_pairs_mut().append_pair("restype", "container");
             url.query_pairs_mut().append_pair("comp", "lease");
 
             let mut headers = Headers::new();
             headers.insert(LEASE_ACTION, "release");
-            headers.add(self.container_lease_client.lease_id());
+            headers.add(self.client.lease_id());
 
-            let mut request =
-                self.container_lease_client
-                    .finalize_request(url, Method::Put, headers, None)?;
+            let mut request = self
+                .client
+                .finalize_request(url, Method::Put, headers, None)?;
 
-            let response = self
-                .container_lease_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
 
             ReleaseLeaseResponse::from_headers(response.headers())
         })
@@ -52,14 +37,3 @@ azure_storage::response_from_headers!(ReleaseLeaseResponse ,
     request_id_from_headers => request_id: RequestId,
     date_from_headers => date: DateTime<Utc>
 );
-
-pub type Response = futures::future::BoxFuture<'static, azure_core::Result<ReleaseLeaseResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for ReleaseLeaseBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
-    }
-}

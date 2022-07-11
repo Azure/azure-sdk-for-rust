@@ -12,42 +12,25 @@ use azure_core::{
 use azure_storage::core::StoredAccessPolicyList;
 use chrono::{DateTime, FixedOffset};
 
-#[derive(Debug, Clone)]
-pub struct GetACLBuilder {
-    container_client: ContainerClient,
-    lease_id: Option<LeaseId>,
-    context: Context,
+operation! {
+    GetACL,
+    client: ContainerClient,
+    ?lease_id: LeaseId
 }
 
 impl GetACLBuilder {
-    pub(crate) fn new(container_client: ContainerClient) -> Self {
-        Self {
-            container_client,
-            lease_id: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        lease_id: LeaseId => Some(lease_id),
-        context: Context => context,
-    }
-
     pub fn into_future(mut self) -> GetACL {
         Box::pin(async move {
-            let url = self.container_client.url_with_segments(None)?;
+            let url = self.client.url_with_segments(None)?;
 
             let mut headers = Headers::new();
             headers.add(self.lease_id);
 
-            let mut request =
-                self.container_client
-                    .finalize_request(url, Method::Get, headers, None)?;
+            let mut request = self
+                .client
+                .finalize_request(url, Method::Get, headers, None)?;
 
-            let response = self
-                .container_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
             GetACLResponse::from_response(response).await
         })
     }
@@ -93,16 +76,5 @@ impl GetACLResponse {
             date,
             stored_access_policy_list,
         })
-    }
-}
-
-pub type GetACL = futures::future::BoxFuture<'static, azure_core::Result<GetACLResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for GetACLBuilder {
-    type IntoFuture = Response;
-    type Output = <Response as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
