@@ -1,4 +1,4 @@
-use crate::{operations::*, prelude::*};
+use crate::{operations::*, prelude::*, transaction::TransactionOperations};
 use azure_core::{headers::Headers, Context, Method, Request, Response, Url};
 use azure_storage::core::clients::StorageClient;
 use bytes::Bytes;
@@ -18,7 +18,7 @@ impl PartitionKeyClient {
     }
 
     pub fn transaction(&self) -> TransactionBuilder {
-        TransactionBuilder::new(self.clone())
+        TransactionBuilder::new(self.clone(), TransactionOperations::new())
     }
 
     pub fn partition_key(&self) -> &str {

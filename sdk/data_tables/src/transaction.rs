@@ -2,13 +2,13 @@ use crate::transaction_operation::TransactionOperation;
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
-pub(crate) struct Transaction {
+pub(crate) struct TransactionOperations {
     batch_uuid: Uuid,
     change_set_uuid: Uuid,
     transaction_operations: Vec<TransactionOperation>,
 }
 
-impl Transaction {
+impl TransactionOperations {
     pub(crate) fn new() -> Self {
         Self {
             batch_uuid: Uuid::new_v4(),

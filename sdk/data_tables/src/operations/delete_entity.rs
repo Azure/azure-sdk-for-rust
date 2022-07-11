@@ -1,64 +1,33 @@
 use crate::{prelude::*, IfMatchCondition};
-use azure_core::{error::Error, headers::Headers, prelude::*, Context, Method, Response};
+use azure_core::{error::Error, headers::Headers, prelude::*, Method, Response};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::{TryFrom, TryInto};
 
-#[derive(Debug, Clone)]
-pub struct DeleteEntityBuilder {
-    entity_client: EntityClient,
-    if_match: IfMatchCondition,
-    timeout: Option<Timeout>,
-    context: Context,
+operation! {
+    DeleteEntity,
+    client: EntityClient,
+    ?if_match: IfMatchCondition,
+    ?timeout: Timeout
 }
 
 impl DeleteEntityBuilder {
-    pub(crate) fn new(entity_client: EntityClient) -> Self {
-        Self {
-            entity_client,
-            if_match: IfMatchCondition::Any,
-            timeout: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        if_match: IfMatchCondition => if_match,
-        timeout: Timeout => Some(timeout),
-        context: Context => context,
-    }
-
-    pub fn into_future(mut self) -> FutureResponse {
+    pub fn into_future(mut self) -> DeleteEntity {
         Box::pin(async move {
-            let mut url = self.entity_client.url().clone();
+            let mut url = self.client.url().clone();
 
             self.timeout.append_to_url_query(&mut url);
 
             let mut headers = Headers::new();
-            headers.add(self.if_match);
+            headers.add(self.if_match.unwrap_or(IfMatchCondition::Any));
 
-            let mut request =
-                self.entity_client
-                    .finalize_request(url, Method::Delete, headers, None)?;
+            let mut request = self
+                .client
+                .finalize_request(url, Method::Delete, headers, None)?;
 
-            let response = self
-                .entity_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
 
             response.try_into()
         })
-    }
-}
-
-pub type FutureResponse =
-    futures::future::BoxFuture<'static, azure_core::Result<DeleteEntityResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for DeleteEntityBuilder {
-    type IntoFuture = FutureResponse;
-    type Output = <FutureResponse as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 

@@ -1,12 +1,12 @@
 use crate::{
-    prelude::*, transaction::Transaction, transaction_operation::TransactionOperation,
+    prelude::*, transaction::TransactionOperations, transaction_operation::TransactionOperation,
     IfMatchCondition,
 };
 use azure_core::{
     error::{Error, ErrorKind},
     headers::*,
     prelude::*,
-    CollectedResponse, Context, Etag, Method, Request, StatusCode,
+    CollectedResponse, Etag, Method, Request, StatusCode,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use serde::Serialize;
@@ -14,40 +14,25 @@ use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
 use url::Url;
 
-#[derive(Debug, Clone)]
-pub struct TransactionBuilder {
-    partition_key_client: PartitionKeyClient,
-    transaction: Transaction,
-    timeout: Option<Timeout>,
-    context: Context,
+operation! {
+    Transaction,
+    client: PartitionKeyClient,
+    transaction: TransactionOperations,
+    ?timeout: Timeout
 }
 
 impl TransactionBuilder {
-    pub(crate) fn new(partition_key_client: PartitionKeyClient) -> Self {
-        Self {
-            partition_key_client,
-            transaction: Transaction::new(),
-            timeout: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        timeout: Timeout => Some(timeout),
-        context: Context => context,
-    }
-
     /// Insert a new entity into a table
     ///
     /// Ref: https://docs.microsoft.com/en-us/rest/api/storageservices/insert-entity
     pub fn insert<E: Serialize>(mut self, entity: E) -> azure_core::Result<Self> {
         let body = serde_json::to_string(&entity)?;
 
-        let mut url = self.partition_key_client.table_client().url().to_owned();
+        let mut url = self.client.table_client().url().to_owned();
         url.path_segments_mut()
             .map_err(|()| Error::message(ErrorKind::Other, "invalid table URL"))?
             .pop()
-            .push(self.partition_key_client.table_client().table_name());
+            .push(self.client.table_client().table_name());
 
         let mut request = Request::new(url, Method::Post);
         request.insert_header(ACCEPT, "application/json;odata=fullmetadata");
@@ -116,8 +101,8 @@ impl TransactionBuilder {
     ///
     /// ref: https://docs.microsoft.com/en-us/rest/api/storageservices/delete-entity1
     pub fn delete<RK: Into<String>>(mut self, row_key: RK) -> azure_core::Result<Self> {
-        let partition_key_client = Arc::new(self.partition_key_client.clone());
-        let entity_client = partition_key_client.entity_client(row_key)?;
+        let client = Arc::new(self.client.clone());
+        let entity_client = client.entity_client(row_key)?;
         let url = entity_client.url();
 
         let mut request = Request::new(url.clone(), Method::Delete);
@@ -129,9 +114,9 @@ impl TransactionBuilder {
         Ok(self)
     }
 
-    pub fn into_future(mut self) -> FutureResponse {
+    pub fn into_future(mut self) -> Transaction {
         Box::pin(async move {
-            let mut url = self.partition_key_client.table_client().url().to_owned();
+            let mut url = self.client.table_client().url().to_owned();
             url.path_segments_mut()
                 .map_err(|()| Error::message(ErrorKind::Other, "invalid table URL"))?
                 .pop()
@@ -150,17 +135,11 @@ impl TransactionBuilder {
                 ),
             );
 
-            let mut request = self.partition_key_client.finalize_request(
-                url,
-                Method::Post,
-                headers,
-                request_body,
-            )?;
+            let mut request =
+                self.client
+                    .finalize_request(url, Method::Post, headers, request_body)?;
 
-            let response = self
-                .partition_key_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
 
             let collected_response = CollectedResponse::from_response(response).await?;
             collected_response.try_into()
@@ -175,8 +154,8 @@ impl TransactionBuilder {
         match_condition: Option<IfMatchCondition>,
     ) -> azure_core::Result<Self> {
         let body = serde_json::to_string(&entity)?;
-        let partition_key_client = Arc::new(self.partition_key_client.clone());
-        let entity_client = partition_key_client.entity_client(row_key)?;
+        let client = Arc::new(self.client.clone());
+        let entity_client = client.entity_client(row_key)?;
         let url = entity_client.url();
 
         let mut request = Request::new(url.clone(), method);
@@ -187,18 +166,6 @@ impl TransactionBuilder {
 
         self.transaction.add(TransactionOperation::new(request));
         Ok(self)
-    }
-}
-
-pub type FutureResponse =
-    futures::future::BoxFuture<'static, azure_core::Result<SubmitTransactionResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for TransactionBuilder {
-    type IntoFuture = FutureResponse;
-    type Output = <FutureResponse as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 
@@ -222,12 +189,12 @@ impl Default for OperationResponse {
 }
 
 #[derive(Debug, Clone)]
-pub struct SubmitTransactionResponse {
+pub struct TransactionResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub operation_responses: Vec<OperationResponse>,
 }
 
-impl TryFrom<CollectedResponse> for SubmitTransactionResponse {
+impl TryFrom<CollectedResponse> for TransactionResponse {
     type Error = Error;
 
     fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
@@ -298,7 +265,7 @@ impl TryFrom<CollectedResponse> for SubmitTransactionResponse {
             operation_responses.push(operation_response);
         }
 
-        Ok(SubmitTransactionResponse {
+        Ok(TransactionResponse {
             common_storage_response_headers: response.headers().try_into()?,
             operation_responses,
         })

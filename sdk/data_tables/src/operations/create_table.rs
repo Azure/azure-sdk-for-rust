@@ -1,29 +1,17 @@
 use crate::prelude::*;
-use azure_core::{collect_pinned_stream, headers::*, Context, Method, Response};
+use azure_core::{collect_pinned_stream, headers::*, Method, Response};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
-#[derive(Debug, Clone)]
-pub struct CreateTableBuilder {
-    table_client: TableClient,
-    context: Context,
+operation! {
+    CreateTable,
+    client: TableClient,
 }
 
 impl CreateTableBuilder {
-    pub(crate) fn new(table_client: TableClient) -> Self {
-        Self {
-            table_client,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        context: Context => context,
-    }
-
-    pub fn into_future(mut self) -> FutureResponse {
+    pub fn into_future(mut self) -> CreateTable {
         Box::pin(async move {
-            let url = self.table_client.url().clone();
+            let url = self.client.url().clone();
 
             #[derive(Debug, Clone, Serialize)]
             struct RequestBody<'a> {
@@ -32,7 +20,7 @@ impl CreateTableBuilder {
             }
 
             let body = serde_json::to_string(&RequestBody {
-                table_name: self.table_client.table_name(),
+                table_name: self.client.table_name(),
             })?
             .into();
 
@@ -42,28 +30,13 @@ impl CreateTableBuilder {
             headers.insert(PREFER, "return-content");
 
             let mut request =
-                self.table_client
+                self.client
                     .finalize_request(url, Method::Post, headers, Some(body))?;
 
-            let response = self
-                .table_client
-                .send(&mut self.context, &mut request)
-                .await?;
+            let response = self.client.send(&mut self.context, &mut request).await?;
 
             CreateTableResponse::try_from(response).await
         })
-    }
-}
-
-pub type FutureResponse =
-    futures::future::BoxFuture<'static, azure_core::Result<CreateTableResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for CreateTableBuilder {
-    type IntoFuture = FutureResponse;
-    type Output = <FutureResponse as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 
