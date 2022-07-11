@@ -2,7 +2,6 @@ use crate::{QueueServiceClient, QueueServiceProperties};
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     headers::Headers,
-    prelude::*,
     Context, Method, Response as AzureResponse,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
@@ -12,7 +11,6 @@ use std::convert::TryInto;
 pub struct SetQueueServicePropertiesBuilder {
     service_client: QueueServiceClient,
     properties: QueueServiceProperties,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -24,13 +22,11 @@ impl SetQueueServicePropertiesBuilder {
         SetQueueServicePropertiesBuilder {
             service_client,
             properties,
-            timeout: None,
             context: Context::new(),
         }
     }
 
     setters! {
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
@@ -44,7 +40,6 @@ impl SetQueueServicePropertiesBuilder {
 
             url.query_pairs_mut().append_pair("restype", "service");
             url.query_pairs_mut().append_pair("comp", "properties");
-            self.timeout.append_to_url_query(&mut url);
 
             let xml_body =
                 serde_xml_rs::to_string(&self.properties).map_kind(ErrorKind::DataConversion)?;

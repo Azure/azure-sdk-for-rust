@@ -1,14 +1,11 @@
 use crate::clients::PopReceiptClient;
-use azure_core::{
-    error::Error, headers::Headers, prelude::*, Context, Method, Response as AzureResponse,
-};
+use azure_core::{error::Error, headers::Headers, Context, Method, Response as AzureResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
 #[derive(Debug)]
 pub struct DeleteMessageBuilder {
     pop_receipt_client: PopReceiptClient,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -16,21 +13,17 @@ impl DeleteMessageBuilder {
     pub(crate) fn new(pop_receipt_client: PopReceiptClient) -> Self {
         DeleteMessageBuilder {
             pop_receipt_client,
-            timeout: None,
             context: Context::new(),
         }
     }
 
     setters! {
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
     pub fn into_future(mut self) -> Response {
         Box::pin(async move {
-            let mut url = self.pop_receipt_client.pop_receipt_url()?;
-
-            self.timeout.append_to_url_query(&mut url);
+            let url = self.pop_receipt_client.pop_receipt_url()?;
 
             let mut request = self.pop_receipt_client.storage_client().finalize_request(
                 url,

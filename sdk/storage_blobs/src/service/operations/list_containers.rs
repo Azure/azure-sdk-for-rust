@@ -16,7 +16,6 @@ pub struct ListContainersBuilder {
     include_metadata: bool,
     include_deleted: bool,
     max_results: Option<MaxResults>,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -28,7 +27,6 @@ impl ListContainersBuilder {
             include_metadata: false,
             include_deleted: false,
             max_results: None,
-            timeout: None,
             context: Context::new(),
         }
     }
@@ -38,7 +36,6 @@ impl ListContainersBuilder {
         include_metadata: bool => include_metadata,
         include_deleted: bool => include_deleted,
         max_results: MaxResults => Some(max_results),
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
@@ -66,7 +63,6 @@ impl ListContainersBuilder {
                     url.query_pairs_mut().append_pair("include", include);
                 }
                 this.max_results.append_to_url_query(&mut url);
-                this.timeout.append_to_url_query(&mut url);
 
                 let mut request = this.client.storage_client.finalize_request(
                     url,

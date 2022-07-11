@@ -31,7 +31,6 @@ async fn main() -> azure_core::Result<()> {
         .create()
         .public_access(PublicAccess::Container)
         .metadata(metadata)
-        .timeout(Duration::from_secs(100))
         .into_future()
         .await?;
 

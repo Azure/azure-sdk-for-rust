@@ -6,7 +6,6 @@ use chrono::{DateTime, Utc};
 pub struct ChangeLeaseBuilder {
     blob_lease_client: BlobLeaseClient,
     proposed_lease_id: ProposedLeaseId,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -18,13 +17,12 @@ impl ChangeLeaseBuilder {
         Self {
             blob_lease_client,
             proposed_lease_id,
-            timeout: None,
             context: Context::new(),
         }
     }
 
     setters! {
-        timeout: Timeout => Some(timeout),
+        context: Context => context,
     }
 
     pub fn into_future(mut self) -> Response {
@@ -32,7 +30,6 @@ impl ChangeLeaseBuilder {
             let mut url = self.blob_lease_client.url_with_segments(None)?;
 
             url.query_pairs_mut().append_pair("comp", "lease");
-            self.timeout.append_to_url_query(&mut url);
 
             let mut headers = Headers::new();
             headers.insert(LEASE_ACTION, "change");

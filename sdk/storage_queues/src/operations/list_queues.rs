@@ -12,7 +12,6 @@ pub struct ListQueuesBuilder {
     prefix: Option<Prefix>,
     max_results: Option<MaxResults>,
     include_metadata: bool,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -23,7 +22,6 @@ impl ListQueuesBuilder {
             prefix: None,
             max_results: None,
             include_metadata: false,
-            timeout: None,
             context: Context::new(),
         }
     }
@@ -32,7 +30,6 @@ impl ListQueuesBuilder {
         prefix: Prefix => Some(prefix),
         max_results: MaxResults => Some(max_results),
         include_metadata: bool => include_metadata,
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
@@ -59,9 +56,6 @@ impl ListQueuesBuilder {
                 if this.include_metadata {
                     url.query_pairs_mut().append_pair("include", "metadata");
                 }
-
-                this.timeout.append_to_url_query(&mut url);
-                AppendToUrlQuery::append_to_url_query(&this.timeout, &mut url);
 
                 let mut request = this.service_client.storage_client.finalize_request(
                     url,

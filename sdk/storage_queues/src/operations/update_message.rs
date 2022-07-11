@@ -15,7 +15,6 @@ pub struct UpdateMessageBuilder {
     pop_receipt_client: PopReceiptClient,
     body: String,
     visibility_timeout: VisibilityTimeout,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -29,13 +28,11 @@ impl UpdateMessageBuilder {
             pop_receipt_client,
             body,
             visibility_timeout,
-            timeout: None,
             context: Context::new(),
         }
     }
 
     setters! {
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
@@ -44,7 +41,6 @@ impl UpdateMessageBuilder {
             let mut url = self.pop_receipt_client.pop_receipt_url()?;
 
             self.visibility_timeout.append_to_url_query(&mut url);
-            self.timeout.append_to_url_query(&mut url);
 
             // since the format is fixed we just decorate the message with the tags.
             // This could be made optional in the future and/or more

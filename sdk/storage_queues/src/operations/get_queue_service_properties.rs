@@ -1,6 +1,6 @@
 use crate::{QueueServiceClient, QueueServiceProperties};
 use azure_core::{
-    collect_pinned_stream, headers::Headers, prelude::*, Context, Method, Response as AzureResponse,
+    collect_pinned_stream, headers::Headers, Context, Method, Response as AzureResponse,
 };
 use azure_storage::core::{headers::CommonStorageResponseHeaders, xml::read_xml};
 use std::convert::TryInto;
@@ -8,7 +8,6 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct GetQueueServicePropertiesBuilder {
     service_client: QueueServiceClient,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -16,13 +15,11 @@ impl GetQueueServicePropertiesBuilder {
     pub(crate) fn new(service_client: QueueServiceClient) -> Self {
         Self {
             service_client,
-            timeout: None,
             context: Context::new(),
         }
     }
 
     setters! {
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
@@ -36,8 +33,6 @@ impl GetQueueServicePropertiesBuilder {
 
             url.query_pairs_mut().append_pair("restype", "service");
             url.query_pairs_mut().append_pair("comp", "properties");
-
-            self.timeout.append_to_url_query(&mut url);
 
             let mut request = self.service_client.storage_client.finalize_request(
                 url,

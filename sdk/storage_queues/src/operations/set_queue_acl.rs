@@ -7,7 +7,6 @@ use std::convert::TryInto;
 pub struct SetQueueACLBuilder {
     queue_client: QueueClient,
     policies: Vec<QueueStoredAccessPolicy>,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -16,13 +15,11 @@ impl SetQueueACLBuilder {
         SetQueueACLBuilder {
             queue_client,
             policies,
-            timeout: None,
             context: Context::new(),
         }
     }
 
     setters! {
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
@@ -31,7 +28,6 @@ impl SetQueueACLBuilder {
             let mut url = self.queue_client.url_with_segments(None)?;
 
             url.query_pairs_mut().append_pair("comp", "acl");
-            self.timeout.append_to_url_query(&mut url);
 
             // convert the queue_stored_access_policies slice
             // in a StoredAccessPolicyList to get its XML

@@ -12,7 +12,6 @@ pub struct GetMessagesBuilder {
     queue_client: QueueClient,
     number_of_messages: Option<NumberOfMessages>,
     visibility_timeout: Option<VisibilityTimeout>,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -22,7 +21,6 @@ impl GetMessagesBuilder {
             queue_client,
             number_of_messages: None,
             visibility_timeout: None,
-            timeout: None,
             context: Context::new(),
         }
     }
@@ -30,7 +28,6 @@ impl GetMessagesBuilder {
     setters! {
         number_of_messages: NumberOfMessages => Some(number_of_messages),
         visibility_timeout: VisibilityTimeout => Some(visibility_timeout),
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
@@ -40,7 +37,6 @@ impl GetMessagesBuilder {
 
             self.visibility_timeout.append_to_url_query(&mut url);
             self.number_of_messages.append_to_url_query(&mut url);
-            self.timeout.append_to_url_query(&mut url);
 
             let mut request = self.queue_client.storage_client().finalize_request(
                 url,

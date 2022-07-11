@@ -7,7 +7,6 @@ pub struct CreateBuilder {
     container_client: ContainerClient,
     public_access: PublicAccess,
     metadata: Option<Metadata>,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -17,7 +16,6 @@ impl CreateBuilder {
             container_client,
             public_access: PublicAccess::None,
             metadata: None,
-            timeout: None,
             context: Context::new(),
         }
     }
@@ -25,7 +23,6 @@ impl CreateBuilder {
     setters! {
         public_access: PublicAccess => public_access,
         metadata: Metadata => Some(metadata),
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
@@ -34,8 +31,6 @@ impl CreateBuilder {
             let mut url = self.container_client.url_with_segments(None)?;
 
             url.query_pairs_mut().append_pair("restype", "container");
-
-            self.timeout.append_to_url_query(&mut url);
 
             let mut headers = Headers::new();
             if let Some(metadata) = &self.metadata {

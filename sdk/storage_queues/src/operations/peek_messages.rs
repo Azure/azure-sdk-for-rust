@@ -11,7 +11,6 @@ use std::convert::TryInto;
 pub struct PeekMessagesBuilder {
     queue_client: QueueClient,
     number_of_messages: Option<NumberOfMessages>,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -20,14 +19,12 @@ impl PeekMessagesBuilder {
         PeekMessagesBuilder {
             queue_client,
             number_of_messages: None,
-            timeout: None,
             context: Context::new(),
         }
     }
 
     setters! {
         number_of_messages: NumberOfMessages => Some(number_of_messages),
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
@@ -37,7 +34,6 @@ impl PeekMessagesBuilder {
 
             url.query_pairs_mut().append_pair("peekonly", "true");
             self.number_of_messages.append_to_url_query(&mut url);
-            self.timeout.append_to_url_query(&mut url);
 
             let mut request = self.queue_client.storage_client().finalize_request(
                 url,

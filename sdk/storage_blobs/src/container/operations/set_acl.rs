@@ -9,7 +9,6 @@ pub struct SetACLBuilder {
     container_client: ContainerClient,
     public_access: PublicAccess,
     stored_access_policy_list: Option<StoredAccessPolicyList>,
-    timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
     context: Context,
 }
@@ -20,7 +19,6 @@ impl SetACLBuilder {
             container_client,
             public_access,
             stored_access_policy_list: None,
-            timeout: None,
             lease_id: None,
             context: Context::new(),
         }
@@ -28,7 +26,6 @@ impl SetACLBuilder {
 
     setters! {
         lease_id: LeaseId => Some(lease_id),
-        timeout: Timeout => Some(timeout),
         stored_access_policy_list: StoredAccessPolicyList => Some(stored_access_policy_list),
         context: Context => context,
     }
@@ -39,8 +36,6 @@ impl SetACLBuilder {
 
             url.query_pairs_mut().append_pair("restype", "container");
             url.query_pairs_mut().append_pair("comp", "acl");
-
-            self.timeout.append_to_url_query(&mut url);
 
             let xml = self.stored_access_policy_list.map(|xml| xml.to_xml());
 

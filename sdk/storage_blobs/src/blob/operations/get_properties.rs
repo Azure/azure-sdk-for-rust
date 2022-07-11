@@ -6,7 +6,6 @@ use chrono::{DateTime, Utc};
 pub struct GetPropertiesBuilder {
     blob_client: BlobClient,
     blob_versioning: Option<BlobVersioning>,
-    timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
     context: Context,
 }
@@ -16,7 +15,6 @@ impl GetPropertiesBuilder {
         Self {
             blob_client,
             blob_versioning: None,
-            timeout: None,
             lease_id: None,
             context: Context::new(),
         }
@@ -24,7 +22,6 @@ impl GetPropertiesBuilder {
 
     setters! {
         blob_versioning: BlobVersioning => Some(blob_versioning),
-        timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
     }
 
@@ -32,7 +29,6 @@ impl GetPropertiesBuilder {
         Box::pin(async move {
             let mut url = self.blob_client.url_with_segments(None)?;
 
-            self.timeout.append_to_url_query(&mut url);
             self.blob_versioning.append_to_url_query(&mut url);
 
             let mut headers = Headers::new();

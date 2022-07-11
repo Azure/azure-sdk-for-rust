@@ -1,3 +1,4 @@
+use azure_core::{prelude::Timeout, Context};
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::StreamExt;
@@ -35,10 +36,12 @@ async fn main() -> azure_core::Result<()> {
     }
 
     // create the container
+    let mut context = Context::new();
+    context.insert(Timeout::new(Duration::from_secs(100)));
     container_client
         .create()
         .public_access(PublicAccess::None)
-        .timeout(Duration::from_secs(100))
+        .context(context)
         .into_future()
         .await?;
     println!("Container {} created", container_name);

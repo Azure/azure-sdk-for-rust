@@ -17,7 +17,6 @@ pub struct PutBlockBlobBuilder {
     access_tier: Option<AccessTier>,
     // TODO: Support tags
     lease_id: Option<LeaseId>,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -35,7 +34,6 @@ impl PutBlockBlobBuilder {
             access_tier: None,
             lease_id: None,
             context: Context::new(),
-            timeout: None,
         }
     }
 
@@ -48,14 +46,11 @@ impl PutBlockBlobBuilder {
         metadata: Metadata => Some(metadata),
         access_tier: AccessTier => Some(access_tier),
         lease_id: LeaseId => Some(lease_id),
-        timeout: Timeout => Some(timeout),
     }
 
     pub fn into_future(mut self) -> Response {
         Box::pin(async move {
-            let mut url = self.blob_client.url_with_segments(None)?;
-
-            self.timeout.append_to_url_query(&mut url);
+            let url = self.blob_client.url_with_segments(None)?;
 
             let mut headers = Headers::new();
             headers.insert(BLOB_TYPE, "BlockBlob");

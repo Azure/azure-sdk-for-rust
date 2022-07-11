@@ -9,7 +9,6 @@ use std::convert::TryInto;
 pub struct SetQueueMetadataBuilder {
     queue_client: QueueClient,
     metadata: Metadata,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -18,13 +17,11 @@ impl SetQueueMetadataBuilder {
         SetQueueMetadataBuilder {
             queue_client,
             metadata,
-            timeout: None,
             context: Context::new(),
         }
     }
 
     setters! {
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
@@ -33,7 +30,6 @@ impl SetQueueMetadataBuilder {
             let mut url = self.queue_client.url_with_segments(None)?;
 
             url.query_pairs_mut().append_pair("comp", "metadata");
-            self.timeout.append_to_url_query(&mut url);
 
             let mut headers = Headers::new();
             for m in self.metadata.iter() {

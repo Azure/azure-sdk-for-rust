@@ -5,7 +5,6 @@ use chrono::{DateTime, Utc};
 #[derive(Debug, Clone)]
 pub struct RenewLeaseBuilder {
     blob_lease_client: BlobLeaseClient,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -14,21 +13,17 @@ impl RenewLeaseBuilder {
         Self {
             blob_lease_client,
             context: Context::new(),
-            timeout: None,
         }
     }
 
     setters! {
-
-        timeout: Timeout => Some(timeout),
+        context: Context => context,
     }
 
     pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.blob_lease_client.url_with_segments(None)?;
-
             url.query_pairs_mut().append_pair("comp", "lease");
-            self.timeout.append_to_url_query(&mut url);
 
             let mut headers = Headers::new();
             headers.insert(LEASE_ACTION, "renew");

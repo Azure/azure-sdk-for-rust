@@ -6,7 +6,6 @@ pub struct DeleteBlobSnapshotBuilder {
     blob_client: BlobClient,
     snapshot: Snapshot,
     permanent: bool,
-    timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
     context: Context,
 }
@@ -17,7 +16,6 @@ impl DeleteBlobSnapshotBuilder {
             blob_client,
             snapshot,
             permanent: false,
-            timeout: None,
             lease_id: None,
             context: Context::new(),
         }
@@ -25,7 +23,6 @@ impl DeleteBlobSnapshotBuilder {
 
     setters! {
         permanent: bool => permanent,
-        timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
     }
 
@@ -33,7 +30,6 @@ impl DeleteBlobSnapshotBuilder {
         Box::pin(async move {
             let mut url = self.blob_client.url_with_segments(None)?;
 
-            self.timeout.append_to_url_query(&mut url);
             (&self.snapshot).append_to_url_query(&mut url);
             if self.permanent {
                 url.query_pairs_mut().append_pair("deletetype", "permanent");

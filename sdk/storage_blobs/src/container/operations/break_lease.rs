@@ -6,7 +6,6 @@ use chrono::{DateTime, Utc};
 #[derive(Debug, Clone)]
 pub struct BreakLeaseBuilder {
     container_client: ContainerClient,
-    timeout: Option<Timeout>,
     lease_break_period: Option<LeaseBreakPeriod>,
     lease_id: Option<LeaseId>,
     context: Context,
@@ -16,7 +15,6 @@ impl BreakLeaseBuilder {
     pub(crate) fn new(container_client: ContainerClient) -> BreakLeaseBuilder {
         Self {
             container_client,
-            timeout: None,
             lease_break_period: None,
             lease_id: None,
             context: Context::new(),
@@ -26,7 +24,6 @@ impl BreakLeaseBuilder {
     setters! {
         lease_id: LeaseId => Some(lease_id),
         lease_break_period: LeaseBreakPeriod => Some(lease_break_period),
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
@@ -36,8 +33,6 @@ impl BreakLeaseBuilder {
 
             url.query_pairs_mut().append_pair("restype", "container");
             url.query_pairs_mut().append_pair("comp", "lease");
-
-            self.timeout.append_to_url_query(&mut url);
 
             let mut headers = Headers::new();
             headers.insert(LEASE_ACTION, "break");

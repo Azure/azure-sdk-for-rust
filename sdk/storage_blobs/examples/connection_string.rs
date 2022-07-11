@@ -1,7 +1,7 @@
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::StreamExt;
-use std::{num::NonZeroU32, time::Duration};
+use std::num::NonZeroU32;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -31,7 +31,6 @@ async fn main() -> azure_core::Result<()> {
     container_client
         .create()
         .public_access(PublicAccess::None)
-        .timeout(Duration::from_secs(100))
         .into_future()
         .await?;
     println!("Container {} created", container_name);
