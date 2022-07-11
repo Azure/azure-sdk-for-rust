@@ -17,32 +17,6 @@ impl BlobLeaseClient {
         }
     }
 
-    pub fn lease_id(&self) -> LeaseId {
-        self.lease_id
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn storage_client(&self) -> &StorageClient {
-        self.blob_client.storage_client()
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn container_client(&self) -> &ContainerClient {
-        self.blob_client.container_client()
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn blob_client(&self) -> &BlobClient {
-        &self.blob_client
-    }
-
-    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
-    where
-        I: IntoIterator<Item = &'a str>,
-    {
-        self.blob_client.url_with_segments(segments)
-    }
-
     pub fn change(&self, proposed_lease_id: ProposedLeaseId) -> ChangeLeaseBuilder {
         ChangeLeaseBuilder::new(self.clone(), proposed_lease_id)
     }
@@ -53,6 +27,29 @@ impl BlobLeaseClient {
 
     pub fn renew(&self) -> RenewLeaseBuilder {
         RenewLeaseBuilder::new(self.clone())
+    }
+
+    pub fn lease_id(&self) -> LeaseId {
+        self.lease_id
+    }
+
+    pub fn storage_client(&self) -> &StorageClient {
+        self.blob_client.storage_client()
+    }
+
+    pub fn container_client(&self) -> &ContainerClient {
+        self.blob_client.container_client()
+    }
+
+    pub fn blob_client(&self) -> &BlobClient {
+        &self.blob_client
+    }
+
+    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
+    where
+        I: IntoIterator<Item = &'a str>,
+    {
+        self.blob_client.url_with_segments(segments)
     }
 
     pub(crate) fn finalize_request(

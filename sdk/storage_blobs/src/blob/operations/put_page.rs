@@ -5,7 +5,7 @@ use bytes::Bytes;
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
-pub struct UpdatePageBuilder {
+pub struct PutPageBuilder {
     blob_client: BlobClient,
     ba512_range: BA512Range,
     content: Bytes,
@@ -17,7 +17,7 @@ pub struct UpdatePageBuilder {
     context: Context,
 }
 
-impl UpdatePageBuilder {
+impl PutPageBuilder {
     pub(crate) fn new(blob_client: BlobClient, ba512_range: BA512Range, content: Bytes) -> Self {
         Self {
             blob_client,
@@ -107,7 +107,7 @@ impl UpdatePageResponse {
 pub type Response = futures::future::BoxFuture<'static, azure_core::Result<UpdatePageResponse>>;
 
 #[cfg(feature = "into_future")]
-impl std::future::IntoFuture for UpdatePageBuilder {
+impl std::future::IntoFuture for PutPageBuilder {
     type IntoFuture = Response;
     type Output = <Response as std::future::Future>::Output;
     fn into_future(self) -> Self::IntoFuture {

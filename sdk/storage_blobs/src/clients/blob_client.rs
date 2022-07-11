@@ -1,10 +1,9 @@
 use crate::{blob::operations::*, options::BA512Range, prelude::*};
-use azure_core::Method;
 use azure_core::{
     error::{Error, ErrorKind},
     headers::Headers,
     prelude::*,
-    Request, Response,
+    Method, Request, Response, StatusCode,
 };
 use azure_storage::core::{
     clients::StorageCredentials,
@@ -19,6 +18,9 @@ use chrono::{DateTime, Utc};
 use futures::StreamExt;
 use url::Url;
 
+/// A client for handling blobs
+///
+/// For a full list of operations available on blobs, check out [the Azure documentation](https://docs.microsoft.com/en-us/rest/api/storageservices/operations-on-blobs).
 #[derive(Debug, Clone)]
 pub struct BlobClient {
     container_client: ContainerClient,
@@ -33,38 +35,15 @@ impl BlobClient {
         }
     }
 
-    pub fn blob_name(&self) -> &str {
-        &self.blob_name
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn storage_client(&self) -> &StorageClient {
-        self.container_client.storage_client()
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn container_client(&self) -> &ContainerClient {
-        &self.container_client
-    }
-
-    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
-    where
-        I: IntoIterator<Item = &'a str>,
-    {
-        let blob_name_with_segments = self.blob_name.split('/').into_iter().chain(segments);
-        self.container_client
-            .url_with_segments(blob_name_with_segments)
-    }
-
-    // stream blob downloads
-    //
-    // By default, blobs are downloaded in 1MB chunks to reduce the impact of
-    // intermittent network issues while downloading large blobs.
+    /// Stream a blob in chunks.
+    ///
+    /// By default, blobs are downloaded in 1MB chunks to reduce the impact of
+    /// intermittent network issues while downloading large blobs.
     pub fn get(&self) -> GetBlobBuilder {
         GetBlobBuilder::new(self.clone())
     }
 
-    // helper function that returns the entire blob stream
+    /// Return an entire blob.
     pub async fn get_content(&self) -> azure_core::Result<Vec<u8>> {
         let mut blob = Vec::new();
         // NOTE: this uses the default chunk size of 1MB, which enables the
@@ -78,15 +57,12 @@ impl BlobClient {
         Ok(blob)
     }
 
+    /// Get all user-defined metadata, standard HTTP properties, and system properties for the blob.
     pub fn get_properties(&self) -> GetPropertiesBuilder {
         GetPropertiesBuilder::new(self.clone())
     }
 
-    pub fn blob_lease_client(&self, lease_id: LeaseId) -> BlobLeaseClient {
-        BlobLeaseClient::new(self.clone(), lease_id)
-    }
-
-    /// Creates a builder for setting blob properties.
+    /// Set blob properties.
     ///
     /// Several properties are cleared from the blob if not passed.
     /// Consider calling `set_from_blob_properties` with existing blob properties.
@@ -94,14 +70,17 @@ impl BlobClient {
         SetPropertiesBuilder::new(self.clone())
     }
 
+    /// Get all user-defined metadata for the blob.
     pub fn get_metadata(&self) -> GetMetadataBuilder {
         GetMetadataBuilder::new(self.clone())
     }
 
+    /// Set all user-defined metadata of the blob
     pub fn set_metadata(&self) -> SetMetadataBuilder {
         SetMetadataBuilder::new(self.clone())
     }
 
+    /// Set the access tier on the blob.
     pub fn set_blob_tier(&self) -> SetBlobTierBuilder {
         SetBlobTierBuilder::new(self.clone())
     }
@@ -116,62 +95,62 @@ impl BlobClient {
         SetBlobExpiryBuilder::new(self.clone(), blob_expiry)
     }
 
-    pub fn update_page(
-        &self,
-        ba512_range: BA512Range,
-        content: impl Into<Bytes>,
-    ) -> UpdatePageBuilder {
-        UpdatePageBuilder::new(self.clone(), ba512_range, content.into())
-    }
-
-    pub fn get_page_ranges(&self) -> GetPageRangesBuilder {
-        GetPageRangesBuilder::new(self.clone())
-    }
-
-    pub fn delete(&self) -> DeleteBlobBuilder {
-        DeleteBlobBuilder::new(self.clone())
-    }
-
-    pub fn delete_snapshot(&self, snapshot: Snapshot) -> DeleteBlobSnapshotBuilder {
-        DeleteBlobSnapshotBuilder::new(self.clone(), snapshot)
-    }
-
-    pub fn delete_version_id(&self, version_id: VersionId) -> DeleteBlobVersionBuilder {
-        DeleteBlobVersionBuilder::new(self.clone(), version_id)
-    }
-
-    pub fn copy(&self, copy_source: Url) -> CopyBlobBuilder {
-        CopyBlobBuilder::new(self.clone(), copy_source)
-    }
-
-    pub fn copy_from_url(&self, copy_source: Url) -> CopyBlobFromUrlBuilder {
-        CopyBlobFromUrlBuilder::new(self.clone(), copy_source)
-    }
-
+    /// Creates a new page blob.
     pub fn put_page_blob(&self, length: u128) -> PutPageBlobBuilder {
         PutPageBlobBuilder::new(self.clone(), length)
     }
 
+    /// Creates a new append blob.
     pub fn put_append_blob(&self) -> PutAppendBlobBuilder {
         PutAppendBlobBuilder::new(self.clone())
     }
 
-    pub fn get_block_list(&self) -> GetBlockListBuilder {
-        GetBlockListBuilder::new(self.clone())
-    }
-
-    pub fn put_block_list(&self, block_list: BlockList) -> PutBlockListBuilder {
-        PutBlockListBuilder::new(self.clone(), block_list)
-    }
-
+    /// Creates a new block blob, or update the content of an existing block blob.
     pub fn put_block_blob(&self, body: impl Into<Bytes>) -> PutBlockBlobBuilder {
         PutBlockBlobBuilder::new(self.clone(), body.into())
     }
 
-    pub fn append_block(&self, body: impl Into<Bytes>) -> AppendBlockBuilder {
-        AppendBlockBuilder::new(self.clone(), body.into())
+    /// Copy the blob to a destination within the storage account.
+    pub fn copy(&self, copy_source: Url) -> CopyBlobBuilder {
+        CopyBlobBuilder::new(self.clone(), copy_source)
     }
 
+    /// Copy the blob to a destination within the storage account synchronously.
+    pub fn copy_from_url(&self, copy_source: Url) -> CopyBlobFromUrlBuilder {
+        CopyBlobFromUrlBuilder::new(self.clone(), copy_source)
+    }
+
+    /// Create a lease on the blob to lock for write and delete operations.
+    pub fn acquire_lease<LD: Into<LeaseDuration>>(
+        &self,
+        lease_duration: LD,
+    ) -> AcquireLeaseBuilder {
+        AcquireLeaseBuilder::new(self.clone(), lease_duration.into())
+    }
+
+    /// End the lease but ensure that another client cannot acquire a new lease until the current lease period has expired.
+    pub fn break_lease(&self) -> BreakLeaseBuilder {
+        BreakLeaseBuilder::new(self.clone())
+    }
+
+    /// Delete the blob.
+    pub fn delete(&self) -> DeleteBlobBuilder {
+        DeleteBlobBuilder::new(self.clone())
+    }
+
+    /// Delete a snapshot of the blob.
+    pub fn delete_snapshot(&self, snapshot: Snapshot) -> DeleteBlobSnapshotBuilder {
+        DeleteBlobSnapshotBuilder::new(self.clone(), snapshot)
+    }
+
+    /// Delete the blob at a specific version.
+    pub fn delete_version_id(&self, version_id: VersionId) -> DeleteBlobVersionBuilder {
+        DeleteBlobVersionBuilder::new(self.clone(), version_id)
+    }
+
+    /* Operations specific to certain blob types */
+
+    /// Creates a new block to be committed as part of a block blob.
     pub fn put_block(
         &self,
         block_id: impl Into<BlockId>,
@@ -180,21 +159,39 @@ impl BlobClient {
         PutBlockBuilder::new(self.clone(), block_id.into(), body.into())
     }
 
+    /// Retrieve the list of blocks that have been uploaded as part of a block blob.
+    pub fn get_block_list(&self) -> GetBlockListBuilder {
+        GetBlockListBuilder::new(self.clone())
+    }
+
+    /// Write a block blob by specifying the list of block IDs that make up the blob.
+    ///
+    /// In order to be written as part of a blob, a block must have been successfully written to the server in a prior Put Block operation.
+    pub fn put_block_list(&self, block_list: BlockList) -> PutBlockListBuilder {
+        PutBlockListBuilder::new(self.clone(), block_list)
+    }
+
+    /// Write a range of pages to a page blob.
+    pub fn put_page(&self, ba512_range: BA512Range, content: impl Into<Bytes>) -> PutPageBuilder {
+        PutPageBuilder::new(self.clone(), ba512_range, content.into())
+    }
+
+    /// Return the list of valid page ranges for a page blob or snapshot of a page blob.
+    pub fn get_page_ranges(&self) -> GetPageRangesBuilder {
+        GetPageRangesBuilder::new(self.clone())
+    }
+
+    /// Commits a new block of data to the end of an existing append blob.
+    pub fn append_block(&self, body: impl Into<Bytes>) -> AppendBlockBuilder {
+        AppendBlockBuilder::new(self.clone(), body.into())
+    }
+
+    /// Clear range of pages in a page blob.
     pub fn clear_page(&self, ba512_range: BA512Range) -> ClearPageBuilder {
         ClearPageBuilder::new(self.clone(), ba512_range)
     }
 
-    pub fn acquire_lease<LD: Into<LeaseDuration>>(
-        &self,
-        lease_duration: LD,
-    ) -> AcquireLeaseBuilder {
-        AcquireLeaseBuilder::new(self.clone(), lease_duration.into())
-    }
-
-    pub fn break_lease(&self) -> BreakLeaseBuilder {
-        BreakLeaseBuilder::new(self.clone())
-    }
-
+    /// Create a shared access signature.
     pub fn shared_access_signature(
         &self,
         permissions: BlobSasPermissions,
@@ -217,6 +214,7 @@ impl BlobClient {
         }
     }
 
+    /// Create a signed blob url
     pub fn generate_signed_blob_url<T>(&self, signature: &T) -> azure_core::Result<url::Url>
     where
         T: SasToken,
@@ -224,6 +222,45 @@ impl BlobClient {
         let mut url = self.url_with_segments(None)?;
         url.set_query(Some(&signature.token()));
         Ok(url)
+    }
+
+    /// Check whether blob exists.
+    pub async fn exists(&self) -> azure_core::Result<bool> {
+        let result = self.get_properties().into_future().await.map(|_| true);
+        if let Err(err) = result {
+            if let ErrorKind::HttpResponse { status, .. } = err.kind() {
+                return Ok(status != &StatusCode::NotFound);
+            } else {
+                return Err(err);
+            }
+        }
+        result
+    }
+
+    pub fn blob_name(&self) -> &str {
+        &self.blob_name
+    }
+
+    /// Turn into a `BlobLeaseClient`
+    pub fn blob_lease_client(&self, lease_id: LeaseId) -> BlobLeaseClient {
+        BlobLeaseClient::new(self.clone(), lease_id)
+    }
+
+    pub fn storage_client(&self) -> &StorageClient {
+        self.container_client.storage_client()
+    }
+
+    pub fn container_client(&self) -> &ContainerClient {
+        &self.container_client
+    }
+
+    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
+    where
+        I: IntoIterator<Item = &'a str>,
+    {
+        let blob_name_with_segments = self.blob_name.split('/').into_iter().chain(segments);
+        self.container_client
+            .url_with_segments(blob_name_with_segments)
     }
 
     pub(crate) fn finalize_request(
@@ -243,18 +280,6 @@ impl BlobClient {
         request: &mut Request,
     ) -> azure_core::Result<Response> {
         self.container_client.send(context, request).await
-    }
-
-    pub async fn exists(&self) -> azure_core::Result<bool> {
-        let result = self.get_properties().into_future().await.map(|_| true);
-        if let Err(err) = result {
-            if let ErrorKind::HttpResponse { status, .. } = err.kind() {
-                return Ok(status != &404u16);
-            } else {
-                return Err(err);
-            }
-        }
-        result
     }
 }
 
@@ -297,59 +322,5 @@ mod tests {
             url.as_str(),
             "http://127.0.0.1:10000/devstoreaccount1/a/b/c/d?fake_token"
         );
-    }
-}
-
-#[cfg(test)]
-#[cfg(feature = "test_integration")]
-mod integration_tests {
-    use super::*;
-    use crate::blob::clients::AsBlobClient;
-
-    fn get_emulator_client(container_name: &str) -> Arc<ContainerClient> {
-        let storage_account = StorageClient::new_emulator_default();
-        storage_account.container_client(container_name)
-    }
-
-    #[tokio::test]
-    async fn test_get_properties() {
-        let container_name = uuid::Uuid::new_v4().to_string();
-        let container_client = get_emulator_client(&container_name);
-
-        container_client
-            .create()
-            .into_future()
-            .await
-            .expect("create container should succeed");
-
-        let md5 = md5::compute("world");
-        container_client
-            .blob_client("hello.txt")
-            .put_block_blob("world")
-            .into_future()
-            .await
-            .expect("put block blob should succeed");
-        let properties = container_client
-            .blob_client("hello.txt")
-            .get_properties()
-            .into_future()
-            .await
-            .expect("get properties should succeed");
-        assert_eq!(properties.blob.name, "hello.txt");
-        assert_eq!(
-            properties
-                .blob
-                .properties
-                .content_md5
-                .expect("has content_md5")
-                .as_slice(),
-            &md5.0
-        );
-
-        container_client
-            .delete()
-            .into_future()
-            .await
-            .expect("delete container should succeed");
     }
 }

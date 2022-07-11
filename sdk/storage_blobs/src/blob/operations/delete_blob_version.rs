@@ -30,7 +30,7 @@ impl DeleteBlobVersionBuilder {
         Box::pin(async move {
             let mut url = self.blob_client.url_with_segments(None)?;
 
-            (&self.version_id).append_to_url_query(&mut url);
+            self.version_id.append_to_url_query(&mut url);
             if self.permanent {
                 url.query_pairs_mut().append_pair("deletetype", "permanent");
             }

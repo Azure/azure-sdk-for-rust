@@ -41,25 +41,6 @@ impl ContainerClient {
         }
     }
 
-    pub fn container_name(&self) -> &str {
-        &self.container_name
-    }
-
-    pub(crate) fn storage_client(&self) -> &StorageClient {
-        &self.storage_client
-    }
-
-    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
-    where
-        I: IntoIterator<Item = &'a str>,
-    {
-        self.storage_client.blob_url_with_segments(
-            Some(self.container_name.as_str())
-                .into_iter()
-                .chain(segments),
-        )
-    }
-
     pub fn create(&self) -> CreateBuilder {
         CreateBuilder::new(self.clone())
     }
@@ -103,6 +84,55 @@ impl ContainerClient {
         BlobClient::new(self.clone(), blob_name.into())
     }
 
+    pub fn container_name(&self) -> &str {
+        &self.container_name
+    }
+
+    pub fn storage_client(&self) -> &StorageClient {
+        &self.storage_client
+    }
+
+    pub fn shared_access_signature(
+        &self,
+        permissions: BlobSasPermissions,
+        expiry: DateTime<Utc>,
+    ) -> azure_core::Result<BlobSharedAccessSignature> {
+        let canonicalized_resource = format!(
+            "/blob/{}/{}",
+            self.storage_client().account(),
+            self.container_name(),
+        );
+
+        match self.storage_client().storage_credentials() {
+            StorageCredentials::Key(_, key) => Ok(
+                BlobSharedAccessSignature::new(key.to_string(), canonicalized_resource, permissions, expiry, BlobSignedResource::Container),
+            ),
+            _ => Err(Error::message(ErrorKind::Credential,
+                "Shared access signature generation - SAS can be generated only from key and account clients",
+            )),
+        }
+    }
+
+    pub fn generate_signed_container_url<T>(&self, signature: &T) -> azure_core::Result<url::Url>
+    where
+        T: SasToken,
+    {
+        let mut url = self.url_with_segments(None)?;
+        url.set_query(Some(&signature.token()));
+        Ok(url)
+    }
+
+    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
+    where
+        I: IntoIterator<Item = &'a str>,
+    {
+        self.storage_client.blob_url_with_segments(
+            Some(self.container_name.as_str())
+                .into_iter()
+                .chain(segments),
+        )
+    }
+
     pub(crate) async fn send(
         &self,
         context: &mut Context,
@@ -122,36 +152,6 @@ impl ContainerClient {
     ) -> azure_core::Result<Request> {
         self.storage_client
             .finalize_request(url, method, headers, request_body)
-    }
-
-    pub fn shared_access_signature(
-        &self,
-        permissions: BlobSasPermissions,
-        expiry: DateTime<Utc>,
-    ) -> azure_core::Result<BlobSharedAccessSignature> {
-        let canonicalized_resource = format!(
-            "/blob/{}/{}",
-            self.storage_client().account(),
-            self.container_name(),
-        );
-
-        match self.storage_client().storage_credentials() {
-            StorageCredentials::Key(ref _account, ref key) => Ok(
-                BlobSharedAccessSignature::new(key.to_string(), canonicalized_resource, permissions, expiry, BlobSignedResource::Container),
-            ),
-            _ => Err(Error::message(ErrorKind::Credential,
-                "Shared access signature generation - SAS can be generated only from key and account clients",
-            )),
-        }
-    }
-
-    pub fn generate_signed_container_url<T>(&self, signature: &T) -> azure_core::Result<url::Url>
-    where
-        T: SasToken,
-    {
-        let mut url = self.url_with_segments(None)?;
-        url.set_query(Some(&signature.token()));
-        Ok(url)
     }
 }
 
