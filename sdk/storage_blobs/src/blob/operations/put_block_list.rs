@@ -16,8 +16,7 @@ operation! {
     ?metadata: Metadata,
     ?access_tier: AccessTier,
     // TODO: Support tags
-    ?lease_id: LeaseId,
-    ?timeout: Timeout
+    ?lease_id: LeaseId
 }
 
 impl PutBlockListBuilder {

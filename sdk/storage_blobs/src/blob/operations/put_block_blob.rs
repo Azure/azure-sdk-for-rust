@@ -16,16 +16,13 @@ operation! {
     ?metadata: Metadata,
     ?access_tier: AccessTier,
     // TODO: Support tags
-    ?lease_id: LeaseId,
-    ?timeout: Timeout
+    ?lease_id: LeaseId
 }
 
 impl PutBlockBlobBuilder {
     pub fn into_future(mut self) -> PutBlockBlob {
         Box::pin(async move {
-            let mut url = self.client.url_with_segments(None)?;
-
-            self.timeout.append_to_url_query(&mut url);
+            let url = self.client.url_with_segments(None)?;
 
             let mut headers = Headers::new();
             headers.insert(BLOB_TYPE, "BlockBlob");
