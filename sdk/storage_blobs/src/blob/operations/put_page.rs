@@ -13,7 +13,6 @@ operation! {
     ?sequence_number_condition: SequenceNumberCondition,
     ?if_modified_since_condition: IfModifiedSinceCondition,
     ?if_match_condition: IfMatchCondition,
-    ?timeout: Timeout,
     ?lease_id: LeaseId
 }
 
@@ -22,7 +21,6 @@ impl PutPageBuilder {
         Box::pin(async move {
             let mut url = self.client.url_with_segments(None)?;
 
-            self.timeout.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("comp", "page");
 
             let mut headers = Headers::new();

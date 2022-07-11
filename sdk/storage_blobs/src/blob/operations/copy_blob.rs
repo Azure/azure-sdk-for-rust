@@ -17,7 +17,6 @@ operation! {
     ?if_modified_since_condition: IfModifiedSinceCondition,
     ?if_match_condition: IfMatchCondition,
     ?access_tier: AccessTier,
-    ?timeout: Timeout,
     ?lease_id: LeaseId,
     ?if_source_since_condition: IfSourceModifiedSinceCondition,
     ?if_source_match_condition: IfSourceMatchCondition,
