@@ -1,6 +1,6 @@
 /*
 Lists the VM images in specified location that do not have a publisher plan that must be
-agreed to before use.  
+agreed to before use.
 
 Note, for this example, if any image has a publisher plan, the all of the rest
 of the images in the offer are skipped.
@@ -41,7 +41,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .collect::<Vec<_>>();
         offers.sort();
 
-        'offer : for offer in offers {
+        'offer: for offer in offers {
             let mut skus = client
                 .list_skus(&location, &publisher, &offer, &subscription_id)
                 .into_future()
@@ -52,7 +52,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             skus.sort();
 
             for sku in skus {
-
                 let mut versions = client
                     .list(&location, &publisher, &offer, &sku, &subscription_id)
                     .into_future()
