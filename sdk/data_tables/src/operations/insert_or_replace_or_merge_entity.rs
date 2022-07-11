@@ -1,5 +1,5 @@
 use crate::{operations::*, prelude::*};
-use azure_core::{headers::*, prelude::*, CollectedResponse, Method};
+use azure_core::{headers::*, CollectedResponse, Method};
 use bytes::Bytes;
 use std::convert::TryInto;
 
@@ -8,15 +8,12 @@ operation! {
     client: EntityClient,
     body: Bytes,
     operation: InsertOperation,
-    ?timeout: Timeout
 }
 
 impl InsertOrReplaceOrMergeEntityBuilder {
     pub fn into_future(mut self) -> InsertOrReplaceOrMergeEntity {
         Box::pin(async move {
-            let mut url = self.client.url().clone();
-
-            self.timeout.append_to_url_query(&mut url);
+            let url = self.client.url().clone();
 
             let mut headers = Headers::new();
             headers.insert(CONTENT_TYPE, "application/json");
