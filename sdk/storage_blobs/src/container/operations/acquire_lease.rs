@@ -7,7 +7,6 @@ use chrono::{DateTime, Utc};
 pub struct AcquireLeaseBuilder {
     container_client: ContainerClient,
     lease_duration: LeaseDuration,
-    timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
     proposed_lease_id: Option<ProposedLeaseId>,
     context: Context,
@@ -18,7 +17,6 @@ impl AcquireLeaseBuilder {
         AcquireLeaseBuilder {
             container_client,
             lease_duration,
-            timeout: None,
             lease_id: None,
             proposed_lease_id: None,
             context: Context::new(),
@@ -28,7 +26,6 @@ impl AcquireLeaseBuilder {
     setters! {
         lease_id: LeaseId => Some(lease_id),
         proposed_lease_id: ProposedLeaseId => Some(proposed_lease_id),
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
@@ -38,8 +35,6 @@ impl AcquireLeaseBuilder {
 
             url.query_pairs_mut().append_pair("restype", "container");
             url.query_pairs_mut().append_pair("comp", "lease");
-
-            self.timeout.append_to_url_query(&mut url);
 
             let mut headers = Headers::new();
             headers.insert(LEASE_ACTION, "acquire");

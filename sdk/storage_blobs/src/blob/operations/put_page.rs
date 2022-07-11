@@ -5,7 +5,7 @@ use bytes::Bytes;
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
-pub struct UpdatePageBuilder {
+pub struct PutPageBuilder {
     blob_client: BlobClient,
     ba512_range: BA512Range,
     content: Bytes,
@@ -13,12 +13,11 @@ pub struct UpdatePageBuilder {
     sequence_number_condition: Option<SequenceNumberCondition>,
     if_modified_since_condition: Option<IfModifiedSinceCondition>,
     if_match_condition: Option<IfMatchCondition>,
-    timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
     context: Context,
 }
 
-impl UpdatePageBuilder {
+impl PutPageBuilder {
     pub(crate) fn new(blob_client: BlobClient, ba512_range: BA512Range, content: Bytes) -> Self {
         Self {
             blob_client,
@@ -28,9 +27,8 @@ impl UpdatePageBuilder {
             sequence_number_condition: None,
             if_modified_since_condition: None,
             if_match_condition: None,
-            context: Context::new(),
-            timeout: None,
             lease_id: None,
+            context: Context::new(),
         }
     }
 
@@ -39,15 +37,12 @@ impl UpdatePageBuilder {
         sequence_number_condition: SequenceNumberCondition => Some(sequence_number_condition),
         if_modified_since_condition: IfModifiedSinceCondition => Some(if_modified_since_condition),
         if_match_condition: IfMatchCondition => Some(if_match_condition),
-        timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
     }
 
     pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.blob_client.url_with_segments(None)?;
-
-            self.timeout.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("comp", "page");
 
             let mut headers = Headers::new();
@@ -112,7 +107,7 @@ impl UpdatePageResponse {
 pub type Response = futures::future::BoxFuture<'static, azure_core::Result<UpdatePageResponse>>;
 
 #[cfg(feature = "into_future")]
-impl std::future::IntoFuture for UpdatePageBuilder {
+impl std::future::IntoFuture for PutPageBuilder {
     type IntoFuture = Response;
     type Output = <Response as std::future::Future>::Output;
     fn into_future(self) -> Self::IntoFuture {

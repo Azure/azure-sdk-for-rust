@@ -10,7 +10,6 @@ pub struct AppendBlockBuilder {
     condition_max_size: Option<ConditionMaxSize>,
     condition_append_position: Option<ConditionAppendPosition>,
     lease_id: Option<LeaseId>,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -23,7 +22,6 @@ impl AppendBlockBuilder {
             condition_max_size: None,
             condition_append_position: None,
             lease_id: None,
-            timeout: None,
             context: Context::new(),
         }
     }
@@ -33,14 +31,12 @@ impl AppendBlockBuilder {
         condition_max_size: ConditionMaxSize => Some(condition_max_size),
         condition_append_position: ConditionAppendPosition => Some(condition_append_position),
         lease_id: LeaseId => Some(lease_id),
-        timeout: Timeout => Some(timeout),
     }
 
     pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.blob_client.url_with_segments(None)?;
 
-            self.timeout.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("comp", "appendblock");
 
             let mut headers = Headers::new();

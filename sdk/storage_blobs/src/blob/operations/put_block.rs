@@ -10,7 +10,6 @@ pub struct PutBlockBuilder {
     body: Bytes,
     #[allow(unused)]
     hash: Option<Hash>,
-    timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
     context: Context,
 }
@@ -22,15 +21,13 @@ impl PutBlockBuilder {
             block_id,
             body,
             hash: None,
-            context: Context::new(),
-            timeout: None,
             lease_id: None,
+            context: Context::new(),
         }
     }
 
     setters! {
         hash: Hash => Some(hash),
-        timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
     }
 
@@ -38,7 +35,6 @@ impl PutBlockBuilder {
         Box::pin(async move {
             let mut url = self.blob_client.url_with_segments(None)?;
 
-            self.timeout.append_to_url_query(&mut url);
             self.block_id.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("comp", "block");
 

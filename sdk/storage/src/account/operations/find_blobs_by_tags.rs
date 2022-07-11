@@ -9,8 +9,7 @@ operation! {
     client: StorageClient,
     expression: String,
     ?next_marker: NextMarker,
-    ?max_results: MaxResults,
-    ?timeout: Timeout
+    ?max_results: MaxResults
 }
 
 impl FindBlobsByTagsBuilder {
@@ -19,7 +18,6 @@ impl FindBlobsByTagsBuilder {
         Box::pin(async move {
             let mut request = self.client.blob_storage_request(azure_core::Method::Get)?;
 
-            self.timeout.append_to_url_query(request.url_mut());
             request
                 .url_mut()
                 .query_pairs_mut()

@@ -13,7 +13,6 @@ use std::convert::{TryFrom, TryInto};
 pub struct SetPropertiesBuilder {
     blob_client: BlobClient,
     lease_id: Option<LeaseId>,
-    timeout: Option<Timeout>,
     cache_control: Option<BlobCacheControl>,
     content_type: Option<BlobContentType>,
     content_encoding: Option<BlobContentEncoding>,
@@ -28,7 +27,6 @@ impl SetPropertiesBuilder {
         Self {
             blob_client,
             lease_id: None,
-            timeout: None,
             cache_control: None,
             content_type: None,
             content_encoding: None,
@@ -65,7 +63,6 @@ impl SetPropertiesBuilder {
 
     setters! {
         lease_id: LeaseId => Some(lease_id),
-        timeout: Timeout => Some(timeout),
         cache_control: BlobCacheControl => Some(cache_control),
         content_type: BlobContentType => Some(content_type),
         content_encoding: BlobContentEncoding => Some(content_encoding),
@@ -78,9 +75,7 @@ impl SetPropertiesBuilder {
     pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.blob_client.url_with_segments(None)?;
-
             url.query_pairs_mut().append_pair("comp", "properties");
-            self.timeout.append_to_url_query(&mut url);
 
             let mut headers = Headers::new();
             headers.add(self.lease_id);

@@ -12,7 +12,6 @@ pub struct PutAppendBlobBuilder {
     metadata: Option<Metadata>,
     // TODO: Support tags
     lease_id: Option<LeaseId>,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -27,7 +26,6 @@ impl PutAppendBlobBuilder {
             metadata: None,
             lease_id: None,
             context: Context::new(),
-            timeout: None,
         }
     }
 
@@ -38,15 +36,11 @@ impl PutAppendBlobBuilder {
         content_disposition: ContentDisposition => Some(content_disposition),
         metadata: Metadata => Some(metadata),
         lease_id: LeaseId => Some(lease_id),
-
-        timeout: Timeout => Some(timeout),
     }
 
     pub fn into_future(mut self) -> Response {
         Box::pin(async move {
-            let mut url = self.blob_client.url_with_segments(None)?;
-
-            self.timeout.append_to_url_query(&mut url);
+            let url = self.blob_client.url_with_segments(None)?;
 
             let mut headers = Headers::new();
             headers.insert(BLOB_TYPE, "AppendBlob");

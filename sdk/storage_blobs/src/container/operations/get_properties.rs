@@ -12,7 +12,6 @@ use std::convert::{TryFrom, TryInto};
 #[derive(Debug, Clone)]
 pub struct GetPropertiesBuilder {
     container_client: ContainerClient,
-    timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
     context: Context,
 }
@@ -21,14 +20,12 @@ impl GetPropertiesBuilder {
     pub(crate) fn new(container_client: ContainerClient) -> Self {
         Self {
             container_client,
-            timeout: None,
             lease_id: None,
             context: Context::new(),
         }
     }
 
     setters! {
-        timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
         context: Context => context,
     }
@@ -36,10 +33,7 @@ impl GetPropertiesBuilder {
     pub fn into_future(mut self) -> Response {
         Box::pin(async move {
             let mut url = self.container_client.url_with_segments(None)?;
-
             url.query_pairs_mut().append_pair("restype", "container");
-
-            self.timeout.append_to_url_query(&mut url);
 
             let mut headers = Headers::new();
             headers.add(self.lease_id);

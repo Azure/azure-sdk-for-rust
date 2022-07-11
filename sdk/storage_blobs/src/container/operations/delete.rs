@@ -5,8 +5,6 @@ use azure_core::{headers::Headers, prelude::*, Method};
 pub struct DeleteBuilder {
     container_client: ContainerClient,
     lease_id: Option<LeaseId>,
-    #[allow(unused)]
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -15,14 +13,12 @@ impl DeleteBuilder {
         DeleteBuilder {
             container_client,
             lease_id: None,
-            timeout: None,
             context: Context::new(),
         }
     }
 
     setters! {
         lease_id: LeaseId => Some(lease_id),
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 

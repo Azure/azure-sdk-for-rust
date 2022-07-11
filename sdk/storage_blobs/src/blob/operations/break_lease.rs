@@ -7,7 +7,6 @@ pub struct BreakLeaseBuilder {
     blob_client: BlobClient,
     lease_break_period: Option<LeaseBreakPeriod>,
     lease_id: Option<LeaseId>,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -17,7 +16,6 @@ impl BreakLeaseBuilder {
             blob_client,
             lease_break_period: None,
             lease_id: None,
-            timeout: None,
             context: Context::new(),
         }
     }
@@ -25,7 +23,6 @@ impl BreakLeaseBuilder {
     setters! {
         lease_break_period: LeaseBreakPeriod => Some(lease_break_period),
         lease_id: LeaseId => Some(lease_id),
-        timeout: Timeout => Some(timeout),
     }
 
     pub fn into_future(mut self) -> Response {
@@ -33,7 +30,6 @@ impl BreakLeaseBuilder {
             let mut url = self.blob_client.url_with_segments(None)?;
 
             url.query_pairs_mut().append_pair("comp", "lease");
-            self.timeout.append_to_url_query(&mut url);
 
             let mut headers = Headers::new();
             headers.insert(LEASE_ACTION, "break");

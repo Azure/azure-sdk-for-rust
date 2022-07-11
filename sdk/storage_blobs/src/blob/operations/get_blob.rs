@@ -13,7 +13,6 @@ pub struct GetBlobBuilder {
     blob_client: BlobClient,
     range: Option<Range>,
     blob_versioning: Option<BlobVersioning>,
-    timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
     chunk_size: u64,
     context: Context,
@@ -24,7 +23,6 @@ impl GetBlobBuilder {
         Self {
             blob_client,
             blob_versioning: None,
-            timeout: None,
             range: None,
             lease_id: None,
             chunk_size: DEFAULT_CHUNK_SIZE,
@@ -36,7 +34,6 @@ impl GetBlobBuilder {
         range: Range => Some(range),
         chunk_size: u64 => chunk_size,
         blob_versioning: BlobVersioning => Some(blob_versioning),
-        timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
     }
 
@@ -53,7 +50,6 @@ impl GetBlobBuilder {
                 };
 
                 this.blob_versioning.append_to_url_query(&mut url);
-                this.timeout.append_to_url_query(&mut url);
 
                 let mut headers = Headers::new();
                 for (name, value) in range.as_headers() {

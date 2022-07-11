@@ -8,7 +8,6 @@ pub struct AcquireLeaseBuilder {
     lease_duration: LeaseDuration,
     lease_id: Option<LeaseId>,
     proposed_lease_id: Option<ProposedLeaseId>,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -19,7 +18,6 @@ impl AcquireLeaseBuilder {
             lease_duration,
             lease_id: None,
             proposed_lease_id: None,
-            timeout: None,
             context: Context::new(),
         }
     }
@@ -27,7 +25,6 @@ impl AcquireLeaseBuilder {
     setters! {
         lease_id: LeaseId => Some(lease_id),
         proposed_lease_id: ProposedLeaseId => Some(proposed_lease_id),
-        timeout: Timeout => Some(timeout),
     }
 
     pub fn into_future(mut self) -> Response {
@@ -35,7 +32,6 @@ impl AcquireLeaseBuilder {
             let mut url = self.blob_client.url_with_segments(None)?;
 
             url.query_pairs_mut().append_pair("comp", "lease");
-            self.timeout.append_to_url_query(&mut url);
 
             let mut headers = Headers::new();
             headers.insert(LEASE_ACTION, "acquire");

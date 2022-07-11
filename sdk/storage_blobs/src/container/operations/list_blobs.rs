@@ -23,7 +23,6 @@ pub struct ListBlobsBuilder {
     include_deleted: bool,
     include_tags: bool,
     include_versions: bool,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -41,7 +40,6 @@ impl ListBlobsBuilder {
             include_deleted: false,
             include_tags: false,
             include_versions: false,
-            timeout: None,
             context: Context::new(),
         }
     }
@@ -57,7 +55,6 @@ impl ListBlobsBuilder {
         include_deleted: bool => include_deleted,
         include_tags: bool => include_tags,
         include_versions: bool => include_versions,
-        timeout: Timeout => Some(timeout),
         context: Context => context,
     }
 
@@ -108,8 +105,6 @@ impl ListBlobsBuilder {
                     url.query_pairs_mut()
                         .append_pair("include", &optional_includes.join(","));
                 }
-
-                this.timeout.append_to_url_query(&mut url);
 
                 let mut request = this.container_client.finalize_request(
                     url,

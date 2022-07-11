@@ -2,7 +2,6 @@
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::StreamExt;
-use std::time::Duration;
 
 #[tokio::test]
 async fn stream_list_blobs() {
@@ -39,7 +38,6 @@ async fn stream_list_blobs() {
     container
         .create()
         .public_access(PublicAccess::None)
-        .timeout(Duration::from_secs(100))
         .into_future()
         .await
         .unwrap();

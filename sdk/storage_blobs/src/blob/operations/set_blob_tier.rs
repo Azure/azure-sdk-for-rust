@@ -10,7 +10,6 @@ pub struct SetBlobTierBuilder {
     rehydrate_priority: Option<RehydratePriority>,
     // URI Parameters
     blob_versioning: Option<BlobVersioning>,
-    timeout: Option<Timeout>,
     context: Context,
 }
 
@@ -19,10 +18,9 @@ impl SetBlobTierBuilder {
         Self {
             blob_client,
             access_tier: AccessTier::Archive,
-            context: Context::new(),
             rehydrate_priority: Some(RehydratePriority::Standard),
             blob_versioning: None,
-            timeout: None,
+            context: Context::new(),
         }
     }
 
@@ -30,7 +28,6 @@ impl SetBlobTierBuilder {
         access_tier: AccessTier => access_tier,
         rehydrate_priority: RehydratePriority => Some(rehydrate_priority),
         blob_versioning: BlobVersioning => Some(blob_versioning),
-        timeout: Timeout => Some(timeout),
     }
 
     pub fn into_future(mut self) -> Response {
@@ -38,7 +35,6 @@ impl SetBlobTierBuilder {
             let mut url = self.blob_client.url_with_segments(None)?;
             url.query_pairs_mut().append_pair("comp", "tier");
             self.blob_versioning.append_to_url_query(&mut url);
-            self.timeout.append_to_url_query(&mut url);
 
             let mut headers = Headers::new();
             headers.add(self.access_tier);

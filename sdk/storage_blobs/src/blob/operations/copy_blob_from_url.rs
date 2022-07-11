@@ -19,7 +19,6 @@ pub struct CopyBlobFromUrlBuilder {
     metadata: Option<Metadata>,
     if_modified_since_condition: Option<IfModifiedSinceCondition>,
     if_match_condition: Option<IfMatchCondition>,
-    timeout: Option<Timeout>,
     lease_id: Option<LeaseId>,
     if_source_since_condition: Option<IfSourceModifiedSinceCondition>,
     if_source_match_condition: Option<IfSourceMatchCondition>,
@@ -36,7 +35,6 @@ impl CopyBlobFromUrlBuilder {
             metadata: None,
             if_modified_since_condition: None,
             if_match_condition: None,
-            timeout: None,
             lease_id: None,
             if_source_since_condition: None,
             if_source_match_condition: None,
@@ -50,7 +48,6 @@ impl CopyBlobFromUrlBuilder {
         metadata: Metadata => Some(metadata),
         if_modified_since_condition: IfModifiedSinceCondition => Some(if_modified_since_condition),
         if_match_condition: IfMatchCondition => Some(if_match_condition),
-        timeout: Timeout => Some(timeout),
         lease_id: LeaseId => Some(lease_id),
         if_source_since_condition: IfSourceModifiedSinceCondition => Some(if_source_since_condition),
         if_source_match_condition: IfSourceMatchCondition => Some(if_source_match_condition),
@@ -59,9 +56,7 @@ impl CopyBlobFromUrlBuilder {
 
     pub fn into_future(mut self) -> Response {
         Box::pin(async move {
-            let mut url = self.blob_client.url_with_segments(None)?;
-
-            self.timeout.append_to_url_query(&mut url);
+            let url = self.blob_client.url_with_segments(None)?;
 
             let mut headers = Headers::new();
             headers.insert(COPY_SOURCE, self.source_url.to_string());

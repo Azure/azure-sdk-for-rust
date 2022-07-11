@@ -1,9 +1,10 @@
 use crate::authorization_policy::AuthorizationPolicy;
-use crate::operations::*;
 use crate::shared_access_signature::account_sas::{
     AccountSasPermissions, AccountSasResource, AccountSasResourceType, AccountSharedAccessSignature,
 };
 use crate::ConnectionString;
+use crate::{operations::*, TimeoutPolicy};
+use azure_core::prelude::Timeout;
 use azure_core::Method;
 use azure_core::{
     auth::TokenCredential,
@@ -526,7 +527,10 @@ fn new_pipeline_from_options(options: StorageOptions, credentials: StorageCreden
     // The `AuthorizationPolicy` must be the **last** retry policy.
     // Policies can change the url and/or the headers, and the `AuthorizationPolicy`
     // must be able to inspect them or the resulting token will be invalid.
-    let per_retry_policies = vec![auth_policy];
+    let per_retry_policies = vec![
+        Arc::new(options.timeout_policy) as Arc<dyn azure_core::Policy>,
+        auth_policy,
+    ];
 
     Pipeline::new(
         option_env!("CARGO_PKG_NAME"),
@@ -540,9 +544,15 @@ fn new_pipeline_from_options(options: StorageOptions, credentials: StorageCreden
 #[derive(Debug, Clone, Default)]
 pub struct StorageOptions {
     options: ClientOptions,
+    timeout_policy: TimeoutPolicy,
 }
+
 impl StorageOptions {
     fn new() -> StorageOptions {
         Self::default()
+    }
+
+    pub fn set_timeout(&mut self, default_timeout: Timeout) {
+        self.timeout_policy = TimeoutPolicy::new(Some(default_timeout))
     }
 }
