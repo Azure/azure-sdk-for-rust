@@ -459,8 +459,8 @@ impl StorageClient {
         GetAccountInformationBuilder::new(self.clone())
     }
 
-    pub fn find_blobs_by_tags(&self) -> FindBlobsByTagsBuilder {
-        FindBlobsByTagsBuilder::new(self.clone())
+    pub fn find_blobs_by_tags(&self, expression: String) -> FindBlobsByTagsBuilder {
+        FindBlobsByTagsBuilder::new(self.clone(), expression)
     }
 
     fn url_with_segments<'a, I>(mut url: url::Url, new_segments: I) -> azure_core::Result<url::Url>

@@ -4,35 +4,15 @@ use azure_core::prelude::*;
 use azure_core::{collect_pinned_stream, RequestId, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct FindBlobsByTagsBuilder {
+operation! {
+    FindBlobsByTags,
     client: StorageClient,
     expression: String,
-    #[allow(unused)]
-    next_marker: Option<NextMarker>,
-    #[allow(unused)]
-    max_results: Option<MaxResults>,
-    context: Context,
+    ?next_marker: NextMarker,
+    ?max_results: MaxResults
 }
 
 impl FindBlobsByTagsBuilder {
-    pub(crate) fn new(client: StorageClient) -> Self {
-        Self {
-            client,
-            expression: String::new(),
-            next_marker: None,
-            max_results: None,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        expression: String => expression,
-        next_marker: NextMarker => Some(next_marker),
-        max_results: MaxResults => Some(max_results),
-        context: Context => context,
-    }
-
     // TODO: Make this a stream instead of a `Future`
     pub fn into_future(mut self) -> FindBlobsByTags {
         Box::pin(async move {
@@ -52,26 +32,13 @@ impl FindBlobsByTagsBuilder {
                 .send(&mut self.context, &mut request, ServiceType::Blob)
                 .await?;
 
-            ListBlobsByTagsResponse::try_from(response).await
+            FindBlobsByTagsResponse::try_from(response).await
         })
     }
 }
 
-/// The future returned by calling `into_future` on the builder.
-pub type FindBlobsByTags =
-    futures::future::BoxFuture<'static, azure_core::Result<ListBlobsByTagsResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for FindBlobsByTagsBuilder {
-    type IntoFuture = FindBlobsByTags;
-    type Output = <FindBlobsByTags as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
-    }
-}
-
 #[derive(Debug, Clone, PartialEq)]
-pub struct ListBlobsByTagsResponse {
+pub struct FindBlobsByTagsResponse {
     pub max_results: Option<u32>,
     pub delimiter: Option<String>,
     pub next_marker: Option<NextMarker>,
@@ -106,7 +73,7 @@ pub struct Blob {
     pub tag_value: String,
 }
 
-impl ListBlobsByTagsResponse {
+impl FindBlobsByTagsResponse {
     async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;

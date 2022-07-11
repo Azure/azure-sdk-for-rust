@@ -3,27 +3,15 @@ use azure_core::headers::{
     account_kind_from_headers, date_from_headers, request_id_from_headers, sku_name_from_headers,
     Headers,
 };
-use azure_core::{Context, RequestId};
+use azure_core::RequestId;
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone)]
-pub struct GetAccountInformationBuilder {
+operation! {
+    GetAccountInformation,
     client: StorageClient,
-    context: Context,
 }
 
 impl GetAccountInformationBuilder {
-    pub(crate) fn new(client: StorageClient) -> Self {
-        Self {
-            client,
-            context: Context::new(),
-        }
-    }
-
-    setters! {
-        context: Context => context,
-    }
-
     pub fn into_future(mut self) -> GetAccountInformation {
         Box::pin(async move {
             let mut request = self.client.blob_storage_request(azure_core::Method::Get)?;
@@ -40,19 +28,6 @@ impl GetAccountInformationBuilder {
 
             GetAccountInformationResponse::try_from(response.headers())
         })
-    }
-}
-
-/// The future returned by calling `into_future` on the builder.
-pub type GetAccountInformation =
-    futures::future::BoxFuture<'static, azure_core::Result<GetAccountInformationResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for GetAccountInformationBuilder {
-    type IntoFuture = GetAccountInformation;
-    type Output = <GetAccountInformation as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
     }
 }
 
