@@ -4,11 +4,10 @@ Hard deletes AAD app registrations that are deleted
 cargo run --example purge_deleted_apps -- "startswith(displayName,'fretang')"
 */
 
-use azure_svc_graphrbac::ClientBuilder;
 use azure_identity::AzureCliCredential;
+use azure_svc_graphrbac::ClientBuilder;
 use futures::stream::StreamExt;
-use std::{sync::Arc, env::args};
-
+use std::{env::args, sync::Arc};
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
