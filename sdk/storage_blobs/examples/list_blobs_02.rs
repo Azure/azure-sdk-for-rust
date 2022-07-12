@@ -14,7 +14,8 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("please specify a non-existing container name as command line parameter");
 
-    let storage_client = StorageClient::new_access_key(&account, &access_key);
+    let storage_client =
+        StorageClient::new_access_key(&account, &access_key, StorageOptions::default());
 
     create_container_and_list(storage_client, &container_name).await?;
 

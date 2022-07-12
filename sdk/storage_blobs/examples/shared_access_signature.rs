@@ -25,7 +25,8 @@ fn code() -> azure_core::Result<()> {
     let now = Utc::now() - Duration::minutes(15);
     let later = now + Duration::hours(1);
 
-    let storage_client = StorageClient::new_access_key(&account, &access_key);
+    let storage_client =
+        StorageClient::new_access_key(&account, &access_key, StorageOptions::default());
     let container_client = storage_client.container_client(&container_name);
     let blob_client = container_client.blob_client(&blob_name);
 

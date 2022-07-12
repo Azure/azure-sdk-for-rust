@@ -13,7 +13,8 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("please specify container name as command line parameter");
 
-    let storage_client = StorageClient::new_connection_string(&connection_string)?;
+    let storage_client =
+        StorageClient::new_connection_string(&connection_string, StorageOptions::default())?;
     let container_client = storage_client.container_client(&container_name);
     let blob_service = storage_client.blob_service_client();
 

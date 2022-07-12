@@ -22,9 +22,10 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("please specify container name as first command line parameter");
 
-    let blob_client = StorageClient::new_access_key(&account, &access_key)
-        .container_client(&container_name)
-        .blob_client(file_name);
+    let blob_client =
+        StorageClient::new_access_key(&account, &access_key, StorageOptions::default())
+            .container_client(&container_name)
+            .blob_client(file_name);
 
     let mut stream = blob_client.get().into_stream();
     while let Some(res) = stream.next().await {

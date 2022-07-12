@@ -23,9 +23,10 @@ async fn main() -> azure_core::Result<()> {
         .nth(2)
         .expect("please specify blob name as command line parameter");
 
-    let blob_client = StorageClient::new_access_key(&account, &access_key)
-        .container_client(&container)
-        .blob_client(&blob_name);
+    let blob_client =
+        StorageClient::new_access_key(&account, &access_key, StorageOptions::default())
+            .container_client(&container)
+            .blob_client(&blob_name);
 
     let data = Bytes::from_static(b"something");
 

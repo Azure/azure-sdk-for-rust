@@ -74,6 +74,7 @@ async fn main() -> azure_core::Result<()> {
     let storage_client = StorageClient::new_bearer_token(
         &storage_account_name,
         authorization.access_token().secret(),
+        StorageOptions::default(),
     );
     let blob_service_client = storage_client.blob_service_client();
 

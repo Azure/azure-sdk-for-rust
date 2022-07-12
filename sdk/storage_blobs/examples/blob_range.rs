@@ -17,9 +17,10 @@ async fn main() -> azure_core::Result<()> {
         .nth(2)
         .expect("please specify blob name as command line parameter");
 
-    let blob_client = StorageClient::new_access_key(&account, &access_key)
-        .container_client(&container)
-        .blob_client(&blob);
+    let blob_client =
+        StorageClient::new_access_key(&account, &access_key, StorageOptions::default())
+            .container_client(&container)
+            .blob_client(&blob);
 
     // 1024 G, 512 H and 2048 I
     let mut buf: Vec<u8> = Vec::with_capacity(1024 * 4);

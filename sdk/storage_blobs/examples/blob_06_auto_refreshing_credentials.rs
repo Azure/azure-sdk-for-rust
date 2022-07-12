@@ -25,9 +25,10 @@ async fn main() -> azure_core::Result<()> {
     let creds = Arc::new(DefaultAzureCredential::default());
     let auto_creds = Arc::new(AutoRefreshingTokenCredential::new(creds));
 
-    let blob_client = StorageClient::new_token_credential(&account, auto_creds)
-        .container_client(&container)
-        .blob_client(&blob);
+    let blob_client =
+        StorageClient::new_token_credential(&account, auto_creds, StorageOptions::default())
+            .container_client(&container)
+            .blob_client(&blob);
 
     trace!("Requesting blob");
     let content = blob_client.get_content().await?;
