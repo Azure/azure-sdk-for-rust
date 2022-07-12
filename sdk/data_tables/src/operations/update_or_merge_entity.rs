@@ -1,5 +1,5 @@
 use crate::{operations::*, prelude::*, IfMatchCondition};
-use azure_core::{headers::*, prelude::*, CollectedResponse, Method};
+use azure_core::{headers::*, CollectedResponse, Method};
 use bytes::Bytes;
 use std::convert::TryInto;
 
@@ -9,7 +9,6 @@ operation! {
     body: Bytes,
     if_match_condition: IfMatchCondition,
     operation: UpdateOperation,
-    ?timeout: Timeout
 }
 
 impl UpdateOrMergeEntityBuilder {
