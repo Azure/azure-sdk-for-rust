@@ -13,7 +13,7 @@ async fn stream_list_blobs() {
 
     let container_name = "streamlistblobs235xx752zdve";
 
-    let storage = StorageClient::new_access_key(&account, &access_key);
+    let storage = StorageClient::new_access_key(&account, &access_key, StorageOptions::default());
     let blob_service = storage.blob_service_client();
     let container = storage.container_client(container_name);
 

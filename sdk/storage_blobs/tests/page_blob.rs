@@ -56,5 +56,5 @@ fn initialize() -> StorageClient {
     let access_key =
         std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
-    StorageClient::new_access_key(&account, &access_key)
+    StorageClient::new_access_key(&account, &access_key, StorageOptions::default())
 }

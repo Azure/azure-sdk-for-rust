@@ -8,7 +8,8 @@ async fn get_account_information() {
     let access_key =
         std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
-    let storage_client = StorageClient::new_access_key(&account, &access_key);
+    let storage_client =
+        StorageClient::new_access_key(&account, &access_key, StorageOptions::default());
 
     storage_client
         .get_account_information()

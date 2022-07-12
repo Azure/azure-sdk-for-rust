@@ -16,7 +16,8 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
 
     let queue_name = format!("sdk-{}", Uuid::new_v4());
 
-    let storage_client = StorageClient::new_access_key(&account, &access_key);
+    let storage_client =
+        StorageClient::new_access_key(&account, &access_key, StorageOptions::default());
 
     let queue_service_client = storage_client.queue_service_client();
 
