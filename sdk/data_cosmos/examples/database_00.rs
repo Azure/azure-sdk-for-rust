@@ -1,12 +1,29 @@
+use azure_data_cosmos::prelude::*;
 use clap::Parser;
 use futures::stream::StreamExt;
 use serde_json::Value;
 
-mod util;
+#[derive(Debug, Parser)]
+struct Args {
+    /// Cosmos primary key name
+    #[clap(env = "COSMOS_PRIMARY_KEY")]
+    primary_key: String,
+    /// The cosmos account your're using
+    #[clap(env = "COSMOS_ACCOUNT")]
+    account: String,
+}
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    let client = util::Auth::parse().into_client()?;
+    // First we retrieve the account name and access key from environment variables.
+    // We expect access keys (ie, not resource constrained)
+
+    let args = Args::parse();
+
+    let authorization_token =
+        permission::AuthorizationToken::primary_from_base64(&args.primary_key)?;
+
+    let client = CosmosClient::new(args.account, authorization_token, CosmosOptions::default());
 
     let dbs = client
         .list_databases()
