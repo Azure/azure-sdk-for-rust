@@ -53,10 +53,7 @@ impl GetTagsResponse {
     pub(crate) fn from_response(headers: &Headers, body: &[u8]) -> azure_core::Result<Self> {
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;
-        let tags = read_xml(body).context(
-            ErrorKind::DataConversion,
-            "failed to read SignedIdentifiers xml",
-        )?;
+        let tags = read_xml(body).map_kind(ErrorKind::DataConversion)?;
 
         Ok(Self {
             request_id,
