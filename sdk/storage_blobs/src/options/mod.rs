@@ -17,6 +17,7 @@ mod delete_snapshot_method;
 mod hash;
 mod rehydrate_policy;
 mod snapshot;
+mod tags;
 mod version_id;
 
 pub use access_tier::AccessTier;
@@ -36,4 +37,5 @@ pub use delete_snapshot_method::DeleteSnapshotsMethod;
 pub use hash::Hash;
 pub use rehydrate_policy::RehydratePriority;
 pub use snapshot::Snapshot;
+pub use tags::Tags;
 pub use version_id::VersionId;

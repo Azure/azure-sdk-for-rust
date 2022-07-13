@@ -341,6 +341,7 @@ pub const SOURCE_IF_NONE_MATCH: HeaderName = HeaderName::from_static("x-ms-sourc
 pub const SOURCE_IF_UNMODIFIED_SINCE: HeaderName =
     HeaderName::from_static("x-ms-source-if-unmodified-since");
 pub const SOURCE_LEASE_ID: HeaderName = HeaderName::from_static("x-ms-source-lease-id");
+pub const TAGS: HeaderName = HeaderName::from_static("x-ms-tags");
 pub const USER: HeaderName = HeaderName::from_static("x-ms-user");
 pub const USER_AGENT: HeaderName = HeaderName::from_static("user-agent");
 pub const VERSION: HeaderName = HeaderName::from_static("x-ms-version");

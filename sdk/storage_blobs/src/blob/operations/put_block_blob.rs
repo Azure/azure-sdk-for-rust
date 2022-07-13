@@ -15,7 +15,7 @@ operation! {
     ?content_disposition: ContentDisposition,
     ?metadata: Metadata,
     ?access_tier: AccessTier,
-    // TODO: Support tags
+    ?tags: Tags,
     ?lease_id: LeaseId
 }
 
@@ -31,6 +31,7 @@ impl PutBlockBlobBuilder {
             headers.add(self.content_encoding);
             headers.add(self.content_language);
             headers.add(self.content_disposition);
+            headers.add(self.tags);
             if let Some(metadata) = &self.metadata {
                 for m in metadata.iter() {
                     headers.add(m);
