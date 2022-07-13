@@ -23,9 +23,31 @@ async fn main() -> azure_core::Result<()> {
         .nth(2)
         .expect("please specify blob name as command line parameter");
 
-    let blob_client = StorageClient::new_access_key(&account, &access_key)
-        .container_client(&container)
-        .blob_client(&blob_name);
+    let container_client =
+        StorageClient::new_access_key(&account, &access_key).container_client(&container);
+
+    //put list of block
+    {
+        let foo_blob_client = container_client.blob_client("foo");
+        let mut block_list = BlockList::default();
+        block_list
+            .blocks
+            .push(BlobBlockType::new_uncommitted("1".as_bytes()));
+        block_list
+            .blocks
+            .push(BlobBlockType::new_uncommitted("2".as_bytes()));
+        block_list
+            .blocks
+            .push(BlobBlockType::new_uncommitted("3".as_bytes()));
+
+        let resp = foo_blob_client
+            .put_block_list(block_list)
+            .into_future()
+            .await?;
+        println!("PutBlockListResponse: {:?}", resp);
+    }
+
+    let blob_client = container_client.blob_client(&blob_name);
 
     let data = Bytes::from_static(b"something");
 

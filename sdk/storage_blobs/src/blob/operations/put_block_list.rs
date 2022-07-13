@@ -37,7 +37,7 @@ impl PutBlockListBuilder {
             };
 
             let mut headers = Headers::new();
-            headers.insert("Content-MD5", &md5);
+            headers.insert("content-md5", &md5);
             headers.add(self.content_type);
             headers.add(self.content_encoding);
             headers.add(self.content_language);
