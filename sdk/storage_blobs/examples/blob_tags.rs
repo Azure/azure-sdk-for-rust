@@ -43,6 +43,10 @@ async fn main() -> azure_core::Result<()> {
     let result = blob_client.get_tags().into_future().await?;
     println!("get tags result: {:?}", result);
 
+    for (key, value) in result.tags.into_iter() {
+        println!("key:{} value:{}", key, value);
+    }
+
     let blob_client = container_client.blob_client(&blob_notags_name);
     blob_client
         .put_block_blob("hello world")
