@@ -40,7 +40,7 @@ async fn main() -> azure_core::Result<()> {
     let args = Args::parse();
     let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
 
-    let client = CosmosClient::new(args.account, authorization_token, CosmosOptions::default())
+    let client = CosmosClient::new(args.account, authorization_token)
         .database_client(args.database_name)
         .collection_client(args.collection_name);
 

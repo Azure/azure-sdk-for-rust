@@ -23,8 +23,7 @@ async fn main() -> azure_core::Result<()> {
     let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
 
     // Create a new Cosmos client.
-    let options = CosmosOptions::default();
-    let client = CosmosClient::new(args.account.clone(), authorization_token.clone(), options);
+    let client = CosmosClient::new(args.account, authorization_token);
 
     // Create a new database, and time out if it takes more than 1 second.
     let future = client.create_database("my_database").into_future();

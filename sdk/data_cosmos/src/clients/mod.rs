@@ -11,13 +11,13 @@
 //! ```no_run
 //! use azure_data_cosmos::prelude::*;
 //!
-//! let account = todo!("Get Cosmos account name from the Azure Portal");
+//! let account: String = todo!("Get Cosmos account name from the Azure Portal");
 //! let primary_key: String = todo!("Get Cosmos primary key from the Azure Portal");
 //! let authorization_token = AuthorizationToken::primary_from_base64(&primary_key).unwrap();
 //! let database_name: String = todo!("Think of some database name");
 //!
 //! // Create an http client, then a `CosmosClient`, and then a `DatabaseClient`
-//! let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
+//! let client = CosmosClient::new(account, authorization_token);
 //! let client = client.database_client(database_name);
 //! ```
 
@@ -34,7 +34,7 @@ mod user_defined_function;
 
 pub use attachment::AttachmentClient;
 pub use collection::CollectionClient;
-pub use cosmos::{CosmosClient, CosmosOptions};
+pub use cosmos::CosmosClient;
 pub use database::DatabaseClient;
 pub use document::DocumentClient;
 pub use permission::PermissionClient;
