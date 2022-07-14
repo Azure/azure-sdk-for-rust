@@ -1,11 +1,5 @@
 use crate::prelude::*;
-use azure_core::{
-    collect_pinned_stream,
-    error::{ErrorKind, ResultExt},
-    headers::*,
-    prelude::*,
-    RequestId,
-};
+use azure_core::{collect_pinned_stream, headers::*, prelude::*, RequestId};
 use azure_storage::xml::read_xml;
 use chrono::{DateTime, Utc};
 
@@ -53,7 +47,7 @@ impl GetTagsResponse {
     pub(crate) fn from_response(headers: &Headers, body: &[u8]) -> azure_core::Result<Self> {
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;
-        let tags = read_xml(body).map_kind(ErrorKind::DataConversion)?;
+        let tags = read_xml(body)?;
 
         Ok(Self {
             request_id,

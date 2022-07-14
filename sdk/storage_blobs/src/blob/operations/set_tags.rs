@@ -23,7 +23,7 @@ impl SetTagsBuilder {
 
             let mut headers = Headers::new();
             headers.add(self.lease_id);
-            let body = self.tags.to_xml();
+            let body = self.tags.to_xml()?;
 
             let mut request =
                 self.client

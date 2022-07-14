@@ -13,6 +13,7 @@ async fn main() -> azure_core::Result<()> {
 
     let container_name = format!("example-{}", Uuid::new_v4());
     let blob_name = format!("file-{}.txt", Uuid::new_v4());
+    let blob_notags_name = format!("file-{}.txt", Uuid::new_v4());
 
     let storage_client = StorageClient::new_access_key(&account, &access_key);
 
@@ -41,6 +42,14 @@ async fn main() -> azure_core::Result<()> {
 
     let result = blob_client.get_tags().into_future().await?;
     println!("get tags result: {:?}", result);
+
+    let blob_client = container_client.blob_client(&blob_notags_name);
+    blob_client
+        .put_block_blob("hello world")
+        .into_future()
+        .await?;
+    let result = blob_client.get_tags().into_future().await?;
+    println!("get tags without tags result: {:?}", result);
 
     container_client.delete().into_future().await?;
 
