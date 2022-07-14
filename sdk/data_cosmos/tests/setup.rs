@@ -33,7 +33,7 @@ pub fn initialize(transaction_name: impl Into<String>) -> azure_core::Result<Cos
     .flatten()
     .unwrap_or_else(|| AuthorizationToken::new_resource(String::new()));
 
-    Ok(CosmosClient::new_with_transaction(
+    Ok(CosmosClient::with_mock(
         account_name,
         authorization_token,
         transaction_name,

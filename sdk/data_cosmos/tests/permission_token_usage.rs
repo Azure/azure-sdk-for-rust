@@ -28,7 +28,7 @@ async fn permission_token_usage() {
     const USER_NAME: &str = "someone@cool.net";
     const PERMISSION: &str = "sdktest";
 
-    let mut client = setup::initialize().unwrap();
+    let client = setup::initialize().unwrap();
 
     // create a temp database
     let _create_database_response = client
@@ -75,7 +75,7 @@ async fn permission_token_usage() {
         .permission
         .permission_token
         .into();
-    client.auth_token(new_authorization_token);
+    let client = client.auth_token(new_authorization_token);
     let new_database = client.database_client(DATABASE_NAME);
 
     // let's list the collection content.
@@ -121,7 +121,7 @@ async fn permission_token_usage() {
         .permission
         .permission_token
         .into();
-    client.auth_token(new_authorization_token);
+    let client = client.auth_token(new_authorization_token);
     let new_database = client.database_client(DATABASE_NAME);
     let new_collection = new_database.collection_client(COLLECTION_NAME);
 
