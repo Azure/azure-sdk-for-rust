@@ -78,7 +78,7 @@ async fn main() -> azure_core::Result<()> {
     }
     assert_eq!(
         buf, result,
-        "streamed blob content should match origina buf"
+        "streamed blob content should match original buf"
     );
 
     container_client.delete().into_future().await?;
