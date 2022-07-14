@@ -141,7 +141,9 @@ fn remaining_range(
     let requested_range = base_range.unwrap_or_else(|| Range::new(0, content_range.total_length()));
 
     // if the response said the end of the blob was downloaded, we're done
-    if content_range.end() >= requested_range.end {
+    // Note, we add + 1, as we don't need to re-fetch the last
+    // byte of the previous request.
+    if content_range.end() + 1 >= requested_range.end {
         return None;
     }
 
@@ -202,6 +204,13 @@ mod tests {
 
         let result = remaining_range(3, None, Some(ContentRange::new(0, 10, 20)));
         assert_eq!(result, Some(Range::new(11, 14)));
+
+        let result = remaining_range(
+            20,
+            Some(Range::new(5, 15)),
+            Some(ContentRange::new(5, 14, 20)),
+        );
+        assert_eq!(result, None);
 
         Ok(())
     }
