@@ -5,16 +5,18 @@ use clap::Parser;
 use futures::stream::StreamExt;
 use serde::{Deserialize, Serialize};
 
-mod util;
-
-#[derive(Debug, clap::Parser)]
+#[derive(Debug, Parser)]
 struct Args {
+    /// Cosmos primary key name
+    #[clap(env = "COSMOS_PRIMARY_KEY")]
+    primary_key: String,
+    /// The cosmos account your're using
+    #[clap(env = "COSMOS_ACCOUNT")]
+    account: String,
     /// The name of the database
     database_name: String,
     /// The name of the collection
     collection_name: String,
-    #[clap(flatten)]
-    auth: util::Auth,
 }
 
 // Now we create a sample struct.
@@ -39,14 +41,12 @@ impl azure_data_cosmos::CosmosEntity for MySampleStruct {
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
     let args = Args::parse();
-    let database_name = args.database_name;
-    let collection_name = args.collection_name;
+    let authorization_token =
+        permission::AuthorizationToken::primary_from_base64(&args.primary_key)?;
 
-    let client = args
-        .auth
-        .into_client()?
-        .database_client(database_name)
-        .collection_client(collection_name);
+    let client = CosmosClient::new(args.account, authorization_token, CosmosOptions::default())
+        .database_client(args.database_name)
+        .collection_client(args.collection_name);
 
     let mut response = None;
     for i in 0u64..5 {

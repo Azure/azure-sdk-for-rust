@@ -1,13 +1,16 @@
+use azure_data_cosmos::prelude::*;
 use clap::Parser;
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 
-mod util;
-
-#[derive(Debug, clap::Parser)]
+#[derive(Debug, Parser)]
 struct Args {
-    #[clap(flatten)]
-    auth: util::Auth,
+    /// Cosmos primary key name
+    #[clap(env = "COSMOS_PRIMARY_KEY")]
+    primary_key: String,
+    /// The cosmos account your're using
+    #[clap(env = "COSMOS_ACCOUNT")]
+    account: String,
     /// The name of the database
     database_name: String,
     /// The name of the collection
@@ -35,9 +38,9 @@ impl azure_data_cosmos::CosmosEntity for MySampleStruct {
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
     let args = Args::parse();
-    let client = args
-        .auth
-        .into_client()?
+    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
+
+    let client = CosmosClient::new(args.account, authorization_token, CosmosOptions::default())
         .database_client(args.database_name)
         .collection_client(args.collection_name);
 
