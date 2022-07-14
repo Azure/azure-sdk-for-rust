@@ -34,10 +34,9 @@ pub struct Tags {
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Default)]
-#[serde(rename_all = "PascalCase")]
 pub struct TagSet {
-    #[serde(default)]
-    pub tag: Vec<Tag>,
+    #[serde(default, rename = "Tag")]
+    pub tags: Vec<Tag>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -56,7 +55,7 @@ impl Tags {
         K: Into<String>,
         V: Into<String>,
     {
-        self.tag_set.tag.push(Tag {
+        self.tag_set.tags.push(Tag {
             key: key.into(),
             value: value.into(),
         });
@@ -64,7 +63,7 @@ impl Tags {
 
     pub fn to_xml(&self) -> azure_core::Result<String> {
         let mut s = String::from("<?xml version=\"1.0\" encoding=\"utf-8\"?><Tags><TagSet>");
-        for tag in &self.tag_set.tag {
+        for tag in &self.tag_set.tags {
             write!(
                 &mut s,
                 "<Tag><Key>{}</Key><Value>{}</Value></Tag>",
@@ -96,7 +95,10 @@ impl IntoIterator for Tags {
     type Item = (String, String);
     type IntoIter = std::iter::Map<std::vec::IntoIter<Tag>, fn(Tag) -> (String, String)>;
     fn into_iter(self) -> Self::IntoIter {
-        self.tag_set.tag.into_iter().map(|tag| (tag.key, tag.value))
+        self.tag_set
+            .tags
+            .into_iter()
+            .map(|tag| (tag.key, tag.value))
     }
 }
 
@@ -157,24 +159,24 @@ mod tests {
     fn parse_tags_xml() -> azure_core::Result<()> {
         let xml = r#"<?xml version="1.0" encoding="utf-8"?><Tags><TagSet><Tag><Key>tag-name-1</Key><Value>tag-value-1</Value></Tag><Tag><Key>tag-name-2</Key><Value>tag-value-2</Value></Tag></TagSet></Tags>"#;
         let tags: Tags = read_xml(xml.as_bytes())?;
-        assert_eq!(tags.tag_set.tag.len(), 2);
-        assert_eq!(tags.tag_set.tag[0].key, "tag-name-1");
-        assert_eq!(tags.tag_set.tag[0].value, "tag-value-1");
-        assert_eq!(tags.tag_set.tag[1].key, "tag-name-2");
-        assert_eq!(tags.tag_set.tag[1].value, "tag-value-2");
+        assert_eq!(tags.tag_set.tags.len(), 2);
+        assert_eq!(tags.tag_set.tags[0].key, "tag-name-1");
+        assert_eq!(tags.tag_set.tags[0].value, "tag-value-1");
+        assert_eq!(tags.tag_set.tags[1].key, "tag-name-2");
+        assert_eq!(tags.tag_set.tags[1].value, "tag-value-2");
         let as_xml = tags.to_xml()?;
         assert_eq!(as_xml, xml);
 
         let empty = r#"<?xml version="1.0" encoding="utf-8"?><Tags><TagSet></TagSet></Tags>"#;
         let tags: Tags = read_xml(empty.as_bytes())?;
-        assert_eq!(tags.tag_set.tag.len(), 0);
+        assert_eq!(tags.tag_set.tags.len(), 0);
         let empty_as_xml = tags.to_xml()?;
         assert_eq!(empty_as_xml, empty);
 
         // verify parsing of self closing tags
         let empty = r#"<?xml version="1.0" encoding="utf-8"?><Tags><TagSet/></Tags>"#;
         let tags: Tags = read_xml(empty.as_bytes())?;
-        assert_eq!(tags.tag_set.tag.len(), 0);
+        assert_eq!(tags.tag_set.tags.len(), 0);
 
         Ok(())
     }
