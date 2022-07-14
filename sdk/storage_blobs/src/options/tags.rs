@@ -2,7 +2,12 @@ use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     headers::{Header, HeaderName, HeaderValue, TAGS},
 };
-use std::{collections::HashMap, fmt::Write, iter::Extend, str::FromStr};
+use std::{
+    collections::HashMap,
+    fmt::Write,
+    iter::{Extend, IntoIterator},
+    str::FromStr,
+};
 use url::form_urlencoded;
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Default)]
@@ -27,6 +32,7 @@ use url::form_urlencoded;
 pub struct Tags {
     pub tag_set: TagSet,
 }
+
 #[derive(Debug, Clone, PartialEq, Deserialize, Default)]
 #[serde(rename_all = "PascalCase")]
 pub struct TagSet {
@@ -86,6 +92,14 @@ where
     }
 }
 
+impl IntoIterator for Tags {
+    type Item = (String, String);
+    type IntoIter = std::iter::Map<std::vec::IntoIter<Tag>, fn(Tag) -> (String, String)>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.tag_set.tag.into_iter().map(|tag| (tag.key, tag.value))
+    }
+}
+
 impl From<HashMap<String, String>> for Tags {
     fn from(map: HashMap<String, String>) -> Self {
         let mut tags = Self::new();
@@ -105,9 +119,7 @@ impl From<HashMap<&str, &str>> for Tags {
 impl From<Tags> for HashMap<String, String> {
     fn from(tags: Tags) -> Self {
         let mut map = Self::new();
-        for tag in tags.tag_set.tag {
-            map.insert(tag.key.clone(), tag.value.clone());
-        }
+        map.extend(tags);
         map
     }
 }
@@ -130,9 +142,7 @@ impl Header for Tags {
     fn value(&self) -> HeaderValue {
         let mut encoded = form_urlencoded::Serializer::new(String::new());
         let encoder = &mut encoded;
-        for tag in &self.tag_set.tag {
-            encoder.append_pair(&tag.key, &tag.value);
-        }
+        encoder.extend_pairs(self.clone());
         let encoded_tags = encoded.finish();
         encoded_tags.into()
     }
