@@ -17,7 +17,7 @@ pub use self::block_with_size_list::BlockWithSizeList;
 pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
 pub use self::page_range_list::PageRangeList;
 
-use crate::options::AccessTier;
+use crate::options::{AccessTier, Tags};
 use azure_core::{
     content_type,
     error::{ErrorKind, ResultExt},
@@ -98,25 +98,6 @@ pub struct Blob {
     pub properties: BlobProperties,
     pub metadata: Option<HashMap<String, String>>,
     pub tags: Option<Tags>,
-}
-
-#[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(rename_all = "PascalCase")]
-pub struct Tags {
-    pub tag_set: Option<TagSet>,
-}
-
-#[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(rename_all = "PascalCase")]
-pub struct TagSet {
-    pub tag: Vec<Tag>,
-}
-
-#[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(rename_all = "PascalCase")]
-pub struct Tag {
-    pub key: String,
-    pub value: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -257,6 +238,8 @@ impl Blob {
             Some(metadata)
         };
 
+        let tags = h.get_optional_as(&headers::TAGS)?;
+
         // TODO: Retrieve the snapshot time from
         // the headers
         let snapshot = None;
@@ -306,7 +289,7 @@ impl Blob {
                 extra: HashMap::new(),
             },
             metadata,
-            tags: None,
+            tags,
         })
     }
 }

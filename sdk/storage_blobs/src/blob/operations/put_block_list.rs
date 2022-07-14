@@ -15,7 +15,7 @@ operation! {
     ?content_md5: BlobContentMD5,
     ?metadata: Metadata,
     ?access_tier: AccessTier,
-    // TODO: Support tags
+    ?tags: Tags,
     ?lease_id: LeaseId
 }
 
@@ -43,6 +43,7 @@ impl PutBlockListBuilder {
             headers.add(self.content_language);
             headers.add(self.content_disposition);
             headers.add(self.content_md5);
+            headers.add(self.tags);
             if let Some(metadata) = &self.metadata {
                 for m in metadata.iter() {
                     headers.add(m);

@@ -13,7 +13,7 @@ operation! {
     ?content_language: ContentLanguage,
     ?content_disposition: ContentDisposition,
     ?metadata: Metadata,
-    // TODO: Support tags
+    ?tags: Tags,
     ?lease_id: LeaseId,
     ?sequence_number: SequenceNumber
 }
@@ -30,6 +30,7 @@ impl PutPageBlobBuilder {
             headers.add(self.content_encoding);
             headers.add(self.content_language);
             headers.add(self.content_disposition);
+            headers.add(self.tags);
             if let Some(metadata) = &self.metadata {
                 for m in metadata.iter() {
                     headers.add(m);

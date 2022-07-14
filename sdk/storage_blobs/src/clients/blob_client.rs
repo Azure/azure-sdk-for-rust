@@ -1,4 +1,8 @@
-use crate::{blob::operations::*, options::BA512Range, prelude::*};
+use crate::{
+    blob::operations::*,
+    options::{BA512Range, Tags},
+    prelude::*,
+};
 use azure_core::{
     error::{Error, ErrorKind},
     headers::Headers,
@@ -162,6 +166,16 @@ impl BlobClient {
     /// Retrieve the list of blocks that have been uploaded as part of a block blob.
     pub fn get_block_list(&self) -> GetBlockListBuilder {
         GetBlockListBuilder::new(self.clone())
+    }
+
+    /// Retrieve the user-defined tags for the specified blob, version, or snapshot.
+    pub fn get_tags(&self) -> GetTagsBuilder {
+        GetTagsBuilder::new(self.clone())
+    }
+
+    /// Set user-defined tags for the specified blob, version, or snapshot.
+    pub fn set_tags(&self, tags: impl Into<Tags>) -> SetTagsBuilder {
+        SetTagsBuilder::new(self.clone(), tags.into())
     }
 
     /// Write a block blob by specifying the list of block IDs that make up the blob.
