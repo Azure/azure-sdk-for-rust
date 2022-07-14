@@ -1,6 +1,6 @@
 use azure_core::error::{Error, ErrorKind, ResultExt};
-use azure_core::Method;
-use azure_core::{content_type, headers, CollectedResponse, HttpClient, Request, Url};
+use azure_core::request_options::ContentType;
+use azure_core::{headers, CollectedResponse, HttpClient, Method, Request, Url};
 use base64::{decode, encode_config};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
@@ -809,7 +809,7 @@ impl ServiceClient {
     ) -> azure_core::Result<Request> {
         let mut request = Request::new(Url::parse(uri)?, method);
         request.insert_header(headers::AUTHORIZATION, &self.sas_token);
-        request.insert_header(headers::CONTENT_TYPE, content_type::APPLICATION_JSON);
+        request.insert_headers(&ContentType::APPLICATION_JSON);
         Ok(request)
     }
 }

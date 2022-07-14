@@ -1,5 +1,5 @@
 use crate::{operations::*, prelude::*, IfMatchCondition};
-use azure_core::{headers::*, CollectedResponse, Method};
+use azure_core::{headers::*, prelude::*, CollectedResponse, Method};
 use bytes::Bytes;
 use std::convert::TryInto;
 
@@ -17,7 +17,7 @@ impl UpdateOrMergeEntityBuilder {
             let url = self.client.url().clone();
 
             let mut headers = Headers::new();
-            headers.insert(CONTENT_TYPE, "application/json");
+            headers.add(ContentType::APPLICATION_JSON);
             headers.add(self.if_match_condition);
 
             let mut request = self.client.finalize_request(

@@ -2,6 +2,7 @@ use crate::{operations::*, prelude::*};
 use azure_core::{
     error::{Error, ErrorKind},
     headers::*,
+    prelude::*,
     CollectedResponse, Context, Method,
 };
 use bytes::Bytes;
@@ -47,7 +48,7 @@ where
             let mut headers = Headers::new();
             headers.add(self.return_entity);
             headers.insert(ACCEPT, "application/json;odata=fullmetadata");
-            headers.insert(CONTENT_TYPE, "application/json");
+            headers.add(ContentType::APPLICATION_JSON);
 
             let mut request =
                 self.table_client
