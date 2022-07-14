@@ -64,6 +64,15 @@ async fn main() -> azure_core::Result<()> {
         assert_eq!(chunk1.data[i], 72);
     }
 
+    // Download a single range stream.
+    let mut single_chunk = vec![];
+    let mut stream = blob_client.get().range(1024u64..1536).into_stream();
+    while let Some(result) = stream.next().await {
+        single_chunk.extend(result?.data);
+    }
+    assert_eq!(single_chunk.len(), 512);
+    assert!(single_chunk.iter().all(|x| *x == 72));
+
     // this time, only download them in chunks of 10 bytes
     let mut chunk2 = vec![];
 
