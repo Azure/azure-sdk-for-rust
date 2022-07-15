@@ -1,6 +1,7 @@
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::stream::StreamExt;
+use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -10,109 +11,77 @@ async fn main() -> azure_core::Result<()> {
     let access_key =
         std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
-    let container = std::env::args()
-        .nth(1)
-        .expect("please specify container name as command line parameter");
-    let blob = std::env::args()
-        .nth(2)
-        .expect("please specify blob name as command line parameter");
+    let container_name = format!("range-example-{}", Uuid::new_v4());
+    let blob_name = format!("blob-{}.txt", Uuid::new_v4());
 
-    let blob_client = StorageClient::new_access_key(&account, &access_key)
-        .container_client(&container)
-        .blob_client(&blob);
+    let container_client =
+        StorageClient::new_access_key(&account, &access_key).container_client(&container_name);
+    container_client.create().into_future().await?;
 
-    // 1024 G, 512 H and 2048 I
-    let mut buf: Vec<u8> = Vec::with_capacity(1024 * 4);
-    buf.extend([71; 1024]);
-    buf.extend([72; 512]);
-    buf.extend([73; 2048]);
+    let blob_client = container_client.blob_client(&blob_name);
 
-    let content = std::str::from_utf8(&buf)?.to_owned();
-    println!("content == {}", content);
+    let buf = b"0123456789".repeat(1000);
 
-    let _response = blob_client
+    blob_client
         .put_block_blob(buf.clone())
         .into_future()
         .await?;
 
+    // if we get the entire content, it should match
     let blob = blob_client.get_content().await?;
+    assert_eq!(blob, buf);
 
-    assert_eq!(blob.len(), buf.len());
+    // if we only download specific ranges, this should act like we took a range slice
+    // from the buffer
+    for range in [0..1024, 10..100, 3..103] {
+        let mut chunk: Vec<u8> = vec![];
+        let mut stream = blob_client.get().range(range.clone()).into_stream();
+        while let Some(value) = stream.next().await {
+            let value = value?.data;
+            chunk.extend(&value);
+        }
+        assert_eq!(chunk, &buf[range.clone()]);
 
-    let chunk0 = blob_client
-        .get()
-        .range(0u64..1024)
-        .into_stream()
-        .next()
-        .await
-        .expect("stream failed")?;
-    assert_eq!(chunk0.data.len(), 1024);
-    for i in 0..1024 {
-        assert_eq!(chunk0.data[i], 71);
+        // if we download the range in large chunks, the result should still be the same
+        let mut chunk: Vec<u8> = vec![];
+        let mut stream = blob_client
+            .get()
+            .range(range.clone())
+            .chunk_size(0xFFFF_FFFF_FFFFu64)
+            .into_stream();
+        while let Some(value) = stream.next().await {
+            let value = value?.data;
+            chunk.extend(&value);
+        }
+        assert_eq!(chunk, &buf[range.clone()]);
+
+        // if we download the range in tiny chunks, the result should still be the same
+        let mut chunk: Vec<u8> = vec![];
+        let mut stream = blob_client
+            .get()
+            .range(range.clone())
+            .chunk_size(17u64)
+            .into_stream();
+        while let Some(value) = stream.next().await {
+            let value = value?.data;
+            chunk.extend(&value);
+        }
+        assert_eq!(chunk, &buf[range.clone()]);
     }
 
-    let chunk1 = blob_client
-        .get()
-        .range(1024u64..1536)
-        .into_stream()
-        .next()
-        .await
-        .expect("stream failed")?;
-
-    assert_eq!(chunk1.data.len(), 512);
-    for i in 0..512 {
-        assert_eq!(chunk1.data[i], 72);
-    }
-
-    // Download a single range stream.
-    let mut single_chunk = vec![];
-    let mut stream = blob_client.get().range(1024u64..1536).into_stream();
-    while let Some(result) = stream.next().await {
-        single_chunk.extend(result?.data);
-    }
-    assert_eq!(single_chunk.len(), 512);
-    assert!(single_chunk.iter().all(|x| *x == 72));
-
-    // this time, only download them in chunks of 10 bytes
-    let mut chunk2 = vec![];
-
-    let mut stream = blob_client
-        .get()
-        .range(1536u64..3584)
-        .chunk_size(10u64)
-        .into_stream();
-    while let Some(result) = stream.next().await {
-        chunk2.extend(result?.data);
-    }
-    assert_eq!(chunk2.len(), 2048);
-    assert!(chunk2.iter().all(|x| *x == 73));
-
-    let mut stream = blob_client.get().chunk_size(512u64).into_stream();
-
-    println!("\nStreaming");
-    let mut chunk: usize = 0;
+    // download the whole blob in 100 byte chunks
+    let mut result: Vec<u8> = vec![];
+    let mut stream = blob_client.get().chunk_size(100u64).into_stream();
     while let Some(value) = stream.next().await {
         let value = value?.data;
-        println!("received {:?} bytes", value.len());
-        println!("received {}", std::str::from_utf8(&value)?);
-
-        for i in 0..512 {
-            assert_eq!(
-                value[i],
-                match chunk {
-                    0 | 1 => 71,
-                    2 => 72,
-                    _ => 73,
-                }
-            );
-        }
-
-        chunk += 1;
+        result.extend(&value);
     }
+    assert_eq!(
+        buf, result,
+        "streamed blob content should match original buf"
+    );
 
-    for dropped_suffix_len in &[3usize, 1] {
-        println!("dropped_suffix_len == {}", dropped_suffix_len);
-    }
+    container_client.delete().into_future().await?;
 
     Ok(())
 }
