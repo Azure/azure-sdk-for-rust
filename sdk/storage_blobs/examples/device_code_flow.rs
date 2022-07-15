@@ -15,7 +15,7 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("please specify the storage account name as first command line parameter");
 
-    let http_client = azure_core::new_http_client();
+    let http_client = azure_core::new_reqwest_client();
 
     // the process requires two steps. The first is to ask for
     // the code to show to the user. This is done with the following

@@ -56,7 +56,8 @@ impl Stream for BytesStream {
     }
 }
 
-#[async_trait::async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl SeekableStream for BytesStream {
     async fn reset(&mut self) -> crate::Result<()> {
         self.bytes_read = 0;

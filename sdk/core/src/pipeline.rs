@@ -1,4 +1,3 @@
-#[cfg(not(target_arch = "wasm32"))]
 use crate::policies::TransportPolicy;
 use crate::policies::{CustomHeadersPolicy, Policy, TelemetryPolicy};
 use crate::{ClientOptions, Context, Request, Response};
@@ -71,18 +70,14 @@ impl Pipeline {
         pipeline.extend_from_slice(&per_retry_policies);
         pipeline.extend_from_slice(&options.per_retry_policies);
 
-        // TODO: Add transport policy for WASM once https://github.com/Azure/azure-sdk-for-rust/issues/293 is resolved.
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            #[allow(unused_mut)]
-            let mut policy: Arc<dyn Policy> =
-                Arc::new(TransportPolicy::new(options.transport.clone()));
+        #[allow(unused_mut)]
+        let mut policy: Arc<dyn Policy> =
+            Arc::new(TransportPolicy::new(options.transport.clone()));
 
-            #[cfg(feature = "mock_transport_framework")]
-            crate::mock::set_mock_transport_policy(&mut policy, options.transport);
+        #[cfg(feature = "mock_transport_framework")]
+        crate::mock::set_mock_transport_policy(&mut policy, options.transport);
 
-            pipeline.push(policy);
-        }
+        pipeline.push(policy);
 
         Self { pipeline }
     }

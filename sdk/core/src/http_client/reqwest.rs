@@ -1,8 +1,13 @@
-use super::*;
+use crate::error::{ErrorKind, ResultExt};
+use crate::{Body, HttpClient, PinnedStream};
+
+use async_trait::async_trait;
+use futures::TryStreamExt;
 use std::{collections::HashMap, str::FromStr};
 
 /// Construct a new `HttpClient` with the `reqwest` backend.
-pub fn new_http_client() -> std::sync::Arc<dyn HttpClient> {
+pub fn new_reqwest_client() -> std::sync::Arc<dyn HttpClient> {
+    log::info!("instantiating an http client using the reqwest backend");
     std::sync::Arc::new(::reqwest::Client::new())
 }
 
@@ -34,7 +39,7 @@ impl HttpClient for ::reqwest::Client {
         let status = rsp.status();
         let headers = to_headers(rsp.headers());
         let body: PinnedStream = Box::pin(rsp.bytes_stream().map_err(|error| {
-            Error::full(
+            crate::error::Error::full(
                 ErrorKind::Io,
                 error,
                 "error converting `reqwest` request into a byte stream",
@@ -87,7 +92,7 @@ fn try_from_method(method: &crate::Method) -> crate::Result<::reqwest::Method> {
 fn try_from_status(status: ::reqwest::StatusCode) -> crate::Result<crate::StatusCode> {
     let status = u16::from(status);
     crate::StatusCode::try_from(status).map_err(|_| {
-        Error::with_message(ErrorKind::DataConversion, || {
+        crate::error::Error::with_message(ErrorKind::DataConversion, || {
             format!("invalid status code {status}")
         })
     })

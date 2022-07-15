@@ -16,7 +16,7 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1"
-azure_core = { path = "../core", version = "0.3" }
+azure_core = { path = "../core", version = "0.3", default-features = false }
 base64 = "0.13"
 chrono = "0.4"
 futures = "0.3"
@@ -30,7 +30,6 @@ bytes = "1.0"
 hmac = "0.12"
 sha2 = "0.10"
 
-
 [dev-dependencies]
 env_logger = "0.9"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
@@ -41,6 +40,7 @@ stop-token = { version = "0.7.0", features = ["tokio"] }
 clap = { version = "3.2.7", features = ["derive", "env"] }
 
 [features]
+default = ["azure_core/enable_reqwest"]
 test_e2e = []
 mock_transport_framework = [ "azure_core/mock_transport_framework"]
 into_future = []

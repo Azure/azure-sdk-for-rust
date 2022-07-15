@@ -1,20 +1,39 @@
-#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
-#[cfg(not(target_arch = "wasm32"))]
+mod noop;
+#[cfg(all(
+    not(target_arch = "wasm32"),
+    any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")
+))]
 mod reqwest;
+#[cfg(all(
+    target_arch = "wasm32",
+    any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")
+))]
+compile_error!("The `enable_request` and `enable_reqwest_rustls` features are not allowed for `wasm32` targets`");
 
-#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(
+    not(target_arch = "wasm32"),
+    any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")
+))]
 pub use self::reqwest::*;
-#[allow(unused_imports)]
-use crate::error::{Error, ErrorKind, ResultExt};
-#[allow(unused_imports)]
-use crate::Body;
-#[allow(unused_imports)]
-use crate::{headers::Headers, PinnedStream};
+pub use noop::*;
+
+use std::sync::Arc;
+
+/// Construct a new `HttpClient`
+pub fn default_client() -> Arc<dyn HttpClient> {
+    #[allow(unused)]
+    let http_client: Arc<dyn HttpClient> = Arc::new(NoopClient);
+    #[cfg(all(
+        not(target_arch = "wasm32"),
+        any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")
+    ))]
+    let http_client = new_reqwest_client();
+    http_client
+}
+
+use crate::error::ErrorKind;
 use async_trait::async_trait;
 use bytes::Bytes;
-#[allow(unused_imports)]
-use futures::TryStreamExt;
 use serde::Serialize;
 
 /// An HTTP client which can send requests.

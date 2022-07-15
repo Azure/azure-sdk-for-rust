@@ -95,7 +95,7 @@ fn create_client() -> azure_core::Result<Client> {
     let policy_key =
         std::env::var("AZURE_POLICY_KEY").expect("Please set AZURE_POLICY_KEY env variable first!");
 
-    let http_client = azure_core::new_http_client();
+    let http_client = azure_core::new_reqwest_client();
 
     Ok(Client::new(
         http_client,

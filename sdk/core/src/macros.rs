@@ -191,6 +191,11 @@ macro_rules! operation {
         }
         azure_core::__private::paste! {
         /// The future returned by calling `into_future` on the builder.
+        /// For wasm, we don't require that the future is `Send`
+        #[cfg(target_arch = "wasm32")]
+        pub type $name =
+            std::pin::Pin<std::boxed::Box<dyn std::future::Future<Output = azure_core::Result<[<$name Response>]>> + 'static>>;
+        #[cfg(not(target_arch = "wasm32"))]
         pub type $name =
             futures::future::BoxFuture<'static, azure_core::Result<[<$name Response>]>>;
         #[cfg(feature = "into_future")]

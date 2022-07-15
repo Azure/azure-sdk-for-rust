@@ -33,7 +33,7 @@ pub struct ImdsManagedIdentityCredential {
 impl Default for ImdsManagedIdentityCredential {
     /// Creates an instance of the `TransportOptions` using the default `HttpClient`.
     fn default() -> Self {
-        Self::new(azure_core::new_http_client())
+        Self::new(azure_core::new_reqwest_client())
     }
 }
 
@@ -88,7 +88,8 @@ impl ImdsManagedIdentityCredential {
     }
 }
 
-#[async_trait::async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for ImdsManagedIdentityCredential {
     async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
         let msi_endpoint = std::env::var(MSI_ENDPOINT_ENV_KEY)

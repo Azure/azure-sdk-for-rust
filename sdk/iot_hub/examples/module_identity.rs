@@ -15,7 +15,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(2)
         .expect("Please pass the module id as the second parameter");
 
-    let http_client = azure_core::new_http_client();
+    let http_client = azure_core::new_reqwest_client();
     let service_client =
         ServiceClient::from_connection_string(http_client, iot_hub_connection_string, 3600)?;
     let module = service_client

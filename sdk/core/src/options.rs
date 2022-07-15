@@ -1,3 +1,4 @@
+use crate::http_client;
 use crate::policies::{ExponentialRetryPolicy, FixedRetryPolicy, NoRetryPolicy, Policy};
 use crate::HttpClient;
 use std::sync::Arc;
@@ -15,14 +16,7 @@ use std::time::Duration;
 ///     .retry(RetryOptions::default().max_retries(10u32))
 ///     .telemetry(TelemetryOptions::default().application_id("my-application"));
 /// ```
-#[derive(Clone, Debug)]
-#[cfg_attr(
-    all(
-        any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"),
-        not(target_arch = "wasm32")
-    ),
-    derive(Default)
-)]
+#[derive(Clone, Debug, Default)]
 pub struct ClientOptions {
     /// Policies called per call.
     pub(crate) per_call_policies: Vec<Arc<dyn Policy>>,
@@ -33,7 +27,6 @@ pub struct ClientOptions {
     /// Telemetry options.
     pub(crate) telemetry: TelemetryOptions,
     /// Transport options.
-    #[allow(dead_code)] // wasm
     pub(crate) transport: TransportOptions,
 }
 
@@ -107,32 +100,25 @@ impl Default for RetryMode {
 #[derive(Clone, Debug)]
 pub struct RetryOptions {
     /// The algorithm to use for calculating retry delays.
-    mode: RetryMode,
+    ///
+    /// The default is `RetryMode::Exponential`
+    pub mode: RetryMode,
 
     /// The delay between retry attempts for a fixed algorithm
     /// or the delay on which to base calculations for a back-off-based approach.
     ///
     /// The default is 800 milliseconds.
-    delay: Duration,
+    pub delay: Duration,
 
     /// The maximum number of retry attempts before giving up.
     ///
     /// The default is 3.
-    max_retries: u32,
+    pub max_retries: u32,
 
     /// The maximum permissible delay between retry attempts.
     ///
     /// The default is 1 minute.
-    max_delay: Duration,
-}
-
-impl RetryOptions {
-    setters! {
-        mode: RetryMode => mode,
-        delay: Duration => delay,
-        max_retries: u32 => max_retries,
-        max_delay: Duration => max_delay,
-    }
+    pub max_delay: Duration,
 }
 
 impl Default for RetryOptions {
@@ -181,7 +167,6 @@ impl TelemetryOptions {
 #[derive(Clone, Debug)]
 pub struct TransportOptions {
     /// The HTTP client implementation to use for requests.
-    #[allow(dead_code)] // wasm
     pub(crate) http_client: Arc<dyn HttpClient>,
     #[cfg(feature = "mock_transport_framework")]
     /// The name of the transaction used when reading or writing mock requests and responses.
@@ -191,7 +176,6 @@ pub struct TransportOptions {
 impl TransportOptions {
     /// Creates a new `TransportOptions` using the given `HttpClient`.
     pub fn new(http_client: Arc<dyn HttpClient>) -> Self {
-        #[allow(unreachable_code)]
         Self {
             http_client,
             #[cfg(feature = "mock_transport_framework")]
@@ -203,17 +187,15 @@ impl TransportOptions {
     #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
     pub fn new_with_transaction_name(transaction_name: String) -> Self {
         Self {
-            http_client: crate::http_client::new_http_client(),
+            http_client: crate::http_client::new_reqwest_client(),
             transaction_name,
         }
     }
 }
 
-#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
-#[cfg(not(target_arch = "wasm32"))]
 impl Default for TransportOptions {
     /// Creates an instance of the `TransportOptions` using the default `HttpClient`.
     fn default() -> Self {
-        Self::new(crate::http_client::new_http_client())
+        Self::new(http_client::default_client())
     }
 }
