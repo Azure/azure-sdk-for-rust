@@ -22,7 +22,6 @@ mod pageable;
 mod pipeline;
 mod policies;
 mod request;
-mod request_options;
 mod response;
 mod seekable_stream;
 
@@ -32,6 +31,7 @@ pub mod headers;
 pub mod mock;
 pub mod parsing;
 pub mod prelude;
+pub mod request_options;
 pub mod sleep;
 pub mod util;
 

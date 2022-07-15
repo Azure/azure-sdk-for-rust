@@ -1,5 +1,5 @@
 use crate::{operations::*, prelude::*};
-use azure_core::{headers::*, CollectedResponse, Method};
+use azure_core::{headers::*, prelude::*, CollectedResponse, Method};
 use bytes::Bytes;
 use std::convert::TryInto;
 
@@ -16,7 +16,7 @@ impl InsertOrReplaceOrMergeEntityBuilder {
             let url = self.client.url().clone();
 
             let mut headers = Headers::new();
-            headers.insert(CONTENT_TYPE, "application/json");
+            headers.add(ContentType::APPLICATION_JSON);
 
             let mut request = self.client.finalize_request(
                 url,

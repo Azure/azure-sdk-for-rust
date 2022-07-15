@@ -36,7 +36,7 @@ impl TransactionBuilder {
 
         let mut request = Request::new(url, Method::Post);
         request.insert_header(ACCEPT, "application/json;odata=fullmetadata");
-        request.insert_header(CONTENT_TYPE, "application/json");
+        request.insert_headers(&ContentType::APPLICATION_JSON);
         request.set_body(body);
 
         self.transaction.add(TransactionOperation::new(request));
@@ -160,7 +160,7 @@ impl TransactionBuilder {
 
         let mut request = Request::new(url.clone(), method);
         request.insert_header(ACCEPT, "application/json;odata=fullmetadata");
-        request.insert_header(CONTENT_TYPE, "application/json");
+        request.insert_headers(&ContentType::APPLICATION_JSON);
         request.set_body(body);
         request.add_optional_header(&match_condition);
 

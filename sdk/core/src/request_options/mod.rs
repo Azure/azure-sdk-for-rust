@@ -46,7 +46,7 @@ pub use content_encoding::ContentEncoding;
 pub use content_language::ContentLanguage;
 pub use content_length::ContentLength;
 pub use content_range::ContentRange;
-pub use content_type::ContentType;
+pub use content_type::*;
 pub use continuation::Continuation;
 pub use delimiter::Delimiter;
 pub use if_match_condition::IfMatchCondition;

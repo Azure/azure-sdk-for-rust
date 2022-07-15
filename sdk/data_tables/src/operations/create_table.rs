@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::{collect_pinned_stream, headers::*, Method, Response};
+use azure_core::{collect_pinned_stream, headers::*, prelude::*, Method, Response};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
@@ -26,7 +26,7 @@ impl CreateTableBuilder {
 
             let mut headers = Headers::new();
             headers.insert(ACCEPT, "application/json;odata=fullmetadata");
-            headers.insert(CONTENT_TYPE, "application/json");
+            headers.add(ContentType::APPLICATION_JSON);
             headers.insert(PREFER, "return-content");
 
             let mut request =
