@@ -50,6 +50,7 @@ impl Tags {
     pub fn new() -> Self {
         Self::default()
     }
+
     pub fn insert<K, V>(&mut self, key: K, value: V)
     where
         K: Into<String>,
