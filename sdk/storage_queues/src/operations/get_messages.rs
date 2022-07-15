@@ -43,20 +43,17 @@ pub struct GetMessagesResponse {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "PascalCase")]
 pub struct Message {
-    #[serde(rename = "MessageId")]
     message_id: String,
-    #[serde(rename = "PopReceipt")]
     pop_receipt: String,
-    #[serde(rename = "InsertionTime", deserialize_with = "deserialize_utc")]
+    #[serde(deserialize_with = "deserialize_utc_date_from_rfc2822")]
     pub insertion_time: DateTime<Utc>,
-    #[serde(rename = "ExpirationTime", deserialize_with = "deserialize_utc")]
+    #[serde(deserialize_with = "deserialize_utc_date_from_rfc2822")]
     pub expiration_time: DateTime<Utc>,
-    #[serde(rename = "TimeNextVisible", deserialize_with = "deserialize_utc")]
+    #[serde(deserialize_with = "deserialize_utc_date_from_rfc2822")]
     pub time_next_visible: DateTime<Utc>,
-    #[serde(rename = "DequeueCount")]
     pub dequeue_count: u64,
-    #[serde(rename = "MessageText")]
     pub message_text: String,
 }
 
@@ -74,14 +71,14 @@ impl From<Message> for PopReceipt {
 
 #[derive(Debug, Clone, Deserialize)]
 struct MessageList {
-    #[serde(rename = "QueueMessage")]
-    pub messages: Option<Vec<Message>>,
+    #[serde(rename = "QueueMessage", default)]
+    pub messages: Vec<Message>,
 }
 
 impl GetMessagesResponse {
     fn parse_messages(body: &[u8]) -> azure_core::Result<Vec<Message>> {
         let response: MessageList = read_xml(body)?;
-        Ok(response.messages.unwrap_or_default())
+        Ok(response.messages)
     }
 
     async fn try_from(response: AzureResponse) -> azure_core::Result<Self> {
@@ -95,15 +92,6 @@ impl GetMessagesResponse {
             messages,
         })
     }
-}
-
-fn deserialize_utc<'de, D>(deserializer: D) -> std::result::Result<DateTime<Utc>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-    let date = DateTime::parse_from_rfc2822(&s).map_err(serde::de::Error::custom)?;
-    Ok(DateTime::from_utc(date.naive_utc(), Utc))
 }
 
 #[cfg(test)]

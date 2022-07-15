@@ -11,14 +11,10 @@ impl NextMarker {
     }
 
     pub fn from_possibly_empty_string(next_marker: Option<String>) -> Option<Self> {
-        if let Some(nm) = next_marker {
-            if nm.is_empty() {
-                None
-            } else {
-                Some(NextMarker::new(nm))
-            }
-        } else {
+        if let Some("") = next_marker.as_deref() {
             None
+        } else {
+            next_marker.map(Into::into)
         }
     }
 

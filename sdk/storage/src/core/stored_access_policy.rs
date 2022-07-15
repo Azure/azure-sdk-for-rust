@@ -1,82 +1,21 @@
-use crate::xml::read_xml;
-use azure_core::error::{ErrorKind, ResultExt};
-use bytes::Bytes;
+use azure_core::prelude::*;
 use chrono::{DateTime, FixedOffset};
+
+use crate::xml::read_xml;
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct StoredAccessPolicyList {
     pub stored_access: Vec<StoredAccessPolicy>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct StoredAccessPolicy {
-    pub id: String,
-    pub start: DateTime<FixedOffset>,
-    pub expiry: DateTime<FixedOffset>,
-    pub permission: String,
-}
-
-impl StoredAccessPolicy {
-    pub fn new<A, B>(
-        id: A,
-        start: DateTime<FixedOffset>,
-        expiry: DateTime<FixedOffset>,
-        permission: B,
-    ) -> StoredAccessPolicy
-    where
-        A: Into<String>,
-        B: Into<String>,
-    {
-        StoredAccessPolicy {
-            id: id.into(),
-            start,
-            expiry,
-            permission: permission.into(),
-        }
-    }
-}
-
 impl StoredAccessPolicyList {
-    pub fn new() -> StoredAccessPolicyList {
-        StoredAccessPolicyList::default()
+    pub fn new(list: Vec<StoredAccessPolicy>) -> Self {
+        Self { stored_access: list }
     }
 
-    pub fn from_xml(xml: &Bytes) -> azure_core::Result<StoredAccessPolicyList> {
-        let mut sal = StoredAccessPolicyList::default();
-        let sis: SignedIdentifiers = read_xml(xml).context(
-            ErrorKind::DataConversion,
-            "failed to read SignedIdentifiers xml",
-        )?;
-
-        if let Some(sis) = sis.signed_identifiers {
-            for si in sis {
-                let sa =
-                    StoredAccessPolicy {
-                        id: si.id,
-                        start: DateTime::parse_from_rfc3339(&si.access_policy.start).with_context(
-                            ErrorKind::DataConversion,
-                            || {
-                                format!(
-                                    "failed to parse DateTime from access_policy.start: {}",
-                                    &si.access_policy.start
-                                )
-                            },
-                        )?,
-                        expiry: DateTime::parse_from_rfc3339(&si.access_policy.expiry)
-                            .with_context(ErrorKind::DataConversion, || {
-                                format!(
-                                    "failed to parse DateTime from access_policy.expiry: {}",
-                                    &si.access_policy.expiry
-                                )
-                            })?,
-                        permission: si.access_policy.permission,
-                    };
-
-                sal.stored_access.push(sa);
-            }
-        }
-
-        Ok(sal)
+    pub fn from_xml(bytes: &[u8]) -> azure_core::Result<Self> {
+        let sis: SignedIdentifiers = read_xml(bytes)?;
+        Ok(sis.into())
     }
 
     pub fn to_xml(&self) -> String {
@@ -110,10 +49,56 @@ impl StoredAccessPolicyList {
     }
 }
 
+impl From<SignedIdentifiers> for StoredAccessPolicyList {
+    fn from(si: SignedIdentifiers) -> Self {
+        let list = si
+            .signed_identifiers
+            .into_iter()
+            .map(|si| StoredAccessPolicy {
+                id: si.id,
+                start: si.access_policy.start,
+                expiry: si.access_policy.expiry,
+                permission: si.access_policy.permission,
+            })
+            .collect();
+        Self {
+            stored_access: list,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct StoredAccessPolicy {
+    pub id: String,
+    pub start: DateTime<FixedOffset>,
+    pub expiry: DateTime<FixedOffset>,
+    pub permission: String,
+}
+
+impl StoredAccessPolicy {
+    pub fn new<A, B>(
+        id: A,
+        start: DateTime<FixedOffset>,
+        expiry: DateTime<FixedOffset>,
+        permission: B,
+    ) -> Self
+    where
+        A: Into<String>,
+        B: Into<String>,
+    {
+        Self {
+            id: id.into(),
+            start,
+            expiry,
+            permission: permission.into(),
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 struct SignedIdentifiers {
-    #[serde(rename = "SignedIdentifier")]
-    signed_identifiers: Option<Vec<SignedIdentifier>>,
+    #[serde(rename = "SignedIdentifier", default)]
+    signed_identifiers: Vec<SignedIdentifier>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -126,14 +111,17 @@ struct SignedIdentifier {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 struct AccessPolicy {
-    start: String,
-    expiry: String,
+    #[serde(deserialize_with = "deserialize_date_from_rfc3339")]
+    start: DateTime<FixedOffset>,
+    #[serde(deserialize_with = "deserialize_date_from_rfc3339")]
+    expiry: DateTime<FixedOffset>,
     permission: String,
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::xml::read_xml;
 
     #[test]
     fn parse_from_xml() {
@@ -142,27 +130,30 @@ mod test {
       <SignedIdentifier>
           <Id>MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=</Id>
           <AccessPolicy>
-            <Start>2009-09-28T08:49:37.0000000Z</Start>
-            <Expiry>2009-09-29T08:49:37.0000000Z</Expiry>
+            <Start>2009-09-28T08:49:37Z</Start>
+            <Expiry>2009-09-29T08:49:37Z</Expiry>
             <Permission>rwd</Permission>
           </AccessPolicy>
       </SignedIdentifier>
       <SignedIdentifier>
           <Id>000zNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=</Id>
           <AccessPolicy>
-            <Start>2018-09-28T08:49:37.0000000Z</Start>
-            <Expiry>2020-09-29T08:49:37.0000000Z</Expiry>
+            <Start>2018-09-28T08:49:37Z</Start>
+            <Expiry>2020-09-29T08:49:37Z</Expiry>
             <Permission>rd</Permission>
           </AccessPolicy>
       </SignedIdentifier>
     </SignedIdentifiers>";
 
-        let resp = Bytes::from(resp);
-        let sis: SignedIdentifiers = read_xml(&resp).unwrap();
-        assert!(sis.signed_identifiers.unwrap().len() == 2);
+        let sis: SignedIdentifiers = read_xml(resp.as_bytes()).unwrap();
+        assert_eq!(sis.signed_identifiers.len(), 2);
+        let sap: StoredAccessPolicyList = sis.into();
+        let sxml = sap.to_xml();
 
-        let sal = StoredAccessPolicyList::from_xml(&resp).unwrap();
-
-        let _sxml = sal.to_xml();
+        fn remove_whitespace(mut s: String) -> String {
+            s.retain(|c| !c.is_whitespace());
+            s
+        }
+        assert_eq!(remove_whitespace(sxml), remove_whitespace(resp.to_owned()));
     }
 }

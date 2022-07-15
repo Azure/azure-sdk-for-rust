@@ -94,7 +94,7 @@ pub struct ListBlobsResponse {
     pub prefix: Option<String>,
     pub max_results: Option<u32>,
     pub delimiter: Option<String>,
-    pub next_marker: Option<String>,
+    pub next_marker: Option<NextMarker>,
     pub blobs: Blobs,
     pub request_id: RequestId,
     pub date: DateTime<Utc>,
@@ -114,7 +114,7 @@ struct ListBlobsResponseInternal {
 #[serde(rename_all = "PascalCase")]
 pub struct Blobs {
     pub blob_prefix: Option<Vec<BlobPrefix>>,
-    #[serde(rename = "Blob", default = "Vec::new")]
+    #[serde(rename = "Blob", default)]
     pub blobs: Vec<Blob>,
 }
 
@@ -133,7 +133,7 @@ impl ListBlobsResponse {
 
         let next_marker = match list_blobs_response_internal.next_marker {
             Some(ref nm) if nm.is_empty() => None,
-            Some(nm) => Some(nm),
+            Some(nm) => Some(nm.into()),
             None => None,
         };
 
@@ -152,7 +152,7 @@ impl ListBlobsResponse {
 impl Continuable for ListBlobsResponse {
     type Continuation = NextMarker;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_marker.clone().map(NextMarker::from)
+        self.next_marker.clone()
     }
 }
 

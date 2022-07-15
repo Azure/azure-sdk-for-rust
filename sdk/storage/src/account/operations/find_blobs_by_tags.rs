@@ -59,9 +59,8 @@ struct ListBlobsByTagsResponseInternal {
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(rename_all = "PascalCase")]
 pub struct Blobs {
-    #[serde(rename = "Blob", default = "Vec::new")]
+    #[serde(rename = "Blob", default)]
     pub blobs: Vec<Blob>,
 }
 
