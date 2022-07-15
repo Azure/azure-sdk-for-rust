@@ -6,7 +6,7 @@
 
 If you want to write a test case or an example that supports the mock testing framework you must create a client with a transaction name that matches a collection of transactions found in the "tests/transactions" directory at the root of the SDK workspace.
 
-For instance in `cosmos` you can use the `CosmosClient::new_with_transaction` function.
+For instance in `cosmos` you can use the `CosmosClient::with_mock` function.
 
 ```rust
 let account = "MyCosmosAccountName";

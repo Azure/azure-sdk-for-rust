@@ -26,13 +26,37 @@ impl CosmosClient {
     pub fn new(account: impl Into<String>, auth_token: AuthorizationToken) -> Self {
         Self {
             pipeline: new_pipeline_from_options(ClientOptions::default(), auth_token),
-            cloud_location: CloudLocation::Public(account.into()),
+            cloud_location: CloudLocation::Public {
+                account: account.into(),
+            },
+        }
+    }
+
+    /// Create a new instance of `CosmosClient` connecting to a specific cloud.
+    pub fn with_cloud(auth_token: AuthorizationToken, cloud_location: CloudLocation) -> Self {
+        Self {
+            pipeline: new_pipeline_from_options(ClientOptions::default(), auth_token),
+            cloud_location,
+        }
+    }
+
+    /// Create a new `CosmosClient` which connects to the account's instance in Azure emulator
+    pub fn with_emulator(address: impl AsRef<str>, port: u16) -> Self {
+        let auth_token = AuthorizationToken::primary_from_base64(EMULATOR_ACCOUNT_KEY).unwrap();
+        Self {
+            pipeline: new_pipeline_from_options(ClientOptions::default(), auth_token),
+            cloud_location: CloudLocation::Custom {
+                uri: format!("https://{}:{}", address.as_ref(), port),
+            },
         }
     }
 
     #[cfg(feature = "mock_transport_framework")]
-    /// Create new options with a given transaction name
-    pub fn new_with_transaction(
+    /// Create a new instance of `CosmosClient` using a mock backend. The
+    /// transaction name is used to look up which files to read to validate the
+    /// request and mock the response.
+    // TODO(yosh): consider adding a general way to replace transports, and remove this method.
+    pub fn with_mock(
         account: impl Into<String>,
         auth_token: AuthorizationToken,
         transaction_name: impl Into<String>,
@@ -40,45 +64,14 @@ impl CosmosClient {
         let options = ClientOptions::new_with_transaction_name(transaction_name.into());
         Self {
             pipeline: new_pipeline_from_options(options, auth_token),
-            cloud_location: CloudLocation::Public(account.into()),
-        }
-    }
-
-    /// Create a new `CosmosClient` which connects to the account's instance in the Chinese Azure cloud.
-    pub fn new_china(account: impl Into<String>, auth_token: AuthorizationToken) -> Self {
-        Self {
-            pipeline: new_pipeline_from_options(ClientOptions::default(), auth_token),
-            cloud_location: CloudLocation::China(account.into()),
-        }
-    }
-
-    /// Create a new `CosmosClient` which connects to the account's instance in custom Azure cloud.
-    pub fn new_custom(
-        account: impl Into<String>,
-        auth_token: AuthorizationToken,
-        uri: String,
-    ) -> Self {
-        let account = account.into();
-        Self {
-            pipeline: new_pipeline_from_options(ClientOptions::default(), auth_token),
-            cloud_location: CloudLocation::Custom { account, uri },
-        }
-    }
-
-    /// Create a new `CosmosClient` which connects to the account's instance in Azure emulator
-    pub fn new_emulator(address: impl AsRef<str>, port: u16) -> Self {
-        let auth_token = AuthorizationToken::primary_from_base64(EMULATOR_ACCOUNT_KEY).unwrap();
-        Self {
-            pipeline: new_pipeline_from_options(ClientOptions::default(), auth_token),
-            cloud_location: CloudLocation::Custom {
-                account: String::from("Custom"),
-                uri: format!("https://{}:{}", address.as_ref(), port),
+            cloud_location: CloudLocation::Public {
+                account: account.into(),
             },
         }
     }
 
     /// Set the auth token used
-    pub fn auth_token(&mut self, auth_token: AuthorizationToken) {
+    pub fn auth_token(mut self, auth_token: AuthorizationToken) -> Self {
         // we replace the AuthorizationPolicy. This is
         // the last-1 policy by construction.
         let auth_policy: Arc<dyn azure_core::Policy> =
@@ -86,6 +79,7 @@ impl CosmosClient {
 
         self.pipeline
             .replace_policy(auth_policy, self.pipeline.policies().len() - 2);
+        self
     }
 
     /// Create a database
@@ -154,28 +148,24 @@ fn new_pipeline_from_options(
 }
 
 /// The cloud with which you want to interact.
-///
-/// All variants require the cosmos account name. `Custom` also requires a valid
-/// base URL (e.g. https://custom.documents.azure.com)
-#[allow(unused)]
+// TODO: Other govt clouds?
 #[derive(Debug, Clone)]
-enum CloudLocation {
+pub enum CloudLocation {
     /// Azure public cloud
-    Public(String),
+    Public { account: String },
     /// Azure China cloud
-    China(String),
-    // TODO: Other govt clouds?
+    China { account: String },
     /// A custom base URL
-    Custom { account: String, uri: String },
+    Custom { uri: String },
 }
 
 impl CloudLocation {
     /// the base URL for a given cloud location
     fn url(&self) -> String {
         match self {
-            CloudLocation::Public(account) => format!("https://{}.documents.azure.com", account),
-            CloudLocation::China(account) => format!("https://{}.documents.azure.cn", account),
-            CloudLocation::Custom { uri, .. } => uri.clone(),
+            CloudLocation::Public { account } => format!("https://{}.documents.azure.com", account),
+            CloudLocation::China { account } => format!("https://{}.documents.azure.cn", account),
+            CloudLocation::Custom { uri } => uri.clone(),
         }
     }
 }

@@ -76,8 +76,7 @@ async fn main() -> azure_core::Result<()> {
         "Replacing authorization_token with {:?}.",
         new_authorization_token
     );
-    let mut client = client.clone();
-    client.auth_token(new_authorization_token);
+    let client = client.clone().auth_token(new_authorization_token);
 
     // let's list the documents with the new auth token
     let list_documents_response = client
@@ -145,7 +144,7 @@ async fn main() -> azure_core::Result<()> {
         "Replacing authorization_token with {:?}.",
         new_authorization_token
     );
-    client.auth_token(new_authorization_token);
+    let client = client.auth_token(new_authorization_token);
 
     // now we have an "All" authorization_token
     // so the create_document should succeed!
