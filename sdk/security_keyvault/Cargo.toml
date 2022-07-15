@@ -21,7 +21,7 @@ serde_json = "1.0"
 url = "2.2"
 serde = { version = "1.0", features = ["derive"] }
 getset = "0.1"
-azure_core = { path = "../core", version = "0.3" }
+azure_core = { path = "../core", version = "0.3", default_features = false }
 
 [dev-dependencies]
 oauth2 = "4.0.0"
@@ -29,3 +29,6 @@ azure_identity = { path = "../identity" }
 mockito = "0.31"
 async-trait = "0.1"
 tokio = { version = "1.0", features = ["full"] }
+
+[features]
+default = ["azure_core/default"]

@@ -8,7 +8,7 @@ mod reqwest;
     target_arch = "wasm32",
     any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")
 ))]
-compile_error!("The `enable_request` and `enable_reqwest_rustls` features are not allowed for `wasm32` targets`");
+compile_error!("The `enable_request` and `enable_reqwest_rustls` features are not allowed for `wasm32` targets");
 
 #[cfg(all(
     not(target_arch = "wasm32"),

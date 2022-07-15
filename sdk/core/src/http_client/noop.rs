@@ -9,11 +9,12 @@ pub struct NoopClient;
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl crate::HttpClient for NoopClient {
-    async fn execute_request(&self, _request: &crate::Request) -> crate::Result<crate::Response> {
+    async fn execute_request(&self, request: &crate::Request) -> crate::Result<crate::Response> {
         panic!(
             "A request was called on the default http client `NoopClient`.\
-	This client does nothing but panic by default. Make sure to enable an http\
-	 client that can actually perform requests. **TODO**: link to instructions on how to do this "
+	This client does nothing but panic. Make sure to enable an http\
+	 client that can actually perform requests. You can do this by ensuring that the `reqwest` feature is enabled.\n\
+     Request:\n{request:?}"
         );
     }
 }
