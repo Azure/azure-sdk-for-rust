@@ -10,7 +10,9 @@ pub struct StoredAccessPolicyList {
 
 impl StoredAccessPolicyList {
     pub fn new(list: Vec<StoredAccessPolicy>) -> Self {
-        Self { stored_access: list }
+        Self {
+            stored_access: list,
+        }
     }
 
     pub fn from_xml(bytes: &[u8]) -> azure_core::Result<Self> {
