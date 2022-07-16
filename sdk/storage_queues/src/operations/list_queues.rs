@@ -72,38 +72,6 @@ impl Continuable for ListQueuesResponse {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct ListQueuesResponseInternal {
-    #[serde(rename = "ServiceEndpoint")]
-    pub service_endpoint: String,
-    #[serde(rename = "Prefix")]
-    pub prefix: Option<String>,
-    #[serde(rename = "Marker")]
-    pub marker: Option<String>,
-    #[serde(rename = "MaxResults")]
-    pub max_results: Option<u32>,
-
-    #[serde(rename = "Queues")]
-    pub queues: Queues,
-
-    #[serde(rename = "NextMarker")]
-    pub next_marker: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Queues {
-    #[serde(rename = "Queue")]
-    pub queues: Option<Vec<Queue>>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Queue {
-    #[serde(rename = "Name")]
-    pub name: String,
-    #[serde(rename = "Metadata")]
-    pub metadata: Option<std::collections::HashMap<String, String>>,
-}
-
 impl ListQueuesResponse {
     async fn try_from(response: AzureResponse) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
@@ -111,12 +79,8 @@ impl ListQueuesResponse {
 
         let mut response: ListQueuesResponseInternal = read_xml(&body)?;
 
-        // get rid of the ugly Some("") empty string
-        // we use None instead
-        if let Some(next_marker) = &response.next_marker {
-            if next_marker.is_empty() {
-                response.next_marker = None;
-            }
+        if let Some("") = response.next_marker.as_deref() {
+            response.next_marker = None;
         }
 
         Ok(ListQueuesResponse {
@@ -125,10 +89,35 @@ impl ListQueuesResponse {
             prefix: response.prefix,
             marker: response.marker,
             max_results: response.max_results,
-            queues: response.queues.queues.unwrap_or_default(),
+            queues: response.queues.queues,
             next_marker: response.next_marker.map(|nm| nm.into()),
         })
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct ListQueuesResponseInternal {
+    pub service_endpoint: String,
+    pub prefix: Option<String>,
+    pub marker: Option<String>,
+    pub max_results: Option<u32>,
+    pub queues: Queues,
+    pub next_marker: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Queues {
+    #[serde(rename = "Queue", default)]
+    pub queues: Vec<Queue>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct Queue {
+    pub name: String,
+    #[serde(default)]
+    pub metadata: std::collections::HashMap<String, String>,
 }
 
 #[cfg(test)]
@@ -139,8 +128,8 @@ mod test {
     fn try_parse() {
         let range = "<?xml version=\"1.0\" encoding=\"utf-8\"?><EnumerationResults ServiceEndpoint=\"https://azureskdforrust.queue.core.windows.net/\"><Prefix>a</Prefix><MaxResults>2</MaxResults><Queues><Queue><Name>azureiscool</Name></Queue><Queue><Name>azurerocks</Name></Queue></Queues><NextMarker /></EnumerationResults>";
 
-        let response: ListQueuesResponseInternal = serde_xml_rs::from_str(range).unwrap();
+        let response: ListQueuesResponseInternal = read_xml(range.as_bytes()).unwrap();
 
-        assert_eq!(response.queues.queues.unwrap().len(), 2);
+        assert_eq!(response.queues.queues.len(), 2);
     }
 }

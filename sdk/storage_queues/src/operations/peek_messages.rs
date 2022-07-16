@@ -1,7 +1,6 @@
 use crate::{clients::QueueClient, prelude::*};
 use azure_core::{
-    collect_pinned_stream, headers::utc_date_from_rfc2822, headers::Headers, prelude::*, Method,
-    Response as AzureResponse,
+    collect_pinned_stream, headers::Headers, prelude::*, Method, Response as AzureResponse,
 };
 use azure_storage::core::{headers::CommonStorageResponseHeaders, xml::read_xml};
 use chrono::{DateTime, Utc};
@@ -41,33 +40,22 @@ pub struct PeekMessagesResponse {
     pub messages: Vec<PeekMessage>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct PeekMessageInternal {
-    #[serde(rename = "MessageId")]
-    pub message_id: String,
-    #[serde(rename = "InsertionTime")]
-    pub insertion_time: String,
-    #[serde(rename = "ExpirationTime")]
-    pub expiration_time: String,
-    #[serde(rename = "DequeueCount")]
-    pub dequeue_count: u64,
-    #[serde(rename = "MessageText")]
-    pub message_text: String,
+#[derive(Debug, Deserialize)]
+pub struct PeekMessagesBody {
+    #[serde(rename = "QueueMessage", default)]
+    pub messages: Vec<PeekMessage>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
 pub struct PeekMessage {
     pub message_id: String,
+    #[serde(deserialize_with = "deserialize_utc_date_from_rfc2822")]
     pub insertion_time: DateTime<Utc>,
+    #[serde(deserialize_with = "deserialize_utc_date_from_rfc2822")]
     pub expiration_time: DateTime<Utc>,
     pub dequeue_count: u64,
     pub message_text: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct PeekMessagesInternal {
-    #[serde(rename = "QueueMessage")]
-    pub messages: Option<Vec<PeekMessageInternal>>,
 }
 
 impl PeekMessagesResponse {
@@ -75,18 +63,7 @@ impl PeekMessagesResponse {
         let (_, headers, body) = response.deconstruct();
         let body = collect_pinned_stream(body).await?;
 
-        let response: PeekMessagesInternal = read_xml(&body)?;
-
-        let mut messages = Vec::new();
-        for message in response.messages.unwrap_or_default().into_iter() {
-            messages.push(PeekMessage {
-                message_id: message.message_id,
-                insertion_time: utc_date_from_rfc2822(&message.insertion_time)?,
-                expiration_time: utc_date_from_rfc2822(&message.expiration_time)?,
-                dequeue_count: message.dequeue_count,
-                message_text: message.message_text,
-            })
-        }
+        let messages = read_xml::<PeekMessagesBody>(&body)?.messages;
 
         Ok(PeekMessagesResponse {
             common_storage_response_headers: (&headers).try_into()?,

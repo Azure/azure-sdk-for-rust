@@ -1,4 +1,4 @@
-/// This struct encapsulates the pop (get from queuE) receipt.
+/// This struct encapsulates the pop (get from queue) receipt.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PopReceipt {
     message_id: String,
