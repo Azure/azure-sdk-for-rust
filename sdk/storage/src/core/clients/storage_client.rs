@@ -1,4 +1,5 @@
 use crate::authorization_policy::AuthorizationPolicy;
+use crate::operations::*;
 use crate::shared_access_signature::account_sas::{
     AccountSasPermissions, AccountSasResource, AccountSasResourceType, AccountSharedAccessSignature,
 };
@@ -410,7 +411,6 @@ impl StorageClient {
     }
 
     /// Prepares' an `azure_core::Request`.
-    #[cfg(feature = "account")]
     pub(crate) fn blob_storage_request(
         &self,
         http_method: azure_core::Method,
@@ -451,17 +451,12 @@ impl StorageClient {
         Self::url_with_segments(self.queue_storage_url().to_owned(), segments)
     }
 
-    #[cfg(feature = "account")]
-    pub fn get_account_information(&self) -> crate::operations::GetAccountInformationBuilder {
-        crate::operations::GetAccountInformationBuilder::new(self.clone())
+    pub fn get_account_information(&self) -> GetAccountInformationBuilder {
+        GetAccountInformationBuilder::new(self.clone())
     }
 
-    #[cfg(feature = "account")]
-    pub fn find_blobs_by_tags(
-        &self,
-        expression: String,
-    ) -> crate::operations::FindBlobsByTagsBuilder {
-        crate::operations::FindBlobsByTagsBuilder::new(self.clone(), expression)
+    pub fn find_blobs_by_tags(&self, expression: String) -> FindBlobsByTagsBuilder {
+        FindBlobsByTagsBuilder::new(self.clone(), expression)
     }
 
     fn url_with_segments<'a, I>(mut url: url::Url, new_segments: I) -> azure_core::Result<url::Url>

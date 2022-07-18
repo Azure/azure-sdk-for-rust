@@ -11,12 +11,9 @@ extern crate serde_derive;
 #[macro_use]
 extern crate azure_core;
 
-#[cfg(feature = "account")]
 pub mod account;
 mod authorization_policy;
 pub mod core;
 
 pub use crate::core::*;
-
-#[cfg(feature = "account")]
 pub use account::*;
