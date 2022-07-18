@@ -7,9 +7,6 @@ use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use std::convert::TryInto;
 
-/// A future of a delete file response
-type GetFile = futures::future::BoxFuture<'static, azure_core::Result<GetFileResponse>>;
-
 #[derive(Debug, Clone)]
 pub struct GetFileBuilder {
     client: FileClient,
@@ -75,6 +72,8 @@ impl GetFileBuilder {
         })
     }
 }
+
+azure_core::future!(GetFile);
 
 #[derive(Debug, Clone)]
 pub struct GetFileResponse {

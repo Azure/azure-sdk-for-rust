@@ -37,7 +37,7 @@ where
         context: Context => context,
     }
 
-    pub fn into_future(mut self) -> FutureResponse<T> {
+    pub fn into_future(mut self) -> InsertEntity<T> {
         Box::pin(async move {
             let mut url = self.table_client.url().to_owned();
             url.path_segments_mut()
@@ -66,13 +66,12 @@ where
     }
 }
 
-pub type FutureResponse<T> =
-    futures::future::BoxFuture<'static, azure_core::Result<InsertEntityResponse<T>>>;
+azure_core::future!(InsertEntity<T>);
 
 #[cfg(feature = "into_future")]
 impl<T: DeserializeOwned + Send> std::future::IntoFuture for InsertEntityBuilder<T> {
-    type IntoFuture = FutureResponse<T>;
-    type Output = <FutureResponse<T> as std::future::Future>::Output;
+    type IntoFuture = InsertEntity<T>;
+    type Output = <InsertEntity<T> as std::future::Future>::Output;
     fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
