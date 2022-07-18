@@ -20,16 +20,16 @@ macro_rules! r#try {
 #[pin_project]
 pub struct Pageable<T, E> {
     #[pin]
-    stream: std::pin::Pin<Box<dyn Stream<Item = Result<T, E>>>>,
+    stream: std::pin::Pin<Box<dyn Stream<Item = Result<T, E>> + Send>>,
 }
 
 impl<T, E> Pageable<T, E>
 where
     T: Continuable,
 {
-    pub fn new<F>(make_request: impl Fn(Option<T::Continuation>) -> F + Clone + 'static) -> Self
+    pub fn new<F>(make_request: impl Fn(Option<T::Continuation>) -> F + Clone + Send + 'static) -> Self
     where
-        F: std::future::Future<Output = Result<T, E>> + 'static,
+        F: std::future::Future<Output = Result<T, E>> + Send + 'static,
     {
         let stream = unfold(State::Init, move |state: State<T::Continuation>| {
             let make_request = make_request.clone();
@@ -81,7 +81,7 @@ impl<T, O> std::fmt::Debug for Pageable<T, O> {
 
 /// A type that can yield an optional continuation token
 pub trait Continuable {
-    type Continuation: 'static;
+    type Continuation: Send + 'static;
     fn continuation(&self) -> Option<Self::Continuation>;
 }
 
