@@ -5,9 +5,6 @@ use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
-/// A future of a delete file response
-type PutPath = futures::future::BoxFuture<'static, azure_core::Result<DeletePathResponse>>;
-
 #[derive(Debug, Clone)]
 pub struct DeletePathBuilder<C>
 where
@@ -47,7 +44,7 @@ impl<C: PathClient + 'static> DeletePathBuilder<C> {
         context: Context => context,
     }
 
-    pub fn into_future(self) -> PutPath {
+    pub fn into_future(self) -> DeletePath {
         let this = self.clone();
         let ctx = self.context.clone();
 
@@ -76,6 +73,8 @@ impl<C: PathClient + 'static> DeletePathBuilder<C> {
         })
     }
 }
+
+azure_core::future!(DeletePath);
 
 #[derive(Debug, Clone)]
 pub struct DeletePathResponse {

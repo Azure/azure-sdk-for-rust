@@ -13,7 +13,7 @@ categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.3", default-features = false }
+azure_core = { path = "../core", version = "0.3" }
 async-lock = "2.5"
 oauth2 = { version = "4.0.0", default-features = false }
 url = "2.2"
@@ -35,7 +35,7 @@ reqwest = { version = "0.11", features = ["json"], default-features = false }
 tokio = { version = "1.0", features = ["macros"] }
 env_logger = "0.9"
 serde_test = "1"
-azure_security_keyvault = { path = "../security_keyvault" }
+azure_security_keyvault = { path = "../security_keyvault", default_features = false }
 
 [features]
 default = ["development", "enable_reqwest"]

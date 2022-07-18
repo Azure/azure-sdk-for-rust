@@ -139,7 +139,8 @@ fn get_encoded_cert(cert: &X509) -> Result<String, ClientCertificateCredentialEr
     ))
 }
 
-#[async_trait::async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for ClientCertificateCredential {
     async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
         let options = self.options();

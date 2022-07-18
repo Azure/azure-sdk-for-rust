@@ -24,7 +24,7 @@ pub struct ExecuteStoredProcedureBuilder<T> {
 
 static EMPTY_LIST: &[u8; 2] = b"[]";
 
-impl<T: DeserializeOwned + Send> ExecuteStoredProcedureBuilder<T> {
+impl<T> ExecuteStoredProcedureBuilder<T> {
     pub(crate) fn new(client: StoredProcedureClient) -> Self {
         Self {
             client,
@@ -50,7 +50,9 @@ impl<T: DeserializeOwned + Send> ExecuteStoredProcedureBuilder<T> {
             ..self
         })
     }
+}
 
+impl<T: DeserializeOwned + Send> ExecuteStoredProcedureBuilder<T> {
     pub fn into_future(self) -> ExecuteStoredProcedure<T> {
         Box::pin(async move {
             let mut request = self
@@ -89,9 +91,7 @@ impl<T: DeserializeOwned + Send> ExecuteStoredProcedureBuilder<T> {
     }
 }
 
-/// The future returned by calling `into_future` on the builder.
-pub type ExecuteStoredProcedure<T> =
-    futures::future::BoxFuture<'static, azure_core::Result<ExecuteStoredProcedureResponse<T>>>;
+azure_core::future!(ExecuteStoredProcedure<T>);
 
 #[cfg(feature = "into_future")]
 impl<T: DeserializeOwned + Send> std::future::IntoFuture for ExecuteStoredProcedureBuilder<T> {

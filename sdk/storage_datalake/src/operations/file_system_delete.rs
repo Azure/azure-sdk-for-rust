@@ -4,10 +4,6 @@ use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
-/// A future of a create file system response
-type DeleteFileSystem =
-    futures::future::BoxFuture<'static, azure_core::Result<DeleteFileSystemResponse>>;
-
 #[derive(Debug, Clone)]
 pub struct DeleteFileSystemBuilder {
     client: FileSystemClient,
@@ -57,6 +53,8 @@ impl DeleteFileSystemBuilder {
         })
     }
 }
+
+azure_core::future!(DeleteFileSystem);
 
 #[derive(Debug, Clone)]
 pub struct DeleteFileSystemResponse {

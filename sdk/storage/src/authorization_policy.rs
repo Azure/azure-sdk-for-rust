@@ -19,7 +19,8 @@ impl AuthorizationPolicy {
     }
 }
 
-#[async_trait::async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl Policy for AuthorizationPolicy {
     async fn send(
         &self,
@@ -44,7 +45,7 @@ impl Policy for AuthorizationPolicy {
                         key,
                         ctx.get()
                             .expect("ServiceType must be in the Context at this point"),
-                    );
+                    )?;
                     request.insert_header(AUTHORIZATION, auth)
                 }
                 request
@@ -86,10 +87,13 @@ fn generate_authorization(
     account: &str,
     key: &str,
     service_type: &ServiceType,
-) -> String {
+) -> azure_core::Result<String> {
     let str_to_sign = string_to_sign(h, u, method, account, service_type);
-    let auth = crate::hmac::sign(&str_to_sign, key).unwrap();
-    format!("SharedKey {}:{}", account, auth)
+    let auth = crate::hmac::sign(&str_to_sign, key).context(
+        azure_core::error::ErrorKind::Credential,
+        "failed to sign the hmac",
+    )?;
+    Ok(format!("SharedKey {}:{}", account, auth))
 }
 
 fn add_if_exists<'a>(h: &'a Headers, key: &HeaderName) -> &'a str {

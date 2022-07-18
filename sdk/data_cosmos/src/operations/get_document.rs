@@ -20,7 +20,7 @@ pub struct GetDocumentBuilder<T> {
     _document: PhantomData<T>,
 }
 
-impl<T: DeserializeOwned + Send> GetDocumentBuilder<T> {
+impl<T> GetDocumentBuilder<T> {
     pub(crate) fn new(client: DocumentClient) -> Self {
         Self {
             client,
@@ -38,7 +38,9 @@ impl<T: DeserializeOwned + Send> GetDocumentBuilder<T> {
         if_modified_since: DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
         context: Context => context,
     }
+}
 
+impl<T: DeserializeOwned + Send> GetDocumentBuilder<T> {
     /// Convert into a future
     ///
     /// We do not implement `std::future::IntoFuture` because it requires the ability for the
@@ -75,9 +77,7 @@ impl<T: DeserializeOwned + Send> GetDocumentBuilder<T> {
     }
 }
 
-/// The future returned by calling `into_future` on the builder.
-pub type GetDocument<T> =
-    futures::future::BoxFuture<'static, azure_core::Result<GetDocumentResponse<T>>>;
+azure_core::future!(GetDocument<T>);
 
 #[cfg(feature = "into_future")]
 impl<T: DeserializeOwned + Send> std::future::IntoFuture for GetDocumentBuilder<T> {

@@ -1,3 +1,4 @@
+use crate::clients::ServiceType;
 use crate::core::prelude::*;
 use azure_core::headers::{
     account_kind_from_headers, date_from_headers, request_id_from_headers, sku_name_from_headers,
@@ -22,8 +23,7 @@ impl GetAccountInformationBuilder {
 
             let response = self
                 .client
-                .pipeline()
-                .send(&mut self.context, &mut request)
+                .send(&mut self.context, &mut request, ServiceType::Blob)
                 .await?;
 
             GetAccountInformationResponse::try_from(response.headers())

@@ -15,7 +15,8 @@ impl From<Headers> for CustomHeaders {
 #[derive(Clone, Debug, Default)]
 pub struct CustomHeadersPolicy {}
 
-#[async_trait::async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl Policy for CustomHeadersPolicy {
     async fn send(
         &self,

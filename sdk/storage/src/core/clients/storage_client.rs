@@ -3,7 +3,7 @@ use crate::shared_access_signature::account_sas::{
     AccountSasPermissions, AccountSasResource, AccountSasResourceType, AccountSharedAccessSignature,
 };
 use crate::ConnectionString;
-use crate::{operations::*, TimeoutPolicy};
+use crate::TimeoutPolicy;
 use azure_core::prelude::Timeout;
 use azure_core::Method;
 use azure_core::{
@@ -398,10 +398,6 @@ impl StorageClient {
         Ok(request)
     }
 
-    pub(crate) fn pipeline(&self) -> &Pipeline {
-        &self.pipeline
-    }
-
     pub async fn send(
         &self,
         context: &mut Context,
@@ -414,6 +410,7 @@ impl StorageClient {
     }
 
     /// Prepares' an `azure_core::Request`.
+    #[cfg(feature = "account")]
     pub(crate) fn blob_storage_request(
         &self,
         http_method: azure_core::Method,
@@ -455,12 +452,16 @@ impl StorageClient {
     }
 
     #[cfg(feature = "account")]
-    pub fn get_account_information(&self) -> GetAccountInformationBuilder {
-        GetAccountInformationBuilder::new(self.clone())
+    pub fn get_account_information(&self) -> crate::operations::GetAccountInformationBuilder {
+        crate::operations::GetAccountInformationBuilder::new(self.clone())
     }
 
-    pub fn find_blobs_by_tags(&self, expression: String) -> FindBlobsByTagsBuilder {
-        FindBlobsByTagsBuilder::new(self.clone(), expression)
+    #[cfg(feature = "account")]
+    pub fn find_blobs_by_tags(
+        &self,
+        expression: String,
+    ) -> crate::operations::FindBlobsByTagsBuilder {
+        crate::operations::FindBlobsByTagsBuilder::new(self.clone(), expression)
     }
 
     fn url_with_segments<'a, I>(mut url: url::Url, new_segments: I) -> azure_core::Result<url::Url>
