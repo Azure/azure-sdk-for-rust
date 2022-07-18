@@ -20,7 +20,7 @@ pub use noop::*;
 use std::sync::Arc;
 
 /// Construct a new `HttpClient`
-pub fn default_client() -> Arc<dyn HttpClient> {
+pub fn new_http_client() -> Arc<dyn HttpClient> {
     #[allow(unused)]
     let http_client: Arc<dyn HttpClient> = Arc::new(NoopClient);
     #[cfg(all(

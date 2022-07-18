@@ -56,7 +56,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         }
     });
 
-    let http_client = azure_core::default_client();
+    let http_client = azure_core::new_http_client();
     let service_client =
         ServiceClient::from_connection_string(http_client, iot_hub_connection_string, 3600)?;
     service_client

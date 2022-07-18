@@ -31,7 +31,7 @@ pub struct ImdsManagedIdentityCredential {
 impl Default for ImdsManagedIdentityCredential {
     /// Creates an instance of the `TransportOptions` using the default `HttpClient`.
     fn default() -> Self {
-        Self::new(azure_core::default_client())
+        Self::new(azure_core::new_http_client())
     }
 }
 

@@ -205,6 +205,6 @@ impl TransportOptions {
 impl Default for TransportOptions {
     /// Creates an instance of the `TransportOptions` using the default `HttpClient`.
     fn default() -> Self {
-        Self::new(http_client::default_client())
+        Self::new(http_client::new_http_client())
     }
 }
