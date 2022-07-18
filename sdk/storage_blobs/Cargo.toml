@@ -37,7 +37,7 @@ reqwest = "0.11"
 oauth2 = { version = "4.0.0", default-features = false }
 
 [features]
-default = ["enable_reqwest"]
+default = ["enable_reqwest", "azure_identity/default"]
 test_e2e = []
 azurite_workaround = []
 enable_reqwest = ["azure_core/enable_reqwest", "azure_storage/enable_reqwest"]

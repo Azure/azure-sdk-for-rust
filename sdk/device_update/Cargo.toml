@@ -32,6 +32,6 @@ mockito = "0.31"
 async-trait = "0.1"
 
 [features]
-default = ["enable_reqwest"]
+default = ["enable_reqwest", "azure_identity/default"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["reqwest/rustls-tls"]
