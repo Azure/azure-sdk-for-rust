@@ -454,7 +454,6 @@ impl StorageClient {
         Self::url_with_segments(self.queue_storage_url().to_owned(), segments)
     }
 
-    #[cfg(feature = "account")]
     pub fn get_account_information(&self) -> GetAccountInformationBuilder {
         GetAccountInformationBuilder::new(self.clone())
     }
