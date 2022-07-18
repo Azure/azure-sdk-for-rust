@@ -71,8 +71,7 @@ impl Pipeline {
         pipeline.extend_from_slice(&options.per_retry_policies);
 
         #[allow(unused_mut)]
-        let mut policy: Arc<dyn Policy> =
-            Arc::new(TransportPolicy::new(options.transport.clone()));
+        let mut policy: Arc<dyn Policy> = Arc::new(TransportPolicy::new(options.transport.clone()));
 
         #[cfg(feature = "mock_transport_framework")]
         crate::mock::set_mock_transport_policy(&mut policy, options.transport);
