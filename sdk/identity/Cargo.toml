@@ -13,7 +13,7 @@ categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.3", default-features = false }
+azure_core = { path = "../core", version = "0.3" }
 async-lock = "2.5"
 oauth2 = { version = "4.0.0", default-features = false }
 url = "2.2"
