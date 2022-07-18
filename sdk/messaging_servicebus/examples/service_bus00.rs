@@ -14,7 +14,7 @@ async fn main() {
     let policy_key =
         std::env::var("AZURE_POLICY_KEY").expect("Please set AZURE_POLICY_KEY env variable first!");
 
-    let http_client = azure_core::new_reqwest_client();
+    let http_client = azure_core::default_client();
 
     let client = Client::new(
         http_client,

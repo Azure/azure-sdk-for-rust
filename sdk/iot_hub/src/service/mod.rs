@@ -821,7 +821,7 @@ mod tests {
     fn from_connectionstring_success() -> Result<(), Box<dyn std::error::Error>> {
         use crate::service::ServiceClient;
 
-        let http_client = azure_core::new_reqwest_client();
+        let http_client = azure_core::default_client();
         let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
         let _ = ServiceClient::from_connection_string(http_client, connection_string, 3600)?;
         Ok(())
@@ -832,7 +832,7 @@ mod tests {
     ) -> Result<(), Box<dyn std::error::Error>> {
         use crate::service::ServiceClient;
 
-        let http_client = azure_core::new_reqwest_client();
+        let http_client = azure_core::default_client();
         let connection_string = "HostName==cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
         let _ = ServiceClient::from_connection_string(http_client.clone(), connection_string, 3600)
             .is_err();
@@ -847,7 +847,7 @@ mod tests {
     fn from_connectionstring_should_fail_on_empty_connection_string(
     ) -> Result<(), Box<dyn std::error::Error>> {
         use crate::service::ServiceClient;
-        let http_client = azure_core::new_reqwest_client();
+        let http_client = azure_core::default_client();
 
         let _ = ServiceClient::from_connection_string(http_client, "", 3600).is_err();
         Ok(())
@@ -857,7 +857,7 @@ mod tests {
     fn from_connectionstring_should_fail_on_incomplete_connection_string(
     ) -> Result<(), Box<dyn std::error::Error>> {
         use crate::service::ServiceClient;
-        let http_client = azure_core::new_reqwest_client();
+        let http_client = azure_core::default_client();
 
         let _ = ServiceClient::from_connection_string(http_client, "HostName=cool-iot-hub.azure-devices.net;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==", 3600).is_err();
         Ok(())
@@ -866,7 +866,7 @@ mod tests {
     #[test]
     fn update_module_twin_should_create_builder() -> Result<(), Box<dyn std::error::Error>> {
         use crate::service::ServiceClient;
-        let http_client = azure_core::new_reqwest_client();
+        let http_client = azure_core::default_client();
 
         let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
         let service_client =
@@ -883,7 +883,7 @@ mod tests {
     #[test]
     fn replace_module_twin_should_create_builder() -> Result<(), Box<dyn std::error::Error>> {
         use crate::service::ServiceClient;
-        let http_client = azure_core::new_reqwest_client();
+        let http_client = azure_core::default_client();
 
         let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
         let service_client =
@@ -900,7 +900,7 @@ mod tests {
     #[test]
     fn update_device_twin_should_create_builder() -> Result<(), Box<dyn std::error::Error>> {
         use crate::service::ServiceClient;
-        let http_client = azure_core::new_reqwest_client();
+        let http_client = azure_core::default_client();
 
         let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
         let service_client =
@@ -917,7 +917,7 @@ mod tests {
     #[test]
     fn replace_device_twin_should_create_builder() -> Result<(), Box<dyn std::error::Error>> {
         use crate::service::ServiceClient;
-        let http_client = azure_core::new_reqwest_client();
+        let http_client = azure_core::default_client();
 
         let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
         let service_client =

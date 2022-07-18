@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .expect("Please pass the payload as the second parameter");
 
     println!("Updating device twin for device: {}", device_id);
-    let http_client = azure_core::new_reqwest_client();
+    let http_client = azure_core::default_client();
 
     let service_client =
         ServiceClient::from_connection_string(http_client, iot_hub_connection_string, 3600)?;

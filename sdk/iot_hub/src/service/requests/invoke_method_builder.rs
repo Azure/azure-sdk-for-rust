@@ -112,7 +112,7 @@ mod tests {
     fn directmethod_new_should_succeed() {
         use crate::service::InvokeMethodBuilder;
 
-        let http_client = azure_core::new_reqwest_client();
+        let http_client = azure_core::default_client();
         let service: ServiceClient = ServiceClient::from_sas_token(http_client, "test", "test");
         let direct_method = InvokeMethodBuilder::new(
             &service,
