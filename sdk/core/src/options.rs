@@ -121,6 +121,15 @@ pub struct RetryOptions {
     pub max_delay: Duration,
 }
 
+impl RetryOptions {
+    setters! {
+        mode: RetryMode => mode,
+        delay: Duration => delay,
+        max_retries: u32 => max_retries,
+        max_delay: Duration => max_delay,
+    }
+}
+
 impl Default for RetryOptions {
     fn default() -> Self {
         RetryOptions {
