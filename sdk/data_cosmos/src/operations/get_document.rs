@@ -40,11 +40,7 @@ impl<T> GetDocumentBuilder<T> {
     }
 }
 
-#[cfg(target_arch = "wasm32")]
-pub trait Documentable: DeserializeOwned {}
-#[cfg(not(target_arch = "wasm32"))]
-pub trait Documentable: DeserializeOwned + Send {}
-impl<T: Documentable> GetDocumentBuilder<T> {
+impl<T: DeserializeOwned + Send> GetDocumentBuilder<T> {
     /// Convert into a future
     ///
     /// We do not implement `std::future::IntoFuture` because it requires the ability for the
@@ -81,16 +77,7 @@ impl<T: Documentable> GetDocumentBuilder<T> {
     }
 }
 
-#[cfg(target_arch = "wasm32")]
-pub type GetDocument<T> = std::pin::Pin<
-    std::boxed::Box<
-        dyn std::future::Future<Output = azure_core::Result<GetDocumentResponse<T>>> + 'static,
-    >,
->;
-#[cfg(not(target_arch = "wasm32"))]
-/// The future returned by calling `into_future` on the builder.
-pub type GetDocument<T> =
-    futures::future::BoxFuture<'static, azure_core::Result<GetDocumentResponse<T>>>;
+azure_core::future!(GetDocument<T>);
 
 #[cfg(feature = "into_future")]
 impl<T: DeserializeOwned + Send> std::future::IntoFuture for GetDocumentBuilder<T> {

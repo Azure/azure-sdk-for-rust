@@ -63,7 +63,7 @@ jobs:
         run: cargo check -p azure_core --no-default-features
 
       - name: check core for wasm
-        run: cargo check -p azure_core --target=wasm32-unknown-unknown
+        run: cargo check -p azure_core --target=wasm32-unknown-unknown --no-default-features
 
       - name: check for azurite_workaround
         run: cargo check --all --features azurite_workaround

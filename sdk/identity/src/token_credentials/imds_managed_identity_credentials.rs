@@ -28,12 +28,10 @@ pub struct ImdsManagedIdentityCredential {
     msi_res_id: Option<String>,
 }
 
-#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
-#[cfg(not(target_arch = "wasm32"))]
 impl Default for ImdsManagedIdentityCredential {
     /// Creates an instance of the `TransportOptions` using the default `HttpClient`.
     fn default() -> Self {
-        Self::new(azure_core::new_reqwest_client())
+        Self::new(azure_core::default_client())
     }
 }
 

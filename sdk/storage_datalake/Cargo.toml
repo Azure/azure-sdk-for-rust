@@ -30,7 +30,7 @@ url = "2.2"
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }
-azure_identity = { path = "../identity" }
+azure_identity = { path = "../identity", default_features = false }
 
 [features]
 default = ["enable_reqwest"]

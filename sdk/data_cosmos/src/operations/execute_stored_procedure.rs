@@ -52,11 +52,7 @@ impl<T> ExecuteStoredProcedureBuilder<T> {
     }
 }
 
-#[cfg(target_arch = "wasm32")]
-pub trait StoredProcable: DeserializeOwned {}
-#[cfg(not(target_arch = "wasm32"))]
-pub trait StoredProcable: DeserializeOwned + Send {}
-impl<T: StoredProcable> ExecuteStoredProcedureBuilder<T> {
+impl<T: DeserializeOwned + Send> ExecuteStoredProcedureBuilder<T> {
     pub fn into_future(self) -> ExecuteStoredProcedure<T> {
         Box::pin(async move {
             let mut request = self
@@ -95,16 +91,7 @@ impl<T: StoredProcable> ExecuteStoredProcedureBuilder<T> {
     }
 }
 
-#[cfg(target_arch = "wasm32")]
-pub type ExecuteStoredProcedure<T> = std::pin::Pin<
-    std::boxed::Box<
-        dyn std::future::Future<Output = azure_core::Result<ExecuteStoredProcedureResponse<T>>>
-            + 'static,
-    >,
->;
-#[cfg(not(target_arch = "wasm32"))]
-pub type ExecuteStoredProcedure<T> =
-    futures::future::BoxFuture<'static, azure_core::Result<ExecuteStoredProcedureResponse<T>>>;
+azure_core::future!(ExecuteStoredProcedure<T>);
 
 #[cfg(feature = "into_future")]
 impl<T: DeserializeOwned + Send> std::future::IntoFuture for ExecuteStoredProcedureBuilder<T> {

@@ -25,7 +25,7 @@ azure_core = { path = "../core", version = "0.3", default_features = false }
 
 [dev-dependencies]
 oauth2 = "4.0.0"
-azure_identity = { path = "../identity" }
+azure_identity = { path = "../identity", default_features = false }
 mockito = "0.31"
 async-trait = "0.1"
 tokio = { version = "1.0", features = ["full"] }
