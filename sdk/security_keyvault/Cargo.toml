@@ -28,7 +28,7 @@ oauth2 = "4.0.0"
 azure_identity = { path = "../identity", default_features = false }
 mockito = "0.31"
 async-trait = "0.1"
-tokio = { version = "1.0", features = ["full"] }
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 
 [features]
 default = ["azure_core/default"]
