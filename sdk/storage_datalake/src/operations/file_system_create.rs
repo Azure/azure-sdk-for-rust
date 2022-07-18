@@ -11,10 +11,6 @@ use azure_storage::core::headers::CommonStorageResponseHeaders;
 use chrono::{DateTime, Utc};
 use std::convert::TryInto;
 
-/// A future of a create file system response
-type CreateFileSystem =
-    futures::future::BoxFuture<'static, azure_core::Result<CreateFileSystemResponse>>;
-
 #[derive(Debug, Clone)]
 pub struct CreateFileSystemBuilder {
     client: FileSystemClient,
@@ -64,6 +60,8 @@ impl CreateFileSystemBuilder {
         })
     }
 }
+
+azure_core::future!(CreateFileSystem);
 
 #[derive(Debug, Clone)]
 pub struct CreateFileSystemResponse {

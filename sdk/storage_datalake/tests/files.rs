@@ -158,8 +158,9 @@ async fn file_rename() -> azure_core::Result<()> {
         .await;
     assert!(rename_file_if_not_exists_result.is_err());
 
-    let file_client3 = file_client1.rename(file_path2).into_future().await?;
-    let renamed_file_properties = file_client3.get_properties().into_future().await?;
+    file_client1.rename(file_path2).into_future().await?;
+
+    let renamed_file_properties = file_client2.get_properties().into_future().await?;
 
     // when renaming a file, the source file properties should be propagated
     assert_eq!(renamed_file_properties.properties, Some(file_properties));

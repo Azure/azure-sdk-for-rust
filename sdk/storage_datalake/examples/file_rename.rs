@@ -42,8 +42,8 @@ async fn main() -> azure_core::Result<()> {
     );
 
     println!("renaming file '{}' to '{}'...", file_path1, file_path2);
-    let file_client3 = file_client1.rename(file_path2).into_future().await?;
-    let renamed_file_properties = file_client3.get_properties().into_future().await?;
+    file_client1.rename(file_path2).into_future().await?;
+    let renamed_file_properties = file_client2.get_properties().into_future().await?;
     println!("renamed file properties == {:?}\n", renamed_file_properties);
 
     // getting properties for the source file should fail, when the file no longer exists

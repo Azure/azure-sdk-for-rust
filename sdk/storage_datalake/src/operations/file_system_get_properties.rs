@@ -9,10 +9,6 @@ use azure_storage::core::headers::CommonStorageResponseHeaders;
 use chrono::{DateTime, Utc};
 use std::convert::TryInto;
 
-/// A future of a file system get properties response
-type GetFileSystemProperties =
-    futures::future::BoxFuture<'static, azure_core::Result<GetFileSystemPropertiesResponse>>;
-
 #[derive(Debug, Clone)]
 pub struct GetFileSystemPropertiesBuilder {
     client: FileSystemClient,
@@ -58,6 +54,8 @@ impl GetFileSystemPropertiesBuilder {
         })
     }
 }
+
+azure_core::future!(GetFileSystemProperties);
 
 #[derive(Debug, Clone)]
 pub struct GetFileSystemPropertiesResponse {

@@ -2,6 +2,8 @@ use futures::stream::unfold;
 use futures::Stream;
 use pin_project::pin_project;
 
+/// Helper macro for unwrapping `Result`s into the right types
+/// that `futures::stream::unfold` expects.
 macro_rules! r#try {
     ($expr:expr $(,)?) => {
         match $expr {
@@ -13,55 +15,72 @@ macro_rules! r#try {
     };
 }
 
-/// A pageable stream that yields items of type `T`
-///
-/// Internally uses the Azure specific continuation header to
-/// make repeated requests to Azure yielding a new page each time.
-#[pin_project]
-pub struct Pageable<T, E> {
-    #[pin]
-    stream: std::pin::Pin<Box<dyn Stream<Item = Result<T, E>> + Send>>,
-}
-
-impl<T, E> Pageable<T, E>
-where
-    T: Continuable + Send + Sync,
-{
-    pub fn new<F>(
-        make_request: impl Fn(Option<T::Continuation>) -> F + Clone + 'static + Send,
-    ) -> Self
-    where
-        F: std::future::Future<Output = Result<T, E>> + Send + 'static,
-    {
-        let stream = unfold(State::Init, move |state: State<T::Continuation>| {
-            let make_request = make_request.clone();
-            async move {
-                let response = match state {
-                    State::Init => {
-                        let request = make_request(None);
-                        r#try!(request.await)
-                    }
-                    State::Continuation(token) => {
-                        let request = make_request(Some(token));
-                        r#try!(request.await)
-                    }
-                    State::Done => {
-                        return None;
-                    }
-                };
-
-                let next_state = response
-                    .continuation()
-                    .map_or(State::Done, State::Continuation);
-
-                Some((Ok(response), next_state))
-            }
-        });
-        Self {
-            stream: Box::pin(stream),
+/// Helper macro for declaring the `Pageable` and `Continuable types which easily allows
+/// for conditionally compiling with a `Send` constraint or not.
+macro_rules! declare {
+    ($($extra:tt)*) => {
+        /// A pageable stream that yields items of type `T`
+        ///
+        /// Internally uses the Azure specific continuation header to
+        /// make repeated requests to Azure yielding a new page each time.
+        #[pin_project]
+        pub struct Pageable<T, E> {
+            #[pin]
+            stream: std::pin::Pin<Box<dyn Stream<Item = Result<T, E>> $($extra)*>>,
         }
-    }
+
+        impl<T, E> Pageable<T, E>
+        where
+            T: Continuable,
+        {
+            pub fn new<F>(
+                make_request: impl Fn(Option<T::Continuation>) -> F + Clone $($extra)* + 'static,
+            ) -> Self
+            where
+                F: std::future::Future<Output = Result<T, E>> $($extra)* + 'static,
+            {
+                let stream = unfold(State::Init, move |state: State<T::Continuation>| {
+                    let make_request = make_request.clone();
+                    async move {
+                        let response = match state {
+                            State::Init => {
+                                let request = make_request(None);
+                                r#try!(request.await)
+                            }
+                            State::Continuation(token) => {
+                                let request = make_request(Some(token));
+                                r#try!(request.await)
+                            }
+                            State::Done => {
+                                return None;
+                            }
+                        };
+
+                        let next_state = response
+                            .continuation()
+                            .map_or(State::Done, State::Continuation);
+
+                        Some((Ok(response), next_state))
+                    }
+                });
+                Self {
+                    stream: Box::pin(stream),
+                }
+            }
+        }
+
+        /// A type that can yield an optional continuation token
+        pub trait Continuable {
+            type Continuation: 'static $($extra)*;
+            fn continuation(&self) -> Option<Self::Continuation>;
+        }
+    };
 }
+
+#[cfg(not(target_arch = "wasm32"))]
+declare!(+ Send);
+#[cfg(target_arch = "wasm32")]
+declare!();
 
 impl<T, E> Stream for Pageable<T, E> {
     type Item = Result<T, E>;
@@ -79,12 +98,6 @@ impl<T, O> std::fmt::Debug for Pageable<T, O> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Pageable").finish_non_exhaustive()
     }
-}
-
-/// A type that can yield an optional continuation token
-pub trait Continuable {
-    type Continuation: Send + 'static;
-    fn continuation(&self) -> Option<Self::Continuation>;
 }
 
 #[derive(Debug, Clone, PartialEq)]

@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use bytes::Bytes;
 use futures::io::AsyncRead;
 use futures::stream::Stream;
@@ -6,7 +5,8 @@ use futures::task::Poll;
 
 /// Enable a type implementing `AsyncRead` to be consumed as if it were
 /// a `Stream` of `Bytes`.
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait SeekableStream:
     AsyncRead + Unpin + std::fmt::Debug + Send + Sync + dyn_clone::DynClone
 {

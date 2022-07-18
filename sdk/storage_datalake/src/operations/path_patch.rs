@@ -8,11 +8,7 @@ use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
-use futures::future::BoxFuture;
 use std::convert::TryInto;
-
-/// A future of a patch file response
-type PatchPath = BoxFuture<'static, azure_core::Result<PatchPathResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct PatchPathBuilder<C>
@@ -113,6 +109,8 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
         })
     }
 }
+
+azure_core::future!(PatchPath);
 
 #[derive(Debug, Clone)]
 pub struct PatchPathResponse {

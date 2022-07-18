@@ -7,11 +7,7 @@ use azure_core::Request;
 use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use chrono::{DateTime, Utc};
-use futures::future::BoxFuture;
 use std::convert::TryInto;
-
-/// A future of a delete file response
-type PutPath = BoxFuture<'static, azure_core::Result<PutPathResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct PutPathBuilder<C>
@@ -91,6 +87,29 @@ impl<C: PathClient + 'static> PutPathBuilder<C> {
     }
 }
 
+azure_core::future!(PutPath);
+
+#[derive(Debug, Clone)]
+pub struct PutPathResponse {
+    pub common_storage_response_headers: CommonStorageResponseHeaders,
+    pub etag: String,
+    pub last_modified: DateTime<Utc>,
+    pub continuation: Option<NextMarker>,
+}
+
+impl PutPathResponse {
+    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
+        let (_status_code, headers, _pinned_stream) = response.deconstruct();
+
+        Ok(Self {
+            common_storage_response_headers: (&headers).try_into()?,
+            etag: etag_from_headers(&headers)?,
+            last_modified: last_modified_from_headers(&headers)?,
+            continuation: NextMarker::from_header_optional(&headers)?,
+        })
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct RenamePathBuilder<C>
 where
@@ -136,7 +155,7 @@ impl<C: PathClient + 'static> RenamePathBuilder<C> {
         context: Context => context,
     }
 
-    pub fn into_future(self) -> BoxFuture<'static, azure_core::Result<C>> {
+    pub fn into_future(self) -> RenamePath {
         let this = self.clone();
         let ctx = self.context.clone();
 
@@ -163,28 +182,11 @@ impl<C: PathClient + 'static> RenamePathBuilder<C> {
                 .send(&mut ctx.clone(), &mut request)
                 .await?;
 
-            Ok(this.client)
+            Ok(())
         })
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct PutPathResponse {
-    pub common_storage_response_headers: CommonStorageResponseHeaders,
-    pub etag: String,
-    pub last_modified: DateTime<Utc>,
-    pub continuation: Option<NextMarker>,
-}
+azure_core::future!(RenamePath);
 
-impl PutPathResponse {
-    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
-        let (_status_code, headers, _pinned_stream) = response.deconstruct();
-
-        Ok(Self {
-            common_storage_response_headers: (&headers).try_into()?,
-            etag: etag_from_headers(&headers)?,
-            last_modified: last_modified_from_headers(&headers)?,
-            continuation: NextMarker::from_header_optional(&headers)?,
-        })
-    }
-}
+type RenamePathResponse = ();

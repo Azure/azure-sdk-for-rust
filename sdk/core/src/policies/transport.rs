@@ -1,27 +1,22 @@
-#[cfg(not(target_arch = "wasm32"))]
 use crate::policies::{Policy, PolicyResult};
-#[allow(unused_imports)]
 use crate::TransportOptions;
-#[allow(unused_imports)]
-use crate::{Context, HttpClient, Request, Response};
-#[cfg(not(target_arch = "wasm32"))]
+use crate::{Context, Request};
+use async_trait::async_trait;
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub struct TransportPolicy {
-    #[allow(unused)]
     pub(crate) transport_options: TransportOptions,
 }
 
 impl TransportPolicy {
-    #[cfg(not(target_arch = "wasm32"))]
     pub fn new(transport_options: TransportOptions) -> Self {
         Self { transport_options }
     }
 }
 
-#[async_trait::async_trait]
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl Policy for TransportPolicy {
     async fn send(
         &self,

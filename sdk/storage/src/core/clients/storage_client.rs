@@ -1,9 +1,10 @@
 use crate::authorization_policy::AuthorizationPolicy;
+use crate::operations::*;
 use crate::shared_access_signature::account_sas::{
     AccountSasPermissions, AccountSasResource, AccountSasResourceType, AccountSharedAccessSignature,
 };
 use crate::ConnectionString;
-use crate::{operations::*, TimeoutPolicy};
+use crate::TimeoutPolicy;
 use azure_core::prelude::Timeout;
 use azure_core::Method;
 use azure_core::{
@@ -396,10 +397,6 @@ impl StorageClient {
         };
 
         Ok(request)
-    }
-
-    pub(crate) fn pipeline(&self) -> &Pipeline {
-        &self.pipeline
     }
 
     pub async fn send(

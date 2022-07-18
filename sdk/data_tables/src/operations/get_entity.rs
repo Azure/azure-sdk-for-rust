@@ -29,7 +29,7 @@ impl<T: DeserializeOwned + Send> GetEntityBuilder<T> {
         context: Context => context,
     }
 
-    pub fn into_future(mut self) -> FutureResponse<T> {
+    pub fn into_future(mut self) -> GetEntity<T> {
         Box::pin(async move {
             let mut url = self.entity_client.url().to_owned();
 
@@ -52,13 +52,12 @@ impl<T: DeserializeOwned + Send> GetEntityBuilder<T> {
     }
 }
 
-pub type FutureResponse<T> =
-    futures::future::BoxFuture<'static, azure_core::Result<GetEntityResponse<T>>>;
+azure_core::future!(GetEntity<T>);
 
 #[cfg(feature = "into_future")]
 impl<T: DeserializeOwned + Send> std::future::IntoFuture for GetEntityBuilder<T> {
-    type IntoFuture = FutureResponse<T>;
-    type Output = <FutureResponse<T> as std::future::Future>::Output;
+    type IntoFuture = GetEntity<T>;
+    type Output = <GetEntity<T> as std::future::Future>::Output;
     fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
