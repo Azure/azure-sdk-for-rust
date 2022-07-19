@@ -15,7 +15,9 @@ operation! {
     client: TableClient,
     ?filter: Filter,
     ?select: Select,
-    ?top: Top
+    ?top: Top,
+    ?initial_partition_key: String,
+    ?initial_row_key: String
 }
 
 impl QueryEntityBuilder {
@@ -42,6 +44,13 @@ impl QueryEntityBuilder {
                         .append_pair("NextPartitionKey", &partition_key);
 
                     if let Some(row_key) = row_key {
+                        url.query_pairs_mut().append_pair("NextRowKey", &row_key);
+                    }
+                } else if let Some(initial_paritition_key) = this.initial_partition_key {
+                    url.query_pairs_mut()
+                        .append_pair("NextPartitionKey", &initial_paritition_key);
+
+                    if let Some(row_key) = this.initial_row_key {
                         url.query_pairs_mut().append_pair("NextRowKey", &row_key);
                     }
                 }
