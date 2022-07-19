@@ -19,13 +19,6 @@ async fn main() -> azure_core::Result<()> {
     let args = Args::parse();
 
     // This is how you construct an authorization token.
-    // Remember to pick the correct token type.
-    // Here we assume master.
-    // Most methods return a ```Result<_, azure_data_cosmos::Error>```.
-    // ```azure_data_cosmos::Error``` is an enum union of all the possible underlying
-    // errors, plus Azure specific ones. For example if a REST call returns the
-    // unexpected result (ie NotFound instead of Ok) we return an Err telling
-    // you that.
     let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
 
     // Once we have an authorization token you can create a client instance. You can change the

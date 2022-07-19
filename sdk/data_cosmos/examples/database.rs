@@ -15,11 +15,10 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    // First we retrieve the account name and access key from environment variables.
-    // We expect access keys (ie, not resource constrained)
-
+    // Let's get the Cosmos account name and primary key from env variables.
     let args = Args::parse();
 
+    // First, we create an authorization token.
     let authorization_token =
         permission::AuthorizationToken::primary_from_base64(&args.primary_key)?;
 
@@ -33,9 +32,10 @@ async fn main() -> azure_core::Result<()> {
         .unwrap()?;
 
     for db in dbs.databases {
-        println!("database == {:?}", db);
+        println!("Database: {:?}", db);
         let database = client.database_client(db.name().to_owned());
 
+        // List all the collections
         let collections = database
             .list_collections()
             .into_stream()
@@ -43,12 +43,12 @@ async fn main() -> azure_core::Result<()> {
             .await
             .unwrap()?;
         for collection in collections.collections {
-            println!("collection == {:?}", collection);
+            println!("Collection: {:?}", collection);
             let mut indexing_policy_new = collection.indexing_policy.clone();
             let collection = database.collection_client(collection.id);
 
             if collection.collection_name() == "democ" {
-                println!("democ!");
+                println!("Found democ collection!");
 
                 let data = r#"
                 {
@@ -62,16 +62,23 @@ async fn main() -> azure_core::Result<()> {
                 }"#;
                 let document: Value = serde_json::from_str(data)?;
 
-                let resp = collection
+                let create_document = collection
                     .create_document(document)
                     .is_upsert(true)
                     .partition_key(&43u32)?
                     .into_future()
                     .await?;
 
-                println!("resp == {:?}", resp);
+                println!("`create_document` response: {:?}", create_document);
 
-                // call replace collection
+                // Alternatively, we can just fetch a specific collection directly
+                let _ = database
+                    .collection_client("cnt")
+                    .get_collection()
+                    .into_future()
+                    .await?;
+
+                // Replace the collection's indexing policy
                 indexing_policy_new
                     .excluded_paths
                     .push("/\"collo2\"/?".to_owned().into());
@@ -83,18 +90,19 @@ async fn main() -> azure_core::Result<()> {
                     .into_future()
                     .await?;
                 println!(
-                    "replace_collection_response == {:#?}",
+                    "`replace_collection` response: {:#?}",
                     replace_collection_response
                 );
             }
 
+            // Fetch all the documents as json
             let documents = collection
                 .list_documents()
                 .into_stream::<Value>()
                 .next()
                 .await
                 .unwrap()?;
-            println!("\ndocuments as json == {:?}", documents);
+            println!("\n`list_documents` as json: {:?}", documents);
         }
     }
 
