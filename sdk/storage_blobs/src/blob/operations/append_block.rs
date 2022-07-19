@@ -1,11 +1,10 @@
 use crate::{blob::operations::put_block::PutBlockResponse, prelude::*};
-use azure_core::{headers::*, prelude::*};
-use bytes::Bytes;
+use azure_core::{headers::*, prelude::*, Body};
 
 operation! {
     AppendBlock,
     client: BlobClient,
-    body: Bytes,
+    body: Body,
     ?hash: Hash,
     ?condition_max_size: ConditionMaxSize,
     ?condition_append_position: ConditionAppendPosition,

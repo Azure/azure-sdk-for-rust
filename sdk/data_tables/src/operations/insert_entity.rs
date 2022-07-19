@@ -3,16 +3,15 @@ use azure_core::{
     error::{Error, ErrorKind},
     headers::*,
     prelude::*,
-    CollectedResponse, Context, Method,
+    Body, CollectedResponse, Context, Method,
 };
-use bytes::Bytes;
 use serde::de::DeserializeOwned;
 use std::{convert::TryInto, marker::PhantomData};
 
 #[derive(Debug, Clone)]
 pub struct InsertEntityBuilder<T> {
     table_client: TableClient,
-    body: Bytes,
+    body: Body,
     return_entity: ReturnEntity,
     context: Context,
     _entity: PhantomData<T>,
@@ -22,7 +21,7 @@ impl<T> InsertEntityBuilder<T>
 where
     T: DeserializeOwned + Send,
 {
-    pub(crate) fn new(table_client: TableClient, body: Bytes) -> Self {
+    pub(crate) fn new(table_client: TableClient, body: Body) -> Self {
         Self {
             table_client,
             body,

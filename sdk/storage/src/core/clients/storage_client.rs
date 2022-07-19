@@ -5,15 +5,13 @@ use crate::shared_access_signature::account_sas::{
 };
 use crate::ConnectionString;
 use crate::TimeoutPolicy;
-use azure_core::prelude::Timeout;
-use azure_core::Method;
 use azure_core::{
     auth::TokenCredential,
     error::{Error, ErrorKind, ResultExt},
     headers::*,
-    ClientOptions, Context, Pipeline, Request, Response,
+    prelude::Timeout,
+    Body, ClientOptions, Context, Method, Pipeline, Request, Response,
 };
-use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use std::sync::Arc;
 use url::Url;
@@ -371,7 +369,7 @@ impl StorageClient {
         url: Url,
         method: Method,
         headers: Headers,
-        request_body: Option<Bytes>,
+        request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
         let dt = chrono::Utc::now();
         let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));

@@ -1,7 +1,6 @@
 use crate::{blob::operations::*, prelude::*};
-use azure_core::{headers::Headers, prelude::*, Context, Method, Request, Response, Url};
+use azure_core::{headers::Headers, prelude::*, Body, Context, Method, Request, Response, Url};
 use azure_storage::core::prelude::*;
-use bytes::Bytes;
 
 #[derive(Debug, Clone)]
 pub struct BlobLeaseClient {
@@ -57,7 +56,7 @@ impl BlobLeaseClient {
         url: Url,
         method: Method,
         headers: Headers,
-        request_body: Option<Bytes>,
+        request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
         self.blob_client
             .finalize_request(url, method, headers, request_body)

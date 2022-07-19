@@ -56,7 +56,7 @@ impl PutBlockListBuilder {
                 url,
                 azure_core::Method::Put,
                 headers,
-                Some(body_bytes),
+                Some(body_bytes.into()),
             )?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;

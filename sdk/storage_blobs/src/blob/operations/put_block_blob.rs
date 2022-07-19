@@ -1,13 +1,12 @@
 use crate::prelude::*;
-use azure_core::{headers::*, prelude::*, RequestId};
+use azure_core::{headers::*, prelude::*, Body, RequestId};
 use azure_storage::{headers::consistency_from_headers, ConsistencyCRC64, ConsistencyMD5};
-use bytes::Bytes;
 use chrono::{DateTime, Utc};
 
 operation! {
     PutBlockBlob,
     client: BlobClient,
-    body: Bytes,
+    body: Body,
     ?hash: Hash,
     ?content_type: ContentType,
     ?content_encoding: ContentEncoding,

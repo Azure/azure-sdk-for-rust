@@ -1,12 +1,11 @@
 use crate::{operations::*, prelude::*};
-use azure_core::{headers::*, prelude::*, CollectedResponse, Method};
-use bytes::Bytes;
+use azure_core::{headers::*, prelude::*, Body, CollectedResponse, Method};
 use std::convert::TryInto;
 
 operation! {
     InsertOrReplaceOrMergeEntity,
     client: EntityClient,
-    body: Bytes,
+    body: Body,
     operation: InsertOperation,
 }
 

@@ -1,7 +1,6 @@
 use crate::operations::ListTablesBuilder;
-use azure_core::{headers::Headers, Context, Method, Request, Response};
+use azure_core::{headers::Headers, Body, Context, Method, Request, Response};
 use azure_storage::core::clients::{ServiceType, StorageClient};
-use bytes::Bytes;
 use url::Url;
 
 use super::TableClient;
@@ -56,7 +55,7 @@ impl TableServiceClient {
         url: Url,
         method: Method,
         headers: Headers,
-        request_body: Option<Bytes>,
+        request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
         self.storage_client
             .finalize_request(url, method, headers, request_body)

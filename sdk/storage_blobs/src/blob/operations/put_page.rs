@@ -1,14 +1,13 @@
 use crate::prelude::*;
-use azure_core::{headers::*, prelude::*, RequestId};
+use azure_core::{headers::*, prelude::*, Body, RequestId};
 use azure_storage::{headers::content_md5_from_headers, ConsistencyMD5};
-use bytes::Bytes;
 use chrono::{DateTime, Utc};
 
 operation! {
     PutPage,
     client: BlobClient,
     ba512_range: BA512Range,
-    content: Bytes,
+    content: Body,
     ?hash: Hash,
     ?sequence_number_condition: SequenceNumberCondition,
     ?if_modified_since_condition: IfModifiedSinceCondition,

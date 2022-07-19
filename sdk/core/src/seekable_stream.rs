@@ -11,6 +11,11 @@ pub trait SeekableStream:
     AsyncRead + Unpin + std::fmt::Debug + Send + Sync + dyn_clone::DynClone
 {
     async fn reset(&mut self) -> crate::error::Result<()>;
+    fn len(&self) -> usize;
+
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 dyn_clone::clone_trait_object!(SeekableStream);

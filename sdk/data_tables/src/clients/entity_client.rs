@@ -2,9 +2,8 @@ use crate::{operations::*, prelude::*};
 use azure_core::{
     error::{Error, ErrorKind},
     headers::Headers,
-    Context, Method, Request, Response,
+    Body, Context, Method, Request, Response,
 };
-use bytes::Bytes;
 use serde::{de::DeserializeOwned, Serialize};
 use url::Url;
 
@@ -119,7 +118,7 @@ impl EntityClient {
         url: Url,
         method: Method,
         headers: Headers,
-        request_body: Option<Bytes>,
+        request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
         self.partition_key_client
             .finalize_request(url, method, headers, request_body)
