@@ -124,7 +124,7 @@ macro_rules! operation {
     // Construct the builder.
     (@builder
         // The name of the operation and any generic params along with their constraints
-        $name:ident<$($generic:ident: $first_constraint:ident $(+ $constraint:ident)* ),*>,
+        $name:ident<$($generic:ident: $first_constraint:ident $(+ $constraint:ident)* ),* $(+ $lt:lifetime)?>,
         // The client
         client: $client:ty,
         // The required fields that will be used in the constructor
@@ -170,7 +170,7 @@ macro_rules! operation {
         }
     };
     // Construct a builder and the `Future` related code
-    ($name:ident<$($generic:ident: $first_constraint:ident $(+ $constraint:ident)* ),*>,
+    ($name:ident<$($generic:ident: $first_constraint:ident $(+ $constraint:ident)* ),* $(+ $lt:lifetime)?>,
         client: $client:ty,
         @required
         $($required:ident: $rtype:ty,)*
@@ -180,7 +180,7 @@ macro_rules! operation {
         $($nosetter:ident: $nstype:ty),*
         ) => {
         $crate::operation! {
-            @builder $name<$($generic: $first_constraint $(+ $constraint)*),*>,
+            @builder $name<$($generic: $first_constraint $(+ $constraint)*),* $(+ $lt)*>,
             client: $client,
             @required
             $($required: $rtype,)*
@@ -192,7 +192,7 @@ macro_rules! operation {
         $crate::future!($name);
         azure_core::__private::paste! {
         #[cfg(feature = "into_future")]
-        impl std::future::IntoFuture for [<$name Builder>] {
+        impl <$($generic: $first_constraint $(+ $constraint)*)* $(+ $lt)*> std::future::IntoFuture for [<$name Builder>]<$($generic),*> {
             type IntoFuture = $name;
             type Output = <$name as std::future::Future>::Output;
             fn into_future(self) -> Self::IntoFuture {
@@ -251,13 +251,13 @@ macro_rules! operation {
             }
     };
     // `operation! { CreateDocument<D: Serialize>, client: UserClient, ?consistency_level: ConsistencyLevel, ??other_field: bool }`
-    ($name:ident<$($generic:ident: $first_constraint:ident $(+ $constraint:ident)*),*>,
+    ($name:ident<$($generic:ident: $first_constraint:ident $(+ $constraint:ident)*),* $(+ $lt:lifetime)?>,
         client: $client:ty,
         $($required:ident: $rtype:ty,)*
         $(?$optional:ident: $otype:ty,)*
         $(#[skip] $nosetter:ident: $nstype:ty),*) => {
             $crate::operation!{
-                $name<$($generic: $first_constraint $(+ $constraint)*),*>,
+                $name<$($generic: $first_constraint $(+ $constraint)*),* $(+ $lt)*>,
                 client: $client,
                 @required
                 $($required: $rtype,)*

@@ -79,6 +79,19 @@ jobs:
             echo "Run ./eng/scripts/cargo_readme.sh to update readmes" && exit 1
           fi
 
+  nightly:
+    name: Test Nightly
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          override: true
+      - name: check `into_future` feature
+        run: cargo check --all --features into_future
+
   test-services:
     name: Services Tests
     runs-on: ubuntu-20.04

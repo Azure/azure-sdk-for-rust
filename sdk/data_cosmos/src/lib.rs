@@ -1,7 +1,6 @@
 #![allow(clippy::enum_variant_names)]
 #![allow(clippy::new_without_default)]
 #![allow(clippy::module_inception)]
-#![cfg_attr(feature = "into_future", feature(into_future))]
 
 /*!
 # The Cosmos DB crate.
