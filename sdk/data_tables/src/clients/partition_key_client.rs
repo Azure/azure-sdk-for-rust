@@ -1,7 +1,6 @@
 use crate::{operations::*, prelude::*, transaction::TransactionOperations};
-use azure_core::{headers::Headers, Context, Method, Request, Response, Url};
+use azure_core::{headers::Headers, Body, Context, Method, Request, Response, Url};
 use azure_storage::core::clients::StorageClient;
-use bytes::Bytes;
 
 #[derive(Debug, Clone)]
 pub struct PartitionKeyClient {
@@ -42,7 +41,7 @@ impl PartitionKeyClient {
         url: Url,
         method: Method,
         headers: Headers,
-        request_body: Option<Bytes>,
+        request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
         self.table_client
             .finalize_request(url, method, headers, request_body)

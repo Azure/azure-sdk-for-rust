@@ -63,6 +63,10 @@ impl SeekableStream for BytesStream {
         self.bytes_read = 0;
         Ok(())
     }
+
+    fn len(&self) -> usize {
+        self.bytes.len()
+    }
 }
 
 impl AsyncRead for BytesStream {

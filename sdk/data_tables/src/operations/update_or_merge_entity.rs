@@ -1,12 +1,11 @@
 use crate::{operations::*, prelude::*, IfMatchCondition};
-use azure_core::{headers::*, prelude::*, CollectedResponse, Method};
-use bytes::Bytes;
+use azure_core::{headers::*, prelude::*, Body, CollectedResponse, Method};
 use std::convert::TryInto;
 
 operation! {
     UpdateOrMergeEntity,
     client: EntityClient,
-    body: Bytes,
+    body: Body,
     if_match_condition: IfMatchCondition,
     operation: UpdateOperation,
 }

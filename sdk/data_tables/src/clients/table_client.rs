@@ -1,7 +1,6 @@
 use crate::{clients::*, operations::*};
-use azure_core::{headers::Headers, Context, Method, Request, Response, Url};
+use azure_core::{headers::Headers, Body, Context, Method, Request, Response, Url};
 use azure_storage::clients::StorageClient;
-use bytes::Bytes;
 use serde::{de::DeserializeOwned, Serialize};
 
 #[derive(Debug, Clone)]
@@ -67,7 +66,7 @@ impl TableClient {
         url: Url,
         method: Method,
         headers: Headers,
-        request_body: Option<Bytes>,
+        request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
         self.table_service_client
             .finalize_request(url, method, headers, request_body)

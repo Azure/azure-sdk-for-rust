@@ -3,9 +3,8 @@ use azure_core::{
     error::{Error, ErrorKind},
     headers::Headers,
     prelude::*,
-    Request, Response,
+    Body, Method, Request, Response, Url,
 };
-use azure_core::{Method, Url};
 use azure_storage::{
     core::clients::{ServiceType, StorageClient, StorageCredentials},
     prelude::BlobSasPermissions,
@@ -14,7 +13,6 @@ use azure_storage::{
         SasToken,
     },
 };
-use bytes::Bytes;
 use chrono::{DateTime, Utc};
 
 pub trait AsContainerClient<CN: Into<String>> {
@@ -148,7 +146,7 @@ impl ContainerClient {
         url: Url,
         method: Method,
         headers: Headers,
-        request_body: Option<Bytes>,
+        request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
         self.storage_client
             .finalize_request(url, method, headers, request_body)

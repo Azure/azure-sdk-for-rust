@@ -13,6 +13,15 @@ pub enum Body {
     SeekableStream(Box<dyn SeekableStream>),
 }
 
+impl Body {
+    pub fn len(&self) -> usize {
+        match self {
+            Body::Bytes(bytes) => bytes.len(),
+            Body::SeekableStream(stream) => stream.len(),
+        }
+    }
+}
+
 impl<B> From<B> for Body
 where
     B: Into<Bytes>,

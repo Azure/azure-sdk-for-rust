@@ -1,8 +1,6 @@
 use crate::{container::public_access_from_header, prelude::*};
-use azure_core::Method;
-use azure_core::{headers::*, prelude::*};
+use azure_core::{headers::*, prelude::*, Body, Method};
 use azure_storage::core::StoredAccessPolicyList;
-use bytes::Bytes;
 
 operation! {
     SetACL,
@@ -30,7 +28,7 @@ impl SetACLBuilder {
 
             let mut request =
                 self.client
-                    .finalize_request(url, Method::Put, headers, xml.map(Bytes::from))?;
+                    .finalize_request(url, Method::Put, headers, xml.map(Body::from))?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 

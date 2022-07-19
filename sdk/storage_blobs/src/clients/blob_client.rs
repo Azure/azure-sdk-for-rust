@@ -7,7 +7,7 @@ use azure_core::{
     error::{Error, ErrorKind},
     headers::Headers,
     prelude::*,
-    Method, Request, Response, StatusCode,
+    Body, Method, Request, Response, StatusCode,
 };
 use azure_storage::core::{
     clients::StorageCredentials,
@@ -17,7 +17,6 @@ use azure_storage::core::{
         SasToken,
     },
 };
-use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use futures::StreamExt;
 use url::Url;
@@ -110,7 +109,7 @@ impl BlobClient {
     }
 
     /// Creates a new block blob, or update the content of an existing block blob.
-    pub fn put_block_blob(&self, body: impl Into<Bytes>) -> PutBlockBlobBuilder {
+    pub fn put_block_blob(&self, body: impl Into<Body>) -> PutBlockBlobBuilder {
         PutBlockBlobBuilder::new(self.clone(), body.into())
     }
 
@@ -158,7 +157,7 @@ impl BlobClient {
     pub fn put_block(
         &self,
         block_id: impl Into<BlockId>,
-        body: impl Into<Bytes>,
+        body: impl Into<Body>,
     ) -> PutBlockBuilder {
         PutBlockBuilder::new(self.clone(), block_id.into(), body.into())
     }
@@ -186,7 +185,7 @@ impl BlobClient {
     }
 
     /// Write a range of pages to a page blob.
-    pub fn put_page(&self, ba512_range: BA512Range, content: impl Into<Bytes>) -> PutPageBuilder {
+    pub fn put_page(&self, ba512_range: BA512Range, content: impl Into<Body>) -> PutPageBuilder {
         PutPageBuilder::new(self.clone(), ba512_range, content.into())
     }
 
@@ -196,7 +195,7 @@ impl BlobClient {
     }
 
     /// Commits a new block of data to the end of an existing append blob.
-    pub fn append_block(&self, body: impl Into<Bytes>) -> AppendBlockBuilder {
+    pub fn append_block(&self, body: impl Into<Body>) -> AppendBlockBuilder {
         AppendBlockBuilder::new(self.clone(), body.into())
     }
 
@@ -282,7 +281,7 @@ impl BlobClient {
         url: Url,
         method: Method,
         headers: Headers,
-        request_body: Option<Bytes>,
+        request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
         self.container_client
             .finalize_request(url, method, headers, request_body)
