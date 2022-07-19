@@ -1,6 +1,5 @@
 use futures::stream::unfold;
 use futures::Stream;
-use pin_project::pin_project;
 
 /// Helper macro for unwrapping `Result`s into the right types
 /// that `futures::stream::unfold` expects.
@@ -19,15 +18,25 @@ macro_rules! r#try {
 /// for conditionally compiling with a `Send` constraint or not.
 macro_rules! declare {
     ($($extra:tt)*) => {
-        /// A pageable stream that yields items of type `T`
-        ///
-        /// Internally uses the Azure specific continuation header to
-        /// make repeated requests to Azure yielding a new page each time.
-        #[pin_project]
-        pub struct Pageable<T, E> {
-            #[pin]
-            stream: std::pin::Pin<Box<dyn Stream<Item = Result<T, E>> $($extra)*>>,
+        // The use of a module here is a hack to get around the fact that `pin_project`
+        // generates a method `project_ref` which is never used and generates a warning.
+        // The module allows us to declare that `dead_code` is allowed but only for
+        // the `Pageable` type.
+        mod pageable {
+            #![allow(dead_code)]
+            use super::*;
+            /// A pageable stream that yields items of type `T`
+            ///
+            /// Internally uses the Azure specific continuation header to
+            /// make repeated requests to Azure yielding a new page each time.
+            #[pin_project::pin_project]
+            // This is to surpress the unused `project_ref` warning
+            pub struct Pageable<T, E> {
+                #[pin]
+                pub(crate) stream: std::pin::Pin<Box<dyn Stream<Item = Result<T, E>> $($extra)*>>,
+            }
         }
+        pub use pageable::Pageable;
 
         impl<T, E> Pageable<T, E>
         where

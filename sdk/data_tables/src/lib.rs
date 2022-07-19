@@ -1,5 +1,3 @@
-#![cfg_attr(feature = "into_future", feature(into_future))]
-
 #[macro_use]
 extern crate log;
 #[macro_use]
