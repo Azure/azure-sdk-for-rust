@@ -12,7 +12,7 @@ operation! {
 impl DeleteBlobVersionBuilder {
     pub fn into_future(mut self) -> DeleteBlobVersion {
         Box::pin(async move {
-            let mut url = self.client.url_with_segments(None)?;
+            let mut url = self.client.url()?;
 
             self.version_id.append_to_url_query(&mut url);
             if self.permanent.unwrap_or_default() {

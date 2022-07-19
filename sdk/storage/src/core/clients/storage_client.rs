@@ -457,7 +457,10 @@ impl StorageClient {
         FindBlobsByTagsBuilder::new(self.clone(), expression)
     }
 
-    fn url_with_segments<'a, I>(mut url: url::Url, new_segments: I) -> azure_core::Result<url::Url>
+    pub fn url_with_segments<'a, I>(
+        mut url: url::Url,
+        new_segments: I,
+    ) -> azure_core::Result<url::Url>
     where
         I: IntoIterator<Item = &'a str>,
     {

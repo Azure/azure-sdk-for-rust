@@ -15,7 +15,7 @@ operation! {
 impl PutBlockBuilder {
     pub fn into_future(mut self) -> PutBlock {
         Box::pin(async move {
-            let mut url = self.client.url_with_segments(None)?;
+            let mut url = self.client.url()?;
 
             self.block_id.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("comp", "block");

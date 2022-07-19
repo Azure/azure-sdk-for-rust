@@ -15,12 +15,12 @@ use azure_storage::{
 };
 use chrono::{DateTime, Utc};
 
-pub trait AsContainerClient<CN: Into<String>> {
-    fn container_client(&self, container_name: CN) -> ContainerClient;
+pub trait AsContainerClient {
+    fn container_client(&self, container_name: impl Into<String>) -> ContainerClient;
 }
 
-impl<CN: Into<String>> AsContainerClient<CN> for StorageClient {
-    fn container_client(&self, container_name: CN) -> ContainerClient {
+impl AsContainerClient for StorageClient {
+    fn container_client(&self, container_name: impl Into<String>) -> ContainerClient {
         ContainerClient::new(self.clone(), container_name.into())
     }
 }
@@ -115,20 +115,14 @@ impl ContainerClient {
     where
         T: SasToken,
     {
-        let mut url = self.url_with_segments(None)?;
+        let mut url = self.url()?;
         url.set_query(Some(&signature.token()));
         Ok(url)
     }
 
-    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
-    where
-        I: IntoIterator<Item = &'a str>,
-    {
-        self.storage_client.blob_url_with_segments(
-            Some(self.container_name.as_str())
-                .into_iter()
-                .chain(segments),
-        )
+    pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
+        self.storage_client
+            .blob_url_with_segments(Some(self.container_name.as_str()).into_iter())
     }
 
     pub(crate) async fn send(

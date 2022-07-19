@@ -232,7 +232,7 @@ impl BlobClient {
     where
         T: SasToken,
     {
-        let mut url = self.url_with_segments(None)?;
+        let mut url = self.url()?;
         url.set_query(Some(&signature.token()));
         Ok(url)
     }
@@ -267,13 +267,11 @@ impl BlobClient {
         &self.container_client
     }
 
-    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
-    where
-        I: IntoIterator<Item = &'a str>,
-    {
-        let blob_name_with_segments = self.blob_name.split('/').into_iter().chain(segments);
-        self.container_client
-            .url_with_segments(blob_name_with_segments)
+    pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
+        StorageClient::url_with_segments(
+            self.container_client.url()?,
+            self.blob_name.split('/').into_iter(),
+        )
     }
 
     pub(crate) fn finalize_request(
