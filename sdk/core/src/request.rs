@@ -20,6 +20,10 @@ impl Body {
             Body::SeekableStream(stream) => stream.len(),
         }
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 impl<B> From<B> for Body

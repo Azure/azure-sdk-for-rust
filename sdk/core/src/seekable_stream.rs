@@ -12,6 +12,10 @@ pub trait SeekableStream:
 {
     async fn reset(&mut self) -> crate::error::Result<()>;
     fn len(&self) -> usize;
+
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 dyn_clone::clone_trait_object!(SeekableStream);
