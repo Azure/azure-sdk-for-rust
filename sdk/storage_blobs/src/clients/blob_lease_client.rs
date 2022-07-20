@@ -44,11 +44,8 @@ impl BlobLeaseClient {
         &self.blob_client
     }
 
-    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
-    where
-        I: IntoIterator<Item = &'a str>,
-    {
-        self.blob_client.url_with_segments(segments)
+    pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
+        self.blob_client.url()
     }
 
     pub(crate) fn finalize_request(

@@ -47,11 +47,8 @@ impl ContainerLeaseClient {
         &self.container_client
     }
 
-    pub(crate) fn url_with_segments<'a, I>(&'a self, segments: I) -> azure_core::Result<url::Url>
-    where
-        I: IntoIterator<Item = &'a str>,
-    {
-        self.container_client.url_with_segments(segments)
+    pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
+        self.container_client.url()
     }
 
     pub(crate) async fn send(

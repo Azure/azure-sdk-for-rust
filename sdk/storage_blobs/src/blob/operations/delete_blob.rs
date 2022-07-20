@@ -12,7 +12,7 @@ operation! {
 impl DeleteBlobBuilder {
     pub fn into_future(mut self) -> DeleteBlob {
         Box::pin(async move {
-            let url = self.client.url_with_segments(None)?;
+            let url = self.client.url()?;
 
             let mut headers = Headers::new();
             headers.add(self.lease_id);

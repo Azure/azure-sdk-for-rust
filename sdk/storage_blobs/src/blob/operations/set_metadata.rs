@@ -13,7 +13,7 @@ operation! {
 impl SetMetadataBuilder {
     pub fn into_future(mut self) -> SetMetadata {
         Box::pin(async move {
-            let mut url = self.client.url_with_segments(None)?;
+            let mut url = self.client.url()?;
 
             url.query_pairs_mut().append_pair("comp", "metadata");
 

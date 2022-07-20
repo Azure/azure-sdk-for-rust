@@ -29,7 +29,7 @@ operation! {
 impl CopyBlobFromUrlBuilder {
     pub fn into_future(mut self) -> CopyBlobFromUrl {
         Box::pin(async move {
-            let url = self.client.url_with_segments(None)?;
+            let url = self.client.url()?;
 
             let mut headers = Headers::new();
             headers.insert(COPY_SOURCE, self.source_url.to_string());

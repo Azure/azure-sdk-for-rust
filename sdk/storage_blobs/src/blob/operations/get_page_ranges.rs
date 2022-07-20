@@ -13,7 +13,7 @@ operation! {
 impl GetPageRangesBuilder {
     pub fn into_future(mut self) -> GetPageRanges {
         Box::pin(async move {
-            let mut url = self.client.url_with_segments(None)?;
+            let mut url = self.client.url()?;
 
             url.query_pairs_mut().append_pair("comp", "pagelist");
             self.blob_versioning.append_to_url_query(&mut url);

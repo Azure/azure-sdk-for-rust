@@ -21,7 +21,7 @@ operation! {
 impl PutPageBlobBuilder {
     pub fn into_future(mut self) -> PutPageBlob {
         Box::pin(async move {
-            let url = self.client.url_with_segments(None)?;
+            let url = self.client.url()?;
 
             let mut headers = Headers::new();
             headers.insert(BLOB_TYPE, "PageBlob");
