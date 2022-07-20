@@ -86,8 +86,8 @@ struct ErrorDetails {
 impl ErrorDetails {
     fn new(headers: &HashMap<String, String>, body: &[u8]) -> Self {
         let mut code = get_error_code_from_header(headers);
-        code = code.or_else(|| get_error_code_from_body(&body));
-        let message = get_error_message_from_body(&body);
+        code = code.or_else(|| get_error_code_from_body(body));
+        let message = get_error_message_from_body(body);
         Self { code, message }
     }
 }

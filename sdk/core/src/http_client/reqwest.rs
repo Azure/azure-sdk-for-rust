@@ -32,7 +32,7 @@ impl HttpClient for ::reqwest::Client {
         }
         .context(ErrorKind::Other, "failed to build `reqwest` request")?;
 
-        log::info!("making {method} request to {url}");
+        log::debug!("performing request {method} '{url}' with `reqwest`");
         let rsp = self
             .execute(reqwest_request)
             .await

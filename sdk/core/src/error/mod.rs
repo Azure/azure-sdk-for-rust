@@ -386,7 +386,7 @@ mod tests {
         // Generate the display and error chain
         let mut error: &dyn std::error::Error = &error;
         let display = format!("{}", error);
-        let mut errors = vec![display.clone()];
+        let mut errors = vec![];
         while let Some(cause) = error.source() {
             errors.push(format!("{}", cause));
             error = cause;
@@ -410,7 +410,7 @@ mod tests {
             .unwrap()
             .downcast_ref::<std::io::Error>()
             .unwrap();
-        assert_eq!(format!("{}", downcasted), "third error");
+        assert_eq!(format!("{}", downcasted), "second error");
     }
 
     #[test]
