@@ -68,7 +68,7 @@ where
                             http_error.error_code().map(std::borrow::ToOwned::to_owned),
                         ),
                         http_error,
-                        "server returned error status which will not be retried",
+                        format!("server returned error status which will not be retried: {status}"),
                     );
 
                     if !RETRY_STATUSES.contains(&status) {

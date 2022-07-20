@@ -179,6 +179,20 @@ impl Error {
         }
     }
 
+    /// Cast this error as an `HttpError`
+    ///
+    /// This searches the entire ["source" chain](https://doc.rust-lang.org/std/error/trait.Error.html#method.source)
+    /// looking for an `HttpError`.
+    pub fn as_http_error(&self) -> Option<&HttpError> {
+        let mut error = self.get_ref()? as &(dyn std::error::Error);
+        loop {
+            match error.downcast_ref::<HttpError>() {
+                Some(e) => return Some(e),
+                None => error = error.source()?,
+            }
+        }
+    }
+
     /// Returns a reference to the inner error (if any) downcasted to the type provided
     pub fn downcast_ref<T: std::error::Error + 'static>(&self) -> Option<&T> {
         self.get_ref()?.downcast_ref()
@@ -204,7 +218,7 @@ impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.context {
             Context::Custom(Custom { error, .. }) | Context::Full(Custom { error, .. }, _) => {
-                error.source()
+                Some(&**error)
             }
             _ => None,
         }
@@ -372,7 +386,7 @@ mod tests {
         // Generate the display and error chain
         let mut error: &dyn std::error::Error = &error;
         let display = format!("{}", error);
-        let mut errors = vec![display.clone()];
+        let mut errors = vec![];
         while let Some(cause) = error.source() {
             errors.push(format!("{}", cause));
             error = cause;
@@ -396,7 +410,7 @@ mod tests {
             .unwrap()
             .downcast_ref::<std::io::Error>()
             .unwrap();
-        assert_eq!(format!("{}", downcasted), "third error");
+        assert_eq!(format!("{}", downcasted), "second error");
     }
 
     #[test]
