@@ -1081,6 +1081,7 @@ pub mod linked_storage_accounts_properties {
         CustomLogs,
         AzureWatson,
         Query,
+        Ingestion,
         Alerts,
     }
 }

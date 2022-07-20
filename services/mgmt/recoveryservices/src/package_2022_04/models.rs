@@ -1021,7 +1021,7 @@ impl ResourceCertificateDetails {
 #[doc = "Identifies the unique system identifier for each Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
-    #[doc = "The Sku name."]
+    #[doc = "Name of SKU is RS0 (Recovery Services 0th version) and the tier is standard tier. They do not have affect on backend storage redundancy or any other vault settings. To manage storage redundancy, use the backupstorageconfig"]
     pub name: sku::Name,
     #[doc = "The Sku tier."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1049,7 +1049,7 @@ impl Sku {
 }
 pub mod sku {
     use super::*;
-    #[doc = "The Sku name."]
+    #[doc = "Name of SKU is RS0 (Recovery Services 0th version) and the tier is standard tier. They do not have affect on backend storage redundancy or any other vault settings. To manage storage redundancy, use the backupstorageconfig"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Name")]
     pub enum Name {

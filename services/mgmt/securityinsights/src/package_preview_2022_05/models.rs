@@ -6465,16 +6465,19 @@ impl MtpDataConnectorProperties {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManualTriggerRequestBody {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
-    #[serde(rename = "logicAppsResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub logic_apps_resource_id: Option<String>,
+    #[serde(rename = "logicAppsResourceId")]
+    pub logic_apps_resource_id: String,
 }
 impl ManualTriggerRequestBody {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(logic_apps_resource_id: String) -> Self {
+        Self {
+            tenant_id: None,
+            logic_apps_resource_id,
+        }
     }
 }
 #[doc = "List of all the metadata."]

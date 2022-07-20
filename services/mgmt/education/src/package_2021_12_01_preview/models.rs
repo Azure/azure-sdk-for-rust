@@ -391,6 +391,7 @@ pub mod lab_properties {
     pub enum Status {
         Active,
         Deleted,
+        Pending,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -418,6 +419,7 @@ pub mod lab_properties {
             match self {
                 Self::Active => serializer.serialize_unit_variant("Status", 0u32, "Active"),
                 Self::Deleted => serializer.serialize_unit_variant("Status", 1u32, "Deleted"),
+                Self::Pending => serializer.serialize_unit_variant("Status", 2u32, "Pending"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

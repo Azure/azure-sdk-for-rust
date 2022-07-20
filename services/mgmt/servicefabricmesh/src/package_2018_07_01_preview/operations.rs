@@ -284,6 +284,7 @@ pub mod application {
         #[derive(Debug)]
         pub enum Response {
             Ok200,
+            Accepted202,
             NoContent204,
         }
         #[derive(Clone)]
@@ -321,6 +322,7 @@ pub mod application {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => Ok(Response::Ok200),
+                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,

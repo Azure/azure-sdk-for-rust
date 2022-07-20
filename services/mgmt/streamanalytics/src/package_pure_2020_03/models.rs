@@ -54,6 +54,11 @@ impl Serialize for AuthenticationMode {
         }
     }
 }
+impl Default for AuthenticationMode {
+    fn default() -> Self {
+        Self::ConnectionString
+    }
+}
 #[doc = "Describes how data from an input is serialized or how data is serialized when written to an output in Avro format."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvroSerialization {
@@ -549,6 +554,9 @@ impl BlobOutputDataSource {
 pub struct BlobOutputDataSourceProperties {
     #[serde(flatten)]
     pub blob_data_source_properties: BlobDataSourceProperties,
+    #[doc = "Blob path prefix."]
+    #[serde(rename = "blobPathPrefix", default, skip_serializing_if = "Option::is_none")]
+    pub blob_path_prefix: Option<String>,
 }
 impl BlobOutputDataSourceProperties {
     pub fn new() -> Self {
@@ -912,6 +920,11 @@ impl Serialize for CompressionType {
             Self::Deflate => serializer.serialize_unit_variant("CompressionType", 2u32, "Deflate"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
+    }
+}
+impl Default for CompressionType {
+    fn default() -> Self {
+        Self::None
     }
 }
 #[doc = "Describes how data from an input is serialized or how data is serialized when written to an output in CSV format."]
@@ -1322,6 +1335,35 @@ impl Serialize for EventsOutOfOrderPolicy {
         }
     }
 }
+#[doc = "Describes a file input data source that contains reference data."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FileReferenceInputDataSource {
+    #[serde(flatten)]
+    pub reference_input_data_source: ReferenceInputDataSource,
+    #[doc = "The properties that are associated with a file input containing reference data."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<FileReferenceInputDataSourceProperties>,
+}
+impl FileReferenceInputDataSource {
+    pub fn new(reference_input_data_source: ReferenceInputDataSource) -> Self {
+        Self {
+            reference_input_data_source,
+            properties: None,
+        }
+    }
+}
+#[doc = "The properties that are associated with a file input containing reference data."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct FileReferenceInputDataSourceProperties {
+    #[doc = "The path of the file."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+}
+impl FileReferenceInputDataSourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "A function object, containing all information associated with the named function. All functions are contained under a streaming job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Function {
@@ -1443,6 +1485,74 @@ pub struct FunctionRetrieveDefaultDefinitionParameters {
 impl FunctionRetrieveDefaultDefinitionParameters {
     pub fn new(binding_type: String) -> Self {
         Self { binding_type }
+    }
+}
+#[doc = "Describes a Gateway Message Bus output data source."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GatewayMessageBusOutputDataSource {
+    #[serde(flatten)]
+    pub output_data_source: OutputDataSource,
+    #[doc = "The properties that are associated with a Gateway Message Bus."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GatewayMessageBusOutputDataSourceProperties>,
+}
+impl GatewayMessageBusOutputDataSource {
+    pub fn new(output_data_source: OutputDataSource) -> Self {
+        Self {
+            output_data_source,
+            properties: None,
+        }
+    }
+}
+#[doc = "The properties that are associated with a Gateway Message Bus."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GatewayMessageBusOutputDataSourceProperties {
+    #[serde(flatten)]
+    pub gateway_message_bus_source_properties: GatewayMessageBusSourceProperties,
+}
+impl GatewayMessageBusOutputDataSourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The properties that are associated with a gateway message bus datasource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GatewayMessageBusSourceProperties {
+    #[doc = "The name of the Service Bus topic."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub topic: Option<String>,
+}
+impl GatewayMessageBusSourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describes a blob input data source that contains stream data."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GatewayMessageBusStreamInputDataSource {
+    #[serde(flatten)]
+    pub stream_input_data_source: StreamInputDataSource,
+    #[doc = "The properties that are associated with a gateway message bus input containing stream data."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GatewayMessageBusStreamInputDataSourceProperties>,
+}
+impl GatewayMessageBusStreamInputDataSource {
+    pub fn new(stream_input_data_source: StreamInputDataSource) -> Self {
+        Self {
+            stream_input_data_source,
+            properties: None,
+        }
+    }
+}
+#[doc = "The properties that are associated with a gateway message bus input containing stream data."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GatewayMessageBusStreamInputDataSourceProperties {
+    #[serde(flatten)]
+    pub gateway_message_bus_source_properties: GatewayMessageBusSourceProperties,
+}
+impl GatewayMessageBusStreamInputDataSourceProperties {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Describes how identity is verified"]

@@ -367,6 +367,8 @@ pub mod linker_properties {
         Nodejs,
         #[serde(rename = "springBoot")]
         SpringBoot,
+        #[serde(rename = "kafka-springBoot")]
+        KafkaSpringBoot,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -402,6 +404,7 @@ pub mod linker_properties {
                 Self::Django => serializer.serialize_unit_variant("ClientType", 7u32, "django"),
                 Self::Nodejs => serializer.serialize_unit_variant("ClientType", 8u32, "nodejs"),
                 Self::SpringBoot => serializer.serialize_unit_variant("ClientType", 9u32, "springBoot"),
+                Self::KafkaSpringBoot => serializer.serialize_unit_variant("ClientType", 10u32, "kafka-springBoot"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

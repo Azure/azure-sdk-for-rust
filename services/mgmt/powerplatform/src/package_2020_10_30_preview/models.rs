@@ -49,6 +49,9 @@ impl AccountList {
 #[doc = "The properties that define configuration for the account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountProperties {
+    #[doc = "The internally assigned unique identifier of the resource."]
+    #[serde(rename = "systemId", default, skip_serializing_if = "Option::is_none")]
+    pub system_id: Option<String>,
     #[doc = "The description of the account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -670,6 +673,9 @@ impl PrivateLinkServiceConnectionState {
 #[doc = "The properties that define configuration for the enterprise policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Properties {
+    #[doc = "The internally assigned unique identifier of the resource."]
+    #[serde(rename = "systemId", default, skip_serializing_if = "Option::is_none")]
+    pub system_id: Option<String>,
     #[doc = "Settings concerning lockbox."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lockbox: Option<properties::Lockbox>,

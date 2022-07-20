@@ -3298,6 +3298,8 @@ pub mod runbook_create_or_update_draft_properties {
         PowerShell,
         GraphPowerShellWorkflow,
         GraphPowerShell,
+        Python2,
+        Python3,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -3329,6 +3331,8 @@ pub mod runbook_create_or_update_draft_properties {
                 Self::PowerShell => serializer.serialize_unit_variant("RunbookType", 3u32, "PowerShell"),
                 Self::GraphPowerShellWorkflow => serializer.serialize_unit_variant("RunbookType", 4u32, "GraphPowerShellWorkflow"),
                 Self::GraphPowerShell => serializer.serialize_unit_variant("RunbookType", 5u32, "GraphPowerShell"),
+                Self::Python2 => serializer.serialize_unit_variant("RunbookType", 6u32, "Python2"),
+                Self::Python3 => serializer.serialize_unit_variant("RunbookType", 7u32, "Python3"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -3408,6 +3412,8 @@ pub mod runbook_create_or_update_properties {
         PowerShell,
         GraphPowerShellWorkflow,
         GraphPowerShell,
+        Python2,
+        Python3,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -3439,6 +3445,8 @@ pub mod runbook_create_or_update_properties {
                 Self::PowerShell => serializer.serialize_unit_variant("RunbookType", 3u32, "PowerShell"),
                 Self::GraphPowerShellWorkflow => serializer.serialize_unit_variant("RunbookType", 4u32, "GraphPowerShellWorkflow"),
                 Self::GraphPowerShell => serializer.serialize_unit_variant("RunbookType", 5u32, "GraphPowerShell"),
+                Self::Python2 => serializer.serialize_unit_variant("RunbookType", 6u32, "Python2"),
+                Self::Python3 => serializer.serialize_unit_variant("RunbookType", 7u32, "Python3"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -3722,6 +3730,8 @@ pub mod runbook_properties {
         PowerShell,
         GraphPowerShellWorkflow,
         GraphPowerShell,
+        Python2,
+        Python3,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -3753,6 +3763,8 @@ pub mod runbook_properties {
                 Self::PowerShell => serializer.serialize_unit_variant("RunbookType", 3u32, "PowerShell"),
                 Self::GraphPowerShellWorkflow => serializer.serialize_unit_variant("RunbookType", 4u32, "GraphPowerShellWorkflow"),
                 Self::GraphPowerShell => serializer.serialize_unit_variant("RunbookType", 5u32, "GraphPowerShell"),
+                Self::Python2 => serializer.serialize_unit_variant("RunbookType", 6u32, "Python2"),
+                Self::Python3 => serializer.serialize_unit_variant("RunbookType", 7u32, "Python3"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

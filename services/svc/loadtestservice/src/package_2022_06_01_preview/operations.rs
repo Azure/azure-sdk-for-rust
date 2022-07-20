@@ -17,7 +17,7 @@ pub struct ClientBuilder {
     endpoint: Option<String>,
     scopes: Option<Vec<String>>,
 }
-pub const DEFAULT_ENDPOINT: &str = "https://<dataPlaneURL>";
+pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
 impl ClientBuilder {
     pub fn new(credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>) -> Self {
         Self {
@@ -708,7 +708,7 @@ pub mod test {
                 file_id: file_id.into(),
             }
         }
-        #[doc = "Upload input file for a given test name. File size can't be more than 50 MB. Existing file with same name for the given test will be overwritten."]
+        #[doc = "Upload input file for a given test name. File size can't be more than 50 MB. Existing file with same name for the given test will be overwritten. File should be provided in the request body as multipart/form-data."]
         pub fn upload_test_file(
             &self,
             test_id: impl Into<String>,

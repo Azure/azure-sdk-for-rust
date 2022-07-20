@@ -3916,6 +3916,40 @@ impl AzureStorageLinkedServiceTypeProperties {
         Self::default()
     }
 }
+#[doc = "Azure Synapse Analytics (Artifacts) linked service."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureSynapseArtifactsLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "Azure Synapse Analytics (Artifacts) linked service properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: AzureSynapseArtifactsLinkedServiceTypeProperties,
+}
+impl AzureSynapseArtifactsLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: AzureSynapseArtifactsLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "Azure Synapse Analytics (Artifacts) linked service properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureSynapseArtifactsLinkedServiceTypeProperties {
+    #[doc = "https://<workspacename>.dev.azuresynapse.net, Azure Synapse Analytics workspace URL. Type: string (or Expression with resultType string)."]
+    pub endpoint: serde_json::Value,
+    #[doc = "Required to specify MSI, if using system assigned managed identity as authentication method. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub authentication: Option<serde_json::Value>,
+}
+impl AzureSynapseArtifactsLinkedServiceTypeProperties {
+    pub fn new(endpoint: serde_json::Value) -> Self {
+        Self {
+            endpoint,
+            authentication: None,
+        }
+    }
+}
 #[doc = "The Azure Table storage dataset."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureTableDataset {
@@ -4006,6 +4040,59 @@ impl AzureTableStorageLinkedService {
         Self {
             linked_service,
             type_properties,
+        }
+    }
+}
+#[doc = "Big data pool reference type."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BigDataPoolParametrizationReference {
+    #[doc = "Big data pool reference type."]
+    #[serde(rename = "type")]
+    pub type_: big_data_pool_parametrization_reference::Type,
+    #[doc = "Reference big data pool name. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "referenceName")]
+    pub reference_name: serde_json::Value,
+}
+impl BigDataPoolParametrizationReference {
+    pub fn new(type_: big_data_pool_parametrization_reference::Type, reference_name: serde_json::Value) -> Self {
+        Self { type_, reference_name }
+    }
+}
+pub mod big_data_pool_parametrization_reference {
+    use super::*;
+    #[doc = "Big data pool reference type."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Type")]
+    pub enum Type {
+        BigDataPoolReference,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Type {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Type {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Type {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::BigDataPoolReference => serializer.serialize_unit_variant("Type", 0u32, "BigDataPoolReference"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
         }
     }
 }
@@ -11353,7 +11440,7 @@ impl HttpLinkedService {
 #[doc = "Properties specific to this linked service type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HttpLinkedServiceTypeProperties {
-    #[doc = "The base URL of the HTTP endpoint, e.g. http://www.microsoft.com. Type: string (or Expression with resultType string)."]
+    #[doc = "The base URL of the HTTP endpoint, e.g. https://www.microsoft.com. Type: string (or Expression with resultType string)."]
     pub url: serde_json::Value,
     #[doc = "The authentication type to be used to connect to the HTTP server."]
     #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
@@ -13176,7 +13263,7 @@ impl LinkedIntegrationRuntimeType {
         Self { authorization_type }
     }
 }
-#[doc = "The Azure Data Factory nested object which contains the information and credential which can be used to connect with related store or compute resource."]
+#[doc = "The nested object which contains the information and credential which can be used to connect with related store or compute resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedService {
     #[doc = "Type of linked service."]
@@ -13211,7 +13298,7 @@ impl LinkedService {
 pub struct LinkedServiceDebugResource {
     #[serde(flatten)]
     pub sub_resource_debug_resource: SubResourceDebugResource,
-    #[doc = "The Azure Data Factory nested object which contains the information and credential which can be used to connect with related store or compute resource."]
+    #[doc = "The nested object which contains the information and credential which can be used to connect with related store or compute resource."]
     pub properties: LinkedService,
 }
 impl LinkedServiceDebugResource {
@@ -13268,8 +13355,38 @@ pub mod linked_service_reference {
     use super::*;
     #[doc = "Linked service reference type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Type")]
     pub enum Type {
         LinkedServiceReference,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Type {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Type {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Type {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::LinkedServiceReference => serializer.serialize_unit_variant("Type", 0u32, "LinkedServiceReference"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "Linked service resource type."]
@@ -13277,7 +13394,7 @@ pub mod linked_service_reference {
 pub struct LinkedServiceResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
-    #[doc = "The Azure Data Factory nested object which contains the information and credential which can be used to connect with related store or compute resource."]
+    #[doc = "The nested object which contains the information and credential which can be used to connect with related store or compute resource."]
     pub properties: LinkedService,
 }
 impl LinkedServiceResource {
@@ -14791,6 +14908,66 @@ pub struct NetezzaTableDatasetTypeProperties {
 impl NetezzaTableDatasetTypeProperties {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Notebook parameter."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct NotebookParameter {
+    #[doc = "Notebook parameter value. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<serde_json::Value>,
+    #[doc = "Notebook parameter type."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<NotebookParameterType>,
+}
+impl NotebookParameter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Notebook parameter type."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "NotebookParameterType")]
+pub enum NotebookParameterType {
+    #[serde(rename = "string")]
+    String,
+    #[serde(rename = "int")]
+    Int,
+    #[serde(rename = "float")]
+    Float,
+    #[serde(rename = "bool")]
+    Bool,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for NotebookParameterType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for NotebookParameterType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for NotebookParameterType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::String => serializer.serialize_unit_variant("NotebookParameterType", 0u32, "string"),
+            Self::Int => serializer.serialize_unit_variant("NotebookParameterType", 1u32, "int"),
+            Self::Float => serializer.serialize_unit_variant("NotebookParameterType", 2u32, "float"),
+            Self::Bool => serializer.serialize_unit_variant("NotebookParameterType", 3u32, "bool"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "Open Data Protocol (OData) linked service."]
@@ -19506,6 +19683,143 @@ impl SapHanaTableDatasetTypeProperties {
         Self::default()
     }
 }
+#[doc = "SAP ODP Linked Service."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SapOdpLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "Properties specific to this linked service type."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: SapOdpLinkedServiceTypeProperties,
+}
+impl SapOdpLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: SapOdpLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "Properties specific to this linked service type."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SapOdpLinkedServiceTypeProperties {
+    #[doc = "Host name of the SAP instance where the table is located. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub server: Option<serde_json::Value>,
+    #[doc = "System number of the SAP system where the table is located. (Usually a two-digit decimal number represented as a string.) Type: string (or Expression with resultType string)."]
+    #[serde(rename = "systemNumber", default, skip_serializing_if = "Option::is_none")]
+    pub system_number: Option<serde_json::Value>,
+    #[doc = "Client ID of the client on the SAP system where the table is located. (Usually a three-digit decimal number represented as a string) Type: string (or Expression with resultType string)."]
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<serde_json::Value>,
+    #[doc = "Language of the SAP system where the table is located. The default value is EN. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub language: Option<serde_json::Value>,
+    #[doc = "SystemID of the SAP system where the table is located. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "systemId", default, skip_serializing_if = "Option::is_none")]
+    pub system_id: Option<serde_json::Value>,
+    #[doc = "Username to access the SAP server where the table is located. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
+    pub user_name: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<SecretBase>,
+    #[doc = "The hostname of the SAP Message Server. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "messageServer", default, skip_serializing_if = "Option::is_none")]
+    pub message_server: Option<serde_json::Value>,
+    #[doc = "The service name or port number of the Message Server. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "messageServerService", default, skip_serializing_if = "Option::is_none")]
+    pub message_server_service: Option<serde_json::Value>,
+    #[doc = "SNC activation indicator to access the SAP server where the table is located. Must be either 0 (off) or 1 (on). Type: string (or Expression with resultType string)."]
+    #[serde(rename = "sncMode", default, skip_serializing_if = "Option::is_none")]
+    pub snc_mode: Option<serde_json::Value>,
+    #[doc = "Initiator's SNC name to access the SAP server where the table is located. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "sncMyName", default, skip_serializing_if = "Option::is_none")]
+    pub snc_my_name: Option<serde_json::Value>,
+    #[doc = "Communication partner's SNC name to access the SAP server where the table is located. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "sncPartnerName", default, skip_serializing_if = "Option::is_none")]
+    pub snc_partner_name: Option<serde_json::Value>,
+    #[doc = "External security product's library to access the SAP server where the table is located. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "sncLibraryPath", default, skip_serializing_if = "Option::is_none")]
+    pub snc_library_path: Option<serde_json::Value>,
+    #[doc = "SNC Quality of Protection. Allowed value include: 1, 2, 3, 8, 9. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "sncQop", default, skip_serializing_if = "Option::is_none")]
+    pub snc_qop: Option<serde_json::Value>,
+    #[doc = "SNC X509 certificate file path. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "x509CertificatePath", default, skip_serializing_if = "Option::is_none")]
+    pub x509_certificate_path: Option<serde_json::Value>,
+    #[doc = "The Logon Group for the SAP System. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "logonGroup", default, skip_serializing_if = "Option::is_none")]
+    pub logon_group: Option<serde_json::Value>,
+    #[doc = "The subscriber name. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "subscriberName", default, skip_serializing_if = "Option::is_none")]
+    pub subscriber_name: Option<serde_json::Value>,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<serde_json::Value>,
+}
+impl SapOdpLinkedServiceTypeProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "SAP ODP Resource properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SapOdpResourceDataset {
+    #[serde(flatten)]
+    pub dataset: Dataset,
+    #[doc = "SAP ODP Resource properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: SapOdpResourceDatasetTypeProperties,
+}
+impl SapOdpResourceDataset {
+    pub fn new(dataset: Dataset, type_properties: SapOdpResourceDatasetTypeProperties) -> Self {
+        Self { dataset, type_properties }
+    }
+}
+#[doc = "SAP ODP Resource properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SapOdpResourceDatasetTypeProperties {
+    #[doc = "The context of the SAP ODP Object. Type: string (or Expression with resultType string)."]
+    pub context: serde_json::Value,
+    #[doc = "The name of the SAP ODP Object. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "objectName")]
+    pub object_name: serde_json::Value,
+}
+impl SapOdpResourceDatasetTypeProperties {
+    pub fn new(context: serde_json::Value, object_name: serde_json::Value) -> Self {
+        Self { context, object_name }
+    }
+}
+#[doc = "A copy activity source for SAP ODP source."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SapOdpSource {
+    #[serde(flatten)]
+    pub tabular_source: TabularSource,
+    #[doc = "The extraction mode. Allowed value include: Full, Delta and Recovery. The default value is Full. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "extractionMode", default, skip_serializing_if = "Option::is_none")]
+    pub extraction_mode: Option<serde_json::Value>,
+    #[doc = "The subscriber process to manage the delta process. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "subscriberProcess", default, skip_serializing_if = "Option::is_none")]
+    pub subscriber_process: Option<serde_json::Value>,
+    #[doc = "Specifies the selection conditions from source data. Type: array of objects(selection) (or Expression with resultType array of objects)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub selection: Option<serde_json::Value>,
+    #[doc = "Specifies the columns to be selected from source data. Type: array of objects(projection) (or Expression with resultType array of objects)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub projection: Option<serde_json::Value>,
+}
+impl SapOdpSource {
+    pub fn new(tabular_source: TabularSource) -> Self {
+        Self {
+            tabular_source,
+            extraction_mode: None,
+            subscriber_process: None,
+            selection: None,
+            projection: None,
+        }
+    }
+}
 #[doc = "SAP Business Warehouse Open Hub Destination Linked Service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SapOpenHubLinkedService {
@@ -23034,6 +23348,233 @@ impl SybaseTableDatasetTypeProperties {
         Self::default()
     }
 }
+#[doc = "Execute Synapse notebook activity."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SynapseNotebookActivity {
+    #[serde(flatten)]
+    pub execution_activity: ExecutionActivity,
+    #[doc = "Execute Synapse notebook activity properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: SynapseNotebookActivityTypeProperties,
+}
+impl SynapseNotebookActivity {
+    pub fn new(execution_activity: ExecutionActivity, type_properties: SynapseNotebookActivityTypeProperties) -> Self {
+        Self {
+            execution_activity,
+            type_properties,
+        }
+    }
+}
+#[doc = "Execute Synapse notebook activity properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SynapseNotebookActivityTypeProperties {
+    #[doc = "Synapse notebook reference type."]
+    pub notebook: SynapseNotebookReference,
+    #[doc = "Big data pool reference type."]
+    #[serde(rename = "sparkPool", default, skip_serializing_if = "Option::is_none")]
+    pub spark_pool: Option<BigDataPoolParametrizationReference>,
+    #[doc = "Notebook parameters."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<serde_json::Value>,
+    #[doc = "Number of core and memory to be used for executors allocated in the specified Spark pool for the session, which will be used for overriding 'executorCores' and 'executorMemory' of the notebook you provide. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "executorSize", default, skip_serializing_if = "Option::is_none")]
+    pub executor_size: Option<serde_json::Value>,
+    #[doc = "Spark configuration properties, which will override the 'conf' of the notebook you provide."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub conf: Option<serde_json::Value>,
+    #[doc = "Number of core and memory to be used for driver allocated in the specified Spark pool for the session, which will be used for overriding 'driverCores' and 'driverMemory' of the notebook you provide. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "driverSize", default, skip_serializing_if = "Option::is_none")]
+    pub driver_size: Option<serde_json::Value>,
+    #[doc = "Number of executors to launch for this session, which will override the 'numExecutors' of the notebook you provide."]
+    #[serde(rename = "numExecutors", default, skip_serializing_if = "Option::is_none")]
+    pub num_executors: Option<i32>,
+}
+impl SynapseNotebookActivityTypeProperties {
+    pub fn new(notebook: SynapseNotebookReference) -> Self {
+        Self {
+            notebook,
+            spark_pool: None,
+            parameters: None,
+            executor_size: None,
+            conf: None,
+            driver_size: None,
+            num_executors: None,
+        }
+    }
+}
+#[doc = "Synapse notebook reference type."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SynapseNotebookReference {
+    #[doc = "Synapse notebook reference type."]
+    #[serde(rename = "type")]
+    pub type_: synapse_notebook_reference::Type,
+    #[doc = "Reference notebook name. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "referenceName")]
+    pub reference_name: serde_json::Value,
+}
+impl SynapseNotebookReference {
+    pub fn new(type_: synapse_notebook_reference::Type, reference_name: serde_json::Value) -> Self {
+        Self { type_, reference_name }
+    }
+}
+pub mod synapse_notebook_reference {
+    use super::*;
+    #[doc = "Synapse notebook reference type."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Type")]
+    pub enum Type {
+        NotebookReference,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Type {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Type {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Type {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::NotebookReference => serializer.serialize_unit_variant("Type", 0u32, "NotebookReference"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Execute spark job activity properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SynapseSparkJobActivityTypeProperties {
+    #[doc = "Synapse spark job reference type."]
+    #[serde(rename = "sparkJob")]
+    pub spark_job: SynapseSparkJobReference,
+    #[doc = "User specified arguments to SynapseSparkJobDefinitionActivity."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub args: Vec<serde_json::Value>,
+    #[doc = "The main file used for the job, which will override the 'file' of the spark job definition you provide. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file: Option<serde_json::Value>,
+    #[doc = "The fully-qualified identifier or the main class that is in the main definition file, which will override the 'className' of the spark job definition you provide. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "className", default, skip_serializing_if = "Option::is_none")]
+    pub class_name: Option<serde_json::Value>,
+    #[doc = "Additional files used for reference in the main definition file, which will override the 'files' of the spark job definition you provide."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub files: Vec<serde_json::Value>,
+    #[doc = "Big data pool reference type."]
+    #[serde(rename = "targetBigDataPool", default, skip_serializing_if = "Option::is_none")]
+    pub target_big_data_pool: Option<BigDataPoolParametrizationReference>,
+    #[doc = "Number of core and memory to be used for executors allocated in the specified Spark pool for the job, which will be used for overriding 'executorCores' and 'executorMemory' of the spark job definition you provide. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "executorSize", default, skip_serializing_if = "Option::is_none")]
+    pub executor_size: Option<serde_json::Value>,
+    #[doc = "Spark configuration properties, which will override the 'conf' of the spark job definition you provide."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub conf: Option<serde_json::Value>,
+    #[doc = "Number of core and memory to be used for driver allocated in the specified Spark pool for the job, which will be used for overriding 'driverCores' and 'driverMemory' of the spark job definition you provide. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "driverSize", default, skip_serializing_if = "Option::is_none")]
+    pub driver_size: Option<serde_json::Value>,
+    #[doc = "Number of executors to launch for this job, which will override the 'numExecutors' of the spark job definition you provide."]
+    #[serde(rename = "numExecutors", default, skip_serializing_if = "Option::is_none")]
+    pub num_executors: Option<i32>,
+}
+impl SynapseSparkJobActivityTypeProperties {
+    pub fn new(spark_job: SynapseSparkJobReference) -> Self {
+        Self {
+            spark_job,
+            args: Vec::new(),
+            file: None,
+            class_name: None,
+            files: Vec::new(),
+            target_big_data_pool: None,
+            executor_size: None,
+            conf: None,
+            driver_size: None,
+            num_executors: None,
+        }
+    }
+}
+#[doc = "Execute spark job activity."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SynapseSparkJobDefinitionActivity {
+    #[serde(flatten)]
+    pub execution_activity: ExecutionActivity,
+    #[doc = "Execute spark job activity properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: SynapseSparkJobActivityTypeProperties,
+}
+impl SynapseSparkJobDefinitionActivity {
+    pub fn new(execution_activity: ExecutionActivity, type_properties: SynapseSparkJobActivityTypeProperties) -> Self {
+        Self {
+            execution_activity,
+            type_properties,
+        }
+    }
+}
+#[doc = "Synapse spark job reference type."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SynapseSparkJobReference {
+    #[doc = "Synapse spark job reference type."]
+    #[serde(rename = "type")]
+    pub type_: synapse_spark_job_reference::Type,
+    #[doc = "Reference spark job name."]
+    #[serde(rename = "referenceName")]
+    pub reference_name: String,
+}
+impl SynapseSparkJobReference {
+    pub fn new(type_: synapse_spark_job_reference::Type, reference_name: String) -> Self {
+        Self { type_, reference_name }
+    }
+}
+pub mod synapse_spark_job_reference {
+    use super::*;
+    #[doc = "Synapse spark job reference type."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Type")]
+    pub enum Type {
+        SparkJobDefinitionReference,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Type {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Type {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Type {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::SparkJobDefinitionReference => serializer.serialize_unit_variant("Type", 0u32, "SparkJobDefinitionReference"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "Copy activity sources of tabular type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TabularSource {
@@ -24701,7 +25242,7 @@ impl WebLinkedService {
 #[doc = "Base definition of WebLinkedServiceTypeProperties, this typeProperties is polymorphic based on authenticationType, so not flattened in SDK models."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebLinkedServiceTypeProperties {
-    #[doc = "The URL of the web service endpoint, e.g. http://www.microsoft.com . Type: string (or Expression with resultType string)."]
+    #[doc = "The URL of the web service endpoint, e.g. https://www.microsoft.com . Type: string (or Expression with resultType string)."]
     pub url: serde_json::Value,
     #[doc = "Type of authentication used to connect to the web table source."]
     #[serde(rename = "authenticationType")]

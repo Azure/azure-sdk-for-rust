@@ -3829,6 +3829,9 @@ pub struct DiagnosticContractProperties {
     #[doc = "The format of the Operation Name for Application Insights telemetries. Default is Name."]
     #[serde(rename = "operationNameFormat", default, skip_serializing_if = "Option::is_none")]
     pub operation_name_format: Option<diagnostic_contract_properties::OperationNameFormat>,
+    #[doc = "Emit custom metrics via emit-metric policy. Applicable only to Application Insights diagnostic settings."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metrics: Option<bool>,
 }
 impl DiagnosticContractProperties {
     pub fn new(logger_id: String) -> Self {
@@ -3842,6 +3845,7 @@ impl DiagnosticContractProperties {
             http_correlation_protocol: None,
             verbosity: None,
             operation_name_format: None,
+            metrics: None,
         }
     }
 }

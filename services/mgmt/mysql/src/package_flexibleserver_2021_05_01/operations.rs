@@ -80,6 +80,9 @@ impl Client {
     pub fn check_name_availability_client(&self) -> check_name_availability::Client {
         check_name_availability::Client(self.clone())
     }
+    pub fn check_name_availability_without_location_client(&self) -> check_name_availability_without_location::Client {
+        check_name_availability_without_location::Client(self.clone())
+    }
     pub fn check_virtual_network_subnet_usage_client(&self) -> check_virtual_network_subnet_usage::Client {
         check_virtual_network_subnet_usage::Client(self.clone())
     }
@@ -2275,6 +2278,73 @@ pub mod check_name_availability {
                             this.client.endpoint(),
                             &this.subscription_id,
                             &this.location_name
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01");
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.name_availability_request)?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::NameAvailability = serde_json::from_slice(&rsp_body)?;
+                                Ok(rsp_value)
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod check_name_availability_without_location {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn execute(
+            &self,
+            subscription_id: impl Into<String>,
+            name_availability_request: impl Into<models::NameAvailabilityRequest>,
+        ) -> execute::Builder {
+            execute::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                name_availability_request: name_availability_request.into(),
+            }
+        }
+    }
+    pub mod execute {
+        use super::models;
+        type Response = models::NameAvailability;
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) name_availability_request: models::NameAvailabilityRequest,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/providers/Microsoft.DBforMySQL/checkNameAvailability",
+                            this.client.endpoint(),
+                            &this.subscription_id
                         ))?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();

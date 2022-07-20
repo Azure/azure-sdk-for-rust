@@ -54,6 +54,11 @@ impl Serialize for AuthenticationMode {
         }
     }
 }
+impl Default for AuthenticationMode {
+    fn default() -> Self {
+        Self::ConnectionString
+    }
+}
 #[doc = "Describes how data from an input is serialized or how data is serialized when written to an output in Avro format."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvroSerialization {
@@ -1247,6 +1252,11 @@ impl Serialize for CompressionType {
         }
     }
 }
+impl Default for CompressionType {
+    fn default() -> Self {
+        Self::None
+    }
+}
 #[doc = "Describes how data from an input is serialized or how data is serialized when written to an output in CSV format."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CsvSerialization {
@@ -1790,6 +1800,35 @@ pub struct External {
     pub refresh_configuration: Option<RefreshConfiguration>,
 }
 impl External {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describes a file input data source that contains reference data."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FileReferenceInputDataSource {
+    #[serde(flatten)]
+    pub reference_input_data_source: ReferenceInputDataSource,
+    #[doc = "The properties that are associated with a file input containing reference data."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<FileReferenceInputDataSourceProperties>,
+}
+impl FileReferenceInputDataSource {
+    pub fn new(reference_input_data_source: ReferenceInputDataSource) -> Self {
+        Self {
+            reference_input_data_source,
+            properties: None,
+        }
+    }
+}
+#[doc = "The properties that are associated with a file input containing reference data."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct FileReferenceInputDataSourceProperties {
+    #[doc = "The path of the file."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+}
+impl FileReferenceInputDataSourceProperties {
     pub fn new() -> Self {
         Self::default()
     }

@@ -114,9 +114,9 @@ pub struct ElasticSanProperties {
     #[doc = "Total Provisioned MBps Elastic San appliance."]
     #[serde(rename = "totalMBps", default, skip_serializing_if = "Option::is_none")]
     pub total_m_bps: Option<i64>,
-    #[doc = "Provisioned MBps Elastic San appliance."]
-    #[serde(rename = "provisionedMBps", default, skip_serializing_if = "Option::is_none")]
-    pub provisioned_m_bps: Option<i64>,
+    #[doc = "Total size of the Elastic San appliance in TB."]
+    #[serde(rename = "totalSizeTiB", default, skip_serializing_if = "Option::is_none")]
+    pub total_size_ti_b: Option<i64>,
 }
 impl ElasticSanProperties {
     pub fn new(availability_zones: Vec<AvailabilityZone>, base_size_ti_b: i64, extended_capacity_size_ti_b: i64) -> Self {
@@ -130,7 +130,7 @@ impl ElasticSanProperties {
             volume_group_count: None,
             total_iops: None,
             total_m_bps: None,
-            provisioned_m_bps: None,
+            total_size_ti_b: None,
         }
     }
 }
@@ -171,21 +171,18 @@ impl ElasticSanUpdate {
     }
 }
 #[doc = "Elastic San update properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticSanUpdateProperties {
     #[doc = "Base size of the Elastic San appliance in TiB."]
-    #[serde(rename = "baseSizeTiB")]
-    pub base_size_ti_b: i64,
+    #[serde(rename = "baseSizeTiB", default, skip_serializing_if = "Option::is_none")]
+    pub base_size_ti_b: Option<i64>,
     #[doc = "Extended size of the Elastic San appliance in TiB."]
-    #[serde(rename = "extendedCapacitySizeTiB")]
-    pub extended_capacity_size_ti_b: i64,
+    #[serde(rename = "extendedCapacitySizeTiB", default, skip_serializing_if = "Option::is_none")]
+    pub extended_capacity_size_ti_b: Option<i64>,
 }
 impl ElasticSanUpdateProperties {
-    pub fn new(base_size_ti_b: i64, extended_capacity_size_ti_b: i64) -> Self {
-        Self {
-            base_size_ti_b,
-            extended_capacity_size_ti_b,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The type of key used to encrypt the data of the disk."]
@@ -193,8 +190,6 @@ impl ElasticSanUpdateProperties {
 #[serde(remote = "EncryptionType")]
 pub enum EncryptionType {
     EncryptionAtRestWithPlatformKey,
-    EncryptionAtRestWithCustomerKey,
-    EncryptionAtRestWithPlatformAndCustomerKeys,
     #[serde(skip_deserializing)]
     UnknownValue(String),
 }
@@ -222,12 +217,6 @@ impl Serialize for EncryptionType {
         match self {
             Self::EncryptionAtRestWithPlatformKey => {
                 serializer.serialize_unit_variant("EncryptionType", 0u32, "EncryptionAtRestWithPlatformKey")
-            }
-            Self::EncryptionAtRestWithCustomerKey => {
-                serializer.serialize_unit_variant("EncryptionType", 1u32, "EncryptionAtRestWithCustomerKey")
-            }
-            Self::EncryptionAtRestWithPlatformAndCustomerKeys => {
-                serializer.serialize_unit_variant("EncryptionType", 2u32, "EncryptionAtRestWithPlatformAndCustomerKeys")
             }
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
@@ -449,15 +438,15 @@ impl Resource {
 #[doc = "SkuInformation object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceTypeSku {
-    #[doc = "The SKU name. Required for account creation; optional for update."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<Sku>,
+    #[doc = "The Sku tier"]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub sku: Vec<Sku>,
     #[doc = "Availability of the SKU for the location/zone"]
     #[serde(rename = "locationInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub location_info: Vec<SkuLocationInfo>,
     #[doc = "San scalability target"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub san: Option<SanTierInfo>,
+    #[serde(rename = "elasticSan", default, skip_serializing_if = "Option::is_none")]
+    pub elastic_san: Option<SanTierInfo>,
     #[doc = "Volume Group scalability target"]
     #[serde(rename = "volumeGroup", default, skip_serializing_if = "Option::is_none")]
     pub volume_group: Option<VolumeGroupTierInfo>,
@@ -488,9 +477,6 @@ pub struct SanTierInfo {
     #[doc = "Maximum MBps per BaseTiB"]
     #[serde(rename = "mbpsPerBaseTiB", default, skip_serializing_if = "Option::is_none")]
     pub mbps_per_base_ti_b: Option<i64>,
-    #[doc = "Maximum IOPS"]
-    #[serde(rename = "maxIops", default, skip_serializing_if = "Option::is_none")]
-    pub max_iops: Option<i64>,
     #[doc = "Maximum MBps"]
     #[serde(rename = "maxMBps", default, skip_serializing_if = "Option::is_none")]
     pub max_m_bps: Option<i64>,
@@ -524,12 +510,10 @@ pub mod sku {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Name")]
     pub enum Name {
-        #[serde(rename = "Standard_LRS")]
-        StandardLrs,
         #[serde(rename = "Premium_LRS")]
         PremiumLrs,
-        #[serde(rename = "Standard_ZRS")]
-        StandardZrs,
+        #[serde(rename = "Premium_ZRS")]
+        PremiumZrs,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -555,9 +539,8 @@ pub mod sku {
             S: Serializer,
         {
             match self {
-                Self::StandardLrs => serializer.serialize_unit_variant("Name", 0u32, "Standard_LRS"),
-                Self::PremiumLrs => serializer.serialize_unit_variant("Name", 1u32, "Premium_LRS"),
-                Self::StandardZrs => serializer.serialize_unit_variant("Name", 2u32, "Standard_ZRS"),
+                Self::PremiumLrs => serializer.serialize_unit_variant("Name", 0u32, "Premium_LRS"),
+                Self::PremiumZrs => serializer.serialize_unit_variant("Name", 1u32, "Premium_ZRS"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -566,7 +549,7 @@ pub mod sku {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Tier")]
     pub enum Tier {
-        Standard,
+        Premium,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -592,7 +575,7 @@ pub mod sku {
             S: Serializer,
         {
             match self {
-                Self::Standard => serializer.serialize_unit_variant("Tier", 0u32, "Standard"),
+                Self::Premium => serializer.serialize_unit_variant("Tier", 0u32, "Premium"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -634,7 +617,7 @@ impl SkuLocationInfo {
         Self::default()
     }
 }
-#[doc = "Data used when creating a disk."]
+#[doc = "Data source used when creating the volume."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceCreationData {
     #[doc = "This enumerates the possible sources of a volume creation."]
@@ -658,9 +641,6 @@ pub mod source_creation_data {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreateSource {
         None,
-        FromVolume,
-        FromDiskSnapshot,
-        Export,
     }
 }
 #[doc = "Storage Target type."]
@@ -698,18 +678,6 @@ impl Serialize for StorageTargetType {
             Self::None => serializer.serialize_unit_variant("StorageTargetType", 1u32, "None"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
-    }
-}
-#[doc = "Data used when creating a disk."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TargetCreationData {
-    #[doc = "Target location for the source to be copied or exported"]
-    #[serde(rename = "targetUri")]
-    pub target_uri: String,
-}
-impl TargetCreationData {
-    pub fn new(target_uri: String) -> Self {
-        Self { target_uri }
     }
 }
 #[doc = "The resource model definition for a ARM tracked top level resource."]
@@ -778,7 +746,7 @@ pub mod virtual_network_rule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Volume {
     #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
+    pub resource: Resource,
     #[doc = "Volume response properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VolumeProperties>,
@@ -795,7 +763,7 @@ impl Volume {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VolumeGroup {
     #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
+    pub resource: Resource,
     #[doc = "VolumeGroup response properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VolumeGroupProperties>,
@@ -927,7 +895,7 @@ pub struct VolumeProperties {
     #[doc = "Unique Id of the volume in GUID format"]
     #[serde(rename = "volumeId", default, skip_serializing_if = "Option::is_none")]
     pub volume_id: Option<String>,
-    #[doc = "Data used when creating a disk."]
+    #[doc = "Data source used when creating the volume."]
     #[serde(rename = "creationData", default, skip_serializing_if = "Option::is_none")]
     pub creation_data: Option<SourceCreationData>,
     #[doc = "Volume size."]
@@ -955,20 +923,14 @@ pub struct VolumeTierInfo {
     #[serde(rename = "minIncrementSizeGiB", default, skip_serializing_if = "Option::is_none")]
     pub min_increment_size_gi_b: Option<i64>,
     #[doc = "Maximum IOPS per GiB"]
-    #[serde(rename = "maxIopsPerGiB", default, skip_serializing_if = "Option::is_none")]
-    pub max_iops_per_gi_b: Option<i64>,
-    #[doc = "Maximum MBps"]
-    #[serde(rename = "maxMBpsPerGiB", default, skip_serializing_if = "Option::is_none")]
-    pub max_m_bps_per_gi_b: Option<i64>,
+    #[serde(rename = "iopsPerBaseGiB", default, skip_serializing_if = "Option::is_none")]
+    pub iops_per_base_gi_b: Option<i64>,
     #[doc = "Maximum IOPS"]
     #[serde(rename = "maxIops", default, skip_serializing_if = "Option::is_none")]
     pub max_iops: Option<i64>,
     #[doc = "Maximum MBps"]
     #[serde(rename = "maxMBps", default, skip_serializing_if = "Option::is_none")]
     pub max_m_bps: Option<i64>,
-    #[doc = "Maximum number of connected clients count per Volume"]
-    #[serde(rename = "maxConnectedClientCount", default, skip_serializing_if = "Option::is_none")]
-    pub max_connected_client_count: Option<i64>,
 }
 impl VolumeTierInfo {
     pub fn new() -> Self {

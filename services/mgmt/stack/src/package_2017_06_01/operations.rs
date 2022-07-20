@@ -336,6 +336,22 @@ pub mod products {
                 product_name: product_name.into(),
             }
         }
+        pub fn list_products(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group: impl Into<String>,
+            registration_name: impl Into<String>,
+            product_name: impl Into<String>,
+        ) -> list_products::Builder {
+            list_products::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group: resource_group.into(),
+                registration_name: registration_name.into(),
+                product_name: product_name.into(),
+                device_configuration: None,
+            }
+        }
         pub fn get_products(
             &self,
             subscription_id: impl Into<String>,
@@ -560,6 +576,63 @@ pub mod products {
                             azure_core::StatusCode::Ok => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::ExtendedProduct = serde_json::from_slice(&rsp_body)?;
+                                Ok(rsp_value)
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_products {
+        use super::models;
+        type Response = models::ProductList;
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group: String,
+            pub(crate) registration_name: String,
+            pub(crate) product_name: String,
+            pub(crate) device_configuration: Option<models::DeviceConfiguration>,
+        }
+        impl Builder {
+            pub fn device_configuration(mut self, device_configuration: impl Into<models::DeviceConfiguration>) -> Self {
+                self.device_configuration = Some(device_configuration.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStack/registrations/{}/products/{}/listProducts" , this . client . endpoint () , & this . subscription_id , & this . resource_group , & this . registration_name , & this . product_name)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2017-06-01");
+                        let req_body = if let Some(device_configuration) = &this.device_configuration {
+                            req.insert_header("content-type", "application/json");
+                            azure_core::to_json(device_configuration)?
+                        } else {
+                            azure_core::EMPTY_BODY
+                        };
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ProductList = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {

@@ -6,8 +6,9 @@ https://github.com/Azure/azure-rest-api-specs/blob/main/specification/dnsresolve
 
 To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The default tag is `package-2020-04-preview`.
+The default tag is `package-2022-07`.
 
 The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
+- `package-2022-07` has 34 operations from 1 API versions: `2022-07-01`. Use crate feature `package-2022-07` to enable. The operations will be in the `package_2022_07` module.
 - `package-2020-04-preview` has 34 operations from 1 API versions: `2020-04-01-preview`. Use crate feature `package-2020-04-preview` to enable. The operations will be in the `package_2020_04_preview` module.

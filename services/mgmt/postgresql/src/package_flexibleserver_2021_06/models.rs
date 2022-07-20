@@ -1229,6 +1229,8 @@ pub mod server_properties_for_update {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ServerVersion")]
 pub enum ServerVersion {
+    #[serde(rename = "14")]
+    N14,
     #[serde(rename = "13")]
     N13,
     #[serde(rename = "12")]
@@ -1260,9 +1262,10 @@ impl Serialize for ServerVersion {
         S: Serializer,
     {
         match self {
-            Self::N13 => serializer.serialize_unit_variant("ServerVersion", 0u32, "13"),
-            Self::N12 => serializer.serialize_unit_variant("ServerVersion", 1u32, "12"),
-            Self::N11 => serializer.serialize_unit_variant("ServerVersion", 2u32, "11"),
+            Self::N14 => serializer.serialize_unit_variant("ServerVersion", 0u32, "14"),
+            Self::N13 => serializer.serialize_unit_variant("ServerVersion", 1u32, "13"),
+            Self::N12 => serializer.serialize_unit_variant("ServerVersion", 2u32, "12"),
+            Self::N11 => serializer.serialize_unit_variant("ServerVersion", 3u32, "11"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }

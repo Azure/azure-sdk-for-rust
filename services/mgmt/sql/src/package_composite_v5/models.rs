@@ -8009,6 +8009,151 @@ impl ManagedInstanceAzureAdOnlyAuthentication {
         Self::default()
     }
 }
+#[doc = "SQL Managed Instance DTC"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedInstanceDtc {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "The properties of managed instance DTC."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ManagedInstanceDtcProperties>,
+}
+impl ManagedInstanceDtc {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A list of managed instance's DTCs."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedInstanceDtcListResult {
+    #[doc = "Array of results."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ManagedInstanceDtc>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ManagedInstanceDtcListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl ManagedInstanceDtcListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The properties of managed instance DTC."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedInstanceDtcProperties {
+    #[doc = "Active status of managed instance DTC."]
+    #[serde(rename = "dtcEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub dtc_enabled: Option<bool>,
+    #[doc = "The Security Settings of managed instance DTC."]
+    #[serde(rename = "securitySettings", default, skip_serializing_if = "Option::is_none")]
+    pub security_settings: Option<ManagedInstanceDtcSecuritySettings>,
+    #[doc = "External dns suffix search list of managed instance DTC."]
+    #[serde(rename = "externalDnsSuffixSearchList", default, skip_serializing_if = "Vec::is_empty")]
+    pub external_dns_suffix_search_list: Vec<String>,
+    #[doc = "Host name dns suffix of managed instance DTC."]
+    #[serde(rename = "dtcHostNameDnsSuffix", default, skip_serializing_if = "Option::is_none")]
+    pub dtc_host_name_dns_suffix: Option<String>,
+    #[doc = "Provisioning state of managed instance DTC."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<managed_instance_dtc_properties::ProvisioningState>,
+}
+impl ManagedInstanceDtcProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod managed_instance_dtc_properties {
+    use super::*;
+    #[doc = "Provisioning state of managed instance DTC."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ProvisioningState")]
+    pub enum ProvisioningState {
+        Created,
+        InProgress,
+        Succeeded,
+        Failed,
+        Canceled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ProvisioningState {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ProvisioningState {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ProvisioningState {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Created => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Created"),
+                Self::InProgress => serializer.serialize_unit_variant("ProvisioningState", 1u32, "InProgress"),
+                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Succeeded"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Failed"),
+                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Canceled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "The Security Settings of managed instance DTC."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedInstanceDtcSecuritySettings {
+    #[doc = "The Transaction Manager Communication Settings of managed instance DTC."]
+    #[serde(
+        rename = "transactionManagerCommunicationSettings",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub transaction_manager_communication_settings: Option<ManagedInstanceDtcTransactionManagerCommunicationSettings>,
+    #[doc = "Allow XA Transactions to managed instance DTC."]
+    #[serde(rename = "xaTransactionsEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub xa_transactions_enabled: Option<bool>,
+    #[doc = "Allow SNA LU 6.2 to managed instance DTC."]
+    #[serde(rename = "snaLu6point2TransactionsEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub sna_lu6point2_transactions_enabled: Option<bool>,
+}
+impl ManagedInstanceDtcSecuritySettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The Transaction Manager Communication Settings of managed instance DTC."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedInstanceDtcTransactionManagerCommunicationSettings {
+    #[doc = "Allow Inbound traffic to managed instance DTC."]
+    #[serde(rename = "allowInboundEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub allow_inbound_enabled: Option<bool>,
+    #[doc = "Allow Outbound traffic of managed instance DTC."]
+    #[serde(rename = "allowOutboundEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub allow_outbound_enabled: Option<bool>,
+    #[doc = "Authentication type of managed instance DTC."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub authentication: Option<String>,
+}
+impl ManagedInstanceDtcTransactionManagerCommunicationSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The managed server capability"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceEditionCapability {
@@ -9436,6 +9581,82 @@ impl ManagedInstanceVulnerabilityAssessmentProperties {
             storage_account_access_key: None,
             recurring_scans: None,
         }
+    }
+}
+#[doc = "A managed server DNS alias."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedServerDnsAlias {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a managed server DNS alias."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ManagedServerDnsAliasProperties>,
+}
+impl ManagedServerDnsAlias {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A managed server DNS alias acquisition request."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedServerDnsAliasAcquisition {
+    #[doc = "The resource ID of the managed server DNS alias that will be acquired to point to this managed server instead."]
+    #[serde(rename = "oldManagedServerDnsAliasResourceId")]
+    pub old_managed_server_dns_alias_resource_id: String,
+}
+impl ManagedServerDnsAliasAcquisition {
+    pub fn new(old_managed_server_dns_alias_resource_id: String) -> Self {
+        Self {
+            old_managed_server_dns_alias_resource_id,
+        }
+    }
+}
+#[doc = "A managed server dns alias creation request."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedServerDnsAliasCreation {
+    #[doc = "Whether or not DNS record should be created for this alias."]
+    #[serde(rename = "createDnsRecord", default, skip_serializing_if = "Option::is_none")]
+    pub create_dns_record: Option<bool>,
+}
+impl ManagedServerDnsAliasCreation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A list of managed server DNS aliases."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedServerDnsAliasListResult {
+    #[doc = "Array of results."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ManagedServerDnsAlias>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ManagedServerDnsAliasListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl ManagedServerDnsAliasListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of a managed server DNS alias."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedServerDnsAliasProperties {
+    #[doc = "The fully qualified DNS record for managed server alias"]
+    #[serde(rename = "azureDnsRecord", default, skip_serializing_if = "Option::is_none")]
+    pub azure_dns_record: Option<String>,
+    #[doc = "The fully qualified public DNS record for managed server alias"]
+    #[serde(rename = "publicAzureDnsRecord", default, skip_serializing_if = "Option::is_none")]
+    pub public_azure_dns_record: Option<String>,
+}
+impl ManagedServerDnsAliasProperties {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "A managed server security alert policy."]

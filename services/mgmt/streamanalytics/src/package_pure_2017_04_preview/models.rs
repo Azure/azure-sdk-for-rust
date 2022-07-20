@@ -54,6 +54,11 @@ impl Serialize for AuthenticationMode {
         }
     }
 }
+impl Default for AuthenticationMode {
+    fn default() -> Self {
+        Self::ConnectionString
+    }
+}
 #[doc = "Describes how data from an input is serialized or how data is serialized when written to an output in Avro format."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvroSerialization {

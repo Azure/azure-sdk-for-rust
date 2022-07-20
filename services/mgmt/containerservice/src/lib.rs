@@ -7,6 +7,10 @@
 pub mod profile_hybrid_2020_09_01;
 #[cfg(all(feature = "profile-hybrid-2020-09-01", not(feature = "no-default-tag")))]
 pub use profile_hybrid_2020_09_01::{models, operations, operations::Client, operations::ClientBuilder};
+#[cfg(feature = "package-preview-2022-06")]
+pub mod package_preview_2022_06;
+#[cfg(all(feature = "package-preview-2022-06", not(feature = "no-default-tag")))]
+pub use package_preview_2022_06::{models, operations, operations::Client, operations::ClientBuilder};
 #[cfg(feature = "package-preview-2022-05")]
 pub mod package_preview_2022_05;
 #[cfg(all(feature = "package-preview-2022-05", not(feature = "no-default-tag")))]
@@ -19,7 +23,3 @@ pub use package_preview_2022_04::{models, operations, operations::Client, operat
 pub mod package_preview_2022_03;
 #[cfg(all(feature = "package-preview-2022-03", not(feature = "no-default-tag")))]
 pub use package_preview_2022_03::{models, operations, operations::Client, operations::ClientBuilder};
-#[cfg(feature = "package-preview-2022-02")]
-pub mod package_preview_2022_02;
-#[cfg(all(feature = "package-preview-2022-02", not(feature = "no-default-tag")))]
-pub use package_preview_2022_02::{models, operations, operations::Client, operations::ClientBuilder};

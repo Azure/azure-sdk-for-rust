@@ -284,7 +284,6 @@ pub mod elastic_sans {
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 elastic_san_name: elastic_san_name.into(),
-                x_ms_delete_volumegroups: None,
             }
         }
     }
@@ -628,13 +627,8 @@ pub mod elastic_sans {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) elastic_san_name: String,
-            pub(crate) x_ms_delete_volumegroups: Option<bool>,
         }
         impl Builder {
-            pub fn x_ms_delete_volumegroups(mut self, x_ms_delete_volumegroups: bool) -> Self {
-                self.x_ms_delete_volumegroups = Some(x_ms_delete_volumegroups);
-                self
-            }
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -657,9 +651,6 @@ pub mod elastic_sans {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-11-20-preview");
-                        if let Some(x_ms_delete_volumegroups) = &this.x_ms_delete_volumegroups {
-                            req.insert_header("x-ms-delete-volumegroups", &x_ms_delete_volumegroups.to_string());
-                        }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -758,7 +749,6 @@ pub mod volume_groups {
                 resource_group_name: resource_group_name.into(),
                 elastic_san_name: elastic_san_name.into(),
                 volume_group_name: volume_group_name.into(),
-                x_ms_delete_volumes: None,
             }
         }
     }
@@ -1037,13 +1027,8 @@ pub mod volume_groups {
             pub(crate) resource_group_name: String,
             pub(crate) elastic_san_name: String,
             pub(crate) volume_group_name: String,
-            pub(crate) x_ms_delete_volumes: Option<bool>,
         }
         impl Builder {
-            pub fn x_ms_delete_volumes(mut self, x_ms_delete_volumes: bool) -> Self {
-                self.x_ms_delete_volumes = Some(x_ms_delete_volumes);
-                self
-            }
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1067,9 +1052,6 @@ pub mod volume_groups {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-11-20-preview");
-                        if let Some(x_ms_delete_volumes) = &this.x_ms_delete_volumes {
-                            req.insert_header("x-ms-delete-volumes", &x_ms_delete_volumes.to_string());
-                        }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;

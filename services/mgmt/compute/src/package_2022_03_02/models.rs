@@ -9325,9 +9325,9 @@ pub struct SharingProfile {
     #[doc = "A list of sharing profile groups."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub groups: Vec<SharingProfileGroup>,
-    #[doc = "Information of community gallery if current gallery is shared to community."]
+    #[doc = "Information of community gallery if current gallery is shared to community"]
     #[serde(rename = "communityGalleryInfo", default, skip_serializing_if = "Option::is_none")]
-    pub community_gallery_info: Option<serde_json::Value>,
+    pub community_gallery_info: Option<CommunityGalleryInfo>,
 }
 impl SharingProfile {
     pub fn new() -> Self {
