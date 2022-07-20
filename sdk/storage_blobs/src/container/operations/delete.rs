@@ -4,7 +4,8 @@ use azure_core::{headers::Headers, prelude::*, Method};
 operation! {
     Delete,
     client: ContainerClient,
-    ?lease_id: LeaseId
+    ?lease_id: LeaseId,
+    ?if_modified_since: IfModifiedSinceCondition
 }
 
 impl DeleteBuilder {
@@ -16,6 +17,7 @@ impl DeleteBuilder {
 
             let mut headers = Headers::new();
             headers.add(self.lease_id);
+            headers.add(self.if_modified_since);
 
             let mut request = self
                 .client

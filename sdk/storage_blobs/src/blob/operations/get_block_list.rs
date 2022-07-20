@@ -9,6 +9,7 @@ use std::str::from_utf8;
 operation! {
     GetBlockList,
     client: BlobClient,
+    ?if_tags: IfTagsCondition,
     ?block_list_type: BlockListType,
     ?blob_versioning: BlobVersioning,
     ?lease_id: LeaseId
@@ -28,6 +29,7 @@ impl GetBlockListBuilder {
 
             let mut headers = Headers::new();
             headers.add(self.lease_id);
+            headers.add(self.if_tags);
 
             let mut request =
                 self.client

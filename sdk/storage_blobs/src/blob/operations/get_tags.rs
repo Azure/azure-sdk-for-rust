@@ -6,6 +6,7 @@ use chrono::{DateTime, Utc};
 operation! {
     GetTags,
     client: BlobClient,
+    ?if_tags: IfTagsCondition,
     ?blob_versioning: BlobVersioning,
     ?lease_id: LeaseId
 }
@@ -21,6 +22,7 @@ impl GetTagsBuilder {
 
             let mut headers = Headers::new();
             headers.add(self.lease_id);
+            headers.add(self.if_tags);
 
             let mut request =
                 self.client

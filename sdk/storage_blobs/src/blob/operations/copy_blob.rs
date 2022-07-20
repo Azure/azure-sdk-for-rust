@@ -13,13 +13,14 @@ operation! {
     client: BlobClient,
     source_url: Url,
     ?metadata: Metadata,
-    ?sequence_number_condition: SequenceNumberCondition,
-    ?if_modified_since_condition: IfModifiedSinceCondition,
-    ?if_match_condition: IfMatchCondition,
+    ?if_sequence_number: SequenceNumberCondition,
+    ?if_modified_since: IfModifiedSinceCondition,
+    ?if_match: IfMatchCondition,
+    ?if_tags: IfTagsCondition,
     ?access_tier: AccessTier,
     ?lease_id: LeaseId,
-    ?if_source_since_condition: IfSourceModifiedSinceCondition,
-    ?if_source_match_condition: IfSourceMatchCondition,
+    ?if_source_since: IfSourceModifiedSinceCondition,
+    ?if_source_match: IfSourceMatchCondition,
     ?source_lease_id: SourceLeaseId,
     ?rehydrate_priority: RehydratePriority
 }
@@ -36,13 +37,13 @@ impl CopyBlobBuilder {
                     headers.add(m);
                 }
             }
-            headers.add(self.sequence_number_condition);
-            headers.add(self.if_modified_since_condition);
-            headers.add(self.if_match_condition);
+            headers.add(self.if_sequence_number);
+            headers.add(self.if_modified_since);
+            headers.add(self.if_match);
             headers.add(self.access_tier);
             headers.add(self.lease_id);
-            headers.add(self.if_source_since_condition);
-            headers.add(self.if_source_match_condition);
+            headers.add(self.if_source_since);
+            headers.add(self.if_source_match);
             headers.add(self.source_lease_id);
             headers.add(
                 self.rehydrate_priority

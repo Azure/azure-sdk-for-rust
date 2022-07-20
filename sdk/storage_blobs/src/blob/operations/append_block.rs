@@ -8,6 +8,9 @@ operation! {
     ?hash: Hash,
     ?condition_max_size: ConditionMaxSize,
     ?condition_append_position: ConditionAppendPosition,
+    ?if_modified_since: IfModifiedSinceCondition,
+    ?if_match: IfMatchCondition,
+    ?if_tag: IfTagsCondition,
     ?lease_id: LeaseId
 }
 
@@ -22,6 +25,8 @@ impl AppendBlockBuilder {
             headers.add(self.hash);
             headers.add(self.condition_max_size);
             headers.add(self.condition_append_position);
+            headers.add(self.if_modified_since);
+            headers.add(self.if_match);
             headers.add(self.lease_id);
 
             let mut request = self.client.finalize_request(

@@ -18,11 +18,11 @@ operation! {
     source_url: Url,
     ?is_synchronous: bool,
     ?metadata: Metadata,
-    ?if_modified_since_condition: IfModifiedSinceCondition,
-    ?if_match_condition: IfMatchCondition,
+    ?if_modified_since: IfModifiedSinceCondition,
+    ?if_match: IfMatchCondition,
+    ?if_source_since: IfSourceModifiedSinceCondition,
+    ?if_source_match: IfSourceMatchCondition,
     ?lease_id: LeaseId,
-    ?if_source_since_condition: IfSourceModifiedSinceCondition,
-    ?if_source_match_condition: IfSourceMatchCondition,
     ?source_content_md5: SourceContentMD5
 }
 
@@ -42,11 +42,11 @@ impl CopyBlobFromUrlBuilder {
                     headers.add(m);
                 }
             }
-            headers.add(self.if_modified_since_condition);
-            headers.add(self.if_match_condition);
+            headers.add(self.if_modified_since);
+            headers.add(self.if_match);
             headers.add(self.lease_id);
-            headers.add(self.if_source_since_condition);
-            headers.add(self.if_source_match_condition);
+            headers.add(self.if_source_since);
+            headers.add(self.if_source_match);
             headers.add(self.source_content_md5);
 
             let mut request =

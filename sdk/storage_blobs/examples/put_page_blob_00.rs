@@ -74,7 +74,7 @@ async fn main() -> azure_core::Result<()> {
     let res = blob_client
         .put_page(BA512Range::new(512, 1023)?, slice)
         .hash(digest)
-        .sequence_number_condition(SequenceNumberCondition::Equal(100))
+        .if_sequence_number(SequenceNumberCondition::Equal(100))
         .into_future()
         .await?;
     println!("update sequence number condition == {:?}", res);
