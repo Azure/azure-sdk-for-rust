@@ -106,48 +106,6 @@ impl QueryDocumentsBuilder {
 
 pub type QueryDocuments<T> = Pageable<QueryDocumentsResponse<T>, azure_core::error::Error>;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct DocumentQueryResult<T> {
-    #[serde(flatten)]
-    pub document_attributes: DocumentAttributes,
-    #[serde(flatten)]
-    pub result: T,
-}
-
-impl<T> std::convert::TryFrom<CollectedResponse> for DocumentQueryResult<T>
-where
-    T: DeserializeOwned,
-{
-    type Error = azure_core::error::Error;
-
-    fn try_from(response: CollectedResponse) -> Result<Self, Self::Error> {
-        use azure_core::error::ResultExt;
-        serde_json::from_slice::<Self>(response.body()).with_context(
-            azure_core::error::ErrorKind::DataConversion,
-            || {
-                format!(
-                    "could not convert json '{}' into Permission",
-                    std::str::from_utf8(response.body()).unwrap_or("<NON-UTF8>")
-                )
-            },
-        )
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct QueryResponseMeta {
-    #[serde(rename = "_rid")]
-    pub rid: String,
-    #[serde(rename = "_count")]
-    pub count: u64,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub enum QueryResult<T> {
-    Document(DocumentQueryResult<T>),
-    Raw(T),
-}
-
 #[derive(Debug, Clone)]
 pub struct QueryDocumentsResponse<T> {
     pub query_response_meta: QueryResponseMeta,
@@ -254,11 +212,52 @@ where
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct DocumentQueryResult<T> {
+    #[serde(flatten)]
+    pub document_attributes: DocumentAttributes,
+    #[serde(flatten)]
+    pub result: T,
+}
+
+impl<T> std::convert::TryFrom<CollectedResponse> for DocumentQueryResult<T>
+where
+    T: DeserializeOwned,
+{
+    type Error = azure_core::error::Error;
+
+    fn try_from(response: CollectedResponse) -> Result<Self, Self::Error> {
+        use azure_core::error::ResultExt;
+        serde_json::from_slice::<Self>(response.body()).with_context(
+            azure_core::error::ErrorKind::DataConversion,
+            || {
+                format!(
+                    "could not convert json '{}' into Permission",
+                    std::str::from_utf8(response.body()).unwrap_or("<NON-UTF8>")
+                )
+            },
+        )
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct QueryResponseMeta {
+    #[serde(rename = "_rid")]
+    pub rid: String,
+    #[serde(rename = "_count")]
+    pub count: u64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub enum QueryResult<T> {
+    Document(DocumentQueryResult<T>),
+    Raw(T),
+}
+
 #[derive(Debug, Clone)]
 pub struct QueryDocumentsResponseRaw<T> {
     pub query_response_meta: QueryResponseMeta,
     pub results: Vec<T>,
-
     pub last_state_change: DateTime<Utc>,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
