@@ -12,7 +12,7 @@ use std::convert::{TryFrom, TryInto};
 operation! {
     SetProperties,
     client: BlobClient,
-        ?if_modified_since: IfModifiedSinceCondition,
+    ?if_modified_since: IfModifiedSinceCondition,
     ?if_match: IfMatchCondition,
     ?if_tags: IfTagsCondition,
     ?lease_id: LeaseId,

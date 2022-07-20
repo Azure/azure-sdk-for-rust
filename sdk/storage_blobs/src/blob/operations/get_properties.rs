@@ -5,7 +5,7 @@ use chrono::{DateTime, Utc};
 operation! {
     GetProperties,
     client: BlobClient,
-        ?if_modified_since: IfModifiedSinceCondition,
+    ?if_modified_since: IfModifiedSinceCondition,
     ?if_match: IfMatchCondition,
     ?if_tags: IfTagsCondition,
     ?blob_versioning: BlobVersioning,
