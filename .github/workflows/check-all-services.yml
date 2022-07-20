@@ -971,6 +971,38 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_desktopvirtualization
 
+  azure_mgmt_devcenter:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_devcenter
+
+  azure_mgmt_developerhub:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_developerhub
+
   azure_mgmt_deviceupdate:
     if: always()
     runs-on: ubuntu-latest
@@ -1914,6 +1946,22 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_marketplace
+
+  azure_mgmt_marketplacecatalog:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_marketplacecatalog
 
   azure_mgmt_marketplacenotifications:
     if: always()

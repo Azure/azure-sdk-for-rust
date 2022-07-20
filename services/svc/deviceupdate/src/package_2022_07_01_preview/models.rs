@@ -60,7 +60,7 @@ impl ContractModel {
 #[doc = "Deployment metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Deployment {
-    #[doc = "The deployment identifier."]
+    #[doc = "The caller-provided deployment identifier."]
     #[serde(rename = "deploymentId")]
     pub deployment_id: String,
     #[doc = "The deployment start datetime."]
@@ -68,10 +68,10 @@ pub struct Deployment {
     pub start_date_time: String,
     #[doc = "Update information."]
     pub update: UpdateInfo,
-    #[doc = "The group identity"]
+    #[doc = "The group identity for the devices the deployment is intended to update."]
     #[serde(rename = "groupId")]
     pub group_id: String,
-    #[doc = "The device class subgroups for the deployment."]
+    #[doc = "The device class subgroups the deployment is compatible with and subgroup deployments have been created for. This is not provided by the caller during CreateOrUpdateDeployment but is automatically determined by Device Update"]
     #[serde(rename = "deviceClassSubgroups", default, skip_serializing_if = "Vec::is_empty")]
     pub device_class_subgroups: Vec<String>,
     #[doc = "Boolean flag indicating whether the deployment was canceled."]
@@ -365,7 +365,7 @@ impl DeviceClassProperties {
         }
     }
 }
-#[doc = "Device class subgroup details."]
+#[doc = "Device class subgroup details. A device class subgroup is a subset of devices in a group that share the same device class id."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceClassSubgroup {
     #[doc = "Device class subgroup identity."]
@@ -374,13 +374,13 @@ pub struct DeviceClassSubgroup {
     #[doc = "Group identity."]
     #[serde(rename = "groupId")]
     pub group_id: String,
-    #[doc = "Date and time when the deviceclass subgroup was created."]
+    #[doc = "Date and time when the device class subgroup was created."]
     #[serde(rename = "createdDateTime")]
     pub created_date_time: String,
-    #[doc = "The number of devices in the deviceclass subgroup."]
+    #[doc = "The number of devices in the device class subgroup."]
     #[serde(rename = "deviceCount", default, skip_serializing_if = "Option::is_none")]
     pub device_count: Option<i64>,
-    #[doc = "The active deployment Id for the deviceclass subgroup."]
+    #[doc = "The active deployment Id for the device class subgroup."]
     #[serde(rename = "deploymentId", default, skip_serializing_if = "Option::is_none")]
     pub deployment_id: Option<String>,
 }
@@ -482,6 +482,21 @@ impl DeviceClassSubgroupDeploymentStatus {
         }
     }
 }
+#[doc = "Device class subgroups filter. Filters device class subgroups based on device class compat property names and values"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DeviceClassSubgroupFilter {
+    #[doc = "The name of the compat property to use in the filter. E.g. compatProperties/manufacturer"]
+    #[serde(rename = "compatPropertyName", default, skip_serializing_if = "Option::is_none")]
+    pub compat_property_name: Option<String>,
+    #[doc = "The value the compat property to use in the filter. E.g. Contoso"]
+    #[serde(rename = "compatPropertyValue", default, skip_serializing_if = "Option::is_none")]
+    pub compat_property_value: Option<String>,
+}
+impl DeviceClassSubgroupFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Device class subgroup, update information, and the number of devices for which the update is applicable."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceClassSubgroupUpdatableDevices {
@@ -535,6 +550,12 @@ pub struct DeviceClassSubgroupsList {
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DeviceClassSubgroupsList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
 }
 impl DeviceClassSubgroupsList {
     pub fn new(value: Vec<DeviceClassSubgroup>) -> Self {
@@ -675,6 +696,12 @@ pub struct DeviceHealthList {
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DeviceHealthList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
 }
 impl DeviceHealthList {
     pub fn new(value: Vec<DeviceHealth>) -> Self {
@@ -1249,8 +1276,8 @@ impl Instructions {
 }
 #[doc = "Diagnostics request body"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogCollectionOperation {
-    #[doc = "The diagnostics operation id."]
+pub struct LogCollection {
+    #[doc = "The log collection id."]
     #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
     pub operation_id: Option<String>,
     #[doc = "Array of Device Update agent ids"]
@@ -1269,7 +1296,7 @@ pub struct LogCollectionOperation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<OperationStatusWithoutUndefinedOption>,
 }
-impl LogCollectionOperation {
+impl LogCollection {
     pub fn new(device_list: Vec<DeviceUpdateAgentId>) -> Self {
         Self {
             operation_id: None,
@@ -1279,6 +1306,40 @@ impl LogCollectionOperation {
             last_action_date_time: None,
             status: None,
         }
+    }
+}
+#[doc = "The list of log collections with detailed status, with server paging support."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LogCollectionDetailedStatusList {
+    #[doc = "The collection of pageable items."]
+    pub value: Vec<LogCollectionOperationDetailedStatus>,
+    #[doc = "The link to the next page of items."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl LogCollectionDetailedStatusList {
+    pub fn new(value: Vec<LogCollectionOperationDetailedStatus>) -> Self {
+        Self { value, next_link: None }
+    }
+}
+#[doc = "The list of log collections with server paging support."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LogCollectionList {
+    #[doc = "The collection of pageable items."]
+    pub value: Vec<LogCollection>,
+    #[doc = "The link to the next page of items."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for LogCollectionList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl LogCollectionList {
+    pub fn new(value: Vec<LogCollection>) -> Self {
+        Self { value, next_link: None }
     }
 }
 #[doc = "Device diagnostics operation detailed status"]
@@ -1306,20 +1367,6 @@ pub struct LogCollectionOperationDetailedStatus {
 impl LogCollectionOperationDetailedStatus {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "The list of diagnostics operations with detailed status, with server paging support."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogCollectionOperationDetailedStatusList {
-    #[doc = "The collection of pageable items."]
-    pub value: Vec<LogCollectionOperationDetailedStatus>,
-    #[doc = "The link to the next page of items."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl LogCollectionOperationDetailedStatusList {
-    pub fn new(value: Vec<LogCollectionOperationDetailedStatus>) -> Self {
-        Self { value, next_link: None }
     }
 }
 #[doc = "Diagnostics operation device status"]
@@ -1353,26 +1400,6 @@ impl LogCollectionOperationDeviceStatus {
             extended_result_code: None,
             log_location: None,
         }
-    }
-}
-#[doc = "The list of diagnostics operations with server paging support."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogCollectionOperationList {
-    #[doc = "The collection of pageable items."]
-    pub value: Vec<LogCollectionOperation>,
-    #[doc = "The link to the next page of items."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl azure_core::Continuable for LogCollectionOperationList {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
-    }
-}
-impl LogCollectionOperationList {
-    pub fn new(value: Vec<LogCollectionOperation>) -> Self {
-        Self { value, next_link: None }
     }
 }
 #[doc = "Operation status filter."]

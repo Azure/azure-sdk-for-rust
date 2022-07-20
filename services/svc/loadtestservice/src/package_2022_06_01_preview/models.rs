@@ -334,15 +334,18 @@ impl PassFailCriteria {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PassFailMetric {
-    #[doc = "The client metric on which the criteria should be applied. Allowed values - ‘response_time_ms’ , ‘latency’, ‘error’."]
+    #[doc = "The client metric on which the criteria should be applied. Allowed values - ‘response_time_ms’ , ‘latency’, ‘error’, ‘requests’, ‘requests_per_sec’."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub clientmetric: Option<String>,
-    #[doc = "The aggregation function to be applied on the client metric. Allowed functions - ‘percentage’ - for error metric , ‘avg’ - for response_time_ms and latency metric."]
+    #[doc = "The aggregation function to be applied on the client metric. Allowed functions - ‘percentage’ - for error metric ,‘avg’, ‘p50’, ‘p90’, ‘p95’, ‘p99’, ‘min’, ‘max’ - for response_time_ms and latency metric, ‘avg’ - for requests_per_sec, ‘count’ - for requests."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub aggregate: Option<String>,
     #[doc = "The comparison operator. Supported types ‘>’ "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub condition: Option<String>,
+    #[doc = "Request name for which the Pass fail criteria has to be applied."]
+    #[serde(rename = "requestName", default, skip_serializing_if = "Option::is_none")]
+    pub request_name: Option<String>,
     #[doc = "The value to compare with the client metric. Allowed values - ‘error : [0.0 , 100.0] unit- % ’, response_time_ms and latency : any integer value unit- ms."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<f64>,

@@ -1400,6 +1400,9 @@ pub struct ReservationOrderProperties {
     #[doc = "This is the date when the Reservation will expire."]
     #[serde(rename = "expiryDate", default, skip_serializing_if = "Option::is_none")]
     pub expiry_date: Option<String>,
+    #[doc = "This is the DateTime when the reservation benefit started."]
+    #[serde(rename = "benefitStartTime", default, skip_serializing_if = "Option::is_none")]
+    pub benefit_start_time: Option<String>,
     #[doc = "Quantity of the SKUs that are part of the Reservation. Must be greater than zero."]
     #[serde(rename = "originalQuantity", default, skip_serializing_if = "Option::is_none")]
     pub original_quantity: Option<ReservationQuantity>,
@@ -1470,6 +1473,9 @@ pub struct ReservationProperties {
     #[doc = "DateTime of the Reservation starting when this version is effective from."]
     #[serde(rename = "effectiveDateTime", default, skip_serializing_if = "Option::is_none")]
     pub effective_date_time: Option<String>,
+    #[doc = "This is the DateTime when the reservation benefit started."]
+    #[serde(rename = "benefitStartTime", default, skip_serializing_if = "Option::is_none")]
+    pub benefit_start_time: Option<String>,
     #[doc = "DateTime of the last time the Reservation was updated."]
     #[serde(rename = "lastUpdatedDateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_date_time: Option<String>,

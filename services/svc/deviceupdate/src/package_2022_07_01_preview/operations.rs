@@ -1105,12 +1105,12 @@ pub mod device_management {
                 group_id: group_id.into(),
             }
         }
-        pub fn get_group_update_compliance(
+        pub fn get_update_compliance_for_group(
             &self,
             instance_id: impl Into<String>,
             group_id: impl Into<String>,
-        ) -> get_group_update_compliance::Builder {
-            get_group_update_compliance::Builder {
+        ) -> get_update_compliance_for_group::Builder {
+            get_update_compliance_for_group::Builder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 group_id: group_id.into(),
@@ -1206,13 +1206,13 @@ pub mod device_management {
                 filter: None,
             }
         }
-        pub fn get_device_class_subgroup_details(
+        pub fn get_device_class_subgroup(
             &self,
             instance_id: impl Into<String>,
             group_id: impl Into<String>,
             device_class_id: impl Into<String>,
-        ) -> get_device_class_subgroup_details::Builder {
-            get_device_class_subgroup_details::Builder {
+        ) -> get_device_class_subgroup::Builder {
+            get_device_class_subgroup::Builder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 group_id: group_id.into(),
@@ -1245,13 +1245,13 @@ pub mod device_management {
                 device_class_id: device_class_id.into(),
             }
         }
-        pub fn list_best_updates_for_device_class_subgroup(
+        pub fn get_best_updates_for_device_class_subgroup(
             &self,
             instance_id: impl Into<String>,
             group_id: impl Into<String>,
             device_class_id: impl Into<String>,
-        ) -> list_best_updates_for_device_class_subgroup::Builder {
-            list_best_updates_for_device_class_subgroup::Builder {
+        ) -> get_best_updates_for_device_class_subgroup::Builder {
+            get_best_updates_for_device_class_subgroup::Builder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 group_id: group_id.into(),
@@ -1287,14 +1287,14 @@ pub mod device_management {
                 deployment_id: deployment_id.into(),
             }
         }
-        pub fn delete_device_class_subgroup_deployment(
+        pub fn delete_deployment_for_device_class_subgroup(
             &self,
             instance_id: impl Into<String>,
             group_id: impl Into<String>,
             device_class_id: impl Into<String>,
             deployment_id: impl Into<String>,
-        ) -> delete_device_class_subgroup_deployment::Builder {
-            delete_device_class_subgroup_deployment::Builder {
+        ) -> delete_deployment_for_device_class_subgroup::Builder {
+            delete_deployment_for_device_class_subgroup::Builder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 group_id: group_id.into(),
@@ -1347,14 +1347,14 @@ pub mod device_management {
                 deployment_id: deployment_id.into(),
             }
         }
-        pub fn list_devices_for_device_class_subgroup_deployment(
+        pub fn list_device_states_for_device_class_subgroup_deployment(
             &self,
             instance_id: impl Into<String>,
             group_id: impl Into<String>,
             device_class_id: impl Into<String>,
             deployment_id: impl Into<String>,
-        ) -> list_devices_for_device_class_subgroup_deployment::Builder {
-            list_devices_for_device_class_subgroup_deployment::Builder {
+        ) -> list_device_states_for_device_class_subgroup_deployment::Builder {
+            list_device_states_for_device_class_subgroup_deployment::Builder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 group_id: group_id.into(),
@@ -1379,42 +1379,38 @@ pub mod device_management {
                 top: None,
             }
         }
-        pub fn get_log_collection_operation(
-            &self,
-            instance_id: impl Into<String>,
-            operation_id: impl Into<String>,
-        ) -> get_log_collection_operation::Builder {
-            get_log_collection_operation::Builder {
+        pub fn get_log_collection(&self, instance_id: impl Into<String>, operation_id: impl Into<String>) -> get_log_collection::Builder {
+            get_log_collection::Builder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 operation_id: operation_id.into(),
             }
         }
-        pub fn collect_logs(
+        pub fn start_log_collection(
             &self,
             instance_id: impl Into<String>,
             operation_id: impl Into<String>,
-            log_collection_request: impl Into<models::LogCollectionOperation>,
-        ) -> collect_logs::Builder {
-            collect_logs::Builder {
+            log_collection: impl Into<models::LogCollection>,
+        ) -> start_log_collection::Builder {
+            start_log_collection::Builder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 operation_id: operation_id.into(),
-                log_collection_request: log_collection_request.into(),
+                log_collection: log_collection.into(),
             }
         }
-        pub fn list_log_collection_operations(&self, instance_id: impl Into<String>) -> list_log_collection_operations::Builder {
-            list_log_collection_operations::Builder {
+        pub fn list_log_collections(&self, instance_id: impl Into<String>) -> list_log_collections::Builder {
+            list_log_collections::Builder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
             }
         }
-        pub fn get_log_collection_operation_detailed_status(
+        pub fn get_log_collection_detailed_status(
             &self,
             instance_id: impl Into<String>,
             operation_id: impl Into<String>,
-        ) -> get_log_collection_operation_detailed_status::Builder {
-            get_log_collection_operation_detailed_status::Builder {
+        ) -> get_log_collection_detailed_status::Builder {
+            get_log_collection_detailed_status::Builder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
                 operation_id: operation_id.into(),
@@ -2183,7 +2179,7 @@ pub mod device_management {
             }
         }
     }
-    pub mod get_group_update_compliance {
+    pub mod get_update_compliance_for_group {
         use super::models;
         type Response = models::UpdateCompliance;
         #[derive(Clone)]
@@ -2622,32 +2618,57 @@ pub mod device_management {
                 self.filter = Some(filter.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/deviceUpdate/{}/management/groups/{}/deviceClassSubgroups",
                             this.client.endpoint(),
                             &this.instance_id,
                             &this.group_id
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-07-01-preview");
-                        if let Some(filter) = &this.filter {
-                            req.url_mut().query_pairs_mut().append_pair("filter", filter);
-                        }
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-07-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-07-01-preview");
+                                if let Some(filter) = &this.filter {
+                                    req.url_mut().query_pairs_mut().append_pair("filter", filter);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
@@ -2661,11 +2682,12 @@ pub mod device_management {
                             })),
                         }
                     }
-                })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
-    pub mod get_device_class_subgroup_details {
+    pub mod get_device_class_subgroup {
         use super::models;
         type Response = models::DeviceClassSubgroup;
         #[derive(Clone)]
@@ -2817,7 +2839,7 @@ pub mod device_management {
             }
         }
     }
-    pub mod list_best_updates_for_device_class_subgroup {
+    pub mod get_best_updates_for_device_class_subgroup {
         use super::models;
         type Response = models::DeviceClassSubgroupUpdatableDevices;
         #[derive(Clone)]
@@ -3009,7 +3031,7 @@ pub mod device_management {
             }
         }
     }
-    pub mod delete_device_class_subgroup_deployment {
+    pub mod delete_deployment_for_device_class_subgroup {
         use super::models;
         type Response = ();
         #[derive(Clone)]
@@ -3223,7 +3245,7 @@ pub mod device_management {
             }
         }
     }
-    pub mod list_devices_for_device_class_subgroup_deployment {
+    pub mod list_device_states_for_device_class_subgroup_deployment {
         use super::models;
         type Response = models::DeploymentDeviceStatesList;
         #[derive(Clone)]
@@ -3459,9 +3481,9 @@ pub mod device_management {
             }
         }
     }
-    pub mod get_log_collection_operation {
+    pub mod get_log_collection {
         use super::models;
-        type Response = models::LogCollectionOperation;
+        type Response = models::LogCollection;
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -3496,7 +3518,7 @@ pub mod device_management {
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::LogCollectionOperation = serde_json::from_slice(&rsp_body)?;
+                                let rsp_value: models::LogCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
@@ -3509,15 +3531,15 @@ pub mod device_management {
             }
         }
     }
-    pub mod collect_logs {
+    pub mod start_log_collection {
         use super::models;
-        type Response = models::LogCollectionOperation;
+        type Response = models::LogCollection;
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) operation_id: String,
-            pub(crate) log_collection_request: models::LogCollectionOperation,
+            pub(crate) log_collection: models::LogCollection,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
@@ -3541,14 +3563,14 @@ pub mod device_management {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2022-07-01-preview");
                         req.insert_header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.log_collection_request)?;
+                        let req_body = azure_core::to_json(&this.log_collection)?;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Created => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::LogCollectionOperation = serde_json::from_slice(&rsp_body)?;
+                                let rsp_value: models::LogCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
@@ -3561,9 +3583,9 @@ pub mod device_management {
             }
         }
     }
-    pub mod list_log_collection_operations {
+    pub mod list_log_collections {
         use super::models;
-        type Response = models::LogCollectionOperationList;
+        type Response = models::LogCollectionList;
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -3621,7 +3643,7 @@ pub mod device_management {
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::LogCollectionOperationList = serde_json::from_slice(&rsp_body)?;
+                                let rsp_value: models::LogCollectionList = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
@@ -3635,7 +3657,7 @@ pub mod device_management {
             }
         }
     }
-    pub mod get_log_collection_operation_detailed_status {
+    pub mod get_log_collection_detailed_status {
         use super::models;
         type Response = models::LogCollectionOperationDetailedStatus;
         #[derive(Clone)]
@@ -3695,30 +3717,55 @@ pub mod device_management {
             pub(crate) filter: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/deviceUpdate/{}/management/deviceDiagnostics/deviceHealth",
                             this.client.endpoint(),
                             &this.instance_id
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-07-01-preview");
-                        let filter = &this.filter;
-                        req.url_mut().query_pairs_mut().append_pair("filter", filter);
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-07-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-07-01-preview");
+                                let filter = &this.filter;
+                                req.url_mut().query_pairs_mut().append_pair("filter", filter);
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
@@ -3732,7 +3779,8 @@ pub mod device_management {
                             })),
                         }
                     }
-                })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }

@@ -483,6 +483,9 @@ pub mod redis_common_properties {
         #[doc = "The storage account connection string for storing rdb file"]
         #[serde(rename = "rdb-storage-connection-string", default, skip_serializing_if = "Option::is_none")]
         pub rdb_storage_connection_string: Option<String>,
+        #[doc = "Specifies whether the aof backup is enabled"]
+        #[serde(rename = "aof-backup-enabled", default, skip_serializing_if = "Option::is_none")]
+        pub aof_backup_enabled: Option<String>,
         #[doc = "First storage account connection string"]
         #[serde(rename = "aof-storage-connection-string-0", default, skip_serializing_if = "Option::is_none")]
         pub aof_storage_connection_string_0: Option<String>,
@@ -507,6 +510,9 @@ pub mod redis_common_properties {
         #[doc = "Zonal Configuration"]
         #[serde(rename = "zonal-configuration", default, skip_serializing_if = "Option::is_none")]
         pub zonal_configuration: Option<String>,
+        #[doc = "Specifies whether the authentication is disabled. Setting this property is highly discouraged from security point of view."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub authnotrequired: Option<String>,
     }
     impl RedisConfiguration {
         pub fn new() -> Self {

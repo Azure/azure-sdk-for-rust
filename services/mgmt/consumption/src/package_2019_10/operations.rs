@@ -2588,7 +2588,11 @@ pub mod credits {
     }
     pub mod get {
         use super::models;
-        type Response = models::CreditSummary;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::CreditSummary),
+            NoContent204,
+        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -2622,8 +2626,9 @@ pub mod credits {
                             azure_core::StatusCode::Ok => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::CreditSummary = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
+                                Ok(Response::Ok200(rsp_value))
                             }
+                            azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,

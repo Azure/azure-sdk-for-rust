@@ -26,8 +26,9 @@ chrono = "0.4"
 all-features = true
 
 [features]
-default = ["package-2020-04-preview", "enable_reqwest"]
+default = ["package-2022-07", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-tag = []
+"package-2022-07" = []
 "package-2020-04-preview" = []

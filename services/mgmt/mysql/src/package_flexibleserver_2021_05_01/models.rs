@@ -1502,6 +1502,12 @@ impl VirtualNetworkSubnetUsageParameter {
 #[doc = "Virtual network subnet usage data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkSubnetUsageResult {
+    #[doc = "The location name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[doc = "The subscription id."]
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
     #[doc = "A list of delegated subnet usage"]
     #[serde(rename = "delegatedSubnetsUsage", default, skip_serializing_if = "Vec::is_empty")]
     pub delegated_subnets_usage: Vec<DelegatedSubnetUsage>,

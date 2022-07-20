@@ -243,11 +243,11 @@ pub struct CollectionProperties {
     #[serde(rename = "allSubscriptions", default, skip_serializing_if = "Option::is_none")]
     pub all_subscriptions: Option<bool>,
     #[doc = "Indicating whether all items are approved for this collection (=true) or not (=false)."]
-    #[serde(rename = "allItemsApproved", default, skip_serializing_if = "Option::is_none")]
-    pub all_items_approved: Option<bool>,
+    #[serde(rename = "approveAllItems", default, skip_serializing_if = "Option::is_none")]
+    pub approve_all_items: Option<bool>,
     #[doc = "Gets the modified date of all items approved."]
-    #[serde(rename = "allItemsApprovedModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub all_items_approved_modified_at: Option<String>,
+    #[serde(rename = "approveAllItemsModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub approve_all_items_modified_at: Option<String>,
     #[doc = "Gets or sets subscription ids list. Empty list indicates all subscriptions are selected, null indicates no update is done, explicit list indicates the explicit selected subscriptions. On insert, null is considered as bad request"]
     #[serde(rename = "subscriptionsList", default, skip_serializing_if = "Vec::is_empty")]
     pub subscriptions_list: Vec<String>,
@@ -1157,6 +1157,9 @@ impl Resource {
 #[doc = "Microsoft.Marketplace REST API operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SingleOperation {
+    #[doc = "Operation ID"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     #[doc = "Operation name: {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,

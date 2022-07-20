@@ -8652,6 +8652,7 @@ pub mod block_blob {
                 x_ms_immutability_policy_until_date: None,
                 x_ms_immutability_policy_mode: None,
                 x_ms_legal_hold: None,
+                x_ms_content_crc64: None,
             }
         }
         pub fn put_blob_from_url(
@@ -8865,6 +8866,7 @@ pub mod block_blob {
             pub(crate) x_ms_immutability_policy_until_date: Option<String>,
             pub(crate) x_ms_immutability_policy_mode: Option<String>,
             pub(crate) x_ms_legal_hold: Option<bool>,
+            pub(crate) x_ms_content_crc64: Option<String>,
         }
         impl Builder {
             pub fn timeout(mut self, timeout: i64) -> Self {
@@ -8967,6 +8969,10 @@ pub mod block_blob {
                 self.x_ms_legal_hold = Some(x_ms_legal_hold);
                 self
             }
+            pub fn x_ms_content_crc64(mut self, x_ms_content_crc64: impl Into<String>) -> Self {
+                self.x_ms_content_crc64 = Some(x_ms_content_crc64.into());
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -9063,6 +9069,9 @@ pub mod block_blob {
                         }
                         if let Some(x_ms_legal_hold) = &this.x_ms_legal_hold {
                             req.insert_header("x-ms-legal-hold", &x_ms_legal_hold.to_string());
+                        }
+                        if let Some(x_ms_content_crc64) = &this.x_ms_content_crc64 {
+                            req.insert_header("x-ms-content-crc64", x_ms_content_crc64);
                         }
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;

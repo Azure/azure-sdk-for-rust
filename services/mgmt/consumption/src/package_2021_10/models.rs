@@ -490,7 +490,7 @@ impl CreditBalanceSummary {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CreditSummary {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of the credit summary."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CreditSummaryProperties>,
@@ -962,7 +962,7 @@ pub struct LegacyReservationTransactionProperties {
     #[doc = "The description of the transaction."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[doc = "The type of the transaction (Purchase, Cancel, etc.)"]
+    #[doc = "The type of the transaction (Purchase, Cancel or Refund)."]
     #[serde(rename = "eventType", default, skip_serializing_if = "Option::is_none")]
     pub event_type: Option<String>,
     #[doc = "The quantity of the transaction."]
@@ -1843,7 +1843,7 @@ pub struct ModernReservationTransactionProperties {
     #[doc = "The date of the transaction"]
     #[serde(rename = "eventDate", default, skip_serializing_if = "Option::is_none")]
     pub event_date: Option<String>,
-    #[doc = "The type of the transaction (Purchase, Cancel, etc.)"]
+    #[doc = "The type of the transaction (Purchase, Cancel or Refund)."]
     #[serde(rename = "eventType", default, skip_serializing_if = "Option::is_none")]
     pub event_type: Option<String>,
     #[doc = "Invoice Number"]

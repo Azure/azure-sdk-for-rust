@@ -1309,6 +1309,12 @@ pub struct ListReplications {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Replication>,
 }
+impl azure_core::Continuable for ListReplications {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        None
+    }
+}
 impl ListReplications {
     pub fn new() -> Self {
         Self::default()

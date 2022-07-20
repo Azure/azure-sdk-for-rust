@@ -800,6 +800,24 @@ impl OperationResults {
         Self::default()
     }
 }
+#[doc = "The ID, name and displayName of the parent management group."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ParentGroupBagInfo {
+    #[doc = "The fully qualified ID for the parent management group.  For example, /providers/Microsoft.Management/managementGroups/0000000-0000-0000-0000-000000000000"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The name of the parent management group. For example, 00000000-0000-0000-0000-000000000000"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The friendly name of the parent management group."]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+}
+impl ParentGroupBagInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "(Optional) The ID of the parent management group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ParentGroupInfo {
@@ -875,9 +893,9 @@ pub struct SubscriptionUnderManagementGroupProperties {
     #[doc = "The friendly name of the subscription."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-    #[doc = "The ID of the parent management group."]
+    #[doc = "The ID, name and displayName of the parent management group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parent: Option<DescendantParentGroupInfo>,
+    pub parent: Option<ParentGroupBagInfo>,
     #[doc = "The state of the subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,

@@ -4,13 +4,13 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
-#[doc = "Authorized groundstation"]
+#[doc = "Authorized groundstation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizedGroundstation {
-    #[doc = "Groundstation name"]
+    #[doc = "Groundstation name."]
     #[serde(rename = "groundStation", default, skip_serializing_if = "Option::is_none")]
     pub ground_station: Option<String>,
-    #[doc = "Date of authorization expiration"]
+    #[doc = "Date of authorization expiration."]
     #[serde(rename = "expirationDate", default, skip_serializing_if = "Option::is_none")]
     pub expiration_date: Option<String>,
 }
@@ -40,7 +40,7 @@ impl AvailableContacts {
 #[doc = "Response for the ListAvailableContacts API service call."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableContactsListResult {
-    #[doc = "A list of available contacts"]
+    #[doc = "A list of available contacts."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AvailableContacts>,
     #[doc = "The URL to get the next set of results."]
@@ -58,22 +58,22 @@ impl AvailableContactsListResult {
         Self::default()
     }
 }
-#[doc = "GroundStations available to schedule Contacts"]
+#[doc = "Ground Stations available to schedule Contacts."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableGroundStation {
-    #[doc = "Id of groundStation"]
+    #[doc = "ID of groundStation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "Name of the ground station."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[doc = "Azure region"]
+    #[doc = "Azure region."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[doc = "The properties bag for this resource"]
+    #[doc = "The properties bag for this resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
@@ -118,10 +118,10 @@ pub struct AvailableGroundStationProperties {
     #[doc = "Latitude of the ground station in decimal degrees."]
     #[serde(rename = "latitudeDegrees", default, skip_serializing_if = "Option::is_none")]
     pub latitude_degrees: Option<f64>,
-    #[doc = "Altitude of the ground station"]
+    #[doc = "Altitude of the ground station."]
     #[serde(rename = "altitudeMeters", default, skip_serializing_if = "Option::is_none")]
     pub altitude_meters: Option<f64>,
-    #[doc = "Release Status of a ground station"]
+    #[doc = "Release Status of a ground station."]
     #[serde(rename = "releaseMode", default, skip_serializing_if = "Option::is_none")]
     pub release_mode: Option<available_ground_station_properties::ReleaseMode>,
 }
@@ -132,7 +132,7 @@ impl AvailableGroundStationProperties {
 }
 pub mod available_ground_station_properties {
     use super::*;
-    #[doc = "Release Status of a ground station"]
+    #[doc = "Release Status of a ground station."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ReleaseMode")]
     pub enum ReleaseMode {
@@ -264,22 +264,22 @@ impl Contact {
         Self::default()
     }
 }
-#[doc = "Contact Instance Properties"]
+#[doc = "Contact Instance Properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContactInstanceProperties {
     #[doc = "Maximum elevation of the antenna during the contact in decimal degrees."]
     #[serde(rename = "maximumElevationDegrees", default, skip_serializing_if = "Option::is_none")]
     pub maximum_elevation_degrees: Option<f64>,
-    #[doc = "Time at which antenna transmit will be enabled."]
+    #[doc = "Time at which antenna transmit will be enabled (ISO 8601 UTC standard)."]
     #[serde(rename = "txStartTime", default, skip_serializing_if = "Option::is_none")]
     pub tx_start_time: Option<String>,
-    #[doc = "Time at which antenna transmit will be disabled."]
+    #[doc = "Time at which antenna transmit will be disabled (ISO 8601 UTC standard)."]
     #[serde(rename = "txEndTime", default, skip_serializing_if = "Option::is_none")]
     pub tx_end_time: Option<String>,
-    #[doc = "Earliest time to receive a signal."]
+    #[doc = "Earliest time to receive a signal (ISO 8601 UTC standard)."]
     #[serde(rename = "rxStartTime", default, skip_serializing_if = "Option::is_none")]
     pub rx_start_time: Option<String>,
-    #[doc = "Time to lost receiving a signal."]
+    #[doc = "Time to lost receiving a signal (ISO 8601 UTC standard)."]
     #[serde(rename = "rxEndTime", default, skip_serializing_if = "Option::is_none")]
     pub rx_end_time: Option<String>,
     #[doc = "Azimuth of the antenna at the start of the contact in decimal degrees."]
@@ -330,10 +330,10 @@ pub struct ContactParameters {
     #[doc = "Name of Azure Ground Station."]
     #[serde(rename = "groundStationName")]
     pub ground_station_name: String,
-    #[doc = "Start time of a contact."]
+    #[doc = "Start time of a contact (ISO 8601 UTC standard)."]
     #[serde(rename = "startTime")]
     pub start_time: String,
-    #[doc = "End time of a contact."]
+    #[doc = "End time of a contact (ISO 8601 UTC standard)."]
     #[serde(rename = "endTime")]
     pub end_time: String,
 }
@@ -368,22 +368,22 @@ impl ContactProfile {
         }
     }
 }
-#[doc = "Contact Profile Link"]
+#[doc = "Contact Profile Link."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContactProfileLink {
-    #[doc = "Link name"]
+    #[doc = "Link name."]
     pub name: String,
-    #[doc = "polarization. eg (RHCP, LHCP)"]
+    #[doc = "Polarization. e.g. (RHCP, LHCP)."]
     pub polarization: contact_profile_link::Polarization,
-    #[doc = "Direction (uplink or downlink)"]
+    #[doc = "Direction (uplink or downlink)."]
     pub direction: contact_profile_link::Direction,
-    #[doc = "Gain To Noise Temperature in db/K."]
+    #[doc = "Gain To Noise Temperature in db/K. It is the required G/T by the customer. Not used yet."]
     #[serde(rename = "gainOverTemperature", default, skip_serializing_if = "Option::is_none")]
     pub gain_over_temperature: Option<f64>,
-    #[doc = "Effective Isotropic Radiated Power (EIRP) in dBW."]
+    #[doc = "Effective Isotropic Radiated Power (EIRP) in dBW. It is the required EIRP by the customer. Not used yet."]
     #[serde(rename = "eirpdBW", default, skip_serializing_if = "Option::is_none")]
     pub eirpd_bw: Option<f64>,
-    #[doc = "Contact Profile Link Channel"]
+    #[doc = "Contact Profile Link Channel."]
     pub channels: Vec<ContactProfileLinkChannel>,
 }
 impl ContactProfileLink {
@@ -405,7 +405,7 @@ impl ContactProfileLink {
 }
 pub mod contact_profile_link {
     use super::*;
-    #[doc = "polarization. eg (RHCP, LHCP)"]
+    #[doc = "Polarization. e.g. (RHCP, LHCP)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Polarization")]
     pub enum Polarization {
@@ -450,7 +450,7 @@ pub mod contact_profile_link {
             }
         }
     }
-    #[doc = "Direction (uplink or downlink)"]
+    #[doc = "Direction (uplink or downlink)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Direction")]
     pub enum Direction {
@@ -490,30 +490,30 @@ pub mod contact_profile_link {
         }
     }
 }
-#[doc = "Contact Profile Link Channel"]
+#[doc = "Contact Profile Link Channel."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContactProfileLinkChannel {
-    #[doc = "Channel name"]
+    #[doc = "Channel name."]
     pub name: String,
-    #[doc = "Center Frequency in MHz"]
+    #[doc = "Center Frequency in MHz."]
     #[serde(rename = "centerFrequencyMHz")]
     pub center_frequency_m_hz: f64,
-    #[doc = "Bandwidth in MHz"]
+    #[doc = "Bandwidth in MHz."]
     #[serde(rename = "bandwidthMHz")]
     pub bandwidth_m_hz: f64,
     #[doc = "Customer End point to store/retrieve data during a contact."]
     #[serde(rename = "endPoint")]
     pub end_point: EndPoint,
-    #[doc = "Configuration for modulation"]
+    #[doc = "Copy of the modem configuration file such as Kratos QRadio. Only valid for uplink directions. If provided, the modem connects to the customer endpoint and accepts commands from the customer instead of a VITA.49 stream."]
     #[serde(rename = "modulationConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub modulation_configuration: Option<String>,
-    #[doc = "Configuration for demodulation"]
+    #[doc = "Copy of the modem configuration file such as Kratos QRadio or Kratos QuantumRx. Only valid for downlink directions. If provided, the modem connects to the customer endpoint and sends demodulated data instead of a VITA.49 stream."]
     #[serde(rename = "demodulationConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub demodulation_configuration: Option<String>,
-    #[doc = "Configuration for encoding"]
+    #[doc = "Currently unused."]
     #[serde(rename = "encodingConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub encoding_configuration: Option<String>,
-    #[doc = "Configuration for decoding"]
+    #[doc = "Currently unused."]
     #[serde(rename = "decodingConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub decoding_configuration: Option<String>,
 }
@@ -555,25 +555,25 @@ impl ContactProfileListResult {
 #[doc = "List of Contact Profile Resource Properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContactProfilesProperties {
-    #[doc = "The current state of the resource's creation, deletion, or modification"]
+    #[doc = "The current state of the resource's creation, deletion, or modification."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
-    #[doc = "Minimum viable contact duration in ISO 8601 format."]
+    #[doc = "Minimum viable contact duration in ISO 8601 format. Used for listing the available contacts with a spacecraft at a given ground station."]
     #[serde(rename = "minimumViableContactDuration", default, skip_serializing_if = "Option::is_none")]
     pub minimum_viable_contact_duration: Option<String>,
-    #[doc = "Minimum viable elevation for the contact in decimal degrees."]
+    #[doc = "Minimum viable elevation for the contact in decimal degrees. Used for listing the available contacts with a spacecraft at a given ground station."]
     #[serde(rename = "minimumElevationDegrees", default, skip_serializing_if = "Option::is_none")]
     pub minimum_elevation_degrees: Option<f64>,
-    #[doc = "Auto track configuration."]
+    #[doc = "Auto-tracking configuration."]
     #[serde(rename = "autoTrackingConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub auto_tracking_configuration: Option<contact_profiles_properties::AutoTrackingConfiguration>,
-    #[doc = "The URI of the Event Hub used for telemetry"]
+    #[doc = "ARM resource identifier of the Event Hub used for telemetry. Requires granting Orbital Resource Provider the rights to send telemetry into the hub."]
     #[serde(rename = "eventHubUri", default, skip_serializing_if = "Option::is_none")]
     pub event_hub_uri: Option<String>,
     #[doc = "Network configuration of customer virtual network."]
     #[serde(rename = "networkConfiguration")]
     pub network_configuration: contact_profiles_properties::NetworkConfiguration,
-    #[doc = "Links of the Contact Profile"]
+    #[doc = "Links of the Contact Profile. Describes RF links, modem processing, and IP endpoints."]
     pub links: Vec<ContactProfileLink>,
 }
 impl ContactProfilesProperties {
@@ -591,7 +591,7 @@ impl ContactProfilesProperties {
 }
 pub mod contact_profiles_properties {
     use super::*;
-    #[doc = "Auto track configuration."]
+    #[doc = "Auto-tracking configuration."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AutoTrackingConfiguration {
         #[serde(rename = "disabled")]
@@ -604,7 +604,7 @@ pub mod contact_profiles_properties {
     #[doc = "Network configuration of customer virtual network."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct NetworkConfiguration {
-        #[doc = "Customer subnet ARM resource identifier."]
+        #[doc = "ARM resource identifier of the subnet delegated to the Microsoft.Orbital/orbitalGateways. Needs to be at least a class C subnet, and should not have any IP created in it."]
         #[serde(rename = "subnetId")]
         pub subnet_id: String,
     }
@@ -617,28 +617,28 @@ pub mod contact_profiles_properties {
 #[doc = "Properties of the Contact Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContactsProperties {
-    #[doc = "The current state of the resource's creation, deletion, or modification"]
+    #[doc = "The current state of the resource's creation, deletion, or modification."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "Status of a contact."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<contacts_properties::Status>,
-    #[doc = "Reservation start time of a contact."]
+    #[doc = "Reservation start time of a contact (ISO 8601 UTC standard)."]
     #[serde(rename = "reservationStartTime")]
     pub reservation_start_time: String,
-    #[doc = "Reservation end time of a contact."]
+    #[doc = "Reservation end time of a contact (ISO 8601 UTC standard)."]
     #[serde(rename = "reservationEndTime")]
     pub reservation_end_time: String,
-    #[doc = "Receive start time of a contact."]
+    #[doc = "Receive start time of a contact (ISO 8601 UTC standard)."]
     #[serde(rename = "rxStartTime", default, skip_serializing_if = "Option::is_none")]
     pub rx_start_time: Option<String>,
-    #[doc = "Receive end time of a contact."]
+    #[doc = "Receive end time of a contact (ISO 8601 UTC standard)."]
     #[serde(rename = "rxEndTime", default, skip_serializing_if = "Option::is_none")]
     pub rx_end_time: Option<String>,
-    #[doc = "Transmit start time of a contact."]
+    #[doc = "Transmit start time of a contact (ISO 8601 UTC standard)."]
     #[serde(rename = "txStartTime", default, skip_serializing_if = "Option::is_none")]
     pub tx_start_time: Option<String>,
-    #[doc = "Transmit end time of a contact."]
+    #[doc = "Transmit end time of a contact (ISO 8601 UTC standard)."]
     #[serde(rename = "txEndTime", default, skip_serializing_if = "Option::is_none")]
     pub tx_end_time: Option<String>,
     #[doc = "Any error message while scheduling a contact."]
@@ -701,6 +701,7 @@ pub mod contacts_properties {
     use super::*;
     #[doc = "Status of a contact."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Status")]
     pub enum Status {
         #[serde(rename = "scheduled")]
         Scheduled,
@@ -712,6 +713,39 @@ pub mod contacts_properties {
         Failed,
         #[serde(rename = "providerCancelled")]
         ProviderCancelled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Status {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Status {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Status {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Scheduled => serializer.serialize_unit_variant("Status", 0u32, "scheduled"),
+                Self::Cancelled => serializer.serialize_unit_variant("Status", 1u32, "cancelled"),
+                Self::Succeeded => serializer.serialize_unit_variant("Status", 2u32, "succeeded"),
+                Self::Failed => serializer.serialize_unit_variant("Status", 3u32, "failed"),
+                Self::ProviderCancelled => serializer.serialize_unit_variant("Status", 4u32, "providerCancelled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
     #[doc = "The configuration associated with the allocated antenna."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -954,19 +988,19 @@ pub struct OperationResult {
     #[doc = "The status of operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<Status>,
-    #[doc = "The operation start time"]
+    #[doc = "The operation start time (ISO 8601 UTC standard)."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
-    #[doc = "The operation end time"]
+    #[doc = "The operation end time (ISO 8601 UTC standard)."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
     #[doc = "Percentage completed."]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<f64>,
-    #[doc = "Operation result properties"]
+    #[doc = "Operation result properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationResultProperties>,
-    #[doc = "Operation result error properties"]
+    #[doc = "Operation result error properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<OperationResultErrorProperties>,
 }
@@ -975,7 +1009,7 @@ impl OperationResult {
         Self::default()
     }
 }
-#[doc = "Operation result error properties"]
+#[doc = "Operation result error properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResultErrorProperties {
     #[doc = "The code of the error."]
@@ -990,7 +1024,7 @@ impl OperationResultErrorProperties {
         Self::default()
     }
 }
-#[doc = "Operation result properties"]
+#[doc = "Operation result properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResultProperties {}
 impl OperationResultProperties {
@@ -998,7 +1032,7 @@ impl OperationResultProperties {
         Self::default()
     }
 }
-#[doc = "The current state of the resource's creation, deletion, or modification"]
+#[doc = "The current state of the resource's creation, deletion, or modification."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ProvisioningState")]
 pub enum ProvisioningState {
@@ -1090,7 +1124,7 @@ impl ResourceIdListResult {
         Self::default()
     }
 }
-#[doc = "Resource Reference"]
+#[doc = "Resource Reference."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceReference {
     #[doc = "Resource ID."]
@@ -1123,20 +1157,20 @@ impl Spacecraft {
         }
     }
 }
-#[doc = "Authorized Ground Stations for the link"]
+#[doc = "List of authorized spacecraft links per ground station and the expiration date of the authorization."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SpacecraftLink {
-    #[doc = "Link name"]
+    #[doc = "Link name."]
     pub name: String,
-    #[doc = "Center Frequency in MHz"]
+    #[doc = "Center Frequency in MHz."]
     #[serde(rename = "centerFrequencyMHz")]
     pub center_frequency_m_hz: f64,
-    #[doc = "Bandwidth in MHz"]
+    #[doc = "Bandwidth in MHz."]
     #[serde(rename = "bandwidthMHz")]
     pub bandwidth_m_hz: f64,
-    #[doc = "Direction (uplink or downlink)"]
+    #[doc = "Direction (uplink or downlink)."]
     pub direction: spacecraft_link::Direction,
-    #[doc = "polarization. eg (RHCP, LHCP)"]
+    #[doc = "Polarization. e.g. (RHCP, LHCP)."]
     pub polarization: spacecraft_link::Polarization,
     #[doc = "Authorized Ground Stations"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1162,7 +1196,7 @@ impl SpacecraftLink {
 }
 pub mod spacecraft_link {
     use super::*;
-    #[doc = "Direction (uplink or downlink)"]
+    #[doc = "Direction (uplink or downlink)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Direction")]
     pub enum Direction {
@@ -1201,7 +1235,7 @@ pub mod spacecraft_link {
             }
         }
     }
-    #[doc = "polarization. eg (RHCP, LHCP)"]
+    #[doc = "Polarization. e.g. (RHCP, LHCP)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Polarization")]
     pub enum Polarization {
@@ -1271,22 +1305,22 @@ impl SpacecraftListResult {
 #[doc = "List of Spacecraft Resource Properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SpacecraftsProperties {
-    #[doc = "The current state of the resource's creation, deletion, or modification"]
+    #[doc = "The current state of the resource's creation, deletion, or modification."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "NORAD ID of the spacecraft."]
     #[serde(rename = "noradId")]
     pub norad_id: String,
-    #[doc = "Title line of Two Line Element (TLE)."]
+    #[doc = "Title line of the two-line element set (TLE)."]
     #[serde(rename = "titleLine", default, skip_serializing_if = "Option::is_none")]
     pub title_line: Option<String>,
-    #[doc = "Line 1 of Two Line Element (TLE)."]
+    #[doc = "Line 1 of the two-line element set (TLE)."]
     #[serde(rename = "tleLine1", default, skip_serializing_if = "Option::is_none")]
     pub tle_line1: Option<String>,
-    #[doc = "Line 2 of Two Line Element (TLE)."]
+    #[doc = "Line 2 of the two-line element set (TLE)."]
     #[serde(rename = "tleLine2", default, skip_serializing_if = "Option::is_none")]
     pub tle_line2: Option<String>,
-    #[doc = "Links of the Spacecraft"]
+    #[doc = "Immutable list of Spacecraft links."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub links: Vec<SpacecraftLink>,
 }

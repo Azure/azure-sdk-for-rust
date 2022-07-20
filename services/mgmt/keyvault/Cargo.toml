@@ -26,7 +26,7 @@ chrono = "0.4"
 all-features = true
 
 [features]
-default = ["package-preview-2021-11", "enable_reqwest"]
+default = ["profile-hybrid-2020-09-01", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-tag = []

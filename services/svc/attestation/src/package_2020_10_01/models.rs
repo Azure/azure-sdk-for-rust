@@ -10,15 +10,18 @@ pub struct AttestOpenEnclaveRequest {
     #[doc = "OpenEnclave report from the enclave to be attested"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub report: Option<String>,
-    #[doc = "Defines the \"run time data\" provided by the attestation target for use by the MAA"]
+    #[doc = "Runtime data are a conduit for any information defined by the Trusted Execution Environment (TEE) when actually running."]
     #[serde(rename = "runtimeData", default, skip_serializing_if = "Option::is_none")]
     pub runtime_data: Option<RuntimeData>,
-    #[doc = "Defines the \"initialization time data\" used to provision the attestation target for use by the MAA"]
+    #[doc = "Initialization time data are a conduit for any configuration information that is unknown when building the Trusted Execution Environment (TEE) and is defined at TEE launch time. This data can be used with confidential container or VM scenarios to capture configuration settings such as disk volume content, network configuration, etc."]
     #[serde(rename = "initTimeData", default, skip_serializing_if = "Option::is_none")]
     pub init_time_data: Option<InitTimeData>,
     #[doc = "Attest against the provided draft policy. Note that the resulting token cannot be validated."]
     #[serde(rename = "draftPolicyForAttestation", default, skip_serializing_if = "Option::is_none")]
     pub draft_policy_for_attestation: Option<String>,
+    #[doc = "Nonce for incoming request - emitted in the generated attestation token"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nonce: Option<String>,
 }
 impl AttestOpenEnclaveRequest {
     pub fn new() -> Self {
@@ -31,15 +34,18 @@ pub struct AttestSgxEnclaveRequest {
     #[doc = "Quote of the enclave to be attested"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quote: Option<String>,
-    #[doc = "Defines the \"run time data\" provided by the attestation target for use by the MAA"]
+    #[doc = "Runtime data are a conduit for any information defined by the Trusted Execution Environment (TEE) when actually running."]
     #[serde(rename = "runtimeData", default, skip_serializing_if = "Option::is_none")]
     pub runtime_data: Option<RuntimeData>,
-    #[doc = "Defines the \"initialization time data\" used to provision the attestation target for use by the MAA"]
+    #[doc = "Initialization time data are a conduit for any configuration information that is unknown when building the Trusted Execution Environment (TEE) and is defined at TEE launch time. This data can be used with confidential container or VM scenarios to capture configuration settings such as disk volume content, network configuration, etc."]
     #[serde(rename = "initTimeData", default, skip_serializing_if = "Option::is_none")]
     pub init_time_data: Option<InitTimeData>,
     #[doc = "Attest against the provided draft policy. Note that the resulting token cannot be validated."]
     #[serde(rename = "draftPolicyForAttestation", default, skip_serializing_if = "Option::is_none")]
     pub draft_policy_for_attestation: Option<String>,
+    #[doc = "Nonce for incoming request - emitted in the generated attestation token"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nonce: Option<String>,
 }
 impl AttestSgxEnclaveRequest {
     pub fn new() -> Self {
@@ -243,10 +249,10 @@ impl Serialize for DataType {
         }
     }
 }
-#[doc = "Defines the \"initialization time data\" used to provision the attestation target for use by the MAA"]
+#[doc = "Initialization time data are a conduit for any configuration information that is unknown when building the Trusted Execution Environment (TEE) and is defined at TEE launch time. This data can be used with confidential container or VM scenarios to capture configuration settings such as disk volume content, network configuration, etc."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InitTimeData {
-    #[doc = "UTF-8 encoded Initialization Data passed into the trusted environment when it is created."]
+    #[doc = "Initialization time data are passed into the Trusted Execution Environment (TEE) when it is created. For an Icelake SGX quote, the SHA256 hash of the InitTimeData must match the lower 32 bytes of the quote's \"config id\" attribute. For a SEV-SNP quote, the SHA256 hash of the InitTimeData must match the quote's \"host data\" attribute."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub data: Option<String>,
     #[doc = "Specifies the type of the data encoded contained within the \"data\" field of a \"RuntimeData\" or \"InitTimeData\" object"]
@@ -508,10 +514,10 @@ pub mod policy_result {
         }
     }
 }
-#[doc = "Defines the \"run time data\" provided by the attestation target for use by the MAA"]
+#[doc = "Runtime data are a conduit for any information defined by the Trusted Execution Environment (TEE) when actually running."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RuntimeData {
-    #[doc = "UTF-8 encoded Runtime Data generated by the trusted environment"]
+    #[doc = "Runtime data are generated by the Trusted Execution Environment (TEE). For an SGX quote (Coffeelake or Icelake), the SHA256 hash of the RuntimeData must match the lower 32 bytes of the quote's \"report data\" attribute. For a SEV-SNP quote, the SHA256 hash of the RuntimeData must match the quote's \"report data\" attribute."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub data: Option<String>,
     #[doc = "Specifies the type of the data encoded contained within the \"data\" field of a \"RuntimeData\" or \"InitTimeData\" object"]

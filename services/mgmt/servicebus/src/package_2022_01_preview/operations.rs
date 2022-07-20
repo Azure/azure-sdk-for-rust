@@ -1487,6 +1487,7 @@ pub mod private_endpoint_connections {
         pub enum Response {
             Ok200(models::PrivateEndpointConnection),
             Created201(models::PrivateEndpointConnection),
+            Accepted202(models::PrivateEndpointConnection),
         }
         #[derive(Clone)]
         pub struct Builder {
@@ -1528,6 +1529,11 @@ pub mod private_endpoint_connections {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
+                            }
+                            azure_core::StatusCode::Accepted => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(&rsp_body)?;
+                                Ok(Response::Accepted202(rsp_value))
                             }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,

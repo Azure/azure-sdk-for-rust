@@ -2247,6 +2247,7 @@ pub mod volumes {
             pub(crate) volume_name: String,
         }
         impl Builder {
+            #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

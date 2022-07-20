@@ -122,6 +122,9 @@ pub struct ConfigurationProfileAssignment {
     #[doc = "Automanage configuration profile assignment properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationProfileAssignmentProperties>,
+    #[doc = "Azure resource id. Indicates if this resource is managed by another Azure resource."]
+    #[serde(rename = "managedBy", default, skip_serializing_if = "Option::is_none")]
+    pub managed_by: Option<ManagedBy>,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -149,14 +152,6 @@ impl ConfigurationProfileAssignmentList {
         Self::default()
     }
 }
-#[doc = "Data related to configuration profile assignment profile overrides."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ConfigurationProfileAssignmentProfileOverrides {}
-impl ConfigurationProfileAssignmentProfileOverrides {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Automanage configuration profile assignment properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProfileAssignmentProperties {
@@ -169,9 +164,6 @@ pub struct ConfigurationProfileAssignmentProperties {
     #[doc = "The status of onboarding, which only appears in the response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
-    #[doc = "Data related to configuration profile assignment profile overrides."]
-    #[serde(rename = "profileOverrides", default, skip_serializing_if = "Option::is_none")]
-    pub profile_overrides: Option<ConfigurationProfileAssignmentProfileOverrides>,
 }
 impl ConfigurationProfileAssignmentProperties {
     pub fn new() -> Self {
@@ -202,9 +194,6 @@ pub struct ConfigurationProfileProperties {
     #[doc = "The custom configuration for configuration profile. Name and value pairs that define the configuration details of the configuration profile."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub configuration: Option<ConfigurationDictionary>,
-    #[doc = "The custom overrides for configuration profile"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub overrides: Option<Overrides>,
 }
 impl ConfigurationProfileProperties {
     pub fn new() -> Self {
@@ -282,6 +271,7 @@ impl ErrorResponse {
         Self::default()
     }
 }
+pub type ManagedBy = String;
 #[doc = "Details of a REST API operation, returned from the Resource Provider Operations API"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
@@ -428,7 +418,6 @@ impl OperationListResult {
         Self::default()
     }
 }
-pub type Overrides = Vec<serde_json::Value>;
 #[doc = "The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {

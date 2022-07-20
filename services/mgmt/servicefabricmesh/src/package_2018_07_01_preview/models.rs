@@ -491,15 +491,46 @@ impl EnvironmentVariable {
         Self::default()
     }
 }
-#[doc = "The error details."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ErrorModel {
-    #[doc = "The error code."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[doc = "The error message."]
+#[doc = "Error model details information"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetailsModel {
+    pub code: String,
+    #[doc = "Error message."]
+    pub message: String,
+}
+impl ErrorDetailsModel {
+    pub fn new(code: String, message: String) -> Self {
+        Self { code, message }
+    }
+}
+#[doc = "Error model information"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorErrorModel {
+    pub code: String,
+    #[doc = "Error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
+    pub inner_error: Option<String>,
+    #[doc = "List of error message details."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorDetailsModel>,
+}
+impl ErrorErrorModel {
+    pub fn new(code: String) -> Self {
+        Self {
+            code,
+            message: None,
+            inner_error: None,
+            details: Vec::new(),
+        }
+    }
+}
+#[doc = "The error details."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorModel {
+    #[doc = "Error model information"]
+    pub error: ErrorErrorModel,
 }
 impl azure_core::Continuable for ErrorModel {
     type Continuation = String;
@@ -508,8 +539,8 @@ impl azure_core::Continuable for ErrorModel {
     }
 }
 impl ErrorModel {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(error: ErrorErrorModel) -> Self {
+        Self { error }
     }
 }
 #[doc = "The health state of a resource such as Application, Service, or Network."]

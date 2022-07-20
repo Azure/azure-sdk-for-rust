@@ -1997,7 +1997,7 @@ impl ProxyResource {
 pub struct PublicIpAddressConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provision: Option<IpAddressProvisioningType>,
-    #[doc = "The number of IPs specified here limits the maximum size of the Pool - 100 dedicated nodes or 100 low-priority nodes can be allocated for each public IP. For example, a pool needing 250 dedicated VMs would need at least 3 public IPs specified. Each element of this collection is of the form: /subscriptions/{subscription}/resourceGroups/{group}/providers/Microsoft.Network/publicIPAddresses/{ip}."]
+    #[doc = "The number of IPs specified here limits the maximum size of the Pool - 100 dedicated nodes or 100 Spot/low-priority nodes can be allocated for each public IP. For example, a pool needing 250 dedicated VMs would need at least 3 public IPs specified. Each element of this collection is of the form: /subscriptions/{subscription}/resourceGroups/{group}/providers/Microsoft.Network/publicIPAddresses/{ip}."]
     #[serde(rename = "ipAddressIds", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_address_ids: Vec<String>,
 }

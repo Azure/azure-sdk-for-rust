@@ -488,6 +488,7 @@ impl CurrentQuotaLimitBase {
 }
 #[doc = "Represent the current display state of the Reservation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "DisplayProvisioningState")]
 pub enum DisplayProvisioningState {
     Succeeded,
     Expiring,
@@ -496,6 +497,41 @@ pub enum DisplayProvisioningState {
     Processing,
     Cancelled,
     Failed,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for DisplayProvisioningState {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for DisplayProvisioningState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for DisplayProvisioningState {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Succeeded => serializer.serialize_unit_variant("DisplayProvisioningState", 0u32, "Succeeded"),
+            Self::Expiring => serializer.serialize_unit_variant("DisplayProvisioningState", 1u32, "Expiring"),
+            Self::Expired => serializer.serialize_unit_variant("DisplayProvisioningState", 2u32, "Expired"),
+            Self::Pending => serializer.serialize_unit_variant("DisplayProvisioningState", 3u32, "Pending"),
+            Self::Processing => serializer.serialize_unit_variant("DisplayProvisioningState", 4u32, "Processing"),
+            Self::Cancelled => serializer.serialize_unit_variant("DisplayProvisioningState", 5u32, "Cancelled"),
+            Self::Failed => serializer.serialize_unit_variant("DisplayProvisioningState", 6u32, "Failed"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Error {
@@ -956,6 +992,7 @@ impl Serialize for InstanceFlexibility {
 }
 #[doc = "Location in which the Resources needs to be reserved. It cannot be changed after the resource has been created."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "Location")]
 pub enum Location {
     #[serde(rename = "westus")]
     Westus,
@@ -1005,6 +1042,58 @@ pub enum Location {
     Westcentralus,
     #[serde(rename = "ukwest")]
     Ukwest,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for Location {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for Location {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for Location {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Westus => serializer.serialize_unit_variant("Location", 0u32, "westus"),
+            Self::Eastus => serializer.serialize_unit_variant("Location", 1u32, "eastus"),
+            Self::Eastus2 => serializer.serialize_unit_variant("Location", 2u32, "eastus2"),
+            Self::Northcentralus => serializer.serialize_unit_variant("Location", 3u32, "northcentralus"),
+            Self::Westus2 => serializer.serialize_unit_variant("Location", 4u32, "westus2"),
+            Self::Southcentralus => serializer.serialize_unit_variant("Location", 5u32, "southcentralus"),
+            Self::Centralus => serializer.serialize_unit_variant("Location", 6u32, "centralus"),
+            Self::Westeurope => serializer.serialize_unit_variant("Location", 7u32, "westeurope"),
+            Self::Northeurope => serializer.serialize_unit_variant("Location", 8u32, "northeurope"),
+            Self::Eastasia => serializer.serialize_unit_variant("Location", 9u32, "eastasia"),
+            Self::Southeastasia => serializer.serialize_unit_variant("Location", 10u32, "southeastasia"),
+            Self::Japaneast => serializer.serialize_unit_variant("Location", 11u32, "japaneast"),
+            Self::Japanwest => serializer.serialize_unit_variant("Location", 12u32, "japanwest"),
+            Self::Brazilsouth => serializer.serialize_unit_variant("Location", 13u32, "brazilsouth"),
+            Self::Australiaeast => serializer.serialize_unit_variant("Location", 14u32, "australiaeast"),
+            Self::Australiasoutheast => serializer.serialize_unit_variant("Location", 15u32, "australiasoutheast"),
+            Self::Southindia => serializer.serialize_unit_variant("Location", 16u32, "southindia"),
+            Self::Westindia => serializer.serialize_unit_variant("Location", 17u32, "westindia"),
+            Self::Centralindia => serializer.serialize_unit_variant("Location", 18u32, "centralindia"),
+            Self::Canadacentral => serializer.serialize_unit_variant("Location", 19u32, "canadacentral"),
+            Self::Canadaeast => serializer.serialize_unit_variant("Location", 20u32, "canadaeast"),
+            Self::Uksouth => serializer.serialize_unit_variant("Location", 21u32, "uksouth"),
+            Self::Westcentralus => serializer.serialize_unit_variant("Location", 22u32, "westcentralus"),
+            Self::Ukwest => serializer.serialize_unit_variant("Location", 23u32, "ukwest"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MergeProperties {
@@ -1279,6 +1368,7 @@ impl Price {
 }
 #[doc = "Represent the current state of the Reservation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ProvisioningState")]
 pub enum ProvisioningState {
     Creating,
     PendingResourceHold,
@@ -1293,6 +1383,47 @@ pub enum ProvisioningState {
     Failed,
     Split,
     Merged,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ProvisioningState {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for ProvisioningState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for ProvisioningState {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Creating => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Creating"),
+            Self::PendingResourceHold => serializer.serialize_unit_variant("ProvisioningState", 1u32, "PendingResourceHold"),
+            Self::ConfirmedResourceHold => serializer.serialize_unit_variant("ProvisioningState", 2u32, "ConfirmedResourceHold"),
+            Self::PendingBilling => serializer.serialize_unit_variant("ProvisioningState", 3u32, "PendingBilling"),
+            Self::ConfirmedBilling => serializer.serialize_unit_variant("ProvisioningState", 4u32, "ConfirmedBilling"),
+            Self::Created => serializer.serialize_unit_variant("ProvisioningState", 5u32, "Created"),
+            Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 6u32, "Succeeded"),
+            Self::Cancelled => serializer.serialize_unit_variant("ProvisioningState", 7u32, "Cancelled"),
+            Self::Expired => serializer.serialize_unit_variant("ProvisioningState", 8u32, "Expired"),
+            Self::BillingFailed => serializer.serialize_unit_variant("ProvisioningState", 9u32, "BillingFailed"),
+            Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 10u32, "Failed"),
+            Self::Split => serializer.serialize_unit_variant("ProvisioningState", 11u32, "Split"),
+            Self::Merged => serializer.serialize_unit_variant("ProvisioningState", 12u32, "Merged"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PurchaseRequest {
@@ -2580,21 +2711,89 @@ impl SubscriptionScopeProperties {
 }
 #[doc = "The applied scope type"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "UserFriendlyAppliedScopeType")]
 pub enum UserFriendlyAppliedScopeType {
     None,
     Shared,
     Single,
     ResourceGroup,
     ManagementGroup,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for UserFriendlyAppliedScopeType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for UserFriendlyAppliedScopeType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for UserFriendlyAppliedScopeType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::None => serializer.serialize_unit_variant("UserFriendlyAppliedScopeType", 0u32, "None"),
+            Self::Shared => serializer.serialize_unit_variant("UserFriendlyAppliedScopeType", 1u32, "Shared"),
+            Self::Single => serializer.serialize_unit_variant("UserFriendlyAppliedScopeType", 2u32, "Single"),
+            Self::ResourceGroup => serializer.serialize_unit_variant("UserFriendlyAppliedScopeType", 3u32, "ResourceGroup"),
+            Self::ManagementGroup => serializer.serialize_unit_variant("UserFriendlyAppliedScopeType", 4u32, "ManagementGroup"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
 }
 #[doc = "The renew state of the reservation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "UserFriendlyRenewState")]
 pub enum UserFriendlyRenewState {
     On,
     Off,
     Renewed,
     NotRenewed,
     NotApplicable,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for UserFriendlyRenewState {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for UserFriendlyRenewState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for UserFriendlyRenewState {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::On => serializer.serialize_unit_variant("UserFriendlyRenewState", 0u32, "On"),
+            Self::Off => serializer.serialize_unit_variant("UserFriendlyRenewState", 1u32, "Off"),
+            Self::Renewed => serializer.serialize_unit_variant("UserFriendlyRenewState", 2u32, "Renewed"),
+            Self::NotRenewed => serializer.serialize_unit_variant("UserFriendlyRenewState", 3u32, "NotRenewed"),
+            Self::NotApplicable => serializer.serialize_unit_variant("UserFriendlyRenewState", 4u32, "NotApplicable"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
 }
 #[doc = "The details of quota request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

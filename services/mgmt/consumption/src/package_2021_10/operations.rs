@@ -287,7 +287,20 @@ pub mod marketplaces {
     }
     pub mod list {
         use super::models;
-        type Response = models::MarketplacesListResult;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::MarketplacesListResult),
+            NoContent204,
+        }
+        impl azure_core::Continuable for Response {
+            type Continuation = String;
+            fn continuation(&self) -> Option<Self::Continuation> {
+                match self {
+                    Self::Ok200(x) => x.continuation(),
+                    Self::NoContent204 => None,
+                }
+            }
+        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -370,8 +383,9 @@ pub mod marketplaces {
                             azure_core::StatusCode::Ok => {
                                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
                                 let rsp_value: models::MarketplacesListResult = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
+                                Ok(Response::Ok200(rsp_value))
                             }
+                            azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,

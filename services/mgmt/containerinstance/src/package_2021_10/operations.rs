@@ -86,6 +86,9 @@ impl Client {
     pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
+    pub fn subnet_service_association_link_client(&self) -> subnet_service_association_link::Client {
+        subnet_service_association_link::Client(self.clone())
+    }
 }
 pub mod container_groups {
     use super::models;
@@ -708,7 +711,11 @@ pub mod container_groups {
     }
     pub mod start {
         use super::models;
-        type Response = ();
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            NoContent204,
+        }
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
@@ -745,7 +752,8 @@ pub mod container_groups {
                         let rsp = this.client.send(&mut req).await?;
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
-                            azure_core::StatusCode::Accepted => Ok(()),
+                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
+                            azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -1323,6 +1331,79 @@ pub mod containers {
                                 let rsp_value: models::ContainerAttachResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod subnet_service_association_link {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Delete container group virtual network association links."]
+        pub fn delete(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            virtual_network_name: impl Into<String>,
+            subnet_name: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                virtual_network_name: virtual_network_name.into(),
+                subnet_name: subnet_name.into(),
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) virtual_network_name: String,
+            pub(crate) subnet_name: String,
+        }
+        impl Builder {
+            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Network/virtualNetworks/{}/subnets/{}/providers/Microsoft.ContainerInstance/serviceAssociationLinks/default" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . virtual_network_name , & this . subnet_name)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => Ok(Response::Ok200),
+                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
+                            azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,

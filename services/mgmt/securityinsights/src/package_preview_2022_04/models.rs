@@ -6040,16 +6040,19 @@ impl MtpDataConnectorProperties {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManualTriggerRequestBody {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
-    #[serde(rename = "logicAppsResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub logic_apps_resource_id: Option<String>,
+    #[serde(rename = "logicAppsResourceId")]
+    pub logic_apps_resource_id: String,
 }
 impl ManualTriggerRequestBody {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(logic_apps_resource_id: String) -> Self {
+        Self {
+            tenant_id: None,
+            logic_apps_resource_id,
+        }
     }
 }
 #[doc = "List of all the metadata."]
@@ -7932,62 +7935,6 @@ pub mod settings {
                 Self::EyesOn => serializer.serialize_unit_variant("Kind", 1u32, "EyesOn"),
                 Self::EntityAnalytics => serializer.serialize_unit_variant("Kind", 2u32, "EntityAnalytics"),
                 Self::Ueba => serializer.serialize_unit_variant("Kind", 3u32, "Ueba"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
-#[doc = "The pricing tier of the solution"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct Sku {
-    #[doc = "The kind of the tier"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<sku::Name>,
-    #[doc = "The amount of reservation level"]
-    #[serde(rename = "capacityReservationLevel", default, skip_serializing_if = "Option::is_none")]
-    pub capacity_reservation_level: Option<i32>,
-}
-impl Sku {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod sku {
-    use super::*;
-    #[doc = "The kind of the tier"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Name")]
-    pub enum Name {
-        #[serde(rename = "PerGB")]
-        PerGb,
-        CapacityReservation,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Name {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Name {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Name {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::PerGb => serializer.serialize_unit_variant("Name", 0u32, "PerGB"),
-                Self::CapacityReservation => serializer.serialize_unit_variant("Name", 1u32, "CapacityReservation"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

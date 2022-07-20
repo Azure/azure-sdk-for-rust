@@ -248,23 +248,105 @@ impl ContainerExecResponse {
     }
 }
 #[doc = "A container group."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerGroup {
     #[serde(flatten)]
     pub resource: Resource,
-    #[doc = "Identity for the container group."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<ContainerGroupIdentity>,
-    #[doc = "The container group properties"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<container_group::Properties>,
+    #[serde(flatten)]
+    pub container_group_properties: ContainerGroupProperties,
 }
 impl ContainerGroup {
+    pub fn new(container_group_properties: ContainerGroupProperties) -> Self {
+        Self {
+            resource: Resource::default(),
+            container_group_properties,
+        }
+    }
+}
+#[doc = "Container group diagnostic information."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ContainerGroupDiagnostics {
+    #[doc = "Container group log analytics information."]
+    #[serde(rename = "logAnalytics", default, skip_serializing_if = "Option::is_none")]
+    pub log_analytics: Option<LogAnalytics>,
+}
+impl ContainerGroupDiagnostics {
     pub fn new() -> Self {
         Self::default()
     }
 }
-pub mod container_group {
+#[doc = "Identity for the container group."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ContainerGroupIdentity {
+    #[doc = "The principal id of the container group identity. This property will only be provided for a system assigned identity."]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "The tenant id associated with the container group. This property will only be provided for a system assigned identity."]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "The type of identity used for the container group. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user assigned identities. The type 'None' will remove any identities from the container group."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<container_group_identity::Type>,
+    #[doc = "The list of user identities associated with the container group."]
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<serde_json::Value>,
+}
+impl ContainerGroupIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod container_group_identity {
+    use super::*;
+    #[doc = "The type of identity used for the container group. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user assigned identities. The type 'None' will remove any identities from the container group."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        SystemAssigned,
+        UserAssigned,
+        #[serde(rename = "SystemAssigned, UserAssigned")]
+        SystemAssignedUserAssigned,
+        None,
+    }
+}
+#[doc = "The container group list response that contains the container group properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ContainerGroupListResult {
+    #[doc = "The list of container groups."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ContainerGroup>,
+    #[doc = "The URI to fetch the next page of container groups."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ContainerGroupListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl ContainerGroupListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The container group properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerGroupProperties {
+    #[doc = "Identity for the container group."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<ContainerGroupIdentity>,
+    #[doc = "The container group properties"]
+    pub properties: container_group_properties::Properties,
+}
+impl ContainerGroupProperties {
+    pub fn new(properties: container_group_properties::Properties) -> Self {
+        Self {
+            identity: None,
+            properties,
+        }
+    }
+}
+pub mod container_group_properties {
     use super::*;
     #[doc = "The container group properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -424,72 +506,6 @@ pub mod container_group {
                 Self::default()
             }
         }
-    }
-}
-#[doc = "Container group diagnostic information."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ContainerGroupDiagnostics {
-    #[doc = "Container group log analytics information."]
-    #[serde(rename = "logAnalytics", default, skip_serializing_if = "Option::is_none")]
-    pub log_analytics: Option<LogAnalytics>,
-}
-impl ContainerGroupDiagnostics {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Identity for the container group."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ContainerGroupIdentity {
-    #[doc = "The principal id of the container group identity. This property will only be provided for a system assigned identity."]
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[doc = "The tenant id associated with the container group. This property will only be provided for a system assigned identity."]
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[doc = "The type of identity used for the container group. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user assigned identities. The type 'None' will remove any identities from the container group."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<container_group_identity::Type>,
-    #[doc = "The list of user identities associated with the container group. The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identities: Option<serde_json::Value>,
-}
-impl ContainerGroupIdentity {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod container_group_identity {
-    use super::*;
-    #[doc = "The type of identity used for the container group. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user assigned identities. The type 'None' will remove any identities from the container group."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        SystemAssigned,
-        UserAssigned,
-        #[serde(rename = "SystemAssigned, UserAssigned")]
-        SystemAssignedUserAssigned,
-        None,
-    }
-}
-#[doc = "The container group list response that contains the container group properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ContainerGroupListResult {
-    #[doc = "The list of container groups."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ContainerGroup>,
-    #[doc = "The URI to fetch the next page of container groups."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl azure_core::Continuable for ContainerGroupListResult {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
-    }
-}
-impl ContainerGroupListResult {
-    pub fn new() -> Self {
-        Self::default()
     }
 }
 #[doc = "The container group SKU."]
@@ -985,7 +1001,8 @@ pub struct ImageRegistryCredential {
     #[doc = "The Docker image registry server without a protocol such as \"http\" and \"https\"."]
     pub server: String,
     #[doc = "The username for the private registry."]
-    pub username: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub username: Option<String>,
     #[doc = "The password for the private registry."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
@@ -997,10 +1014,10 @@ pub struct ImageRegistryCredential {
     pub identity_url: Option<String>,
 }
 impl ImageRegistryCredential {
-    pub fn new(server: String, username: String) -> Self {
+    pub fn new(server: String) -> Self {
         Self {
             server,
-            username,
+            username: None,
             password: None,
             identity: None,
             identity_url: None,
@@ -1083,8 +1100,8 @@ pub struct IpAddress {
     #[serde(rename = "dnsNameLabel", default, skip_serializing_if = "Option::is_none")]
     pub dns_name_label: Option<String>,
     #[doc = "The value representing the security enum."]
-    #[serde(rename = "dnsNameLabelReusePolicy", default, skip_serializing_if = "Option::is_none")]
-    pub dns_name_label_reuse_policy: Option<ip_address::DnsNameLabelReusePolicy>,
+    #[serde(rename = "autoGeneratedDomainNameLabelScope", default, skip_serializing_if = "Option::is_none")]
+    pub auto_generated_domain_name_label_scope: Option<ip_address::AutoGeneratedDomainNameLabelScope>,
     #[doc = "The FQDN for the IP."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
@@ -1096,7 +1113,7 @@ impl IpAddress {
             type_,
             ip: None,
             dns_name_label: None,
-            dns_name_label_reuse_policy: None,
+            auto_generated_domain_name_label_scope: None,
             fqdn: None,
         }
     }
@@ -1142,8 +1159,8 @@ pub mod ip_address {
     }
     #[doc = "The value representing the security enum."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "DnsNameLabelReusePolicy")]
-    pub enum DnsNameLabelReusePolicy {
+    #[serde(remote = "AutoGeneratedDomainNameLabelScope")]
+    pub enum AutoGeneratedDomainNameLabelScope {
         Unsecure,
         TenantReuse,
         SubscriptionReuse,
@@ -1152,13 +1169,13 @@ pub mod ip_address {
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
-    impl FromStr for DnsNameLabelReusePolicy {
+    impl FromStr for AutoGeneratedDomainNameLabelScope {
         type Err = value::Error;
         fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
             Self::deserialize(s.into_deserializer())
         }
     }
-    impl<'de> Deserialize<'de> for DnsNameLabelReusePolicy {
+    impl<'de> Deserialize<'de> for AutoGeneratedDomainNameLabelScope {
         fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
         where
             D: Deserializer<'de>,
@@ -1168,19 +1185,28 @@ pub mod ip_address {
             Ok(deserialized)
         }
     }
-    impl Serialize for DnsNameLabelReusePolicy {
+    impl Serialize for AutoGeneratedDomainNameLabelScope {
         fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
         where
             S: Serializer,
         {
             match self {
-                Self::Unsecure => serializer.serialize_unit_variant("DnsNameLabelReusePolicy", 0u32, "Unsecure"),
-                Self::TenantReuse => serializer.serialize_unit_variant("DnsNameLabelReusePolicy", 1u32, "TenantReuse"),
-                Self::SubscriptionReuse => serializer.serialize_unit_variant("DnsNameLabelReusePolicy", 2u32, "SubscriptionReuse"),
-                Self::ResourceGroupReuse => serializer.serialize_unit_variant("DnsNameLabelReusePolicy", 3u32, "ResourceGroupReuse"),
-                Self::Noreuse => serializer.serialize_unit_variant("DnsNameLabelReusePolicy", 4u32, "Noreuse"),
+                Self::Unsecure => serializer.serialize_unit_variant("AutoGeneratedDomainNameLabelScope", 0u32, "Unsecure"),
+                Self::TenantReuse => serializer.serialize_unit_variant("AutoGeneratedDomainNameLabelScope", 1u32, "TenantReuse"),
+                Self::SubscriptionReuse => {
+                    serializer.serialize_unit_variant("AutoGeneratedDomainNameLabelScope", 2u32, "SubscriptionReuse")
+                }
+                Self::ResourceGroupReuse => {
+                    serializer.serialize_unit_variant("AutoGeneratedDomainNameLabelScope", 3u32, "ResourceGroupReuse")
+                }
+                Self::Noreuse => serializer.serialize_unit_variant("AutoGeneratedDomainNameLabelScope", 4u32, "Noreuse"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
+        }
+    }
+    impl Default for AutoGeneratedDomainNameLabelScope {
+        fn default() -> Self {
+            Self::Unsecure
         }
     }
 }
@@ -1520,6 +1546,9 @@ impl SecretVolume {
 #[doc = "A single usage result"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Usage {
+    #[doc = "Id of the usage result"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     #[doc = "Unit of the usage result"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
@@ -1570,6 +1599,21 @@ impl azure_core::Continuable for UsageListResult {
     }
 }
 impl UsageListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The list of user identities associated with the container group. The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UserAssignedIdentities {
+    #[doc = "The principal id of user assigned identity."]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "The client id of user assigned identity."]
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
+}
+impl UserAssignedIdentities {
     pub fn new() -> Self {
         Self::default()
     }

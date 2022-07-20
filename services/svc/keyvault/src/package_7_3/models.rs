@@ -1470,6 +1470,7 @@ pub struct KeyBundle {
     #[doc = "True if the key's lifetime is managed by key vault. If this is a key backing a certificate, then managed will be true."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub managed: Option<bool>,
+    #[doc = "The policy rules under which the key can be exported."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub release_policy: Option<KeyReleasePolicy>,
 }
@@ -1500,6 +1501,7 @@ pub struct KeyCreateParameters {
     #[doc = "Elliptic curve name. For valid values, see JsonWebKeyCurveName."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub crv: Option<key_create_parameters::Crv>,
+    #[doc = "The policy rules under which the key can be exported."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub release_policy: Option<KeyReleasePolicy>,
 }
@@ -1693,6 +1695,7 @@ pub struct KeyImportParameters {
     #[doc = "Application specific metadata in the form of key-value pairs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The policy rules under which the key can be exported."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub release_policy: Option<KeyReleasePolicy>,
 }
@@ -2066,6 +2069,7 @@ pub mod key_release_parameters {
         }
     }
 }
+#[doc = "The policy rules under which the key can be exported."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyReleasePolicy {
     #[doc = "Content type and version of key release policy"]
@@ -2235,6 +2239,7 @@ pub struct KeyUpdateParameters {
     #[doc = "Application specific metadata in the form of key-value pairs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The policy rules under which the key can be exported."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub release_policy: Option<KeyReleasePolicy>,
 }

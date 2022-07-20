@@ -405,14 +405,14 @@ impl BudgetsListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChargeSummary {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     #[doc = "Specifies the kind of charge summary."]
     pub kind: charge_summary::Kind,
 }
 impl ChargeSummary {
     pub fn new(kind: charge_summary::Kind) -> Self {
         Self {
-            resource: Resource::default(),
+            proxy_resource: ProxyResource::default(),
             kind,
         }
     }
@@ -496,7 +496,7 @@ impl CreditBalanceSummary {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CreditSummary {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of the credit summary."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CreditSummaryProperties>,
@@ -713,7 +713,7 @@ pub mod event_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventSummary {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     #[doc = "The event properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventProperties>,
@@ -1359,7 +1359,7 @@ pub mod lot_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LotSummary {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     #[doc = "The lot properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LotProperties>,
@@ -1741,9 +1741,9 @@ pub struct ModernReservationRecommendationProperties {
     #[doc = "The usage date for looking back."]
     #[serde(rename = "firstUsageDate", default, skip_serializing_if = "Option::is_none")]
     pub first_usage_date: Option<String>,
-    #[doc = "Shared or single recommendation."]
+    #[doc = "Shared (corresponds to integer 2) or single (corresponds to integer 1) recommendation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub scope: Option<String>,
+    pub scope: Option<i32>,
     #[doc = "List of sku properties"]
     #[serde(rename = "skuProperties", default, skip_serializing_if = "Vec::is_empty")]
     pub sku_properties: Vec<SkuProperty>,
@@ -2476,7 +2476,7 @@ impl Reseller {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReservationDetail {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub revised_resource: RevisedResource,
     #[doc = "The properties of the reservation detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ReservationDetailProperties>,
@@ -2553,7 +2553,7 @@ impl ReservationDetailsListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReservationRecommendation {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub revised_resource: RevisedResource,
     #[serde(flatten)]
     pub resource_attributes: ResourceAttributes,
     #[doc = "Specifies the kind of reservation recommendation."]
@@ -2562,7 +2562,7 @@ pub struct ReservationRecommendation {
 impl ReservationRecommendation {
     pub fn new(kind: reservation_recommendation::Kind) -> Self {
         Self {
-            resource: Resource::default(),
+            revised_resource: RevisedResource::default(),
             resource_attributes: ResourceAttributes::default(),
             kind,
         }
@@ -2817,7 +2817,7 @@ impl ReservationSummariesListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReservationSummary {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub revised_resource: RevisedResource,
     #[doc = "The properties of the reservation summary."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ReservationSummaryProperties>,
@@ -2972,6 +2972,30 @@ pub struct ResourceAttributes {
     pub sku: Option<String>,
 }
 impl ResourceAttributes {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The Resource model definition."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RevisedResource {
+    #[doc = "Resource Id."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Resource name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Resource type."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "Resource eTag."]
+    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
+    pub e_tag: Option<String>,
+    #[doc = "Resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+impl RevisedResource {
     pub fn new() -> Self {
         Self::default()
     }
