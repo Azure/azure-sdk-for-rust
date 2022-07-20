@@ -1,0 +1,16 @@
+{
+  "uri": "/dbs/database1/colls/container1/docs",
+  "method": "POST",
+  "headers": {
+    "authorization": "<<STRIPPED>>",
+    "content-type": "application/query+json",
+    "user-agent": "azsdk-rust-data_cosmos/0.4.0 (1.62.0; linux; x86_64)",
+    "x-ms-continuation": "{\"token\":\"-RID:~EHQ3AIu0-SkBAAAAAAAAAA==#RT:1#TRC:1#ISV:2#IEO:65567#QCF:8\",\"range\":{\"min\":\"\",\"max\":\"FF\"}}",
+    "x-ms-date": "Wed, 20 Jul 2022 14:56:21 GMT",
+    "x-ms-documentdb-isquery": "true",
+    "x-ms-documentdb-query-enablecrosspartition": "true",
+    "x-ms-max-item-count": "1",
+    "x-ms-version": "2018-12-31"
+  },
+  "body": "eyJxdWVyeSI6InNlbGVjdCAqIGZyb20gRmFtaWx5IiwicGFyYW1ldGVycyI6W119"
+}

@@ -254,6 +254,15 @@ pub enum QueryResult<T> {
     Raw(T),
 }
 
+impl<T> QueryResult<T> {
+    pub fn item(&self) -> &T {
+        match self {
+            Self::Document(r) => &r.result,
+            Self::Raw(i) => i,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct QueryDocumentsResponseRaw<T> {
     pub query_response_meta: QueryResponseMeta,
