@@ -44,7 +44,7 @@ impl GetBlobBuilder {
                 }
 
                 headers.add(this.lease_id);
-                headers.add(this.if_modified_since.clone());
+                headers.add(this.if_modified_since);
                 headers.add(this.if_match.clone());
                 headers.add(this.if_tags.clone());
 
