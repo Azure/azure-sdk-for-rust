@@ -27,6 +27,7 @@ impl Policy for TransportPolicy {
         // there must be no more policies
         assert_eq!(0, next.len());
 
+        log::debug!("the following request will be passed to the transport policy: {request:#?}");
         let response = { self.transport_options.http_client.execute_request(request) };
 
         response.await

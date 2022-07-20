@@ -6,7 +6,7 @@ use std::collections::HashMap;
 #[derive(Debug)]
 pub struct HttpError {
     status: StatusCode,
-    error_code: Option<String>,
+    details: ErrorDetails,
     headers: std::collections::HashMap<String, String>,
     body: Bytes,
 }
@@ -17,17 +17,16 @@ impl HttpError {
     /// This does not check whether the response was a success and should only be used with unsuccessful responses.
     pub async fn new(response: Response) -> Self {
         let status = response.status();
-        let mut error_code = get_error_code_from_header(&response);
         let headers: HashMap<String, String> = response
             .headers()
             .iter()
             .map(|(name, value)| (name.as_str().to_owned(), value.as_str().to_owned()))
             .collect();
         let body = response.into_body().await;
-        error_code = error_code.or_else(|| get_error_code_from_body(&body));
+        let details = ErrorDetails::new(&headers, &body);
         HttpError {
             status,
-            error_code,
+            details,
             headers,
             body,
         }
@@ -40,26 +39,37 @@ impl HttpError {
 
     /// Get a reference to the http error's error code.
     pub fn error_code(&self) -> Option<&str> {
-        self.error_code.as_deref()
+        self.details.code.as_deref()
+    }
+
+    /// Get a reference to the http error's error message.
+    pub fn error_message(&self) -> Option<&str> {
+        self.details.message.as_deref()
     }
 }
 
 impl std::fmt::Display for HttpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "HttpError")?;
-        writeln!(f, "\tStatus: {}", self.status)?;
-        writeln!(
+        let newline = if f.alternate() { "\n" } else { " " };
+        let tab = if f.alternate() { "\t" } else { " " };
+        write!(f, "HttpError {{{newline}")?;
+        write!(f, "{tab}Status: {},{newline}", self.status)?;
+        write!(
             f,
-            "\tError Code: {}",
-            self.error_code.as_deref().unwrap_or("unknown")
+            "{tab}Error Code: {},{newline}",
+            self.details
+                .code
+                .as_deref()
+                .unwrap_or("<unknown error code>")
         )?;
         // TODO: sanitize body
-        writeln!(f, "\tBody: \"{:?}\"", self.body)?;
-        writeln!(f, "\tHeaders:")?;
+        write!(f, "{tab}Body: \"{:?}\",{newline}", self.body)?;
+        write!(f, "{tab}Headers: [{newline}")?;
         // TODO: sanitize headers
         for (k, v) in &self.headers {
-            writeln!(f, "\t\t{}:{}", k, v)?;
+            write!(f, "{tab}{tab}{}:{}{newline}", k, v)?;
         }
+        write!(f, "{tab}],{newline}}}{newline}")?;
 
         Ok(())
     }
@@ -67,23 +77,46 @@ impl std::fmt::Display for HttpError {
 
 impl std::error::Error for HttpError {}
 
+#[derive(Debug)]
+struct ErrorDetails {
+    code: Option<String>,
+    message: Option<String>,
+}
+
+impl ErrorDetails {
+    fn new(headers: &HashMap<String, String>, body: &[u8]) -> Self {
+        let mut code = get_error_code_from_header(headers);
+        code = code.or_else(|| get_error_code_from_body(&body));
+        let message = get_error_message_from_body(&body);
+        Self { code, message }
+    }
+}
+
 /// Gets the error code if it's present in the headers
 ///
 /// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
-fn get_error_code_from_header(response: &Response) -> Option<String> {
-    response.headers().get_optional_string(&headers::ERROR_CODE)
+fn get_error_code_from_header(headers: &HashMap<String, String>) -> Option<String> {
+    headers.get(headers::ERROR_CODE.as_str()).cloned()
 }
 
 /// Gets the error code if it's present in the body
 ///
 /// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
 pub(crate) fn get_error_code_from_body(body: &[u8]) -> Option<String> {
-    Some(
-        serde_json::from_slice::<serde_json::Value>(body)
-            .ok()?
-            .get("error")?
-            .get("code")?
-            .as_str()?
-            .to_owned(),
-    )
+    let json = serde_json::from_slice::<serde_json::Value>(body).ok()?;
+    let nested = || json.get("error")?.get("code")?.as_str();
+    let top_level = || json.get("code")?.as_str();
+    let code = nested().or_else(top_level);
+    code.map(|c| c.to_owned())
+}
+
+/// Gets the error message if it's present in the body
+///
+/// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
+pub(crate) fn get_error_message_from_body(body: &[u8]) -> Option<String> {
+    let json = serde_json::from_slice::<serde_json::Value>(body).ok()?;
+    let nested = || json.get("error")?.get("message")?.as_str();
+    let top_level = || json.get("message")?.as_str();
+    let code = nested().or_else(top_level);
+    code.map(|c| c.to_owned())
 }

@@ -15,7 +15,8 @@ pub fn new_reqwest_client() -> std::sync::Arc<dyn HttpClient> {
 impl HttpClient for ::reqwest::Client {
     async fn execute_request(&self, request: &crate::Request) -> crate::Result<crate::Response> {
         let url = request.url().clone();
-        let mut req = self.request(try_from_method(request.method())?, url);
+        let method = request.method();
+        let mut req = self.request(try_from_method(method)?, url.clone());
         for (name, value) in request.headers().iter() {
             req = req.header(name.as_str(), value.as_str());
         }
@@ -31,6 +32,7 @@ impl HttpClient for ::reqwest::Client {
         }
         .context(ErrorKind::Other, "failed to build `reqwest` request")?;
 
+        log::info!("making {method} request to {url}");
         let rsp = self
             .execute(reqwest_request)
             .await
