@@ -79,8 +79,6 @@ implement_from!(ListTriggersResponse);
 implement_from!(DeleteTriggerResponse);
 implement_from!(ListDocumentsResponse, T);
 implement_from!(QueryDocumentsResponse, T);
-implement_from!(QueryDocumentsResponseRaw, T);
-implement_from!(QueryDocumentsResponseDocuments, T);
 
 impl<T> From<&GetDocumentResponse<T>> for ConsistencyLevel {
     fn from(get_document_response: &GetDocumentResponse<T>) -> Self {

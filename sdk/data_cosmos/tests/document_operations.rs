@@ -83,25 +83,15 @@ async fn document_operations() {
         .into_stream::<MyDocument>();
 
     // Ensure that the query stream can be sent to a task
-    let query_result = tokio::spawn(async move {
-        query_result
-            .next()
+    let query_result =
+        tokio::spawn(async move { query_result.next().await.unwrap().unwrap().results })
             .await
-            .unwrap()
-            .unwrap()
-            .into_documents()
-            .unwrap()
-            .results
-    })
-    .await
-    .unwrap();
+            .unwrap();
 
     assert!(query_result.len() == 1);
-    assert!(
-        query_result[0].document_attributes.rid()
-            == documents.documents[0].document_attributes.rid()
-    );
-    assert_eq!(query_result[0].result, document_data);
+    let (document, attributes) = &query_result[0];
+    assert!(attributes.as_ref().unwrap().rid() == documents.documents[0].document_attributes.rid());
+    assert_eq!(document, &document_data);
 
     // try to get the contents of the previously created document
     let document = collection

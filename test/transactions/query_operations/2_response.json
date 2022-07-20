@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "headers": {
+    "content-length": "49",
+    "content-type": "application/json",
+    "date": "Wed, 20 Jul 2022 14:56:19 GMT",
+    "lsn": "6",
+    "server": "Compute",
+    "x-ms-activity-id": "639eee19-93d1-413d-97c5-32a6df7c447a",
+    "x-ms-alt-content-path": "dbs/database1/colls/container1",
+    "x-ms-content-path": "EHQ3AIu0-Sk=",
+    "x-ms-cosmos-is-partition-key-delete-pending": "false",
+    "x-ms-cosmos-llsn": "6",
+    "x-ms-cosmos-query-execution-info": "{\"reverseRidEnabled\":false,\"reverseIndexScan\":false}",
+    "x-ms-documentdb-partitionkeyrangeid": "0",
+    "x-ms-gatewayversion": "2.0.0",
+    "x-ms-global-committed-lsn": "5",
+    "x-ms-item-count": "0",
+    "x-ms-last-state-change-utc": "Wed, 20 Jul 2022 11:05:20.435 GMT",
+    "x-ms-number-of-read-regions": "0",
+    "x-ms-request-charge": "2.25",
+    "x-ms-request-duration-ms": "0.447",
+    "x-ms-resource-quota": "documentSize=51200;documentsSize=52428800;documentsCount=-1;collectionSize=52428800;",
+    "x-ms-resource-usage": "documentSize=0;documentsSize=0;documentsCount=2;collectionSize=0;",
+    "x-ms-schemaversion": "1.14",
+    "x-ms-serviceversion": "version=2.14.0.0",
+    "x-ms-session-token": "0:-1#6",
+    "x-ms-transport-request-id": "2",
+    "x-ms-xp-role": "2"
+  },
+  "body": "eyJfcmlkIjoiRUhRM0FJdTAtU2s9IiwiRG9jdW1lbnRzIjpbXSwiX2NvdW50IjowfQ=="
+}

@@ -1,3 +1,19 @@
+//! This example illustrates how querying for documents works.
+//!
+//! You can test this with any database collection that has an item that roughly has this shape:
+//! ```json
+//! {
+//!     "id": "AndersenFamily",
+//!     "lastName": "Andersen",
+//!     "parents": [
+//!        { "firstName": "Thomas" },
+//!        { "firstName": "Mary Kay"}
+//!     ],
+//!     "children": [ { "firstName": "Henriette Thaulow" } ],
+//! }
+//! ```
+//!
+//! You can then query for families using a query like: "SELECT * FROM Families"
 use azure_data_cosmos::prelude::*;
 use clap::Parser;
 use futures::StreamExt;
@@ -20,19 +36,18 @@ struct Args {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct MySampleStructOwned {
+#[serde(rename_all = "camelCase")]
+struct Family {
     id: String,
-    a_string: String,
-    a_number: u64,
-    a_timestamp: i64,
+    last_name: String,
+    parents: Vec<Person>,
+    children: Vec<Person>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct MySecondSampleStructOwned {
-    id: String,
-    color: String,
-    #[serde(rename = "myvalue")]
-    my_value: String,
+#[serde(rename_all = "camelCase")]
+struct Person {
+    first_name: String,
 }
 
 #[tokio::main]
@@ -46,94 +61,24 @@ async fn main() -> azure_core::Result<()> {
 
     let query_obj = Query::new(args.query);
 
-    let respo: QueryDocumentsResponse<serde_json::Value> = client
+    let query = client
         .query_documents(query_obj.clone())
         .query_cross_partition(true)
-        .max_item_count(3i32)
-        .into_stream()
-        .next()
-        .await
-        .unwrap()?;
-    println!("as json == {:?}", respo);
+        .max_item_count(1); // This is way lower than necessary but easily allows demonstratiting paging results.
 
-    let respo: QueryDocumentsResponse<MySecondSampleStructOwned> = client
-        .query_documents(query_obj)
-        .query_cross_partition(true)
-        .parallelize_cross_partition_query(true)
-        .max_item_count(2)
-        .into_stream()
-        .next()
-        .await
-        .unwrap()?;
-    println!("as items == {:?}", respo);
+    // First, we'll look at the results as JSON.
+    let mut stream = query.clone().into_stream::<serde_json::Value>();
+    while let Some(respo) = stream.next().await {
+        let respo = respo?;
+        println!("JSON: {:#?}", respo.results);
+    }
 
-    //let ret = client
-    //    .query_documents(
-    //        &database_name,
-    //        &collection_name,
-    //        Query::from(query.as_ref()),
-    //    )
-    //    .execute_json()
-    //    .await?;
-
-    //println!("As JSON:\n{:?}", ret);
-
-    //for doc in ret.results {
-    //    println!("{}", doc.result);
-    //}
-
-    //let ret = client
-    //    .query_documents(
-    //        &database_name,
-    //        &collection_name,
-    //        Query::from(query.as_ref()),
-    //    )
-    //    .execute::<MySampleStructOwned>()
-    //    .await?;
-
-    //println!("\nAs entities:\n{:?}", ret);
-
-    //for doc in ret.results {
-    //    println!("{:?}", doc);
-    //}
-
-    //// test continuation token
-    //// only if we have more than 2 records
-    //let ret = client
-    //    .query_documents(
-    //        &database_name,
-    //        &collection_name,
-    //        Query::from(query.as_ref()),
-    //    )
-    //    .max_item_count(2u64)
-    //    .execute::<MySampleStructOwned>()
-    //    .await?;
-
-    //println!(
-    //    "Received {} entries. Continuation token is == {:?}",
-    //    ret.results.len(),
-    //    ret.additional_headers.continuation_token
-    //);
-
-    //if let Some(ct) = ret.additional_headers.continuation_token {
-    //    let ret = {
-    //        // if we have more, let's get them
-    //        client
-    //            .query_documents(
-    //                &database_name,
-    //                &collection_name,
-    //                Query::from(query.as_ref()),
-    //            )
-    //            .continuation_token(ct)
-    //            .execute::<MySampleStructOwned>()
-    //            .await?
-    //    };
-    //    println!(
-    //        "Received {} entries. Continuation token is == {:?}",
-    //        ret.results.len(),
-    //        ret.additional_headers.continuation_token
-    //    );
-    //}
+    // Then, we'll look at the results as `Family` structs.
+    let mut stream = query.into_stream::<Family>();
+    while let Some(respo) = stream.next().await {
+        let respo = respo?;
+        println!("Structs: {:#?}", respo.results);
+    }
 
     Ok(())
 }

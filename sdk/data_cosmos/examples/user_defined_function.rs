@@ -71,12 +71,11 @@ async fn main() -> azure_core::Result<()> {
         .into_stream::<serde_json::Value>()
         .next()
         .await
-        .unwrap()?
-        .into_raw();
+        .unwrap()?;
     println!("Query response object:\n{:#?}", ret);
 
     // this code extracts the first object
-    let fn_return = &ret.results[0].as_object().unwrap();
+    let fn_return = ret.documents().next().unwrap().as_object().unwrap();
     println!("fn_return == {:?}", fn_return);
     // and from the first object get the first value as f64
     let value = fn_return
