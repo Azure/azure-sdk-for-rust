@@ -60,36 +60,34 @@ async fn user_defined_function_operations() -> azure_core::Result<()> {
         .await?;
 
     let query_stmt = format!("SELECT udf.{}(100)", USER_DEFINED_FUNCTION_NAME);
-    let ret: QueryDocumentsResponseRaw<serde_json::Value> = collection
+    let ret = collection
         .query_documents(Query::new(query_stmt))
         .consistency_level(&ret)
         .max_item_count(2i32)
-        .into_stream()
+        .into_stream::<serde_json::Value>()
         .next()
         .await
-        .unwrap()?
-        .into_raw();
+        .unwrap()?;
 
     assert_eq!(ret.item_count, 1);
 
-    let fn_return = ret.results[0].as_object().unwrap();
+    let fn_return = ret.documents().next().unwrap().as_object().unwrap();
     let value = fn_return.iter().take(1).next().unwrap().1.as_f64().unwrap();
     assert_eq!(value, 10.0);
 
     let query_stmt = format!("SELECT udf.{}(10000)", USER_DEFINED_FUNCTION_NAME);
-    let ret: QueryDocumentsResponseRaw<serde_json::Value> = collection
+    let ret = collection
         .query_documents(Query::new(query_stmt))
         .consistency_level(&ret)
         .max_item_count(2i32)
-        .into_stream()
+        .into_stream::<serde_json::Value>()
         .next()
         .await
-        .unwrap()?
-        .into_raw();
+        .unwrap()?;
 
     assert_eq!(ret.item_count, 1);
 
-    let fn_return = ret.results[0].as_object().unwrap();
+    let fn_return = ret.documents().next().unwrap().as_object().unwrap();
     let value = fn_return
         .into_iter()
         .take(1)

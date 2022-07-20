@@ -42,7 +42,8 @@ async fn query_operations() -> azure_core::Result<()> {
     while let Some(respo) = stream.next().await {
         let respo = respo?;
         assert!(respo.results.len() <= 1);
-        if let Some(item) = respo.results.get(0).map(|i| i.item()) {
+        let mut documents = respo.documents();
+        if let Some(item) = documents.next() {
             last_names.push(item.last_name.clone());
         }
     }

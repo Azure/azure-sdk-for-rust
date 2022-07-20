@@ -115,34 +115,29 @@ async fn main() -> azure_core::Result<()> {
         .into_stream::<MySampleStruct>()
         .next()
         .await
-        .unwrap()?
-        .into_documents() // queries can return Documents or Raw json (ie without etag, _rid, etc...). Since our query return docs we convert with this function.
-        .unwrap(); // we know in advance that the conversion to Document will not fail since we SELECT'ed * FROM table
+        .unwrap()?;
 
     println!(
         "Received {} documents!",
         query_documents_response.results.len()
     );
 
-    query_documents_response
-        .results
-        .iter()
-        .for_each(|document| {
-            println!("number ==> {}", document.result.number);
-        });
+    query_documents_response.documents().for_each(|document| {
+        println!("number ==> {}", document.number);
+    });
 
     let session_token = ConsistencyLevel::Session(query_documents_response.session_token);
-    for document in query_documents_response.results {
+    for (document, document_attributes) in query_documents_response.results {
         println!(
             "deleting id == {}, a_number == {}.",
-            document.result.id, document.result.number
+            document.id, document.number
         );
 
         collection
-            .document_client(document.result.id, &document.result.number)?
+            .document_client(document.id, &document.number)?
             .delete_document()
             .consistency_level(session_token.clone())
-            .if_match_condition(&document.document_attributes)
+            .if_match_condition(&document_attributes.unwrap())
             .into_future()
             .await?;
     }
