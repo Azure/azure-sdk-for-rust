@@ -200,5 +200,5 @@ impl Header for RenameSource {
     }
 }
 
-request_query!(Directory, "directory");
+request_query_option!(Directory, "directory");
 request_header!(AccessControlList, ACL,);

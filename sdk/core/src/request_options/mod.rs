@@ -98,8 +98,8 @@ request_header!(
 );
 request_header!(Version, VERSION,);
 
-request_query!(Prefix, "prefix");
-request_query!(
+request_query_option!(Prefix, "prefix");
+request_query_option!(
     #[doc = "Set delimiter for the request"]
     Delimiter,
     "delimiter"
