@@ -10,7 +10,7 @@ operation! {
     ClearPage,
     client: BlobClient,
     ba512_range: BA512Range,
-    ?if_sequence_number: SequenceNumberCondition,
+    ?if_sequence_number: IfSequenceNumber,
     ?if_modified_since: IfModifiedSinceCondition,
     ?if_match: IfMatchCondition,
     ?lease_id: LeaseId

@@ -13,7 +13,7 @@ operation! {
     client: BlobClient,
     source_url: Url,
     ?metadata: Metadata,
-    ?if_sequence_number: SequenceNumberCondition,
+    ?if_sequence_number: IfSequenceNumber,
     ?if_modified_since: IfModifiedSinceCondition,
     ?if_match: IfMatchCondition,
     ?if_tags: IfTagsCondition,
