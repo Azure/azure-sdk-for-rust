@@ -91,7 +91,11 @@ create_request_header_cow!(ContentLanguage, CONTENT_LANGUAGE,);
 create_request_header_cow!(Continuation, CONTINUATION,);
 create_request_header_cow!(IfTags, IF_TAGS,);
 create_request_header_cow!(UserAgent, USER_AGENT,);
-create_request_header_cow!(User, USER,);
+create_request_header_cow!(
+    User,
+    USER,
+    "The (friendly) name of the user making the request",
+);
 create_request_header_cow!(Version, VERSION,);
 
 create_request_query_cow!(Prefix, "prefix");
