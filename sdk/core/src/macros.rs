@@ -293,14 +293,17 @@ macro_rules! future {
 /// The following macro invocation:
 /// ```
 /// # #[macro_use] extern crate azure_core;
-/// create_request_header_cow!(ClientRequestId, CLIENT_REQUEST_ID, "builds a client request id",);
+/// request_header!(
+///     #[doc="builds a client request id header"]
+///     ClientRequestId, CLIENT_REQUEST_ID,
+/// );
 /// ```
 /// Turns into a Header value used to construct requests.
 #[macro_export]
-macro_rules! create_request_header_cow {
-    ($name:ident, $header:ident $(, $doc:expr)?, $(($variant:ident, $value:expr)), *) => {
-        $( #[doc = $doc] )?
+macro_rules! request_header {
+    ($(#[$outer:meta])* $name:ident, $header:ident, $(($variant:ident, $value:expr)), *) => {
         #[derive(Debug, Clone)]
+        $(#[$outer])*
         pub struct $name(std::borrow::Cow<'static, str>);
 
         impl $name {
@@ -344,14 +347,14 @@ macro_rules! create_request_header_cow {
 /// The following macro invocation:
 /// ```
 /// # #[macro_use] extern crate azure_core;
-/// create_request_query_cow!(Prefix, "prefix");
+/// request_query_option!(Prefix, "prefix");
 /// ```
 /// Turns into a request query option used to construct requests
 #[macro_export]
-macro_rules! create_request_query_cow {
-    ($name:ident, $option:expr $(, $doc:expr)?) => {
-        $( #[doc = $doc] )?
+macro_rules! request_query_option {
+    ($(#[$outer:meta])* $name:ident, $option:expr) => {
         #[derive(Debug, Clone)]
+        $(#[$outer])*
         pub struct $name(std::borrow::Cow<'static, str>);
 
         impl $name {

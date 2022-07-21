@@ -200,5 +200,5 @@ impl Header for RenameSource {
     }
 }
 
-create_request_query_cow!(Directory, "directory");
-create_request_header_cow!(AccessControlList, ACL,);
+request_query!(Directory, "directory");
+request_header!(AccessControlList, ACL,);

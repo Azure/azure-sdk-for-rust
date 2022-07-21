@@ -36,18 +36,18 @@ pub use hash::Hash;
 pub use rehydrate_policy::RehydratePriority;
 pub use tags::Tags;
 
-create_request_query_cow!(VersionId, "version_id", 
-"
-This type could also be a DateTime but the docs clearly states to treat is as opaque so we do not convert it in any way.
+request_query!(
+    #[doc = "This type could also be a DateTime but the docs clearly states to treat is as opaque so we do not convert it in any way.
 
-See: <https://docs.microsoft.com/rest/api/storageservices/get-blob>
-"
+See: <https://docs.microsoft.com/rest/api/storageservices/get-blob>"]
+    VersionId,
+    "version_id"
 );
 
-create_request_query_cow!(Snapshot, "snapshot", 
-"
-This type could also be a DateTime but the docs clearly states to treat is as opaque so we do not convert it in any way.
+request_query!(
+    #[doc = "This type could also be a DateTime but the docs clearly states to treat is as opaque so we do not convert it in any way.
 
-See: <https://docs.microsoft.com/rest/api/storageservices/get-blob>
-"
+See: <https://docs.microsoft.com/rest/api/storageservices/get-blob>"]
+    Snapshot,
+    "snapshot"
 );

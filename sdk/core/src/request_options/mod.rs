@@ -40,10 +40,8 @@ pub use sequence_number_condition::SequenceNumberCondition;
 pub use source_lease_id::SourceLeaseId;
 pub use timeout::Timeout;
 
-create_request_header_cow!(
-    AcceptEncoding,
-    ACCEPT_ENCODING,
-    "Advertises which content encoding the client is able to understand.
+request_header!(
+    #[doc = "Advertises which content encoding the client is able to understand.
 
 The Accept-Encoding request HTTP header advertises which content
 encoding, usually a compression algorithm, the client is able to
@@ -54,23 +52,23 @@ Content-Encoding response header.
 Even if both the client and the server supports the same compression
 algorithms, the server may choose not to compress the body of a
 response, if the identity value is also acceptable.
-",
+"]
+    AcceptEncoding,
+    ACCEPT_ENCODING,
 );
-create_request_header_cow!(
+request_header!(
+    #[doc = "The (friendly) version identifier for the client making the request"]
     ClientVersion,
     CLIENT_VERSION,
-    "The (friendly) version identifier for the client making the request",
 );
-create_request_header_cow!(
+request_header!(
+    #[doc = "The Content Type indicates the media type of the request body"]
     ContentType,
     CONTENT_TYPE,
-    "The Content Type indicates the media type of the request body",
     (APPLICATION_JSON, "application/json")
 );
-create_request_header_cow!(
-    Accept,
-    ACCEPT,
-    "Advertises which content types the client is able to understand.
+request_header!(
+    #[doc = "Advertises which content types the client is able to understand.
 
 The Accept request HTTP header advertises which content types, expressed
 as MIME types, the client is able to understand. Using content
@@ -80,23 +78,29 @@ Browsers set adequate values for this header depending of the context
 where the request is done: when fetching a CSS stylesheet a different
 value is set for the request than when fetching an image, video or a
 script.
-",
+"]
+    Accept,
+    ACCEPT,
 );
-create_request_header_cow!(ActivityId, ACTIVITY_ID,);
-create_request_header_cow!(App, APP,);
-create_request_header_cow!(ClientRequestId, CLIENT_REQUEST_ID,);
-create_request_header_cow!(ContentDisposition, CONTENT_DISPOSITION,);
-create_request_header_cow!(ContentEncoding, CONTENT_ENCODING,);
-create_request_header_cow!(ContentLanguage, CONTENT_LANGUAGE,);
-create_request_header_cow!(Continuation, CONTINUATION,);
-create_request_header_cow!(IfTags, IF_TAGS,);
-create_request_header_cow!(UserAgent, USER_AGENT,);
-create_request_header_cow!(
+request_header!(ActivityId, ACTIVITY_ID,);
+request_header!(App, APP,);
+request_header!(ClientRequestId, CLIENT_REQUEST_ID,);
+request_header!(ContentDisposition, CONTENT_DISPOSITION,);
+request_header!(ContentEncoding, CONTENT_ENCODING,);
+request_header!(ContentLanguage, CONTENT_LANGUAGE,);
+request_header!(Continuation, CONTINUATION,);
+request_header!(IfTags, IF_TAGS,);
+request_header!(UserAgent, USER_AGENT,);
+request_header!(
+    #[doc = "The (friendly) name of the user making the request"]
     User,
     USER,
-    "The (friendly) name of the user making the request",
 );
-create_request_header_cow!(Version, VERSION,);
+request_header!(Version, VERSION,);
 
-create_request_query_cow!(Prefix, "prefix");
-create_request_query_cow!(Delimiter, "delimiter");
+request_query!(Prefix, "prefix");
+request_query!(
+    #[doc = "Set delimiter for the request"]
+    Delimiter,
+    "delimiter"
+);
