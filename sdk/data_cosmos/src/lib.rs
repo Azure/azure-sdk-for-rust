@@ -105,7 +105,6 @@ mod cosmos_entity;
 mod headers;
 mod resource_quota;
 mod time_nonce;
-mod to_json_vector;
 
 pub(crate) use authorization_policy::AuthorizationPolicy;
 pub(crate) use time_nonce::TimeNonce;
