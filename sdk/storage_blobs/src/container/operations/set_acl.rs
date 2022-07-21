@@ -6,6 +6,7 @@ operation! {
     SetACL,
     client: ContainerClient,
     public_access: PublicAccess,
+    ?if_modified_since: IfModifiedSinceCondition,
     ?stored_access_policy_list: StoredAccessPolicyList,
     ?lease_id: LeaseId
 }
@@ -25,6 +26,7 @@ impl SetACLBuilder {
                 headers.insert(name, value);
             }
             headers.add(self.lease_id);
+            headers.add(self.if_modified_since);
 
             let mut request =
                 self.client

@@ -5,6 +5,9 @@ use chrono::{DateTime, Utc};
 operation! {
     GetProperties,
     client: BlobClient,
+    ?if_modified_since: IfModifiedSinceCondition,
+    ?if_match: IfMatchCondition,
+    ?if_tags: IfTagsCondition,
     ?blob_versioning: BlobVersioning,
     ?lease_id: LeaseId
 }
@@ -18,6 +21,9 @@ impl GetPropertiesBuilder {
 
             let mut headers = Headers::new();
             headers.add(self.lease_id);
+            headers.add(self.if_modified_since);
+            headers.add(self.if_match);
+            headers.add(self.if_tags);
 
             let mut request =
                 self.client

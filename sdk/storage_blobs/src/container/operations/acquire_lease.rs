@@ -7,6 +7,7 @@ operation! {
     AcquireLease,
     client: ContainerClient,
     lease_duration: LeaseDuration,
+    ?if_modified_since: IfModifiedSinceCondition,
     ?lease_id: LeaseId,
     ?proposed_lease_id: ProposedLeaseId
 }
@@ -24,6 +25,7 @@ impl AcquireLeaseBuilder {
             headers.add(self.lease_duration);
             headers.add(self.lease_id);
             headers.add(self.proposed_lease_id);
+            headers.add(self.if_modified_since);
 
             let mut request = self
                 .client

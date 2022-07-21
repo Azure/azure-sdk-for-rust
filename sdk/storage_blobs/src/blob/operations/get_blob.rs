@@ -15,7 +15,10 @@ operation! {
     ?range: Range,
     ?blob_versioning: BlobVersioning,
     ?lease_id: LeaseId,
-    ?chunk_size: u64
+    ?chunk_size: u64,
+    ?if_modified_since: IfModifiedSinceCondition,
+    ?if_match: IfMatchCondition,
+    ?if_tags: IfTagsCondition,
 }
 
 impl GetBlobBuilder {
@@ -41,6 +44,9 @@ impl GetBlobBuilder {
                 }
 
                 headers.add(this.lease_id);
+                headers.add(this.if_modified_since);
+                headers.add(this.if_match.clone());
+                headers.add(this.if_tags.clone());
 
                 let mut request =
                     this.client

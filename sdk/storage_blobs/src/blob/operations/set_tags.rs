@@ -11,6 +11,7 @@ operation! {
     SetTags,
     client: BlobClient,
     tags: Tags,
+    ?if_tags: IfTagsCondition,
     ?lease_id: LeaseId
 }
 
@@ -23,6 +24,7 @@ impl SetTagsBuilder {
 
             let mut headers = Headers::new();
             headers.add(self.lease_id);
+            headers.add(self.if_tags);
             let body = self.tags.to_xml()?;
 
             let mut request =

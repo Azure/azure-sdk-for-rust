@@ -5,6 +5,9 @@ use chrono::{DateTime, Utc};
 operation! {
     DeleteBlob,
     client: BlobClient,
+    ?if_modified_since: IfModifiedSinceCondition,
+    ?if_match: IfMatchCondition,
+    ?if_tags: IfTagsCondition,
     ?delete_snapshots_method: DeleteSnapshotsMethod,
     ?lease_id: LeaseId
 }
@@ -20,6 +23,9 @@ impl DeleteBlobBuilder {
                 self.delete_snapshots_method
                     .unwrap_or(DeleteSnapshotsMethod::Include),
             );
+            headers.add(self.if_modified_since);
+            headers.add(self.if_match);
+            headers.add(self.if_tags);
 
             let mut request =
                 self.client

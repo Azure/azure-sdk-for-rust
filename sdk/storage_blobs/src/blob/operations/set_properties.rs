@@ -12,6 +12,9 @@ use std::convert::{TryFrom, TryInto};
 operation! {
     SetProperties,
     client: BlobClient,
+    ?if_modified_since: IfModifiedSinceCondition,
+    ?if_match: IfMatchCondition,
+    ?if_tags: IfTagsCondition,
     ?lease_id: LeaseId,
     ?cache_control: BlobCacheControl,
     ?content_type: BlobContentType,
@@ -60,6 +63,9 @@ impl SetPropertiesBuilder {
             headers.add(self.content_language);
             headers.add(self.content_disposition);
             headers.add(self.content_md5);
+            headers.add(self.if_modified_since);
+            headers.add(self.if_match);
+            headers.add(self.if_tags);
 
             let mut request = self
                 .client

@@ -9,9 +9,10 @@ operation! {
     ba512_range: BA512Range,
     content: Body,
     ?hash: Hash,
-    ?sequence_number_condition: SequenceNumberCondition,
-    ?if_modified_since_condition: IfModifiedSinceCondition,
-    ?if_match_condition: IfMatchCondition,
+    ?if_sequence_number: SequenceNumberCondition,
+    ?if_modified_since: IfModifiedSinceCondition,
+    ?if_match: IfMatchCondition,
+    ?if_tags: IfTagsCondition,
     ?lease_id: LeaseId
 }
 
@@ -26,10 +27,11 @@ impl PutPageBuilder {
             headers.insert(PAGE_WRITE, "update");
             headers.insert(BLOB_TYPE, "PageBlob");
             headers.add(self.ba512_range);
-            headers.add(self.sequence_number_condition);
             headers.add(self.hash);
-            headers.add(self.if_modified_since_condition);
-            headers.add(self.if_match_condition);
+            headers.add(self.if_sequence_number);
+            headers.add(self.if_modified_since);
+            headers.add(self.if_match);
+            headers.add(self.if_tags);
             headers.add(self.lease_id);
 
             let mut request = self.client.finalize_request(
