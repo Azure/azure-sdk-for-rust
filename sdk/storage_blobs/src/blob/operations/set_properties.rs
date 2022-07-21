@@ -14,7 +14,7 @@ operation! {
     client: BlobClient,
     ?if_modified_since: IfModifiedSinceCondition,
     ?if_match: IfMatchCondition,
-    ?if_tags: IfTagsCondition,
+    ?if_tags: IfTags,
     ?lease_id: LeaseId,
     ?cache_control: BlobCacheControl,
     ?content_type: BlobContentType,

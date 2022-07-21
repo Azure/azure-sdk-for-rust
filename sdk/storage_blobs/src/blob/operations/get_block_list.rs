@@ -9,7 +9,7 @@ use std::str::from_utf8;
 operation! {
     GetBlockList,
     client: BlobClient,
-    ?if_tags: IfTagsCondition,
+    ?if_tags: IfTags,
     ?block_list_type: BlockListType,
     ?blob_versioning: BlobVersioning,
     ?lease_id: LeaseId

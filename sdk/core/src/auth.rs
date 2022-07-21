@@ -2,17 +2,21 @@
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::fmt::Debug;
+use std::{borrow::Cow, fmt::Debug};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct AccessToken(String);
+pub struct AccessToken(Cow<'static, str>);
 
 impl AccessToken {
-    pub fn new(access_token: String) -> Self {
-        Self(access_token)
+    pub fn new<T>(access_token: T) -> Self
+    where
+        T: Into<Cow<'static, str>>,
+    {
+        Self(access_token.into())
     }
+
     pub fn secret(&self) -> &str {
-        self.0.as_str()
+        &self.0
     }
 }
 

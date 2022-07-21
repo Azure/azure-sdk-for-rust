@@ -18,7 +18,7 @@ operation! {
     ?chunk_size: u64,
     ?if_modified_since: IfModifiedSinceCondition,
     ?if_match: IfMatchCondition,
-    ?if_tags: IfTagsCondition,
+    ?if_tags: IfTags,
 }
 
 impl GetBlobBuilder {

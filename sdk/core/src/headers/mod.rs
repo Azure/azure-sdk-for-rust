@@ -214,7 +214,7 @@ impl HeaderValue {
         Self(std::borrow::Cow::Borrowed(s))
     }
 
-    fn from_cow<C>(c: C) -> Self
+    pub fn from_cow<C>(c: C) -> Self
     where
         C: Into<std::borrow::Cow<'static, str>>,
     {
@@ -299,6 +299,7 @@ pub const IF_UNMODIFIED_SINCE: HeaderName = HeaderName::from_static("if-unmodifi
 pub const IF_SEQUENCE_NUMBER_EQ: HeaderName = HeaderName::from_static("x-ms-if-sequence-number-eq");
 pub const IF_SEQUENCE_NUMBER_LE: HeaderName = HeaderName::from_static("x-ms-if-sequence-number-le");
 pub const IF_SEQUENCE_NUMBER_LT: HeaderName = HeaderName::from_static("x-ms-if-sequence-number-lt");
+pub const IF_TAGS: HeaderName = HeaderName::from_static("x-ms-if-tags");
 pub const ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-item-count");
 pub const ITEM_TYPE: HeaderName = HeaderName::from_static("x-ms-item-type");
 pub const KEEP_ALIVE: HeaderName = HeaderName::from_static("keep-alive");

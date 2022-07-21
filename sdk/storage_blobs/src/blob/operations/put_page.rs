@@ -12,7 +12,7 @@ operation! {
     ?if_sequence_number: SequenceNumberCondition,
     ?if_modified_since: IfModifiedSinceCondition,
     ?if_match: IfMatchCondition,
-    ?if_tags: IfTagsCondition,
+    ?if_tags: IfTags,
     ?lease_id: LeaseId
 }
 
