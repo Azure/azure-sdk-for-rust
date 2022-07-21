@@ -292,7 +292,8 @@ macro_rules! future {
 
 /// The following macro invocation:
 /// ```
-/// create_request_header_cow!(ClientRequestId, CLIENT_REQUEST_ID);
+/// # #[macro_use] extern crate azure_core;
+/// create_request_header_cow!(ClientRequestId, CLIENT_REQUEST_ID, "builds a client request id",);
 /// ```
 /// Turns into a Header value used to construct requests.
 #[macro_export]
@@ -342,6 +343,7 @@ macro_rules! create_request_header_cow {
 
 /// The following macro invocation:
 /// ```
+/// # #[macro_use] extern crate azure_core;
 /// create_request_query_cow!(Prefix, "prefix");
 /// ```
 /// Turns into a request query option used to construct requests
