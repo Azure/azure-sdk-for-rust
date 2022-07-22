@@ -293,6 +293,103 @@ macro_rules! future {
 /// The following macro invocation:
 /// ```
 /// # #[macro_use] extern crate azure_core;
+/// request_header!(
+///     #[doc="builds a client request id header"]
+///     ClientRequestId, CLIENT_REQUEST_ID,
+/// );
+/// ```
+/// Turns into a Header value used to construct requests.
+#[macro_export]
+macro_rules! request_header {
+    ($(#[$outer:meta])* $name:ident, $header:ident, $(($variant:ident, $value:expr)), *) => {
+        #[derive(Debug, Clone)]
+        $(#[$outer])*
+        pub struct $name(std::borrow::Cow<'static, str>);
+
+        impl $name {
+            $(
+                pub const $variant: $name = $name::from_static($value);
+            )*
+
+            pub fn new<S>(s: S) -> Self
+            where
+                S: Into<std::borrow::Cow<'static, str>>,
+            {
+                Self(s.into())
+            }
+
+            pub const fn from_static(s: &'static str) -> Self {
+                Self(std::borrow::Cow::Borrowed(s))
+            }
+        }
+
+        impl<S> From<S> for $name
+        where
+            S: Into<std::borrow::Cow<'static, str>>,
+        {
+            fn from(s: S) -> Self {
+                Self::new(s)
+            }
+        }
+
+        impl $crate::headers::Header for $name {
+            fn name(&self) -> $crate::headers::HeaderName {
+                $crate::headers::$header
+            }
+
+            fn value(&self) -> $crate::headers::HeaderValue {
+                $crate::headers::HeaderValue::from_cow(self.0.clone())
+            }
+        }
+    };
+}
+
+/// The following macro invocation:
+/// ```
+/// # #[macro_use] extern crate azure_core;
+/// request_query_option!(Prefix, "prefix");
+/// ```
+/// Turns into a request query option used to construct requests
+#[macro_export]
+macro_rules! request_query_option {
+    ($(#[$outer:meta])* $name:ident, $option:expr) => {
+        #[derive(Debug, Clone)]
+        $(#[$outer])*
+        pub struct $name(std::borrow::Cow<'static, str>);
+
+        impl $name {
+            pub fn new<S>(s: S) -> Self
+            where
+                S: Into<std::borrow::Cow<'static, str>>,
+            {
+                Self(s.into())
+            }
+
+            pub const fn from_static(s: &'static str) -> Self {
+                Self(std::borrow::Cow::Borrowed(s))
+            }
+        }
+
+        impl<S> From<S> for $name
+        where
+            S: Into<std::borrow::Cow<'static, str>>,
+        {
+            fn from(s: S) -> Self {
+                Self::new(s)
+            }
+        }
+
+        impl $crate::AppendToUrlQuery for $name {
+            fn append_to_url_query(&self, url: &mut url::Url) {
+                url.query_pairs_mut().append_pair($option, &self.0);
+            }
+        }
+    };
+}
+
+/// The following macro invocation:
+/// ```
+/// # #[macro_use] extern crate azure_core;
 /// create_enum!(Words, (Pollo, "Pollo"), (Bianco, "Bianco"), (Giallo, "Giallo"));
 /// ```
 /// Turns into a struct where each variant can be turned into and construct from the corresponding string.

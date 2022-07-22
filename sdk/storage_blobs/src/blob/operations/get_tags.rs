@@ -6,7 +6,7 @@ use chrono::{DateTime, Utc};
 operation! {
     GetTags,
     client: BlobClient,
-    ?if_tags: IfTagsCondition,
+    ?if_tags: IfTags,
     ?blob_versioning: BlobVersioning,
     ?lease_id: LeaseId
 }

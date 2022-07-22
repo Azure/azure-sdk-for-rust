@@ -11,7 +11,7 @@ operation! {
     SetTags,
     client: BlobClient,
     tags: Tags,
-    ?if_tags: IfTagsCondition,
+    ?if_tags: IfTags,
     ?lease_id: LeaseId
 }
 

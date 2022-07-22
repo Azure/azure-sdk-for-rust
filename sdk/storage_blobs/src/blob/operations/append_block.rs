@@ -10,7 +10,7 @@ operation! {
     ?condition_append_position: ConditionAppendPosition,
     ?if_modified_since: IfModifiedSinceCondition,
     ?if_match: IfMatchCondition,
-    ?if_tag: IfTagsCondition,
+    ?if_tag: IfTags,
     ?lease_id: LeaseId
 }
 

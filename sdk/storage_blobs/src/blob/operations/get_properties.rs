@@ -7,7 +7,7 @@ operation! {
     client: BlobClient,
     ?if_modified_since: IfModifiedSinceCondition,
     ?if_match: IfMatchCondition,
-    ?if_tags: IfTagsCondition,
+    ?if_tags: IfTags,
     ?blob_versioning: BlobVersioning,
     ?lease_id: LeaseId
 }
