@@ -1,11 +1,7 @@
 use crate::clients::ServiceType;
 use crate::core::prelude::*;
-use azure_core::headers::{
-    account_kind_from_headers, date_from_headers, request_id_from_headers, sku_name_from_headers,
-    Headers,
-};
-use azure_core::RequestId;
-use chrono::{DateTime, Utc};
+use crate::headers::CommonStorageResponseHeaders;
+use azure_core::headers::{account_kind_from_headers, sku_name_from_headers, Headers};
 
 operation! {
     GetAccountInformation,
@@ -33,22 +29,19 @@ impl GetAccountInformationBuilder {
 
 #[derive(Debug, Clone)]
 pub struct GetAccountInformationResponse {
-    pub request_id: RequestId,
-    pub date: DateTime<Utc>,
+    pub common: CommonStorageResponseHeaders,
     pub sku_name: String,
     pub account_kind: String,
 }
 
 impl GetAccountInformationResponse {
     pub(crate) fn try_from(headers: &Headers) -> azure_core::Result<GetAccountInformationResponse> {
-        let request_id = request_id_from_headers(headers)?;
-        let date = date_from_headers(headers)?;
+        let common = CommonStorageResponseHeaders::try_from(headers)?;
         let sku_name = sku_name_from_headers(headers)?;
         let account_kind = account_kind_from_headers(headers)?;
 
         Ok(GetAccountInformationResponse {
-            request_id,
-            date,
+            common,
             sku_name,
             account_kind,
         })
