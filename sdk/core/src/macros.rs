@@ -301,6 +301,9 @@ macro_rules! future {
 /// Turns into a Header value used to construct requests.
 #[macro_export]
 macro_rules! request_header {
+    ($(#[$outer:meta])* $name:ident, $header:ident) => {
+        $crate::request_header!($name, $header,);
+    };
     ($(#[$outer:meta])* $name:ident, $header:ident, $(($variant:ident, $value:expr)), *) => {
         #[derive(Debug, Clone)]
         $(#[$outer])*

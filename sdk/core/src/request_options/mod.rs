@@ -59,7 +59,7 @@ request_header!(
 request_header!(
     /// The (friendly) version identifier for the client making the request
     ClientVersion,
-    CLIENT_VERSION,
+    CLIENT_VERSION
 );
 request_header!(
     /// The Content Type indicates the media type of the request body
@@ -79,23 +79,23 @@ request_header!(
     /// value is set for the request than when fetching an image, video or a
     /// script.
     Accept,
-    ACCEPT,
+    ACCEPT
 );
-request_header!(ActivityId, ACTIVITY_ID,);
+request_header!(ActivityId, ACTIVITY_ID);
 request_header!(App, APP,);
-request_header!(ClientRequestId, CLIENT_REQUEST_ID,);
-request_header!(ContentDisposition, CONTENT_DISPOSITION,);
-request_header!(ContentEncoding, CONTENT_ENCODING,);
-request_header!(ContentLanguage, CONTENT_LANGUAGE,);
-request_header!(Continuation, CONTINUATION,);
-request_header!(IfTags, IF_TAGS,);
-request_header!(UserAgent, USER_AGENT,);
+request_header!(ClientRequestId, CLIENT_REQUEST_ID);
+request_header!(ContentDisposition, CONTENT_DISPOSITION);
+request_header!(ContentEncoding, CONTENT_ENCODING);
+request_header!(ContentLanguage, CONTENT_LANGUAGE);
+request_header!(Continuation, CONTINUATION);
+request_header!(IfTags, IF_TAGS);
+request_header!(UserAgent, USER_AGENT);
 request_header!(
     /// The (friendly) name of the user making the request
     User,
     USER,
 );
-request_header!(Version, VERSION,);
+request_header!(Version, VERSION);
 
 request_query!(Prefix, "prefix");
 request_query!(
