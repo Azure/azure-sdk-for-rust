@@ -61,12 +61,14 @@ request_header!(
     ClientVersion,
     CLIENT_VERSION
 );
+
 request_header!(
     /// The Content Type indicates the media type of the request body
     ContentType,
     CONTENT_TYPE,
     (APPLICATION_JSON, "application/json")
 );
+
 request_header!(
     /// Advertises which content types the client is able to understand.
     ///
@@ -81,6 +83,13 @@ request_header!(
     Accept,
     ACCEPT
 );
+
+request_header!(
+    /// The (friendly) name of the user making the request
+    User,
+    USER,
+);
+
 request_header!(ActivityId, ACTIVITY_ID);
 request_header!(App, APP,);
 request_header!(ClientRequestId, CLIENT_REQUEST_ID);
@@ -90,16 +99,11 @@ request_header!(ContentLanguage, CONTENT_LANGUAGE);
 request_header!(Continuation, CONTINUATION);
 request_header!(IfTags, IF_TAGS);
 request_header!(UserAgent, USER_AGENT);
-request_header!(
-    /// The (friendly) name of the user making the request
-    User,
-    USER,
-);
 request_header!(Version, VERSION);
 
-request_query!(Prefix, "prefix");
 request_query!(
     /// Set delimiter for the request
     Delimiter,
     "delimiter"
 );
+request_query!(Prefix, "prefix");
