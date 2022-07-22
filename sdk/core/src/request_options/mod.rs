@@ -97,8 +97,8 @@ request_header!(
 );
 request_header!(Version, VERSION,);
 
-request_query_option!(Prefix, "prefix");
-request_query_option!(
+request_query!(Prefix, "prefix");
+request_query!(
     /// Set delimiter for the request
     Delimiter,
     "delimiter"

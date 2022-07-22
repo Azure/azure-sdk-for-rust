@@ -294,7 +294,7 @@ macro_rules! future {
 /// ```
 /// # #[macro_use] extern crate azure_core;
 /// request_header!(
-///     #[doc="builds a client request id header"]
+///     /// Builds a client request id header
 ///     ClientRequestId, CLIENT_REQUEST_ID,
 /// );
 /// ```
@@ -347,11 +347,11 @@ macro_rules! request_header {
 /// The following macro invocation:
 /// ```
 /// # #[macro_use] extern crate azure_core;
-/// request_query_option!(Prefix, "prefix");
+/// request_query!(Prefix, "prefix");
 /// ```
 /// Turns into a request query option used to construct requests
 #[macro_export]
-macro_rules! request_query_option {
+macro_rules! request_query {
     ($(#[$outer:meta])* $name:ident, $option:expr) => {
         #[derive(Debug, Clone)]
         $(#[$outer])*
