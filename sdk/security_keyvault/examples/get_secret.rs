@@ -1,5 +1,5 @@
 use azure_identity::{ClientSecretCredential, TokenCredentialOptions};
-use azure_security_keyvault::KeyClient;
+use azure_security_keyvault::KeyvaultClient;
 use std::env;
 
 #[tokio::main]
@@ -12,16 +12,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         env::var("KEYVAULT_URL").expect("Missing KEYVAULT_URL environment variable.");
     let secret_name = env::var("SECRET_NAME").expect("Missing SECRET_NAME environment variable.");
 
-    let creds = ClientSecretCredential::new(
+    let creds = std::sync::Arc::new(ClientSecretCredential::new(
         tenant_id,
         client_id,
         client_secret,
         TokenCredentialOptions::default(),
-    );
-    let mut client = KeyClient::new(&keyvault_url, &creds)?;
+    ));
+    let client = KeyvaultClient::new(&keyvault_url, creds)?.secret_client(secret_name);
 
-    let secret = client.get_secret(&secret_name).await?;
-    dbg!(&secret.value());
+    let secret = client.get().into_future().await?;
+    dbg!(secret.value);
 
     Ok(())
 }

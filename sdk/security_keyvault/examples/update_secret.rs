@@ -1,8 +1,9 @@
 use azure_identity::{ClientSecretCredential, TokenCredentialOptions};
-use azure_security_keyvault::KeyClient;
+use azure_security_keyvault::KeyvaultClient;
 use chrono::prelude::*;
 use chrono::Duration;
 use std::env;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -22,25 +23,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         client_secret,
         TokenCredentialOptions::default(),
     );
-    let mut client = KeyClient::new(&keyvault_url, &creds)?;
+    let client = KeyvaultClient::new(&keyvault_url, Arc::new(creds))?.secret_client(secret_name);
 
     // Disable secret.
     client
-        .update_secret_enabled(&secret_name, &secret_version, false)
-        .await?;
-
-    // Update secret recovery level to `Purgeable`.
-    client
-        .update_secret_recovery_level(&secret_name, &secret_version, "Purgeable".into())
-        .await?;
-
-    // Update secret to expire in two weeks.
-    client
-        .update_secret_expiration_time(
-            &secret_name,
-            &secret_version,
-            Utc::now() + Duration::days(14),
-        )
+        .update()
+        .version(secret_version)
+        .enabled(false)
+        .recovery_level("Purgeable")
+        .expiration(Utc::now() + Duration::days(14))
+        .into_future()
         .await?;
 
     Ok(())
