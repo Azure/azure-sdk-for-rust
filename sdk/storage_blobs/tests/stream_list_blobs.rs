@@ -28,8 +28,7 @@ async fn stream_list_blobs() {
     if page
         .containers
         .iter()
-        .find(|item| item.name == container_name)
-        .is_some()
+        .any(|item| item.name == container_name)
     {
         panic!("The specified container must not exists!");
     }

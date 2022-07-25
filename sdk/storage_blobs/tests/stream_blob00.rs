@@ -12,7 +12,7 @@ async fn create_blob_and_stream_back() {
 }
 
 async fn code() -> azure_core::Result<()> {
-    let container_name = format!("create-{}", Uuid::new_v4().to_string());
+    let container_name = format!("create-{}", Uuid::new_v4());
     let file_name = "azure_sdk_for_rust_stream_test.txt";
 
     // First we retrieve the account name and access key from environment variables.
@@ -26,7 +26,7 @@ async fn code() -> azure_core::Result<()> {
     let container = storage.container_client(&container_name);
     let blob = container.blob_client(file_name);
 
-    if blob_service
+    if !blob_service
         .list_containers()
         .into_stream()
         .next()
@@ -34,8 +34,7 @@ async fn code() -> azure_core::Result<()> {
         .unwrap()?
         .containers
         .iter()
-        .find(|x| x.name == container_name)
-        .is_none()
+        .any(|x| x.name == container_name)
     {
         println!("create container");
         container
