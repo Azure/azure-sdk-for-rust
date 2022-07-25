@@ -48,15 +48,11 @@ async fn main() -> azure_core::Result<()> {
         "renaming directory '{}' to '{}' ...",
         &directory_name, &new_directory_name
     );
-    let rename_directory_response = directory_client
+    directory_client
         .rename(new_directory_name)
         .properties(fs_properties.clone())
         .into_future()
         .await?;
-    println!(
-        "rename directory response == {:?}\n",
-        rename_directory_response
-    );
 
     println!("deleting file system...");
     let delete_fs_response = file_system_client.delete().into_future().await?;

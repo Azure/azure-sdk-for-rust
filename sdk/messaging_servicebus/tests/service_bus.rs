@@ -97,11 +97,11 @@ fn create_client() -> azure_core::Result<Client> {
 
     let http_client = azure_core::new_http_client();
 
-    Ok(Client::new(
+    Client::new(
         http_client,
         service_bus_namespace,
         queue_name,
         policy_name,
         policy_key,
-    )?)
+    )
 }

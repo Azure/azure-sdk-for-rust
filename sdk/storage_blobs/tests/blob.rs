@@ -3,11 +3,7 @@
 extern crate log;
 
 use azure_storage::core::prelude::*;
-use azure_storage_blobs::{
-    blob::BlockListType,
-    container::{Container, PublicAccess},
-    prelude::*,
-};
+use azure_storage_blobs::{blob::BlockListType, container::PublicAccess, prelude::*};
 use bytes::Bytes;
 use chrono::{FixedOffset, Utc};
 use futures::StreamExt;
@@ -20,7 +16,7 @@ use uuid::Uuid;
 
 #[tokio::test]
 async fn create_and_delete_container() -> azure_core::Result<()> {
-    let container_name = format!("create-{}", Uuid::new_v4().to_string());
+    let container_name = format!("create-{}", Uuid::new_v4());
 
     let storage_client = initialize();
     let blob_service = storage_client.blob_service_client();
@@ -76,14 +72,13 @@ async fn create_and_delete_container() -> azure_core::Result<()> {
         .next()
         .await
         .unwrap()?;
-    let cont_list: Vec<&Container> = list
+    let cont_list = list
         .containers
         .deref()
-        .into_iter()
-        .filter(|e| e.name == container_name)
-        .collect();
+        .iter()
+        .filter(|e| e.name == container_name);
 
-    if cont_list.len() != 1 {
+    if cont_list.count() != 1 {
         panic!("More than 1 container returned with the same name!");
     }
 
@@ -228,7 +223,7 @@ async fn put_block_blob() {
     let container = storage.container_client(container_name);
     let blob = container.blob_client(blob_name);
 
-    if blob_service
+    if !blob_service
         .list_containers()
         .into_stream()
         .next()
@@ -237,8 +232,7 @@ async fn put_block_blob() {
         .unwrap()
         .containers
         .iter()
-        .find(|x| x.name == container_name)
-        .is_none()
+        .any(|x| x.name == container_name)
     {
         container
             .create()
@@ -264,7 +258,7 @@ async fn put_block_blob() {
 #[tokio::test]
 async fn copy_blob() -> azure_core::Result<()> {
     let blob_name: &'static str = "copysrc";
-    let container_name = format!("copy-blob-{}", Uuid::new_v4().to_string());
+    let container_name = format!("copy-blob-{}", Uuid::new_v4());
     let data = Bytes::from_static(b"abcdef");
 
     let storage = initialize();
@@ -272,7 +266,7 @@ async fn copy_blob() -> azure_core::Result<()> {
     let container = storage.container_client(&container_name);
     let blob = container.blob_client(blob_name);
 
-    if blob_service
+    if !blob_service
         .list_containers()
         .into_stream()
         .next()
@@ -281,8 +275,7 @@ async fn copy_blob() -> azure_core::Result<()> {
         .unwrap()
         .containers
         .iter()
-        .find(|x| x.name == container_name)
-        .is_none()
+        .any(|x| x.name == container_name)
     {
         container
             .create()
@@ -328,7 +321,7 @@ where
 #[tokio::test]
 async fn put_block_blob_and_get_properties() -> azure_core::Result<()> {
     let blob_name: &'static str = "properties";
-    let container_name = format!("properties-{}", Uuid::new_v4().to_string());
+    let container_name = format!("properties-{}", Uuid::new_v4());
     let data = Bytes::from_static(b"abcdef");
 
     let storage = initialize();
@@ -336,7 +329,7 @@ async fn put_block_blob_and_get_properties() -> azure_core::Result<()> {
     let container = storage.container_client(&container_name);
     let blob = container.blob_client(blob_name);
 
-    if blob_service
+    if !blob_service
         .list_containers()
         .into_stream()
         .next()
@@ -345,8 +338,7 @@ async fn put_block_blob_and_get_properties() -> azure_core::Result<()> {
         .unwrap()
         .containers
         .iter()
-        .find(|x| x.name == container_name)
-        .is_none()
+        .any(|x| x.name == container_name)
     {
         container
             .create()
@@ -388,7 +380,7 @@ async fn set_blobtier() {
     let container = storage.container_client(container_name);
     let blob = container.blob_client(blob_name);
 
-    if blob_service
+    if !blob_service
         .list_containers()
         .into_stream()
         .next()
@@ -397,8 +389,7 @@ async fn set_blobtier() {
         .unwrap()
         .containers
         .iter()
-        .find(|x| x.name == container_name)
-        .is_none()
+        .any(|x| x.name == container_name)
     {
         container
             .create()

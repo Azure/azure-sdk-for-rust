@@ -24,7 +24,7 @@ async fn put_append_blob() {
     let container = storage.container_client(container_name);
     let blob = container.blob_client(blob_name);
 
-    if blob_service
+    if !blob_service
         .list_containers()
         .into_stream()
         .next()
@@ -33,8 +33,7 @@ async fn put_append_blob() {
         .unwrap()
         .containers
         .iter()
-        .find(|x| x.name == container_name)
-        .is_none()
+        .any(|x| x.name == container_name)
     {
         container
             .create()
