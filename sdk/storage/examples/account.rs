@@ -11,11 +11,13 @@ async fn main() -> azure_core::Result<()> {
 
     let storage_client = StorageClient::new_access_key(&account, &access_key);
 
-    let response = storage_client
+    let account = storage_client
         .get_account_information()
         .into_future()
         .await?;
-    println!("{:?}", response);
+    println!("Account info:");
+    println!("\tKind: {}", account.account_kind);
+    println!("\tSku: {}", account.sku_name);
 
     Ok(())
 }

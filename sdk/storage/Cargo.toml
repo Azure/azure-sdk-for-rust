@@ -32,7 +32,7 @@ hmac = "0.12"
 sha2 = "0.10"
 
 [dev-dependencies]
-tokio = { version = "1.0", features = ["macros"] }
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 env_logger = "0.9"
 reqwest = "0.11"
 
@@ -44,7 +44,3 @@ test_integration = []
 azurite_workaround = []
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
-
-# This section specifies the required features for the examples.
-[[example]]
-name="account00"

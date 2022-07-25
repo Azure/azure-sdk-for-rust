@@ -1,4 +1,4 @@
-use crate::service::operations::ListContainersBuilder;
+use crate::service::operations::*;
 use azure_core::{Context, Request, Response};
 use azure_storage::core::clients::{ServiceType, StorageClient};
 
@@ -20,6 +20,10 @@ pub struct BlobServiceClient {
 impl BlobServiceClient {
     pub(crate) fn new(storage_client: StorageClient) -> Self {
         Self { storage_client }
+    }
+
+    pub fn find_blobs_by_tags(&self, expression: String) -> FindBlobsByTagsBuilder {
+        FindBlobsByTagsBuilder::new(self.clone(), expression)
     }
 
     pub fn list_containers(&self) -> ListContainersBuilder {

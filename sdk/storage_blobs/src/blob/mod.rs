@@ -9,13 +9,13 @@ mod block_list_type;
 mod block_with_size_list;
 mod page_range_list;
 
-pub use self::blob_block_type::BlobBlockType;
-pub use self::blob_block_with_size::BlobBlockWithSize;
-pub use self::block_list::BlockList;
-pub use self::block_list_type::BlockListType;
-pub use self::block_with_size_list::BlockWithSizeList;
-pub use self::lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
-pub use self::page_range_list::PageRangeList;
+pub use blob_block_type::BlobBlockType;
+pub use blob_block_with_size::BlobBlockWithSize;
+pub use block_list::BlockList;
+pub use block_list_type::BlockListType;
+pub use block_with_size_list::BlockWithSizeList;
+pub use lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
+pub use page_range_list::PageRangeList;
 
 use crate::options::{AccessTier, Tags};
 use azure_core::{
