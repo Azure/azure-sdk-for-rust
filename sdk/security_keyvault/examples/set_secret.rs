@@ -1,5 +1,5 @@
 use azure_identity::{ClientSecretCredential, TokenCredentialOptions};
-use azure_security_keyvault::KeyvaultClient;
+use azure_security_keyvault::SecretClient;
 use std::env;
 use std::sync::Arc;
 
@@ -21,11 +21,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         client_secret,
         TokenCredentialOptions::default(),
     );
-    let client = KeyvaultClient::new(&keyvault_url, Arc::new(creds))?.secret_client(secret_name);
+    let client = SecretClient::new(&keyvault_url, Arc::new(creds))?;
 
-    client.set(secret_value).into_future().await?;
+    client.set(&secret_name, secret_value).into_future().await?;
 
-    let secret = client.get().into_future().await?;
+    let secret = client.get(secret_name).into_future().await?;
     assert_eq!(secret.value, "whatup");
 
     Ok(())

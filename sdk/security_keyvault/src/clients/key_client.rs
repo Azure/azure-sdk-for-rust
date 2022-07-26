@@ -1,20 +1,23 @@
 use crate::prelude::*;
+use azure_core::auth::TokenCredential;
+use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct KeyClient {
     pub(crate) client: KeyvaultClient,
-    pub(crate) name: String,
 }
 
 impl KeyClient {
-    pub(crate) fn new<S>(client: KeyvaultClient, name: S) -> Self
-    where
-        S: Into<String>,
-    {
-        Self {
-            client,
-            name: name.into(),
-        }
+    pub fn new(
+        vault_url: &str,
+        token_credential: Arc<dyn TokenCredential>,
+    ) -> azure_core::Result<Self> {
+        let client = KeyvaultClient::new(vault_url, token_credential)?;
+        Ok(Self { client })
+    }
+
+    pub(crate) fn new_with_client(client: KeyvaultClient) -> Self {
+        Self { client }
     }
 
     /// Gets the public part of a stored key.
@@ -23,8 +26,11 @@ impl KeyClient {
     /// This operation requires the keys/get permission.
     ///
     /// GET {vaultBaseUrl}/keys/{key-name}/{key-version}?api-version=7.1
-    pub fn get(&self) -> GetKeyBuilder {
-        GetKeyBuilder::new(self.clone())
+    pub fn get<N>(&self, name: N) -> GetKeyBuilder
+    where
+        N: Into<String>,
+    {
+        GetKeyBuilder::new(self.clone(), name.into())
     }
 
     /// Creates a signature from a digest using the specified key.
@@ -34,11 +40,12 @@ impl KeyClient {
     /// key.
     ///
     /// This operation requires the keys/sign permission.
-    pub fn sign<D>(&self, algorithm: SignatureAlgorithm, digest: D) -> SignBuilder
+    pub fn sign<N, D>(&self, name: N, algorithm: SignatureAlgorithm, digest: D) -> SignBuilder
     where
+        N: Into<String>,
         D: Into<String>,
     {
-        SignBuilder::new(self.clone(), algorithm, digest.into())
+        SignBuilder::new(self.clone(), name.into(), algorithm, digest.into())
     }
 
     /// Decrypt a single block of encrypted data.
@@ -53,8 +60,11 @@ impl KeyClient {
     /// The DECRYPT operation applies to asymmetric and symmetric keys stored in
     /// Vault or HSM since it uses the private portion of the key. This
     /// operation requires the keys/decrypt permission.
-    pub fn decrypt(&mut self, decrypt_parameters: DecryptParameters) -> DecryptBuilder {
-        DecryptBuilder::new(self.clone(), decrypt_parameters)
+    pub fn decrypt<N>(&self, name: N, decrypt_parameters: DecryptParameters) -> DecryptBuilder
+    where
+        N: Into<String>,
+    {
+        DecryptBuilder::new(self.clone(), name.into(), decrypt_parameters)
     }
 }
 
@@ -120,8 +130,8 @@ mod tests {
         let client = mock_client!(&"test-keyvault", MockCredential::new());
 
         let key = client
-            .key_client("test-key")
-            .get()
+            .key_client()
+            .get("test-key")
             .version("78deebed173b48e48f55abf87ed4cf71")
             .into_future()
             .await?;
@@ -169,10 +179,10 @@ mod tests {
             .create();
 
         let creds = MockCredential::new();
-        let client = mock_client!(&"test-keyvault", creds).key_client("test-key");
+        let client = mock_client!(&"test-keyvault", creds).key_client();
 
         let res = client
-            .sign(SignatureAlgorithm::RS512, "base64msg2sign")
+            .sign("test-key", SignatureAlgorithm::RS512, "base64msg2sign")
             .version("78deebed173b48e48f55abf87ed4cf71")
             .into_future()
             .await
@@ -217,8 +227,8 @@ mod tests {
         };
 
         let res: DecryptResult = client
-            .key_client("test-key")
-            .decrypt(decrypt_parameters)
+            .key_client()
+            .decrypt("test-key", decrypt_parameters)
             .version("78deebed173b48e48f55abf87ed4cf71")
             .into_future()
             .await

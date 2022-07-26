@@ -4,6 +4,7 @@ use serde_json::{Map, Value};
 operation! {
     Sign,
     client: KeyClient,
+    name: String,
     algorithm: SignatureAlgorithm,
     digest: String,
     ?version: String
@@ -15,7 +16,7 @@ impl SignBuilder {
             // POST {vaultBaseUrl}/keys/{key-name}/{key-version}/sign?api-version=7.1
             let version = self.version.unwrap_or_default();
             let mut uri = self.client.client.vault_url.clone();
-            uri.set_path(&format!("keys/{}/{}/sign", self.client.name, version));
+            uri.set_path(&format!("keys/{}/{}/sign", self.name, version));
             uri.set_query(Some(API_VERSION_PARAM));
 
             let mut request_body = Map::new();

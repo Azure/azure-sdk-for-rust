@@ -7,6 +7,7 @@ use std::collections::HashMap;
 operation! {
     UpdateSecret,
     client: SecretClient,
+    name: String,
     ?version: String,
     ?enabled: bool,
     ?content_type: String,
@@ -41,7 +42,7 @@ impl UpdateSecretBuilder {
         Box::pin(async move {
             let mut uri = self.client.client.vault_url.clone();
             let version = self.version.unwrap_or_default();
-            uri.set_path(&format!("secrets/{}/{}", self.client.name, version));
+            uri.set_path(&format!("secrets/{}/{}", self.name, version));
             uri.set_query(Some(API_VERSION_PARAM));
 
             let request = UpdateRequest {
@@ -59,7 +60,7 @@ impl UpdateSecretBuilder {
                 .with_context(ErrorKind::Other, || {
                     format!(
                         "failed to serialize UpdateRequest. secret_name: {} secret_version_name: {version}",
-                        self.client.name
+                        self.name
                     )
                 })?;
 
@@ -68,7 +69,7 @@ impl UpdateSecretBuilder {
                 .request(reqwest::Method::PATCH, uri.to_string(), Some(body))
                 .await
                 .with_context(ErrorKind::Other, || {
-                    format!("failed to set secret. secret_name: {}", self.client.name)
+                    format!("failed to set secret. secret_name: {}", self.name)
                 })?;
 
             Ok(())

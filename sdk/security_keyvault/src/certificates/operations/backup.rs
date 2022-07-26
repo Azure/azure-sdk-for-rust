@@ -4,13 +4,14 @@ use azure_core::error::{ErrorKind, ResultExt};
 operation! {
     CertificateBackup,
     client: CertificateClient,
+    name: String,
 }
 
 impl CertificateBackupBuilder {
     pub fn into_future(mut self) -> CertificateBackup {
         Box::pin(async move {
             let mut uri = self.client.client.vault_url.clone();
-            uri.set_path(&format!("certificates/{}/backup", self.client.name));
+            uri.set_path(&format!("certificates/{}/backup", self.name));
             uri.set_query(Some(API_VERSION_PARAM));
 
             let response_body = self

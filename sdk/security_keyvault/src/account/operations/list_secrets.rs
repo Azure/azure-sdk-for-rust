@@ -4,7 +4,7 @@ use url::Url;
 
 operation! {
     ListSecrets,
-    client: KeyvaultClient,
+    client: SecretClient,
 }
 
 impl ListSecretsBuilder {
@@ -12,11 +12,12 @@ impl ListSecretsBuilder {
         Box::pin(async move {
             let mut secrets = Vec::<KeyVaultSecretBaseIdentifier>::new();
 
-            let mut uri = self.client.vault_url.clone();
+            let mut uri = self.client.client.vault_url.clone();
             uri.set_path("secrets");
 
             loop {
                 let resp_body = self
+                    .client
                     .client
                     .request(reqwest::Method::GET, uri.to_string(), None)
                     .await?;

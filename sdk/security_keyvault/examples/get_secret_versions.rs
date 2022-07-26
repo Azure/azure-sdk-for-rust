@@ -1,5 +1,5 @@
 use azure_identity::{ClientSecretCredential, TokenCredentialOptions};
-use azure_security_keyvault::KeyvaultClient;
+use azure_security_keyvault::SecretClient;
 use std::env;
 use std::sync::Arc;
 
@@ -19,9 +19,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         client_secret,
         TokenCredentialOptions::default(),
     ));
-    let client = KeyvaultClient::new(&keyvault_url, creds)?.secret_client(secret_name);
+    let client = SecretClient::new(&keyvault_url, creds)?;
 
-    let secrets = client.get_versions().into_future().await?;
+    let secrets = client.get_versions(secret_name).into_future().await?;
     dbg!(&secrets);
 
     Ok(())

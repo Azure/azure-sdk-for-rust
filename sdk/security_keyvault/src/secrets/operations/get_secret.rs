@@ -4,6 +4,7 @@ use azure_core::error::{ErrorKind, ResultExt};
 operation! {
     GetSecret,
     client: SecretClient,
+    name: String,
     ?version: String
 }
 
@@ -12,7 +13,7 @@ impl GetSecretBuilder {
         Box::pin(async move {
             let mut uri = self.client.client.vault_url.clone();
             let version = self.version.unwrap_or_default();
-            uri.set_path(&format!("secrets/{}/{}", self.client.name, version));
+            uri.set_path(&format!("secrets/{}/{}", self.name, version));
             uri.set_query(Some(API_VERSION_PARAM));
 
             let response_body = self
@@ -23,7 +24,7 @@ impl GetSecretBuilder {
             let response = serde_json::from_str::<KeyVaultGetSecretResponse>(&response_body)
             .with_context(ErrorKind::DataConversion, || {
                 format!(
-                    "failed to parse KeyVaultGetSecretResponse. secret_name: {} secret_version_name: {version} response_body: {response_body}", self.client.name
+                    "failed to parse KeyVaultGetSecretResponse. secret_name: {} secret_version_name: {version} response_body: {response_body}", self.name
                 )
             })?;
             Ok(KeyVaultSecret {

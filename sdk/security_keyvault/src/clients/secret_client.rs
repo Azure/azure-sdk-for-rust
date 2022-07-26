@@ -1,20 +1,23 @@
 use crate::prelude::*;
+use azure_core::auth::TokenCredential;
+use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct SecretClient {
     pub(crate) client: KeyvaultClient,
-    pub(crate) name: String,
 }
 
 impl SecretClient {
-    pub(crate) fn new<S>(client: KeyvaultClient, name: S) -> Self
-    where
-        S: Into<String>,
-    {
-        Self {
-            client,
-            name: name.into(),
-        }
+    pub fn new(
+        vault_url: &str,
+        token_credential: Arc<dyn TokenCredential>,
+    ) -> azure_core::Result<Self> {
+        let client = KeyvaultClient::new(vault_url, token_credential)?;
+        Ok(Self { client })
+    }
+
+    pub(crate) fn new_with_client(client: KeyvaultClient) -> Self {
+        Self { client }
     }
 
     /// Gets a secret from the Key Vault.
@@ -32,15 +35,18 @@ impl SecretClient {
     ///     let mut client = KeyvaultClient::new(
     ///     &"KEYVAULT_URL",
     ///     Arc::new(creds),
-    ///     ).unwrap().secret_client("SECRET_NAME");
-    ///     let secret = client.get().into_future().await.unwrap();
+    ///     ).unwrap().secret_client();
+    ///     let secret = client.get("SECRET_NAME").into_future().await.unwrap();
     ///     dbg!(&secret);
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub fn get(&self) -> GetSecretBuilder {
-        GetSecretBuilder::new(self.clone())
+    pub fn get<N>(&self, name: N) -> GetSecretBuilder
+    where
+        N: Into<String>,
+    {
+        GetSecretBuilder::new(self.clone(), name.into())
     }
 
     /// Sets the value of a secret in the Key Vault.
@@ -58,17 +64,18 @@ impl SecretClient {
     ///     let mut client = KeyvaultClient::new(
     ///     &"KEYVAULT_URL",
     ///     Arc::new(creds),
-    ///     ).unwrap().secret_client("SECRET_NAME");
-    ///     client.set("NEW_VALUE").into_future().await.unwrap();
+    ///     ).unwrap().secret_client();
+    ///     client.set("SECRET_NAME", "NEW_VALUE").into_future().await.unwrap();
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub fn set<S>(&self, value: S) -> SetSecretBuilder
+    pub fn set<N, S>(&self, name: N, value: S) -> SetSecretBuilder
     where
+        N: Into<String>,
         S: Into<String>,
     {
-        SetSecretBuilder::new(self.clone(), value.into())
+        SetSecretBuilder::new(self.clone(), name.into(), value.into())
     }
 
     /// Updates the metadata associated with a secret
@@ -86,14 +93,17 @@ impl SecretClient {
     ///     let client = KeyvaultClient::new(
     ///     &"KEYVAULT_URL",
     ///     Arc::new(creds),
-    ///     ).unwrap().secret_client("SECRET_NAME");
-    ///     client.update().enabled(false).into_future().await.unwrap();
+    ///     ).unwrap().secret_client();
+    ///     client.update("SECRET_NAME").enabled(false).into_future().await.unwrap();
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub fn update(&self) -> UpdateSecretBuilder {
-        UpdateSecretBuilder::new(self.clone())
+    pub fn update<N>(&self, name: N) -> UpdateSecretBuilder
+    where
+        N: Into<String>,
+    {
+        UpdateSecretBuilder::new(self.clone(), name.into())
     }
 
     /// Gets all the versions for a secret in the Key Vault.
@@ -111,15 +121,18 @@ impl SecretClient {
     ///     let client = KeyvaultClient::new(
     ///     &"KEYVAULT_URL",
     ///     Arc::new(creds),
-    ///     ).unwrap().secret_client("SECRET_NAME");
-    ///     let secret_versions = client.get_versions().into_future().await.unwrap();
+    ///     ).unwrap().secret_client();
+    ///     let secret_versions = client.get_versions("SECRET_NAME").into_future().await.unwrap();
     ///     dbg!(&secret_versions);
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub fn get_versions(&self) -> GetSecretVersionsBuilder {
-        GetSecretVersionsBuilder::new(self.clone())
+    pub fn get_versions<N>(&self, name: N) -> GetSecretVersionsBuilder
+    where
+        N: Into<String>,
+    {
+        GetSecretVersionsBuilder::new(self.clone(), name.into())
     }
 
     /// Restores a backed up secret and all its versions.
@@ -138,14 +151,17 @@ impl SecretClient {
     ///     let client = KeyvaultClient::new(
     ///     &"KEYVAULT_URL",
     ///     Arc::new(creds),
-    ///     ).unwrap().secret_client("SECRET_NAME");
-    ///     client.backup().into_future().await.unwrap();
+    ///     ).unwrap().secret_client();
+    ///     client.backup("SECRET_NAME").into_future().await.unwrap();
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub fn backup(&self) -> BackupSecretBuilder {
-        BackupSecretBuilder::new(self.clone())
+    pub fn backup<N>(&self, name: N) -> BackupSecretBuilder
+    where
+        N: Into<String>,
+    {
+        BackupSecretBuilder::new(self.clone(), name.into())
     }
 
     /// Deletes a secret in the Key Vault.
@@ -163,14 +179,68 @@ impl SecretClient {
     ///     let client = KeyvaultClient::new(
     ///     &"KEYVAULT_URL",
     ///     Arc::new(creds),
-    ///     ).unwrap().secret_client("SECRET_NAME");
-    ///     client.delete().into_future().await.unwrap();
+    ///     ).unwrap().secret_client();
+    ///     client.delete("SECRET_NAME").into_future().await.unwrap();
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub fn delete(&self) -> DeleteSecretBuilder {
-        DeleteSecretBuilder::new(self.clone())
+    pub fn delete<N>(&self, name: N) -> DeleteSecretBuilder
+    where
+        N: Into<String>,
+    {
+        DeleteSecretBuilder::new(self.clone(), name.into())
+    }
+
+    /// Lists all the secrets in the Key Vault.
+    ///
+    /// ```no_run
+    /// use azure_security_keyvault::KeyvaultClient;
+    /// use azure_identity::DefaultAzureCredential;
+    /// use tokio::runtime::Runtime;
+    ///
+    /// async fn example() {
+    ///     let creds = DefaultAzureCredential::default();
+    ///     let mut client = KeyvaultClient::new(
+    ///     &"KEYVAULT_URL",
+    ///     std::sync::Arc::new(creds),
+    ///     ).unwrap().secret_client();
+    ///     let secrets = client.list_secrets().into_future().await.unwrap();
+    ///     dbg!(&secrets);
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
+    /// ```
+    pub fn list_secrets(&self) -> ListSecretsBuilder {
+        ListSecretsBuilder::new(self.clone())
+    }
+
+    /// Restores a backed up secret and all its versions.
+    /// This operation requires the secrets/restore permission.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use azure_security_keyvault::KeyvaultClient;
+    /// use azure_identity::DefaultAzureCredential;
+    /// use tokio::runtime::Runtime;
+    ///
+    /// async fn example() {
+    ///     let creds = DefaultAzureCredential::default();
+    ///     let mut client = KeyvaultClient::new(
+    ///     &"KEYVAULT_URL",
+    ///     std::sync::Arc::new(creds),
+    ///     ).unwrap().secret_client();
+    ///     client.restore_secret("KUF6dXJlS2V5VmF1bHRTZWNyZXRCYWNrdXBWMS5taW").into_future().await.unwrap();
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
+    /// ```
+    pub fn restore_secret<S>(&self, backup_blob: S) -> RestoreSecretBuilder
+    where
+        S: Into<String>,
+    {
+        RestoreSecretBuilder::new(self.clone(), backup_blob.into())
     }
 }
 
@@ -219,9 +289,9 @@ mod tests {
         let creds = MockCredential::new();
         dbg!(mockito::server_url());
         let client = mock_client!(&"test-keyvault", creds);
-        let secret_client = client.secret_client("test-secret");
+        let secret_client = client.secret_client();
 
-        let secret = secret_client.get().into_future().await?;
+        let secret = secret_client.get("test-secret").into_future().await?;
 
         assert_eq!("secret-value", secret.value);
         assert_eq!(
@@ -288,9 +358,12 @@ mod tests {
             .create();
 
         let creds = MockCredential::new();
-        let secret_client = mock_client!(&"test-keyvault", creds).secret_client("test-secret");
+        let secret_client = mock_client!(&"test-keyvault", creds).secret_client();
 
-        let secret_versions = secret_client.get_versions().into_future().await?;
+        let secret_versions = secret_client
+            .get_versions("test-secret")
+            .into_future()
+            .await?;
 
         let secret_1 = &secret_versions[0];
         assert_eq!(

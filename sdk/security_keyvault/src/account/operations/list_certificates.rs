@@ -3,7 +3,7 @@ use url::Url;
 
 operation! {
     ListCertificates,
-    client: KeyvaultClient,
+    client: CertificateClient,
 }
 
 impl ListCertificatesBuilder {
@@ -11,12 +11,13 @@ impl ListCertificatesBuilder {
         Box::pin(async move {
             let mut certificates = Vec::<CertificateProperties>::new();
 
-            let mut uri = self.client.vault_url.clone();
+            let mut uri = self.client.client.vault_url.clone();
             uri.set_path("certificates");
             uri.set_query(Some(API_VERSION_PARAM));
 
             loop {
                 let resp_body = self
+                    .client
                     .client
                     .request(reqwest::Method::GET, uri.to_string(), None)
                     .await?;

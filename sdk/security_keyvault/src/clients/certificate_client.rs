@@ -1,20 +1,23 @@
 use crate::prelude::*;
+use azure_core::auth::TokenCredential;
+use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct CertificateClient {
     pub(crate) client: KeyvaultClient,
-    pub(crate) name: String,
 }
 
 impl CertificateClient {
-    pub(crate) fn new<S>(client: KeyvaultClient, name: S) -> Self
-    where
-        S: Into<String>,
-    {
-        Self {
-            client,
-            name: name.into(),
-        }
+    pub fn new(
+        vault_url: &str,
+        token_credential: Arc<dyn TokenCredential>,
+    ) -> azure_core::Result<Self> {
+        let client = KeyvaultClient::new(vault_url, token_credential)?;
+        Ok(Self { client })
+    }
+
+    pub(crate) fn new_with_client(client: KeyvaultClient) -> Self {
+        Self { client }
     }
 
     /// Gets a certificate from the Key Vault.
@@ -32,15 +35,18 @@ impl CertificateClient {
     ///     let mut client = KeyvaultClient::new(
     ///         &"KEYVAULT_URL",
     ///         Arc::new(creds),
-    ///     ).unwrap().certificate_client("CERTIFICATE_NAME");
-    ///     let certificate = client.get().into_future().await.unwrap();
+    ///     ).unwrap().certificate_client();
+    ///     let certificate = client.get("NAME").into_future().await.unwrap();
     ///     dbg!(&certificate);
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub fn get(&self) -> GetCertificateBuilder {
-        GetCertificateBuilder::new(self.clone())
+    pub fn get<N>(&self, name: N) -> GetCertificateBuilder
+    where
+        N: Into<String>,
+    {
+        GetCertificateBuilder::new(self.clone(), name.into())
     }
 
     /// Gets all the versions for a certificate in the Key Vault.
@@ -58,19 +64,25 @@ impl CertificateClient {
     ///     let mut client = KeyvaultClient::new(
     ///         &"KEYVAULT_URL",
     ///         Arc::new(creds),
-    ///     ).unwrap().certificate_client("CERTIFICATE_NAME");
-    ///     let certificate_versions = client.get_versions().into_future().await.unwrap();
+    ///     ).unwrap().certificate_client();
+    ///     let certificate_versions = client.get_versions("NAME").into_future().await.unwrap();
     ///     dbg!(&certificate_versions);
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub fn get_versions(&self) -> GetCertificateVersionsBuilder {
-        GetCertificateVersionsBuilder::new(self.clone())
+    pub fn get_versions<N>(&self, name: N) -> GetCertificateVersionsBuilder
+    where
+        N: Into<String>,
+    {
+        GetCertificateVersionsBuilder::new(self.clone(), name.into())
     }
 
-    pub fn update(&self) -> UpdateCertificatePropertiesBuilder {
-        UpdateCertificatePropertiesBuilder::new(self.clone())
+    pub fn update<N>(&self, name: N) -> UpdateCertificatePropertiesBuilder
+    where
+        N: Into<String>,
+    {
+        UpdateCertificatePropertiesBuilder::new(self.clone(), name.into())
     }
 
     /// Restores a backed up certificate and all its versions.
@@ -89,14 +101,17 @@ impl CertificateClient {
     ///     let mut client = KeyvaultClient::new(
     ///         &"KEYVAULT_URL",
     ///         Arc::new(creds),
-    ///     ).unwrap().certificate_client("CERTIFICATE_NAME");
-    ///     client.backup().into_future().await.unwrap();
+    ///     ).unwrap().certificate_client();
+    ///     client.backup("NAME").into_future().await.unwrap();
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub fn backup(&self) -> CertificateBackupBuilder {
-        CertificateBackupBuilder::new(self.clone())
+    pub fn backup<N>(&self, name: N) -> CertificateBackupBuilder
+    where
+        N: Into<String>,
+    {
+        CertificateBackupBuilder::new(self.clone(), name.into())
     }
 
     /// Deletes a certificate in the Key Vault.
@@ -118,13 +133,16 @@ impl CertificateClient {
     ///     let mut client = KeyvaultClient::new(
     ///         &"KEYVAULT_URL",
     ///         Arc::new(creds),
-    ///     ).unwrap().certificate_client("CERTIFICATE_NAME");
-    ///     client.delete().await.unwrap();
+    ///     ).unwrap().certificate_client();
+    ///     client.delete("NAME").await.unwrap();
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn delete(&self) -> azure_core::Result<()> {
+    pub async fn delete<N>(&self, name: N) -> azure_core::Result<()>
+    where
+        N: Into<String>,
+    {
         // let mut uri = self.vault_url.clone();
         // uri.set_path(&format!("certificates/{}", certificate_name));
         // uri.set_query(Some(API_VERSION_PARAM));
@@ -133,7 +151,62 @@ impl CertificateClient {
 
         // Ok(())
 
+        let _name = name.into();
+
         todo!("See issue #174 at: https://github.com/Azure/azure-sdk-for-rust/issues/174.")
+    }
+
+    /// Lists all the certificates in the Key Vault.
+    ///
+    /// ```no_run
+    /// use azure_security_keyvault::KeyvaultClient;
+    /// use azure_identity::DefaultAzureCredential;
+    /// use tokio::runtime::Runtime;
+    /// use std::sync::Arc;
+    ///
+    /// async fn example() {
+    ///     let creds = DefaultAzureCredential::default();
+    ///     let mut client = KeyvaultClient::new(
+    ///          &"KEYVAULT_URL",
+    ///          Arc::new(creds),
+    ///     ).unwrap().certificate_client();
+    ///     let certificates = client.list_certificates().into_future().await.unwrap();
+    ///     dbg!(&certificates);
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
+    /// ```
+    pub fn list_certificates(&self) -> ListCertificatesBuilder {
+        ListCertificatesBuilder::new(self.clone())
+    }
+
+    /// Restores a backed up certificate and all its versions.
+    /// This operation requires the certificates/restore permission.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use azure_security_keyvault::KeyvaultClient;
+    /// use azure_identity::DefaultAzureCredential;
+    /// use tokio::runtime::Runtime;
+    /// use std::sync::Arc;
+    ///
+    /// async fn example() {
+    ///     let creds = DefaultAzureCredential::default();
+    ///     let mut client = KeyvaultClient::new(
+    ///         &"KEYVAULT_URL",
+    ///         Arc::new(creds),
+    ///     ).unwrap().certificate_client();
+    ///     client.restore_certificate("KUF6dXJlS2V5VmF1bHRTZWNyZXRCYWNrdXBWMS5taW").into_future().await.unwrap();
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
+    /// ```
+    pub fn restore_certificate<S>(&self, backup_blob: S) -> RestoreCertificateBuilder
+    where
+        S: Into<String>,
+    {
+        RestoreCertificateBuilder::new(self.clone(), backup_blob.into())
     }
 }
 
@@ -212,8 +285,8 @@ mod tests {
         let client = mock_client!(&"test-keyvault", creds);
 
         let certificate = client
-            .certificate_client("test-certificate")
-            .get()
+            .certificate_client()
+            .get("test-certificate")
             .into_future()
             .await
             .unwrap();
@@ -285,8 +358,8 @@ mod tests {
         let client = mock_client!(&"test-keyvault", creds);
 
         let certificate_versions = client
-            .certificate_client("test-certificate")
-            .get_versions()
+            .certificate_client()
+            .get_versions("test-certificate")
             .into_future()
             .await
             .unwrap();

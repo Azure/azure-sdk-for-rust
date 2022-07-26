@@ -4,6 +4,7 @@ use url::Url;
 operation! {
     GetCertificateVersions,
     client: CertificateClient,
+    name: String,
 }
 
 impl GetCertificateVersionsBuilder {
@@ -12,7 +13,7 @@ impl GetCertificateVersionsBuilder {
             let mut versions = Vec::<CertificateProperties>::new();
 
             let mut uri = self.client.client.vault_url.clone();
-            uri.set_path(&format!("certificates/{}/versions", self.client.name));
+            uri.set_path(&format!("certificates/{}/versions", self.name));
             uri.set_query(Some(API_VERSION_PARAM));
 
             loop {
@@ -31,7 +32,7 @@ impl GetCertificateVersionsBuilder {
                         .into_iter()
                         .map(|s| CertificateProperties {
                             id: s.id.to_owned(),
-                            name: self.client.name.to_string(),
+                            name: self.name.to_string(),
                             version: s.id.split('/').collect::<Vec<_>>()[5].to_string(),
                             enabled: s.attributes.enabled,
                             created_on: s.attributes.created,

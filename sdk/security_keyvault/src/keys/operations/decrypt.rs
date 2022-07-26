@@ -4,6 +4,7 @@ use serde_json::{Map, Value};
 operation! {
     Decrypt,
     client: KeyClient,
+    name: String,
     decrypt_parameters: DecryptParameters,
     ?version: String
 }
@@ -14,7 +15,7 @@ impl DecryptBuilder {
             // POST {vaultBaseUrl}/keys/{key-name}/{key-version}/decrypt?api-version=7.2
             let version = self.version.unwrap_or_default();
             let mut uri = self.client.client.vault_url.clone();
-            let path = format!("keys/{}/{}/decrypt", self.client.name, version);
+            let path = format!("keys/{}/{}/decrypt", self.name, version);
 
             uri.set_path(&path);
             uri.set_query(Some(API_VERSION_PARAM));

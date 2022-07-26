@@ -6,6 +6,7 @@ use url::Url;
 operation! {
     GetSecretVersions,
     client: SecretClient,
+    name: String,
 }
 
 impl GetSecretVersionsBuilder {
@@ -14,7 +15,7 @@ impl GetSecretVersionsBuilder {
             let mut secret_versions = Vec::<KeyVaultSecretBaseIdentifier>::new();
 
             let mut uri = self.client.client.vault_url.clone();
-            uri.set_path(&format!("secrets/{}/versions", self.client.name));
+            uri.set_path(&format!("secrets/{}/versions", self.name));
             uri.set_query(Some(API_VERSION_PARAM));
 
             loop {

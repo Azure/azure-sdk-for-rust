@@ -112,135 +112,22 @@ impl KeyvaultClient {
         Ok(self.token.as_ref().unwrap().token.secret())
     }
 
-    pub fn secret_client<S>(&self, name: S) -> SecretClient
-    where
-        S: Into<String>,
-    {
-        SecretClient::new(self.clone(), name.into())
+    pub fn secret_client(&self) -> SecretClient {
+        SecretClient::new_with_client(self.clone())
     }
 
-    pub fn certificate_client<S>(&self, name: S) -> CertificateClient
-    where
-        S: Into<String>,
-    {
-        CertificateClient::new(self.clone(), name.into())
+    pub fn certificate_client(&self) -> CertificateClient {
+        CertificateClient::new_with_client(self.clone())
     }
 
-    pub fn key_client<S>(&self, name: S) -> KeyClient
-    where
-        S: Into<String>,
-    {
-        KeyClient::new(self.clone(), name.into())
-    }
-
-    /// Lists all the secrets in the Key Vault.
-    ///
-    /// ```no_run
-    /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
-    /// use tokio::runtime::Runtime;
-    ///
-    /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
-    ///     let mut client = KeyvaultClient::new(
-    ///     &"KEYVAULT_URL",
-    ///     std::sync::Arc::new(creds),
-    ///     ).unwrap();
-    ///     let secrets = client.list_secrets().into_future().await.unwrap();
-    ///     dbg!(&secrets);
-    /// }
-    ///
-    /// Runtime::new().unwrap().block_on(example());
-    /// ```
-    pub fn list_secrets(&self) -> ListSecretsBuilder {
-        ListSecretsBuilder::new(self.clone())
-    }
-
-    /// Lists all the certificates in the Key Vault.
-    ///
-    /// ```no_run
-    /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
-    /// use tokio::runtime::Runtime;
-    /// use std::sync::Arc;
-    ///
-    /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
-    ///     let mut client = KeyvaultClient::new(
-    ///          &"KEYVAULT_URL",
-    ///          Arc::new(creds),
-    ///     ).unwrap();
-    ///     let certificates = client.list_certificates().into_future().await.unwrap();
-    ///     dbg!(&certificates);
-    /// }
-    ///
-    /// Runtime::new().unwrap().block_on(example());
-    /// ```
-    pub fn list_certificates(&self) -> ListCertificatesBuilder {
-        ListCertificatesBuilder::new(self.clone())
-    }
-
-    /// Restores a backed up certificate and all its versions.
-    /// This operation requires the certificates/restore permission.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
-    /// use tokio::runtime::Runtime;
-    /// use std::sync::Arc;
-    ///
-    /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
-    ///     let mut client = KeyvaultClient::new(
-    ///         &"KEYVAULT_URL",
-    ///         Arc::new(creds),
-    ///     ).unwrap();
-    ///     client.restore_certificate("KUF6dXJlS2V5VmF1bHRTZWNyZXRCYWNrdXBWMS5taW").into_future().await.unwrap();
-    /// }
-    ///
-    /// Runtime::new().unwrap().block_on(example());
-    /// ```
-    pub fn restore_certificate<S>(&mut self, backup_blob: S) -> RestoreCertificateBuilder
-    where
-        S: Into<String>,
-    {
-        RestoreCertificateBuilder::new(self.clone(), backup_blob.into())
-    }
-
-    /// Restores a backed up secret and all its versions.
-    /// This operation requires the secrets/restore permission.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
-    /// use tokio::runtime::Runtime;
-    ///
-    /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
-    ///     let mut client = KeyvaultClient::new(
-    ///     &"KEYVAULT_URL",
-    ///     std::sync::Arc::new(creds),
-    ///     ).unwrap();
-    ///     client.restore_secret("KUF6dXJlS2V5VmF1bHRTZWNyZXRCYWNrdXBWMS5taW").into_future().await.unwrap();
-    /// }
-    ///
-    /// Runtime::new().unwrap().block_on(example());
-    /// ```
-    pub fn restore_secret<S>(&self, backup_blob: S) -> RestoreSecretBuilder
-    where
-        S: Into<String>,
-    {
-        RestoreSecretBuilder::new(self.clone(), backup_blob.into())
+    pub fn key_client(&self) -> KeyClient {
+        KeyClient::new_with_client(self.clone())
     }
 }
 
 /// Helper to get vault endpoint with a scheme and a trailing slash
 /// ex. `https://vault.azure.net/` where the full client url is `https://myvault.vault.azure.net`
-pub(crate) fn extract_endpoint(url: &Url) -> azure_core::Result<String> {
+fn extract_endpoint(url: &Url) -> azure_core::Result<String> {
     let endpoint = url
         .host_str()
         .ok_or_else(|| {

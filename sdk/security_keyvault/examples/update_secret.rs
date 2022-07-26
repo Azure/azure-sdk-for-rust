@@ -1,5 +1,5 @@
 use azure_identity::{ClientSecretCredential, TokenCredentialOptions};
-use azure_security_keyvault::KeyvaultClient;
+use azure_security_keyvault::SecretClient;
 use chrono::prelude::*;
 use chrono::Duration;
 use std::env;
@@ -23,11 +23,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         client_secret,
         TokenCredentialOptions::default(),
     );
-    let client = KeyvaultClient::new(&keyvault_url, Arc::new(creds))?.secret_client(secret_name);
+    let client = SecretClient::new(&keyvault_url, Arc::new(creds))?;
 
     // Disable secret.
     client
-        .update()
+        .update(secret_name)
         .version(secret_version)
         .enabled(false)
         .recovery_level("Purgeable")

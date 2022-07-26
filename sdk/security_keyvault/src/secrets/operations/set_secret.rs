@@ -5,6 +5,7 @@ use serde_json::{Map, Value};
 operation! {
     SetSecret,
     client: SecretClient,
+    name: String,
     value: String,
 }
 
@@ -12,7 +13,7 @@ impl SetSecretBuilder {
     pub fn into_future(mut self) -> SetSecret {
         Box::pin(async move {
             let mut uri = self.client.client.vault_url.clone();
-            uri.set_path(&format!("secrets/{}", self.client.name));
+            uri.set_path(&format!("secrets/{}", self.name));
             uri.set_query(Some(API_VERSION_PARAM));
 
             let mut request_body = Map::new();
@@ -28,7 +29,7 @@ impl SetSecretBuilder {
                 )
                 .await
                 .with_context(ErrorKind::Other, || {
-                    format!("failed to set secret. secret_name: {}", self.client.name)
+                    format!("failed to set secret. secret_name: {}", self.name)
                 })?;
 
             Ok(())

@@ -4,6 +4,7 @@ use azure_core::error::{ErrorKind, ResultExt};
 operation! {
     GetCertificate,
     client: CertificateClient,
+    name :String,
     ?version: String
 }
 
@@ -12,7 +13,7 @@ impl GetCertificateBuilder {
         Box::pin(async move {
             let mut uri = self.client.client.vault_url.clone();
             let version = self.version.unwrap_or_default();
-            uri.set_path(&format!("certificates/{}/{}", self.client.name, version));
+            uri.set_path(&format!("certificates/{}/{}", self.name, version));
             uri.set_query(Some(API_VERSION_PARAM));
 
             let response_body = self
@@ -22,7 +23,7 @@ impl GetCertificateBuilder {
                 .await?;
             let response = serde_json::from_str::<KeyVaultGetCertificateResponse>(&response_body)
             .with_context(ErrorKind::DataConversion, || {
-                format!("failed to parse get certificate response. uri: {uri} certificate_name: {} response_body: {response_body}", self.client.name)
+                format!("failed to parse get certificate response. uri: {uri} certificate_name: {} response_body: {response_body}", self.name)
             })?;
             Ok(KeyVaultCertificate {
                 key_id: response.kid,
@@ -32,7 +33,7 @@ impl GetCertificateBuilder {
                 content_type: response.policy.secret_props.content_type,
                 properties: CertificateProperties {
                     id: response.id,
-                    name: self.client.name.to_string(),
+                    name: self.name.to_string(),
                     version: version.to_string(),
                     enabled: response.attributes.enabled,
                     not_before: response.attributes.nbf,

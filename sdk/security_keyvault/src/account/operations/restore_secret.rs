@@ -2,14 +2,14 @@ use crate::prelude::*;
 
 operation! {
     RestoreSecret,
-    client: KeyvaultClient,
+    client: SecretClient,
     backup_blob: String,
 }
 
 impl RestoreSecretBuilder {
     pub fn into_future(mut self) -> RestoreSecret {
         Box::pin(async move {
-            let mut uri = self.client.vault_url.clone();
+            let mut uri = self.client.client.vault_url.clone();
             uri.set_path("secrets/restore");
             uri.set_query(Some(API_VERSION_PARAM));
 
@@ -17,6 +17,7 @@ impl RestoreSecretBuilder {
             request_body.insert("value".to_owned(), self.backup_blob.into());
 
             self.client
+                .client
                 .request(
                     reqwest::Method::POST,
                     uri.to_string(),

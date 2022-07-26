@@ -6,6 +6,7 @@ use serde::Serialize;
 operation! {
     UpdateCertificateProperties,
     client: CertificateClient,
+    name: String,
     ?version: String,
     ?enabled: bool,
     ?not_before: DateTime<Utc>,
@@ -33,7 +34,7 @@ impl UpdateCertificatePropertiesBuilder {
         Box::pin(async move {
             let mut uri = self.client.client.vault_url.clone();
             let version = self.version.unwrap_or_default();
-            uri.set_path(&format!("certificates/{}/{}", self.client.name, version));
+            uri.set_path(&format!("certificates/{}/{}", self.name, version));
             uri.set_query(Some(API_VERSION_PARAM));
 
             let request = UpdateRequest {
@@ -48,7 +49,7 @@ impl UpdateCertificatePropertiesBuilder {
                 .with_context(ErrorKind::Other, || {
                     format!(
                         "failed to serialize UpdateRequest. secret_name: {} secret_version_name: {version}",
-                        self.client.name
+                        self.name
                     )
                 })?;
 
