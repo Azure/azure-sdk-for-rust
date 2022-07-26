@@ -34,7 +34,7 @@ mod user_defined_function;
 
 pub use attachment::AttachmentClient;
 pub use collection::CollectionClient;
-pub use cosmos::CosmosClient;
+pub use cosmos::{CosmosClient, CosmosClientBuilder};
 pub use database::DatabaseClient;
 pub use document::DocumentClient;
 pub use permission::PermissionClient;

@@ -14,6 +14,65 @@ use std::sync::Arc;
 pub const EMULATOR_ACCOUNT_KEY: &str =
     "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
 
+/// A builder for the cosmos client.
+#[derive(Debug, Clone)]
+pub struct CosmosClientBuilder {
+    cloud_location: CloudLocation,
+    options: ClientOptions,
+}
+
+impl CosmosClientBuilder {
+    /// Create a new instance of `CosmosClientBuilder`.
+    pub fn new(account: impl Into<String>, auth_token: AuthorizationToken) -> Self {
+        Self::with_location(CloudLocation::Public {
+            account: account.into(),
+            auth_token,
+        })
+    }
+
+    /// Create a new instance of `CosmosClientBuilder` with a cloud location.
+    pub fn with_location(cloud_location: CloudLocation) -> Self {
+        Self {
+            options: ClientOptions::default(),
+            cloud_location,
+        }
+    }
+
+    /// Convert the builder into a `CosmosClient` instance.
+    pub fn build(self) -> CosmosClient {
+        let auth_token = self.cloud_location.auth_token();
+        CosmosClient {
+            pipeline: new_pipeline_from_options(self.options, auth_token),
+            cloud_location: self.cloud_location,
+        }
+    }
+
+    /// Set the cloud location.
+    pub fn cloud_location(mut self, cloud_location: CloudLocation) -> Self {
+        self.cloud_location = cloud_location;
+        self
+    }
+
+    /// Enable the mocking framework.
+    #[cfg(feature = "mock_transport_framework")]
+    pub fn mock(self, enable: bool) -> Self {
+        self.mock = enable;
+        self
+    }
+
+    /// Set the retry options.
+    pub fn retry(mut self, retry: impl Into<azure_core::RetryOptions>) -> Self {
+        self.options = self.options.retry(retry);
+        self
+    }
+
+    /// Set the transport options.
+    pub fn transport(mut self, transport: impl Into<azure_core::TransportOptions>) -> Self {
+        self.options = self.options.transport(transport);
+        self
+    }
+}
+
 /// A plain Cosmos client.
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
@@ -24,50 +83,7 @@ pub struct CosmosClient {
 impl CosmosClient {
     /// Create a new `CosmosClient` which connects to the account's instance in the public Azure cloud.
     pub fn new(account: impl Into<String>, auth_token: AuthorizationToken) -> Self {
-        Self {
-            pipeline: new_pipeline_from_options(ClientOptions::default(), auth_token),
-            cloud_location: CloudLocation::Public {
-                account: account.into(),
-            },
-        }
-    }
-
-    /// Create a new instance of `CosmosClient` connecting to a specific cloud.
-    pub fn with_cloud(auth_token: AuthorizationToken, cloud_location: CloudLocation) -> Self {
-        Self {
-            pipeline: new_pipeline_from_options(ClientOptions::default(), auth_token),
-            cloud_location,
-        }
-    }
-
-    /// Create a new `CosmosClient` which connects to the account's instance in Azure emulator
-    pub fn with_emulator(address: impl AsRef<str>, port: u16) -> Self {
-        let auth_token = AuthorizationToken::primary_from_base64(EMULATOR_ACCOUNT_KEY).unwrap();
-        Self {
-            pipeline: new_pipeline_from_options(ClientOptions::default(), auth_token),
-            cloud_location: CloudLocation::Custom {
-                uri: format!("https://{}:{}", address.as_ref(), port),
-            },
-        }
-    }
-
-    #[cfg(feature = "mock_transport_framework")]
-    /// Create a new instance of `CosmosClient` using a mock backend. The
-    /// transaction name is used to look up which files to read to validate the
-    /// request and mock the response.
-    // TODO(yosh): consider adding a general way to replace transports, and remove this method.
-    pub fn with_mock(
-        account: impl Into<String>,
-        auth_token: AuthorizationToken,
-        transaction_name: impl Into<String>,
-    ) -> Self {
-        let options = ClientOptions::new_with_transaction_name(transaction_name.into());
-        Self {
-            pipeline: new_pipeline_from_options(options, auth_token),
-            cloud_location: CloudLocation::Public {
-                account: account.into(),
-            },
-        }
+        CosmosClientBuilder::new(account, auth_token).build()
     }
 
     /// Set the auth token used
@@ -152,20 +168,45 @@ fn new_pipeline_from_options(
 #[derive(Debug, Clone)]
 pub enum CloudLocation {
     /// Azure public cloud
-    Public { account: String },
+    Public {
+        account: String,
+        auth_token: AuthorizationToken,
+    },
     /// Azure China cloud
-    China { account: String },
+    China {
+        account: String,
+        auth_token: AuthorizationToken,
+    },
+    /// Use the well-known Cosmos emulator
+    Emulator { address: String, port: u16 },
     /// A custom base URL
-    Custom { uri: String },
+    Custom {
+        uri: String,
+        auth_token: AuthorizationToken,
+    },
 }
 
 impl CloudLocation {
     /// the base URL for a given cloud location
     fn url(&self) -> String {
         match self {
-            CloudLocation::Public { account } => format!("https://{}.documents.azure.com", account),
-            CloudLocation::China { account } => format!("https://{}.documents.azure.cn", account),
-            CloudLocation::Custom { uri } => uri.clone(),
+            CloudLocation::Public { account, .. } => {
+                format!("https://{account}.documents.azure.com")
+            }
+            CloudLocation::China { account, .. } => format!("https://{account}.documents.azure.cn"),
+            CloudLocation::Custom { uri, .. } => uri.clone(),
+            CloudLocation::Emulator { address, port } => format!("https://{address}:{port}"),
+        }
+    }
+
+    fn auth_token(&self) -> AuthorizationToken {
+        match self {
+            CloudLocation::Public { auth_token, .. } => auth_token.clone(),
+            CloudLocation::China { auth_token, .. } => auth_token.clone(),
+            CloudLocation::Emulator { .. } => {
+                AuthorizationToken::primary_from_base64(EMULATOR_ACCOUNT_KEY).unwrap()
+            }
+            CloudLocation::Custom { auth_token, .. } => auth_token.clone(),
         }
     }
 }
