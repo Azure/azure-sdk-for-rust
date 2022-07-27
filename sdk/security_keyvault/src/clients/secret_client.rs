@@ -298,8 +298,8 @@ mod tests {
             "https://test-keyvault.vault.azure.net/secrets/test-secret/4387e9f3d6e14c459867679a90fd0f79",
             secret.id
         );
-        assert!(diff(time_created, secret.time_created) < Duration::seconds(1));
-        assert!(diff(time_updated, secret.time_updated) < Duration::seconds(1));
+        assert!(diff(time_created, secret.created_on) < Duration::seconds(1));
+        assert!(diff(time_updated, secret.updated_on) < Duration::seconds(1));
         Ok(())
     }
 
@@ -370,16 +370,16 @@ mod tests {
             "https://test-keyvault.vault.azure.net/secrets/test-secret/VERSION_1",
             secret_1.id
         );
-        assert!(diff(time_created_1, secret_1.time_created) < Duration::seconds(1));
-        assert!(diff(time_updated_1, secret_1.time_updated) < Duration::seconds(1));
+        assert!(diff(time_created_1, secret_1.created_on) < Duration::seconds(1));
+        assert!(diff(time_updated_1, secret_1.updated_on) < Duration::seconds(1));
 
         let secret_2 = &secret_versions[1];
         assert_eq!(
             "https://test-keyvault.vault.azure.net/secrets/test-secret/VERSION_2",
             secret_2.id
         );
-        assert!(diff(time_created_2, secret_2.time_created) < Duration::seconds(1));
-        assert!(diff(time_updated_2, secret_2.time_updated) < Duration::seconds(1));
+        assert!(diff(time_created_2, secret_2.created_on) < Duration::seconds(1));
+        assert!(diff(time_updated_2, secret_2.updated_on) < Duration::seconds(1));
         Ok(())
     }
 }

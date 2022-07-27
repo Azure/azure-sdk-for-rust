@@ -36,8 +36,8 @@ impl ListSecretsBuilder {
                             id: s.id.clone(),
                             name: s.id.split('/').last().unwrap().to_owned(),
                             enabled: s.attributes.enabled,
-                            time_created: s.attributes.created,
-                            time_updated: s.attributes.updated,
+                            created_on: s.attributes.created,
+                            updated_on: s.attributes.updated,
                         })
                         .collect::<Vec<KeyVaultSecretBaseIdentifier>>(),
                 );

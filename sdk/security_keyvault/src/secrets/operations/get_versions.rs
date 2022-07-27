@@ -39,8 +39,8 @@ impl GetSecretVersionsBuilder {
                             id: s.id.to_owned(),
                             name: s.id.split('/').last().unwrap().to_owned(),
                             enabled: s.attributes.enabled,
-                            time_created: s.attributes.created,
-                            time_updated: s.attributes.updated,
+                            created_on: s.attributes.created,
+                            updated_on: s.attributes.updated,
                         })
                         .collect::<Vec<KeyVaultSecretBaseIdentifier>>(),
                 );
@@ -52,7 +52,7 @@ impl GetSecretVersionsBuilder {
 
             // Return the secret versions sorted by the time modified in descending order.
             secret_versions.sort_by(|a, b| {
-                if a.time_updated > b.time_updated {
+                if a.updated_on > b.updated_on {
                     std::cmp::Ordering::Less
                 } else {
                     std::cmp::Ordering::Greater

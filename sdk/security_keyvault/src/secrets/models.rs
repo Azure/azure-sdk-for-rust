@@ -56,8 +56,8 @@ pub struct KeyVaultSecretBaseIdentifier {
     pub id: String,
     pub name: String,
     pub enabled: bool,
-    pub time_created: DateTime<Utc>,
-    pub time_updated: DateTime<Utc>,
+    pub created_on: DateTime<Utc>,
+    pub updated_on: DateTime<Utc>,
 }
 
 #[derive(Debug)]
@@ -66,6 +66,6 @@ pub struct KeyVaultSecret {
     pub value: String,
     pub enabled: bool,
     pub expires_on: Option<DateTime<Utc>>,
-    pub time_created: DateTime<Utc>,
-    pub time_updated: DateTime<Utc>,
+    pub created_on: DateTime<Utc>,
+    pub updated_on: DateTime<Utc>,
 }

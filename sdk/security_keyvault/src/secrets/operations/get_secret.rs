@@ -31,8 +31,8 @@ impl GetSecretBuilder {
                 expires_on: response.attributes.exp,
                 enabled: response.attributes.enabled,
                 value: response.value,
-                time_created: response.attributes.created,
-                time_updated: response.attributes.updated,
+                created_on: response.attributes.created,
+                updated_on: response.attributes.updated,
                 id: response.id,
             })
         })
