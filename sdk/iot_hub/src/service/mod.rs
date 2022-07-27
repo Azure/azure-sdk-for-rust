@@ -14,13 +14,12 @@ pub mod resources;
 pub mod responses;
 
 use crate::service::requests::{
-    get_twin, ApplyOnEdgeDeviceBuilder, CreateOrUpdateConfigurationBuilder,
+    ApplyOnEdgeDeviceBuilder, CreateOrUpdateConfigurationBuilder,
     CreateOrUpdateDeviceIdentityBuilder, CreateOrUpdateModuleIdentityBuilder,
-    DeleteConfigurationBuilder, DeleteIdentityBuilder, GetIdentityBuilder, InvokeMethodBuilder,
-    QueryBuilder, UpdateOrReplaceTwinBuilder,
+    DeleteConfigurationBuilder, DeleteIdentityBuilder, GetIdentityBuilder, GetTwinBuilder,
+    InvokeMethodBuilder, QueryBuilder, UpdateOrReplaceTwinBuilder,
 };
 use crate::service::resources::identity::IdentityOperation;
-use crate::service::responses::{DeviceTwinResponse, ModuleTwinResponse};
 
 use self::requests::GetConfigurationBuilder;
 use self::resources::{AuthenticationMechanism, Status};
@@ -328,16 +327,12 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let twin = iot_hub.get_module_twin("some-device", "some-module");
     /// ```
-    pub async fn get_module_twin<S, T>(
-        &self,
-        device_id: S,
-        module_id: T,
-    ) -> azure_core::Result<ModuleTwinResponse>
+    pub async fn get_module_twin<S, T>(&self, device_id: S, module_id: T) -> GetTwinBuilder
     where
         S: Into<String>,
         T: Into<String>,
     {
-        get_twin(self, device_id.into(), Some(module_id.into())).await
+        GetTwinBuilder::new(self.clone(), device_id.into()).module_id(module_id)
     }
 
     /// Get the HttpClient of the IoTHub service
@@ -356,11 +351,11 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let twin = iot_hub.get_device_twin("some-device");
     /// ```
-    pub async fn get_device_twin<S>(&self, device_id: S) -> azure_core::Result<DeviceTwinResponse>
+    pub async fn get_device_twin<S>(&self, device_id: S) -> GetTwinBuilder
     where
         S: Into<String>,
     {
-        get_twin(self, device_id.into(), None).await
+        GetTwinBuilder::new(self.clone(), device_id.into())
     }
 
     /// Update the module twin of a given device or module

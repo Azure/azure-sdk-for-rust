@@ -2,6 +2,7 @@ use crate::service::{ServiceClient, API_VERSION};
 use azure_core::Method;
 
 azure_core::operation! {
+    /// The GetConfigurationBuilder is used to get configuration
     GetConfiguration,
     client: ServiceClient,
     ?configuration_id: String

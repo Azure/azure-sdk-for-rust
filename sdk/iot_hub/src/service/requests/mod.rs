@@ -19,7 +19,7 @@ pub use delete_configuration::DeleteConfigurationBuilder;
 pub use delete_identity::DeleteIdentityBuilder;
 pub use get_configuration::GetConfigurationBuilder;
 pub use get_identity::GetIdentityBuilder;
-pub(crate) use get_twin::get_twin;
+pub use get_twin::GetTwinBuilder;
 pub use invoke_method::InvokeMethodBuilder;
 pub use query::QueryBuilder;
 pub use update_or_replace_twin::UpdateOrReplaceTwinBuilder;

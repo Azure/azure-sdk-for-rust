@@ -2,6 +2,8 @@ use crate::service::{ServiceClient, API_VERSION};
 use azure_core::Method;
 
 azure_core::operation! {
+
+    /// The GetIdentityBuilder is used to construct a request to get identity
     GetIdentity,
     client: ServiceClient,
     device_id: String,
@@ -33,3 +35,5 @@ impl GetIdentityBuilder {
         })
     }
 }
+
+pub type GetIdentityResponse = crate::service::CollectedResponse;
