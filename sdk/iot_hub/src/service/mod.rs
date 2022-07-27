@@ -734,7 +734,7 @@ impl ServiceClient {
         T: Into<String>,
     {
         CreateOrUpdateConfigurationBuilder::new(
-            self,
+            self.clone(),
             configuration_id.into(),
             priority,
             target_condition.into(),
@@ -768,7 +768,7 @@ impl ServiceClient {
         U: Into<String>,
     {
         CreateOrUpdateConfigurationBuilder::new(
-            self,
+            self.clone(),
             configuration_id.into(),
             priority,
             target_condition.into(),
