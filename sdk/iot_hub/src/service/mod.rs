@@ -720,8 +720,11 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let query_builder = iot_hub.query();
     /// ```
-    pub fn query(&self) -> QueryBuilder<'_> {
-        QueryBuilder::new(self)
+    pub fn query<Q>(&self, query: Q) -> QueryBuilder
+    where
+        Q: Into<String>,
+    {
+        QueryBuilder::new(self.clone(), query.into())
     }
 
     /// Apply configuration on an Edge device
