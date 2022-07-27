@@ -615,8 +615,27 @@ impl ServiceClient {
     /// let device = iot_hub.create_module_identity()
     ///     .execute("some-existing-device", "some-existing-module", "IoTEdge", AuthenticationMechanism::new_using_symmetric_key("first-key", "second-key"));
     /// ```
-    pub fn create_module_identity(&self) -> CreateOrUpdateModuleIdentityBuilder {
-        CreateOrUpdateModuleIdentityBuilder::new(self, IdentityOperation::Create, None)
+    pub fn create_module_identity<S1, S2, S3>(
+        &self,
+        device_id: S1,
+        module_id: S2,
+        managed_by: S3,
+        authentication: AuthenticationMechanism,
+    ) -> CreateOrUpdateModuleIdentityBuilder
+    where
+        S1: Into<String>,
+        S2: Into<String>,
+        S3: Into<String>,
+    {
+        CreateOrUpdateModuleIdentityBuilder::new(
+            self.clone(),
+            IdentityOperation::Create,
+            device_id.into(),
+            module_id.into(),
+            managed_by.into(),
+            authentication,
+            None,
+        )
     }
 
     /// Update an existing module identity
@@ -632,11 +651,29 @@ impl ServiceClient {
     /// let device = iot_hub.update_module_identity("etag-of-device-to-update")
     ///     .execute("some-existing-device", "some-existing-module", "IoTEdge", AuthenticationMechanism::new_using_symmetric_key("first-key", "second-key"));
     /// ```
-    pub fn update_module_identity<S>(&self, etag: S) -> CreateOrUpdateModuleIdentityBuilder
+    pub fn update_module_identity<S1, S2, S3, S4>(
+        &self,
+        device_id: S1,
+        module_id: S2,
+        managed_by: S3,
+        etag: S4,
+        authentication: AuthenticationMechanism,
+    ) -> CreateOrUpdateModuleIdentityBuilder
     where
-        S: Into<String>,
+        S1: Into<String>,
+        S2: Into<String>,
+        S3: Into<String>,
+        S4: Into<String>,
     {
-        CreateOrUpdateModuleIdentityBuilder::new(self, IdentityOperation::Update, Some(etag.into()))
+        CreateOrUpdateModuleIdentityBuilder::new(
+            self.clone(),
+            IdentityOperation::Update,
+            device_id.into(),
+            module_id.into(),
+            managed_by.into(),
+            authentication,
+            Some(etag.into()),
+        )
     }
 
     /// Create a new device identity
