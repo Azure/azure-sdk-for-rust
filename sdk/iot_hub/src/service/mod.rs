@@ -262,6 +262,7 @@ impl ServiceClient {
     /// ```
     pub fn create_device_method<S, T>(
         &self,
+        payload: serde_json::Value,
         device_id: S,
         method_name: T,
         response_time_out: u64,
@@ -272,12 +273,13 @@ impl ServiceClient {
         T: Into<String>,
     {
         InvokeMethodBuilder::new(
-            self,
+            self.clone(),
+            payload,
             device_id.into(),
             None,
             method_name.into(),
-            connect_time_out,
             response_time_out,
+            connect_time_out,
         )
     }
 
@@ -294,6 +296,7 @@ impl ServiceClient {
     /// ```
     pub fn create_module_method<S, T, U>(
         &self,
+        payload: serde_json::Value,
         device_id: S,
         module_id: T,
         method_name: U,
@@ -306,12 +309,13 @@ impl ServiceClient {
         U: Into<String>,
     {
         InvokeMethodBuilder::new(
-            self,
+            self.clone(),
+            payload,
             device_id.into(),
             Some(module_id.into()),
             method_name.into(),
-            connect_time_out,
             response_time_out,
+            connect_time_out,
         )
     }
 

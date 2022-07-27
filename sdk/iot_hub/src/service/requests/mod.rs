@@ -7,7 +7,7 @@ mod delete_identity;
 mod get_configuration;
 mod get_identity;
 mod get_twin;
-mod invoke_method_builder;
+mod invoke_method;
 mod query_builder;
 mod update_or_replace_twin_builder;
 
@@ -20,6 +20,6 @@ pub use delete_identity::DeleteIdentityBuilder;
 pub(crate) use get_configuration::GetConfigurationBuilder;
 pub(crate) use get_identity::get_identity;
 pub(crate) use get_twin::get_twin;
-pub use invoke_method_builder::InvokeMethodBuilder;
+pub use invoke_method::InvokeMethodBuilder;
 pub use query_builder::QueryBuilder;
 pub use update_or_replace_twin_builder::UpdateOrReplaceTwinBuilder;
