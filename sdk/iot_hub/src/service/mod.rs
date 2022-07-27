@@ -35,6 +35,7 @@ pub const API_VERSION: &str = "2020-05-31-preview";
 /// - providing the connection string.
 /// The IoTHubService then uses the provided information to create a SAS token that it will
 /// use to communicate with the IoT Hub.
+#[derive(Clone, Debug)]
 pub struct ServiceClient {
     http_client: Arc<dyn HttpClient>,
     /// The name of the IoT Hub.
@@ -670,7 +671,7 @@ impl ServiceClient {
     where
         S: Into<String>,
     {
-        ApplyOnEdgeDeviceBuilder::new(self, device_id.into())
+        ApplyOnEdgeDeviceBuilder::new(self.clone(), device_id.into())
     }
 
     /// Get a configuration
