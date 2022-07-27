@@ -25,6 +25,8 @@ use crate::service::responses::{
     ModuleTwinResponse, MultipleConfigurationResponse,
 };
 
+use self::resources::{AuthenticationMechanism, Status};
+
 /// The API version to use for any requests
 pub const API_VERSION: &str = "2020-05-31-preview";
 
@@ -498,8 +500,23 @@ impl ServiceClient {
     /// let device = iot_hub.create_device_identity()
     ///     .execute("some-existing-device", Status::Enabled, AuthenticationMechanism::new_using_symmetric_key("first-key", "second-key"));
     /// ```
-    pub fn create_device_identity(&self) -> CreateOrUpdateDeviceIdentityBuilder {
-        CreateOrUpdateDeviceIdentityBuilder::new(self, IdentityOperation::Create, None)
+    pub fn create_device_identity<S>(
+        &self,
+        device_id: S,
+        status: Status,
+        authentication: AuthenticationMechanism,
+    ) -> CreateOrUpdateDeviceIdentityBuilder
+    where
+        S: Into<String>,
+    {
+        CreateOrUpdateDeviceIdentityBuilder::new(
+            self.clone(),
+            IdentityOperation::Create,
+            device_id.into(),
+            status,
+            authentication,
+            None,
+        )
     }
 
     /// Update an existing device identity
@@ -515,11 +532,25 @@ impl ServiceClient {
     /// let device = iot_hub.update_device_identity("etag-of-device-to-update")
     ///     .execute("some-existing-device", Status::Enabled, AuthenticationMechanism::new_using_symmetric_key("first-key", "second-key"));
     /// ```
-    pub fn update_device_identity<S>(&self, etag: S) -> CreateOrUpdateDeviceIdentityBuilder
+    pub fn update_device_identity<S1, S2>(
+        &self,
+        device_id: S1,
+        status: Status,
+        authentication: AuthenticationMechanism,
+        etag: S2,
+    ) -> CreateOrUpdateDeviceIdentityBuilder
     where
-        S: Into<String>,
+        S1: Into<String>,
+        S2: Into<String>,
     {
-        CreateOrUpdateDeviceIdentityBuilder::new(self, IdentityOperation::Update, Some(etag.into()))
+        CreateOrUpdateDeviceIdentityBuilder::new(
+            self.clone(),
+            IdentityOperation::Update,
+            device_id.into(),
+            status,
+            authentication,
+            Some(etag.into()),
+        )
     }
 
     /// Delete a device identity
