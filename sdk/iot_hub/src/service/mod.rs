@@ -14,17 +14,17 @@ pub mod resources;
 pub mod responses;
 
 use crate::service::requests::{
-    get_configuration, get_identity, get_twin, ApplyOnEdgeDeviceBuilder,
-    CreateOrUpdateConfigurationBuilder, CreateOrUpdateDeviceIdentityBuilder,
-    CreateOrUpdateModuleIdentityBuilder, DeleteConfigurationBuilder, DeleteIdentityBuilder,
-    InvokeMethodBuilder, QueryBuilder, UpdateOrReplaceTwinBuilder,
+    get_identity, get_twin, ApplyOnEdgeDeviceBuilder, CreateOrUpdateConfigurationBuilder,
+    CreateOrUpdateDeviceIdentityBuilder, CreateOrUpdateModuleIdentityBuilder,
+    DeleteConfigurationBuilder, DeleteIdentityBuilder, InvokeMethodBuilder, QueryBuilder,
+    UpdateOrReplaceTwinBuilder,
 };
 use crate::service::resources::identity::IdentityOperation;
 use crate::service::responses::{
-    ConfigurationResponse, DeviceIdentityResponse, DeviceTwinResponse, ModuleIdentityResponse,
-    ModuleTwinResponse, MultipleConfigurationResponse,
+    DeviceIdentityResponse, DeviceTwinResponse, ModuleIdentityResponse, ModuleTwinResponse,
 };
 
+use self::requests::GetConfigurationBuilder;
 use self::resources::{AuthenticationMechanism, Status};
 
 /// The API version to use for any requests
@@ -749,14 +749,11 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device = iot_hub.get_configuration("some-configuration");
     /// ```
-    pub async fn get_configuration<S>(
-        &self,
-        configuration_id: S,
-    ) -> azure_core::Result<ConfigurationResponse>
+    pub async fn get_configuration<S>(&self, configuration_id: S) -> GetConfigurationBuilder
     where
         S: Into<String>,
     {
-        get_configuration(self, Some(configuration_id.into())).await
+        GetConfigurationBuilder::new(self.clone()).configuration_id(configuration_id.into())
     }
 
     /// Get all configurations
@@ -770,8 +767,8 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device = iot_hub.get_configurations();
     /// ```
-    pub async fn get_configurations(&self) -> azure_core::Result<MultipleConfigurationResponse> {
-        get_configuration(self, None).await
+    pub fn get_configurations(&self) -> GetConfigurationBuilder {
+        GetConfigurationBuilder::new(self.clone())
     }
 
     /// Create a new configuration.

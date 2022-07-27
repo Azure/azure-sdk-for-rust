@@ -17,7 +17,7 @@ pub use create_or_update_device_identity::CreateOrUpdateDeviceIdentityBuilder;
 pub use create_or_update_module_identity::CreateOrUpdateModuleIdentityBuilder;
 pub use delete_configuration::DeleteConfigurationBuilder;
 pub use delete_identity::DeleteIdentityBuilder;
-pub(crate) use get_configuration::get_configuration;
+pub(crate) use get_configuration::GetConfigurationBuilder;
 pub(crate) use get_identity::get_identity;
 pub(crate) use get_twin::get_twin;
 pub use invoke_method_builder::InvokeMethodBuilder;
