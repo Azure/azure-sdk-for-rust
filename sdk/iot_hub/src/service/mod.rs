@@ -14,15 +14,13 @@ pub mod resources;
 pub mod responses;
 
 use crate::service::requests::{
-    get_identity, get_twin, ApplyOnEdgeDeviceBuilder, CreateOrUpdateConfigurationBuilder,
+    get_twin, ApplyOnEdgeDeviceBuilder, CreateOrUpdateConfigurationBuilder,
     CreateOrUpdateDeviceIdentityBuilder, CreateOrUpdateModuleIdentityBuilder,
-    DeleteConfigurationBuilder, DeleteIdentityBuilder, InvokeMethodBuilder, QueryBuilder,
-    UpdateOrReplaceTwinBuilder,
+    DeleteConfigurationBuilder, DeleteIdentityBuilder, GetIdentityBuilder, InvokeMethodBuilder,
+    QueryBuilder, UpdateOrReplaceTwinBuilder,
 };
 use crate::service::resources::identity::IdentityOperation;
-use crate::service::responses::{
-    DeviceIdentityResponse, DeviceTwinResponse, ModuleIdentityResponse, ModuleTwinResponse,
-};
+use crate::service::responses::{DeviceTwinResponse, ModuleTwinResponse};
 
 use self::requests::GetConfigurationBuilder;
 use self::resources::{AuthenticationMechanism, Status};
@@ -379,21 +377,13 @@ impl ServiceClient {
     ///              .properties(serde_json::json!({"PropertyName": "PropertyValue"}))
     ///              .execute();
     /// ```
-    pub fn update_module_twin<S, T>(
-        &self,
-        device_id: S,
-        module_id: T,
-    ) -> UpdateOrReplaceTwinBuilder<'_, ModuleTwinResponse>
+    pub fn update_module_twin<S, T>(&self, device_id: S, module_id: T) -> UpdateOrReplaceTwinBuilder
     where
         S: Into<String>,
         T: Into<String>,
     {
-        UpdateOrReplaceTwinBuilder::new(
-            self,
-            device_id.into(),
-            Some(module_id.into()),
-            Method::Patch,
-        )
+        UpdateOrReplaceTwinBuilder::new(self.clone(), device_id.into(), Method::Patch)
+            .module_id(module_id.into())
     }
 
     /// Replace the module twin of a given device and module
@@ -414,12 +404,13 @@ impl ServiceClient {
         &self,
         device_id: S,
         module_id: T,
-    ) -> UpdateOrReplaceTwinBuilder<'_, ModuleTwinResponse>
+    ) -> UpdateOrReplaceTwinBuilder
     where
         S: Into<String>,
         T: Into<String>,
     {
-        UpdateOrReplaceTwinBuilder::new(self, device_id.into(), Some(module_id.into()), Method::Put)
+        UpdateOrReplaceTwinBuilder::new(self.clone(), device_id.into(), Method::Put)
+            .module_id(module_id.into())
     }
 
     /// Update the device twin of a given device
@@ -436,14 +427,11 @@ impl ServiceClient {
     ///              .properties(serde_json::json!({"PropertyName": "PropertyValue"}))
     ///              .execute();
     /// ```
-    pub fn update_device_twin<S>(
-        &self,
-        device_id: S,
-    ) -> UpdateOrReplaceTwinBuilder<'_, DeviceTwinResponse>
+    pub fn update_device_twin<S>(&self, device_id: S) -> UpdateOrReplaceTwinBuilder
     where
         S: Into<String>,
     {
-        UpdateOrReplaceTwinBuilder::new(self, device_id.into(), None, Method::Patch)
+        UpdateOrReplaceTwinBuilder::new(self.clone(), device_id.into(), Method::Patch)
     }
 
     /// Replace the device twin of a given device
@@ -460,14 +448,11 @@ impl ServiceClient {
     ///              .properties(serde_json::json!({"PropertyName": "PropertyValue"}))
     ///              .execute();
     /// ```
-    pub fn replace_device_twin<S>(
-        &self,
-        device_id: S,
-    ) -> UpdateOrReplaceTwinBuilder<'_, DeviceTwinResponse>
+    pub fn replace_device_twin<S>(&self, device_id: S) -> UpdateOrReplaceTwinBuilder
     where
         S: Into<String>,
     {
-        UpdateOrReplaceTwinBuilder::new(self, device_id.into(), None, Method::Put)
+        UpdateOrReplaceTwinBuilder::new(self.clone(), device_id.into(), Method::Put)
     }
 
     /// Get the identity of a given device
@@ -481,14 +466,11 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device = iot_hub.get_device_identity("some-device");
     /// ```
-    pub async fn get_device_identity<S>(
-        &self,
-        device_id: S,
-    ) -> azure_core::Result<DeviceIdentityResponse>
+    pub fn get_device_identity<S>(&self, device_id: S) -> GetIdentityBuilder
     where
         S: Into<String>,
     {
-        get_identity(self, device_id.into(), None).await
+        GetIdentityBuilder::new(self.clone(), device_id.into())
     }
 
     /// Create a new device identity
@@ -590,16 +572,12 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device = iot_hub.get_module_identity("some-device", "some-module");
     /// ```
-    pub async fn get_module_identity<S, T>(
-        &self,
-        device_id: S,
-        module_id: T,
-    ) -> azure_core::Result<ModuleIdentityResponse>
+    pub fn get_module_identity<S, T>(&self, device_id: S, module_id: T) -> GetIdentityBuilder
     where
         S: Into<String>,
         T: Into<String>,
     {
-        get_identity(self, device_id.into(), Some(module_id.into())).await
+        GetIdentityBuilder::new(self.clone(), device_id.into()).module_id(module_id)
     }
 
     /// Create a new module identity
@@ -756,7 +734,7 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device = iot_hub.get_configuration("some-configuration");
     /// ```
-    pub async fn get_configuration<S>(&self, configuration_id: S) -> GetConfigurationBuilder
+    pub fn get_configuration<S>(&self, configuration_id: S) -> GetConfigurationBuilder
     where
         S: Into<String>,
     {
@@ -929,74 +907,6 @@ mod tests {
         let http_client = azure_core::new_http_client();
 
         let _ = ServiceClient::from_connection_string(http_client, "HostName=cool-iot-hub.azure-devices.net;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==", 3600).is_err();
-        Ok(())
-    }
-
-    #[test]
-    fn update_module_twin_should_create_builder() -> Result<(), Box<dyn std::error::Error>> {
-        use crate::service::ServiceClient;
-        let http_client = azure_core::new_http_client();
-
-        let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-        let service_client =
-            ServiceClient::from_connection_string(http_client, connection_string, 3600)?;
-
-        let builder = service_client.update_module_twin("deviceid", "moduleid");
-        assert_eq!(builder.device_id, "deviceid".to_string());
-        assert_eq!(builder.module_id, Some("moduleid".to_string()));
-        assert_eq!(builder.method, azure_core::Method::Patch);
-
-        Ok(())
-    }
-
-    #[test]
-    fn replace_module_twin_should_create_builder() -> Result<(), Box<dyn std::error::Error>> {
-        use crate::service::ServiceClient;
-        let http_client = azure_core::new_http_client();
-
-        let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-        let service_client =
-            ServiceClient::from_connection_string(http_client, connection_string, 3600)?;
-
-        let builder = service_client.replace_module_twin("deviceid", "moduleid");
-        assert_eq!(builder.device_id, "deviceid".to_string());
-        assert_eq!(builder.module_id, Some("moduleid".to_string()));
-        assert_eq!(builder.method, azure_core::Method::Put);
-
-        Ok(())
-    }
-
-    #[test]
-    fn update_device_twin_should_create_builder() -> Result<(), Box<dyn std::error::Error>> {
-        use crate::service::ServiceClient;
-        let http_client = azure_core::new_http_client();
-
-        let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-        let service_client =
-            ServiceClient::from_connection_string(http_client, connection_string, 3600)?;
-
-        let builder = service_client.update_device_twin("deviceid");
-        assert_eq!(builder.device_id, "deviceid".to_string());
-        assert_eq!(builder.module_id, None);
-        assert_eq!(builder.method, azure_core::Method::Patch);
-
-        Ok(())
-    }
-
-    #[test]
-    fn replace_device_twin_should_create_builder() -> Result<(), Box<dyn std::error::Error>> {
-        use crate::service::ServiceClient;
-        let http_client = azure_core::new_http_client();
-
-        let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-        let service_client =
-            ServiceClient::from_connection_string(http_client, connection_string, 3600)?;
-
-        let builder = service_client.replace_device_twin("deviceid");
-        assert_eq!(builder.device_id, "deviceid".to_string());
-        assert_eq!(builder.module_id, None);
-        assert_eq!(builder.method, azure_core::Method::Put);
-
         Ok(())
     }
 }
