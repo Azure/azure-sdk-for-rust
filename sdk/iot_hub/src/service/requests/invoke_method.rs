@@ -42,7 +42,7 @@ impl InvokeMethodBuilder {
     ///
     /// great_method.execute(serde_json::json!({"hello": "world"}));
     /// ```
-    pub async fn into_future(self) -> InvokeMethod {
+    pub fn into_future(self) -> InvokeMethod {
         Box::pin(async move {
             let uri = match &self.module_id {
                 Some(module_id_value) => format!(

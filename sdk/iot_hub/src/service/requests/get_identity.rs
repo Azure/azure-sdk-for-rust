@@ -2,7 +2,6 @@ use crate::service::{ServiceClient, API_VERSION};
 use azure_core::Method;
 
 azure_core::operation! {
-
     /// The GetIdentityBuilder is used to construct a request to get identity
     GetIdentity,
     client: ServiceClient,
@@ -12,7 +11,7 @@ azure_core::operation! {
 
 impl GetIdentityBuilder {
     /// Execute the request to get the identity of a device or module.
-    pub fn into_future<T>(self) -> GetIdentity {
+    pub fn into_future(self) -> GetIdentity {
         Box::pin(async move {
             let uri = match self.module_id {
                 Some(module_id) => format!(

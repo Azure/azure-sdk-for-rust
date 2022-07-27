@@ -15,7 +15,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let http_client = azure_core::new_http_client();
     let service_client =
         ServiceClient::from_connection_string(http_client, iot_hub_connection_string, 3600)?;
-    let twin = service_client.get_device_twin(device_id).await?;
+    let twin = service_client
+        .get_device_twin(device_id)
+        .into_future()
+        .await?;
 
     println!("Received device twin: {:?}", twin);
 

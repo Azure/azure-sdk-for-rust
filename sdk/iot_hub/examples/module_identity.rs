@@ -1,4 +1,5 @@
 use azure_iot_hub::service::resources::AuthenticationMechanism;
+use azure_iot_hub::service::responses::ModuleIdentityResponse;
 use azure_iot_hub::service::ServiceClient;
 use std::error::Error;
 
@@ -19,8 +20,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let service_client =
         ServiceClient::from_connection_string(http_client, iot_hub_connection_string, 3600)?;
     let module = service_client
-        .create_module_identity()
-        .execute(
+        .create_module_identity(
             &device_id,
             &module_id,
             "IoTEdge",
@@ -29,6 +29,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 "6YS6w5wqkpdfkEW7iOP1NvituehFlFRfPko2n7KY4Gk",
             ),
         )
+        .into_future()
         .await?;
 
     println!(
@@ -41,16 +42,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         module.device_id, module.module_id
     );
     let module = service_client
-        .update_module_identity(module.etag)
-        .execute(
+        .update_module_identity(
             &device_id,
             &module_id,
             "Docker",
+            module.etag,
             AuthenticationMechanism::new_using_symmetric_key(
                 "QhgevIUBSWe37q1MP+M/vtktjOcrE74BVbpcxlLQw58=",
                 "6YS6w5wqkpdfkEW7iOP1NvituehFlFRfPko2n7KY4Gk",
             ),
         )
+        .into_future()
         .await?;
 
     println!(
@@ -59,7 +61,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
     let module = service_client
         .get_module_identity(module.device_id, module.module_id)
+        .into_future()
         .await?;
+    let module: ModuleIdentityResponse = module.try_into()?;
     println!("Identity is: {:?}", module);
 
     println!(
@@ -68,7 +72,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
     service_client
         .delete_module_identity(module.device_id, module.module_id, module.etag)
-        .execute()
+        .into_future()
         .await?;
 
     Ok(())

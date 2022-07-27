@@ -1,4 +1,4 @@
-use azure_iot_hub::service::ServiceClient;
+use azure_iot_hub::service::{resources::Configuration, ServiceClient};
 use std::error::Error;
 
 #[tokio::main]
@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             "metric1",
             "SELECT deviceId FROM devices WHERE properties.reported.lastDesiredStatus.code = 200",
         )
-        .execute()
+        .into_future()
         .await?;
 
     println!(
@@ -38,7 +38,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     println!("Getting configuration: {}", configuration_id);
-    let configuration = service_client.get_configuration(configuration_id).await?;
+    let configuration = service_client
+        .get_configuration(configuration_id)
+        .into_future()
+        .await?;
+    let configuration: Configuration = configuration.try_into()?;
 
     println!(
         "Successfully retrieved the new configuration '{:?}'",
@@ -65,10 +69,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         }))
         .labels(configuration.labels)
         .metrics(configuration.metrics.queries)
-        .execute()
+        .into_future()
         .await?;
 
-    let multiple_configurations = service_client.get_configurations().await?;
+    let multiple_configurations = service_client.get_configurations().into_future().await?;
     println!(
         "Successfully retrieved all configurations '{:?}'",
         multiple_configurations
@@ -86,7 +90,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     service_client
         .delete_configuration(&configuration.id, configuration.etag)
-        .execute()
+        .into_future()
         .await?;
 
     println!(

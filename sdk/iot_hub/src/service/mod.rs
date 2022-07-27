@@ -327,7 +327,7 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let twin = iot_hub.get_module_twin("some-device", "some-module");
     /// ```
-    pub async fn get_module_twin<S, T>(&self, device_id: S, module_id: T) -> GetTwinBuilder
+    pub fn get_module_twin<S, T>(&self, device_id: S, module_id: T) -> GetTwinBuilder
     where
         S: Into<String>,
         T: Into<String>,
@@ -351,7 +351,7 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let twin = iot_hub.get_device_twin("some-device");
     /// ```
-    pub async fn get_device_twin<S>(&self, device_id: S) -> GetTwinBuilder
+    pub fn get_device_twin<S>(&self, device_id: S) -> GetTwinBuilder
     where
         S: Into<String>,
     {
