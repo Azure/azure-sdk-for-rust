@@ -20,7 +20,7 @@ azure_core::operation! {
     etag: Option<String>,
 }
 
-impl<'a> CreateOrUpdateModuleIdentityBuilder {
+impl CreateOrUpdateModuleIdentityBuilder {
     /// Performs the create or update request on the device identity
     pub fn into_future(self) -> CreateOrUpdateModuleIdentity {
         Box::pin(async move {

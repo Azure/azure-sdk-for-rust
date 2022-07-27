@@ -41,9 +41,7 @@ impl QueryBuilder {
                 self.client.iot_hub_name, API_VERSION
             );
 
-            let query_body = QueryBody {
-                query: self.query.into(),
-            };
+            let query_body = QueryBody { query: self.query };
             let body = azure_core::to_json(&query_body)?;
 
             let mut request = self.client.finalize_request(&uri, Method::Post)?;
