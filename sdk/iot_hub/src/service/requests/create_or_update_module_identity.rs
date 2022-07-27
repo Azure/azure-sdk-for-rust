@@ -22,7 +22,7 @@ azure_core::operation! {
 
 impl<'a> CreateOrUpdateModuleIdentityBuilder {
     /// Performs the create or update request on the device identity
-    pub async fn into_future(self) -> CreateOrUpdateModuleIdentity {
+    pub fn into_future(self) -> CreateOrUpdateModuleIdentity {
         Box::pin(async move {
             let uri = format!(
                 "https://{}.azure-devices.net/devices/{}/modules/{}?api-version={}",

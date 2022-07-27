@@ -24,7 +24,7 @@ azure_core::operation! {
 
 impl CreateOrUpdateConfigurationBuilder {
     /// Performs the create or update request on the device identity
-    pub async fn into_future(self) -> CreateOrUpdateConfiguration {
+    pub fn into_future(self) -> CreateOrUpdateConfiguration {
         Box::pin(async move {
             let uri = format!(
                 "https://{}.azure-devices.net/configurations/{}?api-version={}",

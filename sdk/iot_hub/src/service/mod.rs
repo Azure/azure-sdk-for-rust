@@ -567,16 +567,12 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device = iot_hub.delete_device_identity("some-device-id", "some-etag");
     /// ```
-    pub fn delete_device_identity<S, T>(
-        &self,
-        device_id: S,
-        if_match: T,
-    ) -> DeleteIdentityBuilder<'_>
+    pub fn delete_device_identity<S, T>(&self, device_id: S, if_match: T) -> DeleteIdentityBuilder
     where
         S: Into<String>,
         T: Into<String>,
     {
-        DeleteIdentityBuilder::new(self, if_match.into(), device_id.into(), None)
+        DeleteIdentityBuilder::new(self.clone(), if_match.into(), device_id.into(), None)
     }
 
     /// Get the identity of a given module
@@ -695,14 +691,14 @@ impl ServiceClient {
         device_id: S,
         module_id: T,
         if_match: U,
-    ) -> DeleteIdentityBuilder<'_>
+    ) -> DeleteIdentityBuilder
     where
         S: Into<String>,
         T: Into<String>,
         U: Into<String>,
     {
         DeleteIdentityBuilder::new(
-            self,
+            self.clone(),
             if_match.into(),
             device_id.into(),
             Some(module_id.into()),
@@ -862,12 +858,12 @@ impl ServiceClient {
         &self,
         configuration_id: S,
         if_match: T,
-    ) -> DeleteConfigurationBuilder<'_>
+    ) -> DeleteConfigurationBuilder
     where
         S: Into<String>,
         T: Into<String>,
     {
-        DeleteConfigurationBuilder::new(self, if_match.into(), configuration_id.into())
+        DeleteConfigurationBuilder::new(self.clone(), if_match.into(), configuration_id.into())
     }
 
     /// Prepares a request that can be used by any request builders.
