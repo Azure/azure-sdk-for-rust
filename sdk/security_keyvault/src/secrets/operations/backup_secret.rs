@@ -29,7 +29,7 @@ impl BackupSecretBuilder {
             let response = CollectedResponse::from_response(response).await?;
             let body = response.body();
 
-            let response = serde_json::from_slice::<BackupSecretResponse>(&body)?;
+            let response = serde_json::from_slice::<BackupSecretResponse>(body)?;
             Ok(response)
         })
     }
