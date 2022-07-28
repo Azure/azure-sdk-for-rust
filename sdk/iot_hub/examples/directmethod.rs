@@ -31,12 +31,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         method_name, device_id, module_id, service_client.iot_hub_name
     );
 
-    let direct_method =
-        service_client.create_module_method(device_id, module_id, method_name, 30, 30);
+    let direct_method = service_client.create_module_method(
+        device_id,
+        module_id,
+        method_name,
+        serde_json::from_str(&payload)?,
+    );
 
-    let response = direct_method
-        .execute(serde_json::from_str(&payload)?)
-        .await?;
+    let response = direct_method.into_future().await?;
 
     println!(
         "Received a response from the direct method with status code {} and payload {:?}",

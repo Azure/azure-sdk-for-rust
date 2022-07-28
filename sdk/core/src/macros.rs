@@ -28,7 +28,7 @@ macro_rules! setters {
     (@single $name:ident : $typ:ty => $transform:expr) => {
         #[allow(clippy::redundant_field_names)]
         #[allow(clippy::needless_update)]
-        // TODO: Declare using idiomatic with_$name when https://github.com/Azure/azure-sdk-for-rust/issues/292 is resolved.
+        #[allow(missing_docs)]
         pub fn $name<P: ::std::convert::Into<$typ>>(self, $name: P) -> Self {
             let $name: $typ = $name.into();
             Self  {
@@ -123,6 +123,7 @@ macro_rules! setters {
 macro_rules! operation {
     // Construct the builder.
     (@builder
+        $(#[$outer:meta])*
         // The name of the operation and any generic params along with their constraints
         $name:ident<$($generic:ident: $first_constraint:ident $(+ $constraint:ident)* ),* $(+ $lt:lifetime)?>,
         // The client
@@ -139,6 +140,7 @@ macro_rules! operation {
         ) => {
         azure_core::__private::paste! {
         #[derive(Debug, Clone)]
+        $(#[$outer])*
         pub struct [<$name Builder>]<$($generic)*> {
             client: $client,
             $($required: $rtype,)*
@@ -169,8 +171,45 @@ macro_rules! operation {
         }
         }
     };
+    // `operation! { #[stream] ListUsers, client: UserClient, ?consistency_level: ConsistencyLevel }`
+    (#[stream] $(#[$outer:meta])* $name:ident,
+        client: $client:ty,
+        $($required:ident: $rtype:ty,)*
+        $(?$optional:ident: $otype:ty),*) => {
+            $crate::operation!{
+                @builder
+                $(#[$outer])*
+                $name<>,
+                client: $client,
+                @required
+                $($required: $rtype,)*
+                @optional
+                $($optional: $otype,)*
+                @nosetter
+            }
+    };
+    (#[stream] $(#[$outer:meta])*
+        $name:ident,
+        client: $client:ty,
+        $($required:ident: $rtype:ty,)*
+        $(?$optional:ident: $otype:ty,)*
+        $(#[skip]$nosetter:ident: $nstype:ty),*
+    ) => {
+            $crate::operation!{
+                @builder
+                $(#[$outer])*
+                $name<>,
+                client: $client,
+                @required
+                $($required: $rtype,)*
+                @optional
+                $($optional: $otype,)*
+                @nosetter
+                $($nosetter: $nstype),*
+            }
+    };
     // Construct a builder and the `Future` related code
-    ($name:ident<$($generic:ident: $first_constraint:ident $(+ $constraint:ident)* ),* $(+ $lt:lifetime)?>,
+    ($(#[$outer:meta])* $name:ident<$($generic:ident: $first_constraint:ident $(+ $constraint:ident)* ),* $(+ $lt:lifetime)?>,
         client: $client:ty,
         @required
         $($required:ident: $rtype:ty,)*
@@ -180,7 +219,9 @@ macro_rules! operation {
         $($nosetter:ident: $nstype:ty),*
         ) => {
         $crate::operation! {
-            @builder $name<$($generic: $first_constraint $(+ $constraint)*),* $(+ $lt)*>,
+            @builder
+            $(#[$outer])*
+            $name<$($generic: $first_constraint $(+ $constraint)*),* $(+ $lt)*>,
             client: $client,
             @required
             $($required: $rtype,)*
@@ -202,11 +243,12 @@ macro_rules! operation {
         }
     };
     // `operation! { CreateUser, client: UserClient, ?consistency_level: ConsistencyLevel }`
-    ($name:ident,
+    ($(#[$outer:meta])* $name:ident,
         client: $client:ty,
         $($required:ident: $rtype:ty,)*
         $(?$optional:ident: $otype:ty),*) => {
             $crate::operation!{
+                $(#[$outer])*
                 $name<>,
                 client: $client,
                 @required
@@ -214,49 +256,16 @@ macro_rules! operation {
                 @optional
                 $($optional: $otype,)*
                 @nosetter
-            }
-    };
-    // `operation! { #[stream] ListUsers, client: UserClient, ?consistency_level: ConsistencyLevel }`
-    (#[stream] $name:ident,
-        client: $client:ty,
-        $($required:ident: $rtype:ty,)*
-        $(?$optional:ident: $otype:ty),*) => {
-            $crate::operation!{
-                @builder
-                $name<>,
-                client: $client,
-                @required
-                $($required: $rtype,)*
-                @optional
-                $($optional: $otype,)*
-                @nosetter
-            }
-    };
-    (#[stream] $name:ident,
-        client: $client:ty,
-        $($required:ident: $rtype:ty,)*
-        $(?$optional:ident: $otype:ty,)*
-        $(#[skip]$nosetter:ident: $nstype:ty),*
-    ) => {
-            $crate::operation!{
-                @builder
-                $name<>,
-                client: $client,
-                @required
-                $($required: $rtype,)*
-                @optional
-                $($optional: $otype,)*
-                @nosetter
-                $($nosetter: $nstype),*
             }
     };
     // `operation! { CreateDocument<D: Serialize>, client: UserClient, ?consistency_level: ConsistencyLevel, ??other_field: bool }`
-    ($name:ident<$($generic:ident: $first_constraint:ident $(+ $constraint:ident)*),* $(+ $lt:lifetime)?>,
+    ($(#[$outer:meta])* $name:ident<$($generic:ident: $first_constraint:ident $(+ $constraint:ident)*),* $(+ $lt:lifetime)?>,
         client: $client:ty,
         $($required:ident: $rtype:ty,)*
         $(?$optional:ident: $otype:ty,)*
         $(#[skip] $nosetter:ident: $nstype:ty),*) => {
             $crate::operation!{
+                $(#[$outer])*
                 $name<$($generic: $first_constraint $(+ $constraint)*),* $(+ $lt)*>,
                 client: $client,
                 @required
