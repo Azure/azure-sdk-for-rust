@@ -6,14 +6,14 @@ use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use std::sync::Arc;
 
-/// The requests module contains any request that the IoT Hub service client can perform.
-pub mod requests;
-/// The resources module contains various types that some of the requests or responses use.
+/// Contains any operation that the IoT Hub service client can perform.
+pub mod operations;
+/// Contains various types that some of the requests or responses use.
 pub mod resources;
-/// The response module contains responses for the requests that the IoT Hub service client can perform.
+/// Contains responses for the requests that the IoT Hub service client can perform.
 pub mod responses;
 
-use crate::service::requests::{
+use crate::service::operations::{
     ApplyOnEdgeDeviceBuilder, CreateOrUpdateConfigurationBuilder,
     CreateOrUpdateDeviceIdentityBuilder, CreateOrUpdateModuleIdentityBuilder,
     DeleteConfigurationBuilder, DeleteIdentityBuilder, GetIdentityBuilder, GetTwinBuilder,
@@ -21,7 +21,7 @@ use crate::service::requests::{
 };
 use crate::service::resources::identity::IdentityOperation;
 
-use self::requests::GetConfigurationBuilder;
+use self::operations::GetConfigurationBuilder;
 use self::resources::{AuthenticationMechanism, Status};
 
 /// The API version to use for any requests
@@ -264,7 +264,7 @@ impl ServiceClient {
         method_name: T,
         response_time_out: u64,
         connect_time_out: u64,
-    ) -> requests::InvokeMethodBuilder
+    ) -> operations::InvokeMethodBuilder
     where
         S: Into<String>,
         T: Into<String>,
@@ -299,7 +299,7 @@ impl ServiceClient {
         method_name: U,
         response_time_out: u64,
         connect_time_out: u64,
-    ) -> requests::InvokeMethodBuilder
+    ) -> operations::InvokeMethodBuilder
     where
         S: Into<String>,
         T: Into<String>,
