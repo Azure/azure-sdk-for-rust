@@ -7,7 +7,7 @@ use azure_core::auth::TokenCredential;
 use azure_identity::{
     CertificateCredentialOptions, ClientCertificateCredential, DefaultAzureCredential,
 };
-use azure_security_keyvault::KeyClient;
+use azure_security_keyvault::KeyvaultClient;
 use oauth2::ClientId;
 use url::Url;
 
@@ -19,11 +19,12 @@ async fn get_certficate(
     certificate_name: &str,
 ) -> Result<Vec<u8>, Box<dyn Error>> {
     let creds = DefaultAzureCredential::default();
-    let mut client = KeyClient::new(
+    let mut client = KeyvaultClient::new(
         format!("https://{}.vault.azure.net", vault_name).as_str(),
-        &creds,
-    )?;
-    let secret = client.get_secret(certificate_name).await?;
+        std::sync::Arc::new(creds),
+    )?
+    .secret_client(certificate_name);
+    let secret = client.get().into_future().await?;
     let cert = base64::decode(secret.value())?;
     Ok(cert)
 }
