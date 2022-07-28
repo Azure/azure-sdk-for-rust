@@ -15,18 +15,6 @@ operation! {
 
 impl ApplyOnEdgeDeviceBuilder {
     /// Performs the apply on edge device request
-    ///
-    ///
-    /// ```
-    /// use azure_iot_hub::service::ServiceClient;
-    /// use serde_json;
-    ///
-    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// # let http_client = azure_core::new_http_client();
-    ///
-    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// iot_hub.apply_on_edge_device("some-device").execute();
-    /// ```
     pub fn into_future(self) -> ApplyOnEdgeDevice {
         Box::pin(async move {
             let uri = format!(

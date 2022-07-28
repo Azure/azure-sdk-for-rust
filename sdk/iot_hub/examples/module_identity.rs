@@ -46,11 +46,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             &device_id,
             &module_id,
             "Docker",
-            module.etag,
             AuthenticationMechanism::new_using_symmetric_key(
                 "QhgevIUBSWe37q1MP+M/vtktjOcrE74BVbpcxlLQw58=",
                 "6YS6w5wqkpdfkEW7iOP1NvituehFlFRfPko2n7KY4Gk",
             ),
+            module.etag,
         )
         .into_future()
         .await?;

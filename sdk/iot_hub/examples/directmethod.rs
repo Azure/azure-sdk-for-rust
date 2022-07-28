@@ -32,12 +32,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     let direct_method = service_client.create_module_method(
-        serde_json::from_str(&payload)?,
         device_id,
         module_id,
         method_name,
-        30,
-        30,
+        serde_json::from_str(&payload)?,
     );
 
     let response = direct_method.into_future().await?;

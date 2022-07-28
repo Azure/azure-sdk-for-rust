@@ -55,8 +55,8 @@ impl UpdateOrReplaceTwinBuilder {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let twin = iot_hub.update_device_twin("some-device")
     ///              .tag("TagName", "TagValue")
-    ///              .properties(serde_json::json!({"PropertyName": "PropertyValue"}))
-    ///              .execute();
+    ///              .desired_properties(serde_json::json!({"PropertyName": "PropertyValue"}))
+    ///              .into_future();
     /// ```
     pub fn into_future(self) -> UpdateOrReplaceTwin {
         Box::pin(async move {

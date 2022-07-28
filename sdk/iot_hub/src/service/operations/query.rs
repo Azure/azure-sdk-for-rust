@@ -23,17 +23,6 @@ azure_core::operation! {
 
 impl QueryBuilder {
     /// Invoke a qiven query on the IoT Hub
-    ///
-    /// ```
-    /// use std::sync::Arc;
-    /// use azure_core::HttpClient;
-    /// use azure_iot_hub::service::ServiceClient;
-    ///
-    /// # let http_client = azure_core::new_http_client();
-    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
-    /// let query_builder = iot_hub.query().max_item_count(1).continuation("some_token").execute("SELECT * FROM devices");
-    /// ```
     pub fn into_future(self) -> Query {
         Box::pin(async move {
             let uri = format!(

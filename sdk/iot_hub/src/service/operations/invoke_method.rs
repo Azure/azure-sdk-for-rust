@@ -9,39 +9,16 @@ azure_core::operation! {
     /// invoke a module or device method.
     InvokeMethod,
     client: ServiceClient,
-    payload: serde_json::Value,
     device_id: String,
-    module_id: Option<String>,
     method_name: String,
-    response_time_out: u64,
-    connect_time_out: u64,
+    payload: serde_json::Value,
+    ?module_id: String,
+    ?response_time_out: u64,
+    ?connect_time_out: u64
 }
 
 impl InvokeMethodBuilder {
-    /// Invoke the DirectMethod
-    ///
-    /// Either a module method, or device method is invoked based on the
-    /// way the DirectMethod was created. On invocation a DirectMethodResponse
-    /// is returned. This does not mean the invocation was successfull. The status
-    /// code within the DirectMethodResponse should still be verified.
-    ///
-    /// # Examples
-    /// ```
-    /// # use std::sync::Arc;
-    /// # use azure_core::HttpClient;
-    /// use azure_iot_hub::service::ServiceClient;
-    /// # let http_client = azure_core::new_http_client();
-    ///
-    /// let service = ServiceClient::from_sas_token(http_client, "some-iot-hub", "sas_token");
-    /// let great_method = service.create_device_method(
-    ///    "SomeDeviceId",
-    ///    "GreatMethod",
-    ///    100,
-    ///    60
-    /// );
-    ///
-    /// great_method.execute(serde_json::json!({"hello": "world"}));
-    /// ```
+    /// Turn the builder into a `Future`
     pub fn into_future(self) -> InvokeMethod {
         Box::pin(async move {
             let uri = match &self.module_id {
@@ -57,10 +34,10 @@ impl InvokeMethodBuilder {
 
             let mut request = self.client.finalize_request(&uri, Method::Post)?;
             let method = InvokeMethodBody {
-                connect_timeout_in_seconds: self.connect_time_out,
+                connect_timeout_in_seconds: self.connect_time_out.unwrap_or(15),
                 method_name: &self.method_name,
                 payload: self.payload,
-                response_timeout_in_seconds: self.response_time_out,
+                response_timeout_in_seconds: self.response_time_out.unwrap_or(15),
             };
 
             let body = azure_core::to_json(&method)?;
