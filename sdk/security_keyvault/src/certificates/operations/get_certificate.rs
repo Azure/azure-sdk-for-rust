@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::error::{ErrorKind, ResultExt};
+use azure_core::{headers::Headers, CollectedResponse, Method};
 
 operation! {
     GetCertificate,
@@ -14,17 +14,24 @@ impl GetCertificateBuilder {
             let mut uri = self.client.client.vault_url.clone();
             let version = self.version.unwrap_or_default();
             uri.set_path(&format!("certificates/{}/{}", self.name, version));
-            uri.set_query(Some(API_VERSION_PARAM));
 
-            let response_body = self
+            let headers = Headers::new();
+            let mut request =
+                self.client
+                    .client
+                    .finalize_request(uri, Method::Get, headers, None)?;
+
+            let response = self
                 .client
                 .client
-                .request(reqwest::Method::GET, uri.to_string(), None)
+                .send(&mut self.context, &mut request)
                 .await?;
-            let response = serde_json::from_str::<KeyVaultGetCertificateResponse>(&response_body)
-            .with_context(ErrorKind::DataConversion, || {
-                format!("failed to parse get certificate response. uri: {uri} certificate_name: {} response_body: {response_body}", self.name)
-            })?;
+
+            let response = CollectedResponse::from_response(response).await?;
+            let body = response.body();
+
+            let response: KeyVaultGetCertificateResponse = serde_json::from_slice(body)?;
+
             Ok(KeyVaultCertificate {
                 key_id: response.kid,
                 secret_id: response.sid,

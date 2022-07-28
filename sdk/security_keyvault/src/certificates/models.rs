@@ -1,5 +1,7 @@
-use chrono::serde::{ts_seconds, ts_seconds_option};
-use chrono::{DateTime, Utc};
+use chrono::{
+    serde::{ts_seconds, ts_seconds_option},
+    DateTime, Utc,
+};
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]

@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::error::{ErrorKind, ResultExt};
+use azure_core::{headers::Headers, CollectedResponse, Method};
 use serde::Deserialize;
 
 operation! {
@@ -13,23 +13,24 @@ impl BackupSecretBuilder {
         Box::pin(async move {
             let mut uri = self.client.client.vault_url.clone();
             uri.set_path(&format!("secrets/{}/backup", self.name));
-            uri.set_query(Some(API_VERSION_PARAM));
 
-            let response_body = self
+            let headers = Headers::new();
+            let mut request =
+                self.client
+                    .client
+                    .finalize_request(uri, Method::Post, headers, None)?;
+
+            let response = self
                 .client
                 .client
-                .request(reqwest::Method::POST, uri.to_string(), None)
+                .send(&mut self.context, &mut request)
                 .await?;
 
-            serde_json::from_str::<BackupSecretResponse>(&response_body).with_context(
-                ErrorKind::DataConversion,
-                || {
-                    format!(
-                        "failed to parse BackupSecretResponse. secret_name: {}",
-                        self.name
-                    )
-                },
-            )
+            let response = CollectedResponse::from_response(response).await?;
+            let body = response.body();
+
+            let response = serde_json::from_slice::<BackupSecretResponse>(&body)?;
+            Ok(response)
         })
     }
 }

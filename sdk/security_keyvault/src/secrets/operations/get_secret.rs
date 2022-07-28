@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::error::{ErrorKind, ResultExt};
+use azure_core::{headers::Headers, CollectedResponse, Method};
 
 operation! {
     GetSecret,
@@ -14,19 +14,23 @@ impl GetSecretBuilder {
             let mut uri = self.client.client.vault_url.clone();
             let version = self.version.unwrap_or_default();
             uri.set_path(&format!("secrets/{}/{}", self.name, version));
-            uri.set_query(Some(API_VERSION_PARAM));
+            let headers = Headers::new();
 
-            let response_body = self
+            println!("uri: {}", uri);
+            let mut request =
+                self.client
+                    .client
+                    .finalize_request(uri, Method::Get, headers, None)?;
+
+            let response = self
                 .client
                 .client
-                .request(reqwest::Method::GET, uri.to_string(), None)
+                .send(&mut self.context, &mut request)
                 .await?;
-            let response = serde_json::from_str::<KeyVaultGetSecretResponse>(&response_body)
-            .with_context(ErrorKind::DataConversion, || {
-                format!(
-                    "failed to parse KeyVaultGetSecretResponse. secret_name: {} secret_version_name: {version} response_body: {response_body}", self.name
-                )
-            })?;
+
+            let response = CollectedResponse::from_response(response).await?;
+            let body = response.body();
+            let response = serde_json::from_slice::<KeyVaultGetSecretResponse>(body)?;
             Ok(KeyVaultSecret {
                 expires_on: response.attributes.exp,
                 enabled: response.attributes.enabled,

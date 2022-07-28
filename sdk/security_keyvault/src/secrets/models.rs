@@ -1,9 +1,11 @@
-use chrono::serde::{ts_seconds, ts_seconds_option};
-use chrono::{DateTime, Utc};
+use chrono::{
+    serde::{ts_seconds, ts_seconds_option},
+    DateTime, Utc,
+};
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
-pub(crate) struct KeyVaultSecretBaseIdentifierAttributedRaw {
+pub struct KeyVaultSecretBaseIdentifierAttributedRaw {
     pub enabled: bool,
     #[serde(with = "ts_seconds")]
     pub created: DateTime<Utc>,
@@ -12,13 +14,13 @@ pub(crate) struct KeyVaultSecretBaseIdentifierAttributedRaw {
 }
 
 #[derive(Deserialize, Debug)]
-pub(crate) struct KeyVaultSecretBaseIdentifierRaw {
+pub struct KeyVaultSecretBaseIdentifierRaw {
     pub id: String,
     pub attributes: KeyVaultSecretBaseIdentifierAttributedRaw,
 }
 
 #[derive(Deserialize, Debug)]
-pub(crate) struct KeyVaultGetSecretsResponse {
+pub struct KeyVaultGetSecretsResponse {
     pub value: Vec<KeyVaultSecretBaseIdentifierRaw>,
     #[serde(rename = "nextLink")]
     pub next_link: Option<String>,

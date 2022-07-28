@@ -1,12 +1,16 @@
-use crate::prelude::*;
-use azure_core::auth::{TokenCredential, TokenResponse};
-use azure_core::error::{Error, ErrorKind, ResultExt};
+use crate::{clients::pipeline::new_pipeline_from_options, prelude::*};
+use azure_core::{
+    auth::TokenCredential,
+    error::{Error, ErrorKind},
+    headers::*,
+    Body, Context, Method, Pipeline, Request, Response,
+};
 use const_format::formatcp;
 use std::sync::Arc;
 use url::Url;
 
 pub const API_VERSION: &str = "7.0";
-pub(crate) const API_VERSION_PARAM: &str = formatcp!("api-version={}", API_VERSION);
+const API_VERSION_PARAM: &str = formatcp!("api-version={}", API_VERSION);
 
 /// Client for Key Vault operations - getting a secret, listing secrets, etc.
 ///
@@ -22,8 +26,7 @@ pub(crate) const API_VERSION_PARAM: &str = formatcp!("api-version={}", API_VERSI
 pub struct KeyvaultClient {
     pub(crate) vault_url: Url,
     pub(crate) endpoint: String,
-    pub(crate) token_credential: Arc<dyn TokenCredential>,
-    pub(crate) token: Option<TokenResponse>,
+    pub(crate) pipeline: Pipeline,
 }
 
 impl std::fmt::Debug for KeyvaultClient {
@@ -53,63 +56,51 @@ impl KeyvaultClient {
     ) -> azure_core::Result<Self> {
         let vault_url = Url::parse(vault_url)?;
         let endpoint = extract_endpoint(&vault_url)?;
+        let pipeline = new_pipeline_from_options(token_credential.clone(), endpoint.clone());
         let client = Self {
             vault_url,
             endpoint,
-            token_credential,
-            token: None,
+            pipeline,
         };
         Ok(client)
     }
 
-    pub(crate) async fn request(
-        &mut self,
-        method: reqwest::Method,
-        uri: String,
-        body: Option<String>,
-    ) -> azure_core::Result<String> {
-        self.get_token().await?;
+    pub(crate) fn finalize_request(
+        &self,
+        mut url: Url,
+        method: Method,
+        headers: Headers,
+        request_body: Option<Body>,
+    ) -> azure_core::Result<Request> {
+        let dt = chrono::Utc::now();
+        let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
-        let mut req = reqwest::Client::new()
-            .request(method, &uri)
-            .bearer_auth(self.token.as_ref().unwrap().token.secret());
+        url.set_query(Some(API_VERSION_PARAM));
 
-        if let Some(body) = body {
-            req = req.header("content-type", "application/json").body(body);
-        } else {
-            req = req.header("content-length", 0);
+        let mut request = Request::new(url, method);
+        for (k, v) in headers {
+            request.insert_header(k, v);
         }
 
-        let resp = req
-            .send()
-            .await
-            .with_context(ErrorKind::Io, || {
-                format!("failed to send request. uri: {uri}")
-            })?
-            .error_for_status()
-            .with_context(ErrorKind::Io, || {
-                format!("failed to read response body text. uri: {uri}")
-            })?;
+        request.insert_header(MS_DATE, time);
 
-        let body = resp.text().await.with_context(ErrorKind::Io, || {
-            format!("failed to read response body text. uri: {uri}")
-        })?;
-        Ok(body)
+        if let Some(request_body) = request_body {
+            request.insert_header(CONTENT_LENGTH, request_body.len().to_string());
+            request.set_body(request_body);
+        } else {
+            request.insert_header(CONTENT_LENGTH, "0");
+            request.set_body(azure_core::EMPTY_BODY);
+        };
+
+        Ok(request)
     }
 
-    pub(crate) async fn get_token(&mut self) -> azure_core::Result<&str> {
-        if self.token.is_none()
-            || matches!(&self.token, Some(token) if token.expires_on < chrono::Utc::now())
-        {
-            let token = self
-                .token_credential
-                .get_token(&self.endpoint)
-                .await
-                .context(ErrorKind::Credential, "get token failed")?;
-
-            self.token = Some(token);
-        }
-        Ok(self.token.as_ref().unwrap().token.secret())
+    pub(crate) async fn send(
+        &self,
+        context: &mut Context,
+        request: &mut Request,
+    ) -> azure_core::Result<Response> {
+        self.pipeline.send(context, request).await
     }
 
     pub fn secret_client(&self) -> SecretClient {

@@ -13,6 +13,7 @@ license = "MIT"
 edition = "2021"
 
 [dependencies]
+async-trait = "0.1"
 futures = "0.3"
 base64 = "0.13"
 reqwest = { version = "0.11", features = ["json"] }
@@ -31,4 +32,6 @@ async-trait = "0.1"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 
 [features]
-default = ["azure_core/default"]
+default = ["enable_reqwest"]
+enable_reqwest = ["azure_core/enable_reqwest"]
+enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]

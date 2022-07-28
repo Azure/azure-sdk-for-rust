@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use azure_core::{headers::Headers, CollectedResponse, Method};
 use url::Url;
 
 operation! {
@@ -13,16 +14,25 @@ impl ListCertificatesBuilder {
 
             let mut uri = self.client.client.vault_url.clone();
             uri.set_path("certificates");
-            uri.set_query(Some(API_VERSION_PARAM));
 
             loop {
-                let resp_body = self
+                let headers = Headers::new();
+                let mut request =
+                    self.client
+                        .client
+                        .finalize_request(uri, Method::Get, headers, None)?;
+
+                let response = self
                     .client
                     .client
-                    .request(reqwest::Method::GET, uri.to_string(), None)
+                    .send(&mut self.context, &mut request)
                     .await?;
+
+                let response = CollectedResponse::from_response(response).await?;
+                let body = response.body();
+
                 let response =
-                    serde_json::from_str::<KeyVaultGetCertificatesResponse>(&resp_body).unwrap();
+                    serde_json::from_slice::<KeyVaultGetCertificatesResponse>(body).unwrap();
 
                 certificates.extend(
                     response

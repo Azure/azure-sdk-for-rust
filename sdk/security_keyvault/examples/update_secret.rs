@@ -1,9 +1,7 @@
 use azure_identity::{ClientSecretCredential, TokenCredentialOptions};
 use azure_security_keyvault::SecretClient;
-use chrono::prelude::*;
-use chrono::Duration;
-use std::env;
-use std::sync::Arc;
+use chrono::{prelude::*, Duration};
+use std::{env, sync::Arc};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

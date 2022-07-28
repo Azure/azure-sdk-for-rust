@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::error::{ErrorKind, ResultExt};
+use azure_core::{headers::Headers, Method};
 use chrono::{serde::ts_seconds_option, DateTime, Utc};
 use serde::Serialize;
 
@@ -35,7 +35,6 @@ impl UpdateCertificatePropertiesBuilder {
             let mut uri = self.client.client.vault_url.clone();
             let version = self.version.unwrap_or_default();
             uri.set_path(&format!("certificates/{}/{}", self.name, version));
-            uri.set_query(Some(API_VERSION_PARAM));
 
             let request = UpdateRequest {
                 attributes: Attributes {
@@ -45,17 +44,19 @@ impl UpdateCertificatePropertiesBuilder {
                 },
             };
 
-            let body = serde_json::to_string(&request)
-                .with_context(ErrorKind::Other, || {
-                    format!(
-                        "failed to serialize UpdateRequest. secret_name: {} secret_version_name: {version}",
-                        self.name
-                    )
-                })?;
+            let body = serde_json::to_string(&request)?;
+
+            let headers = Headers::new();
+            let mut request = self.client.client.finalize_request(
+                uri,
+                Method::Patch,
+                headers,
+                Some(body.into()),
+            )?;
 
             self.client
                 .client
-                .request(reqwest::Method::PATCH, uri.to_string(), Some(body))
+                .send(&mut self.context, &mut request)
                 .await?;
 
             Ok(())

@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use azure_core::{headers::Headers, Method};
 
 operation! {
     RestoreSecret,
@@ -11,18 +12,21 @@ impl RestoreSecretBuilder {
         Box::pin(async move {
             let mut uri = self.client.client.vault_url.clone();
             uri.set_path("secrets/restore");
-            uri.set_query(Some(API_VERSION_PARAM));
 
             let mut request_body = serde_json::Map::new();
             request_body.insert("value".to_owned(), self.backup_blob.into());
 
+            let headers = Headers::new();
+            let mut request = self.client.client.finalize_request(
+                uri,
+                Method::Post,
+                headers,
+                Some(serde_json::Value::Object(request_body).to_string().into()),
+            )?;
+
             self.client
                 .client
-                .request(
-                    reqwest::Method::POST,
-                    uri.to_string(),
-                    Some(serde_json::Value::Object(request_body).to_string()),
-                )
+                .send(&mut self.context, &mut request)
                 .await?;
 
             Ok(())

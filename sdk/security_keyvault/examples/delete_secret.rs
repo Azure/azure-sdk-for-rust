@@ -1,7 +1,6 @@
 use azure_identity::{ClientSecretCredential, TokenCredentialOptions};
 use azure_security_keyvault::SecretClient;
-use std::env;
-use std::sync::Arc;
+use std::{env, sync::Arc};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

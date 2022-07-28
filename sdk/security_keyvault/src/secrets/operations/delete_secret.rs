@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use azure_core::{headers::Headers, Method};
 
 operation! {
     DeleteSecret,
@@ -11,11 +12,16 @@ impl DeleteSecretBuilder {
         Box::pin(async move {
             let mut uri = self.client.client.vault_url.clone();
             uri.set_path(&format!("secrets/{}", self.name));
-            uri.set_query(Some(API_VERSION_PARAM));
+
+            let headers = Headers::new();
+            let mut request =
+                self.client
+                    .client
+                    .finalize_request(uri, Method::Delete, headers, None)?;
 
             self.client
                 .client
-                .request(reqwest::Method::DELETE, uri.to_string(), None)
+                .send(&mut self.context, &mut request)
                 .await?;
 
             Ok(())

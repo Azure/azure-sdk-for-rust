@@ -1,7 +1,6 @@
 use azure_core::error::{Error, ErrorKind};
 use base64::{CharacterSet, Config};
-use chrono::serde::ts_seconds_option;
-use chrono::{DateTime, Utc};
+use chrono::{serde::ts_seconds_option, DateTime, Utc};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{Map, Value};
 use std::fmt::{Debug, Display};
