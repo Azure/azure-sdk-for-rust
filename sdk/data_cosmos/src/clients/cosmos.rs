@@ -53,13 +53,6 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Enable the mocking framework.
-    #[cfg(feature = "mock_transport_framework")]
-    pub fn mock(self, enable: bool) -> Self {
-        self.mock = enable;
-        self
-    }
-
     /// Set the retry options.
     pub fn retry(mut self, retry: impl Into<azure_core::RetryOptions>) -> Self {
         self.options = self.options.retry(retry);
@@ -84,6 +77,14 @@ impl CosmosClient {
     /// Create a new `CosmosClient` which connects to the account's instance in the public Azure cloud.
     pub fn new(account: impl Into<String>, auth_token: AuthorizationToken) -> Self {
         CosmosClientBuilder::new(account, auth_token).build()
+    }
+
+    /// Create a new `CosmosClientBuilder`.
+    pub fn builder(
+        account: impl Into<String>,
+        auth_token: AuthorizationToken,
+    ) -> CosmosClientBuilder {
+        CosmosClientBuilder::new(account, auth_token)
     }
 
     /// Set the auth token used
