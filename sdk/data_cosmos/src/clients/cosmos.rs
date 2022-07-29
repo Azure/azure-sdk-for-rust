@@ -23,6 +23,7 @@ pub struct CosmosClientBuilder {
 
 impl CosmosClientBuilder {
     /// Create a new instance of `CosmosClientBuilder`.
+    #[must_use]
     pub fn new(account: impl Into<String>, auth_token: AuthorizationToken) -> Self {
         Self::with_location(CloudLocation::Public {
             account: account.into(),
@@ -31,6 +32,7 @@ impl CosmosClientBuilder {
     }
 
     /// Create a new instance of `CosmosClientBuilder` with a cloud location.
+    #[must_use]
     pub fn with_location(cloud_location: CloudLocation) -> Self {
         Self {
             options: ClientOptions::default(),
@@ -39,6 +41,7 @@ impl CosmosClientBuilder {
     }
 
     /// Convert the builder into a `CosmosClient` instance.
+    #[must_use]
     pub fn build(self) -> CosmosClient {
         let auth_token = self.cloud_location.auth_token();
         CosmosClient {
@@ -48,25 +51,21 @@ impl CosmosClientBuilder {
     }
 
     /// Set the cloud location.
+    #[must_use]
     pub fn cloud_location(mut self, cloud_location: CloudLocation) -> Self {
         self.cloud_location = cloud_location;
         self
     }
 
-    /// Enable the mocking framework.
-    #[cfg(feature = "mock_transport_framework")]
-    pub fn mock(self, enable: bool) -> Self {
-        self.mock = enable;
-        self
-    }
-
     /// Set the retry options.
+    #[must_use]
     pub fn retry(mut self, retry: impl Into<azure_core::RetryOptions>) -> Self {
         self.options = self.options.retry(retry);
         self
     }
 
     /// Set the transport options.
+    #[must_use]
     pub fn transport(mut self, transport: impl Into<azure_core::TransportOptions>) -> Self {
         self.options = self.options.transport(transport);
         self
@@ -82,11 +81,22 @@ pub struct CosmosClient {
 
 impl CosmosClient {
     /// Create a new `CosmosClient` which connects to the account's instance in the public Azure cloud.
+    #[must_use]
     pub fn new(account: impl Into<String>, auth_token: AuthorizationToken) -> Self {
         CosmosClientBuilder::new(account, auth_token).build()
     }
 
+    /// Create a new `CosmosClientBuilder`.
+    #[must_use]
+    pub fn builder(
+        account: impl Into<String>,
+        auth_token: AuthorizationToken,
+    ) -> CosmosClientBuilder {
+        CosmosClientBuilder::new(account, auth_token)
+    }
+
     /// Set the auth token used
+    #[must_use]
     pub fn auth_token(mut self, auth_token: AuthorizationToken) -> Self {
         // we replace the AuthorizationPolicy. This is
         // the last-1 policy by construction.

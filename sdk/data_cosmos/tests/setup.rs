@@ -23,6 +23,8 @@ fn get_authorization_token() -> azure_core::Result<AuthorizationToken> {
 
 #[cfg(feature = "mock_transport_framework")]
 pub fn initialize(transaction_name: impl Into<String>) -> azure_core::Result<CosmosClient> {
+    use azure_core::TransportOptions;
+
     let account_name = (std::env::var(azure_core::mock::TESTING_MODE_KEY).as_deref()
         == Ok(azure_core::mock::TESTING_MODE_RECORD))
     .then(get_account)
@@ -33,9 +35,10 @@ pub fn initialize(transaction_name: impl Into<String>) -> azure_core::Result<Cos
     .flatten()
     .unwrap_or_else(|| AuthorizationToken::new_resource(String::new()));
 
-    Ok(CosmosClient::with_mock(
-        account_name,
-        authorization_token,
-        transaction_name,
-    ))
+    let transport_options = TransportOptions::new_with_transaction_name(transaction_name.into());
+    let client = CosmosClient::builder(account_name, authorization_token)
+        .transport(transport_options)
+        .build();
+
+    Ok(client)
 }
