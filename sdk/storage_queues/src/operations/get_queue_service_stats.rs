@@ -82,7 +82,7 @@ impl GetQueueServiceStatsResponse {
                 .geo_replication
                 .last_sync_time
                 .map(|t| {
-                    date::parse_http_date(&t)
+                    date::parse_rfc1123(&t)
                         .context(ErrorKind::DataConversion, "failed to parse last sync time")
                 })
                 .transpose()?,

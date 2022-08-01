@@ -26,7 +26,7 @@ impl BlobExpiry {
             }
             BlobExpiry::Absolute(date) => {
                 headers.insert(EXPIRY_OPTION, "Abosolute");
-                headers.insert(EXPIRY_TIME, date::to_http_date(date));
+                headers.insert(EXPIRY_TIME, date::to_rfc1123(date));
             }
             BlobExpiry::NeverExpire => {
                 headers.insert(EXPIRY_OPTION, "NeverExpire");

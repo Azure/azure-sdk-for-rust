@@ -57,7 +57,7 @@ impl GetPropertiesResponse {
     ) -> azure_core::Result<GetPropertiesResponse> {
         let request_id = headers.get_as(&headers::REQUEST_ID)?;
 
-        let date = date::parse_http_date(headers.get_str(&headers::DATE)?)?;
+        let date = date::parse_rfc1123(headers.get_str(&headers::DATE)?)?;
 
         let container = Container::from_response(container_name, headers)?;
 

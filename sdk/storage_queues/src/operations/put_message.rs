@@ -89,10 +89,10 @@ impl PutMessageResponse {
 
         let queue_message = QueueMessage {
             message_id: queue_message.message_id,
-            insertion_time: date::parse_http_date(&queue_message.insertion_time)?,
-            expiration_time: date::parse_http_date(&queue_message.expiration_time)?,
+            insertion_time: date::parse_rfc1123(&queue_message.insertion_time)?,
+            expiration_time: date::parse_rfc1123(&queue_message.expiration_time)?,
             pop_receipt: queue_message.pop_receipt,
-            time_next_visible: date::parse_http_date(&queue_message.time_next_visible)?,
+            time_next_visible: date::parse_rfc1123(&queue_message.time_next_visible)?,
         };
 
         Ok(Self {

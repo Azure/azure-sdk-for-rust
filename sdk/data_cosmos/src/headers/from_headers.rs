@@ -3,7 +3,7 @@ use crate::resource_quota::resource_quotas_from_str;
 use crate::resources::document::IndexingDirective;
 use crate::ResourceQuota;
 
-use azure_core::date::{parse_http_date, parse_last_state_change};
+use azure_core::date::{parse_last_state_change, parse_rfc1123};
 use azure_core::error::{Error, ErrorKind};
 use azure_core::headers::{self, Headers};
 use time::OffsetDateTime;
@@ -179,5 +179,5 @@ pub(crate) fn last_state_change_from_headers(
 
 pub(crate) fn date_from_headers(headers: &Headers) -> azure_core::Result<OffsetDateTime> {
     let s = headers.get_str(&headers::DATE)?;
-    parse_http_date(s)
+    parse_rfc1123(s)
 }

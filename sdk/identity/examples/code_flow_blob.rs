@@ -51,7 +51,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("token secret: {}", token.access_token().secret());
 
     let dt = OffsetDateTime::now_utc();
-    let time = date::to_http_date(&dt);
+    let time = date::to_rfc1123(&dt);
     println!("x-ms-date ==> {}", time);
 
     let resp = reqwest::Client::new()

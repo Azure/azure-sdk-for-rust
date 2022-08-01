@@ -373,7 +373,7 @@ impl StorageClient {
         request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
         let dt = OffsetDateTime::now_utc();
-        let time = date::to_http_date(&dt);
+        let time = date::to_rfc1123(&dt);
 
         let mut request = Request::new(url, method);
         for (k, v) in headers {

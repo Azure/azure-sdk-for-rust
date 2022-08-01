@@ -41,12 +41,12 @@ impl FromStringOptional<time::OffsetDateTime> for time::OffsetDateTime {
 
 #[cfg(not(feature = "azurite_workaround"))]
 pub fn from_azure_time(s: &str) -> crate::Result<time::OffsetDateTime> {
-    date::parse_http_date(s)
+    date::parse_rfc1123(s)
 }
 
 #[cfg(feature = "azurite_workaround")]
 pub fn from_azure_time(s: &str) -> crate::Result<time::OffsetDateTime> {
-    if let Ok(dt) = date::parse_http_date(s) {
+    if let Ok(dt) = date::parse_rfc1123(s) {
         Ok(dt)
     } else {
         log::warn!("Received an invalid date: {}, returning now()", s);

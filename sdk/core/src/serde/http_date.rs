@@ -9,14 +9,14 @@ where
     D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
-    parse_http_date(&s).map_err(de::Error::custom)
+    parse_rfc1123(&s).map_err(de::Error::custom)
 }
 
 pub fn serialize<S>(date: &OffsetDateTime, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    serializer.serialize_str(&to_http_date(date))
+    serializer.serialize_str(&to_rfc1123(date))
 }
 
 pub mod option {
@@ -29,7 +29,7 @@ pub mod option {
         D: Deserializer<'de>,
     {
         let s: Option<String> = Option::deserialize(deserializer)?;
-        s.map(|s| parse_http_date(&s).map_err(serde::de::Error::custom))
+        s.map(|s| parse_rfc1123(&s).map_err(serde::de::Error::custom))
             .transpose()
     }
 
@@ -38,7 +38,7 @@ pub mod option {
         S: Serializer,
     {
         if let Some(date) = date {
-            serializer.serialize_str(&to_http_date(date))
+            serializer.serialize_str(&to_rfc1123(date))
         } else {
             serializer.serialize_none()
         }

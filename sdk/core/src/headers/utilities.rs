@@ -39,7 +39,7 @@ pub fn http_date_from_headers_mandatory(
     header_name: &HeaderName,
 ) -> crate::Result<OffsetDateTime> {
     let date = headers.get_str(header_name)?;
-    date::parse_http_date(date)
+    date::parse_rfc1123(date)
 }
 
 pub fn continuation_token_from_headers_optional(

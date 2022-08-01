@@ -32,8 +32,7 @@ use time::OffsetDateTime;
 fn get_creation_time(h: &Headers) -> azure_core::Result<Option<OffsetDateTime>> {
     if let Some(creation_time) = h.get_optional_str(&headers::CREATION_TIME) {
         // Check that the creation time is valid
-        let creation_time =
-            date::parse_http_date(creation_time).unwrap_or(OffsetDateTime::now_utc());
+        let creation_time = date::parse_rfc1123(creation_time).unwrap_or(OffsetDateTime::now_utc());
         Ok(Some(creation_time))
     } else {
         // Not having a creation time is ok
@@ -181,7 +180,7 @@ impl Blob {
         #[cfg(not(feature = "azurite_workaround"))]
         let creation_time = {
             let creation_time = h.get_str(&headers::CREATION_TIME)?;
-            date::parse_http_date(creation_time)?
+            date::parse_rfc1123(creation_time)?
         };
         #[cfg(feature = "azurite_workaround")]
         let creation_time = get_creation_time(h)?;
@@ -212,7 +211,7 @@ impl Blob {
         let copy_progress = h.get_optional_as(&headers::COPY_PROGRESS)?;
         let copy_completion_time: Option<OffsetDateTime> = h
             .get_optional_str(&headers::COPY_COMPLETION_TIME)
-            .and_then(|cct| date::parse_http_date(cct).ok());
+            .and_then(|cct| date::parse_rfc1123(cct).ok());
         let copy_status_description = h.get_optional_string(&headers::COPY_STATUS_DESCRIPTION);
         let server_encrypted = h.get_as(&headers::SERVER_ENCRYPTED)?;
 

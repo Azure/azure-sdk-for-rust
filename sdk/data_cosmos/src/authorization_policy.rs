@@ -216,7 +216,7 @@ fn string_to_sign(
             ResourceType::Triggers => "triggers",
         },
         resource_link,
-        date::to_http_date(&time_nonce).to_lowercase()
+        date::to_rfc1123(&time_nonce).to_lowercase()
     )
 }
 

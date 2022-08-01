@@ -87,7 +87,7 @@ impl Container {
         NAME: Into<String>,
     {
         let last_modified = headers.get_str(&headers::LAST_MODIFIED)?;
-        let last_modified = date::parse_http_date(last_modified)?;
+        let last_modified = date::parse_rfc1123(last_modified)?;
 
         let e_tag = headers.get_as(&headers::ETAG)?;
 

@@ -42,6 +42,8 @@ pub fn to_rfc2822(date: &OffsetDateTime) -> String {
 ///
 /// https://www.rfc-editor.org/rfc/rfc3339
 ///
+/// In Azure REST API specifications it is specified as `"format": "date-time"`.
+///
 /// 1985-04-12T23:20:50.52Z
 pub fn parse_rfc3339(s: &str) -> crate::Result<OffsetDateTime> {
     OffsetDateTime::parse(s, &Rfc3339).with_context(ErrorKind::DataConversion, || {
@@ -49,9 +51,11 @@ pub fn parse_rfc3339(s: &str) -> crate::Result<OffsetDateTime> {
     })
 }
 
-/// Date format for the Internet
+/// RFC 3339: Date and Time on the Internet: Timestamps
 ///
 /// https://www.rfc-editor.org/rfc/rfc3339
+///
+/// In Azure REST API specifications it is specified as `"format": "date-time"`.
 ///
 /// 1985-04-12T23:20:50.52Z
 pub fn to_rfc3339(date: &OffsetDateTime) -> String {
@@ -59,43 +63,51 @@ pub fn to_rfc3339(date: &OffsetDateTime) -> String {
     date.format(&Rfc3339).unwrap()
 }
 
-/// Preferred HTTP date format
+/// RFC 1123: Requirements for Internet Hosts - Application and Support
 ///
-/// https://httpwg.org/specs/rfc9110.html#http.date
+/// https://www.rfc-editor.org/rfc/rfc1123
 ///
-/// In Azure REST API specification it is specified as `"format": "date-time-rfc1123"`. In .NET it is:
+/// In Azure REST API specifications it is specified as `"format": "date-time-rfc1123"`.
 ///
+/// In .NET it is the `rfc1123pattern`.
 /// https://docs.microsoft.com/dotnet/api/system.globalization.datetimeformatinfo.rfc1123pattern
 ///
+/// This format is also the preferred HTTP date format.
+/// https://httpwg.org/specs/rfc9110.html#http.date
+///
 /// Sun, 06 Nov 1994 08:49:37 GMT
-pub fn parse_http_date(s: &str) -> crate::Result<OffsetDateTime> {
-    Ok(PrimitiveDateTime::parse(s, HTTP_DATE_FORMAT)
+pub fn parse_rfc1123(s: &str) -> crate::Result<OffsetDateTime> {
+    Ok(PrimitiveDateTime::parse(s, RFC1123_FORMAT)
         .with_context(ErrorKind::DataConversion, || {
             format!("unable to parse http date '{s}")
         })?
         .assume_utc())
 }
 
-const HTTP_DATE_FORMAT: &[FormatItem] = format_description!(
+const RFC1123_FORMAT: &[FormatItem] = format_description!(
     "[weekday repr:short], [day] [month repr:short] [year] [hour]:[minute]:[second] GMT"
 );
 
-/// Preferred HTTP date format
+/// RFC 1123: Requirements for Internet Hosts - Application and Support
 ///
-/// https://httpwg.org/specs/rfc9110.html#http.date
+/// https://www.rfc-editor.org/rfc/rfc1123
 ///
-/// In Azure REST API specification it is specified as `"format": "date-time-rfc1123"`. In .NET it is:
+/// In Azure REST API specifications it is specified as `"format": "date-time-rfc1123"`.
 ///
+/// In .NET it is the `rfc1123pattern`.
 /// https://docs.microsoft.com/dotnet/api/system.globalization.datetimeformatinfo.rfc1123pattern
 ///
+/// This format is also the preferred HTTP date format.
+/// https://httpwg.org/specs/rfc9110.html#http.date
+///
 /// Sun, 06 Nov 1994 08:49:37 GMT
-pub fn to_http_date(date: &OffsetDateTime) -> String {
+pub fn to_rfc1123(date: &OffsetDateTime) -> String {
     date.to_offset(UtcOffset::UTC);
     // known format does not panic
-    date.format(&HTTP_DATE_FORMAT).unwrap()
+    date.format(&RFC1123_FORMAT).unwrap()
 }
 
-/// Similar to preferred HTTP date format, but includes milliseconds
+/// Similar to RFC 1123, but includes milliseconds.
 ///
 /// https://docs.microsoft.com/rest/api/cosmos-db/patch-a-document
 ///
@@ -151,16 +163,16 @@ mod tests {
     }
 
     #[test]
-    fn test_to_http_date() -> crate::Result<()> {
+    fn test_to_rfc1123() -> crate::Result<()> {
         let dt = datetime!(1994-11-06 08:49:37 UTC);
-        assert_eq!("Sun, 06 Nov 1994 08:49:37 GMT", to_http_date(&dt));
+        assert_eq!("Sun, 06 Nov 1994 08:49:37 GMT", to_rfc1123(&dt));
         Ok(())
     }
 
     #[test]
-    fn test_parse_http_date() -> crate::Result<()> {
+    fn test_parse_rfc1123() -> crate::Result<()> {
         let dt = datetime!(1994-11-06 08:49:37 UTC);
-        assert_eq!(parse_http_date("Sun, 06 Nov 1994 08:49:37 GMT")?, dt);
+        assert_eq!(parse_rfc1123("Sun, 06 Nov 1994 08:49:37 GMT")?, dt);
         Ok(())
     }
 
@@ -178,7 +190,7 @@ mod tests {
         let creation_time = "Thu, 01 Jul 2021 10:45:02 GMT";
         assert_eq!(
             datetime!(2021-07-01 10:45:02 UTC),
-            parse_http_date(creation_time)?
+            parse_rfc1123(creation_time)?
         );
         Ok(())
     }

@@ -32,7 +32,7 @@ impl Policy for SharedKeyAuthorizationPolicy {
 
         request.insert_header(
             azure_core::headers::MS_DATE,
-            HeaderValue::from(date::to_http_date(&OffsetDateTime::now_utc())),
+            HeaderValue::from(date::to_rfc1123(&OffsetDateTime::now_utc())),
         );
         request.insert_header(
             azure_core::headers::VERSION,
