@@ -83,17 +83,29 @@ impl Client {
     pub fn applications_client(&self) -> applications::Client {
         applications::Client(self.clone())
     }
+    pub fn managed_az_resiliency_status_client(&self) -> managed_az_resiliency_status::Client {
+        managed_az_resiliency_status::Client(self.clone())
+    }
     pub fn managed_cluster_version_client(&self) -> managed_cluster_version::Client {
         managed_cluster_version::Client(self.clone())
     }
     pub fn managed_clusters_client(&self) -> managed_clusters::Client {
         managed_clusters::Client(self.clone())
     }
+    pub fn managed_unsupported_vm_sizes_client(&self) -> managed_unsupported_vm_sizes::Client {
+        managed_unsupported_vm_sizes::Client(self.clone())
+    }
     pub fn node_type_skus_client(&self) -> node_type_skus::Client {
         node_type_skus::Client(self.clone())
     }
     pub fn node_types_client(&self) -> node_types::Client {
         node_types::Client(self.clone())
+    }
+    pub fn operation_results_client(&self) -> operation_results::Client {
+        operation_results::Client(self.clone())
+    }
+    pub fn operation_status_client(&self) -> operation_status::Client {
+        operation_status::Client(self.clone())
     }
     pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
@@ -215,7 +227,7 @@ pub mod application_types {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -263,7 +275,7 @@ pub mod application_types {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -312,7 +324,7 @@ pub mod application_types {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -366,7 +378,7 @@ pub mod application_types {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -423,7 +435,7 @@ pub mod application_types {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -439,7 +451,7 @@ pub mod application_types {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -588,7 +600,7 @@ pub mod application_type_versions {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -642,7 +654,7 @@ pub mod application_type_versions {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -697,7 +709,7 @@ pub mod application_type_versions {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -752,7 +764,7 @@ pub mod application_type_versions {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -804,7 +816,7 @@ pub mod application_type_versions {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -820,7 +832,7 @@ pub mod application_type_versions {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -965,7 +977,7 @@ pub mod applications {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1025,7 +1037,7 @@ pub mod applications {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -1086,7 +1098,7 @@ pub mod applications {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -1147,7 +1159,7 @@ pub mod applications {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1204,7 +1216,7 @@ pub mod applications {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1220,7 +1232,7 @@ pub mod applications {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -1369,7 +1381,7 @@ pub mod services {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1423,7 +1435,7 @@ pub mod services {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -1478,7 +1490,7 @@ pub mod services {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -1533,7 +1545,7 @@ pub mod services {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1585,7 +1597,7 @@ pub mod services {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1601,7 +1613,7 @@ pub mod services {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -1746,7 +1758,7 @@ pub mod managed_clusters {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1762,7 +1774,7 @@ pub mod managed_clusters {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -1820,7 +1832,7 @@ pub mod managed_clusters {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1836,7 +1848,7 @@ pub mod managed_clusters {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -1891,7 +1903,7 @@ pub mod managed_clusters {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1949,7 +1961,7 @@ pub mod managed_clusters {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -2008,7 +2020,7 @@ pub mod managed_clusters {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -2067,7 +2079,7 @@ pub mod managed_clusters {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2076,6 +2088,73 @@ pub mod managed_clusters {
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                             azure_core::StatusCode::Ok => Ok(Response::Ok200),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod managed_az_resiliency_status {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Action to get Az Resiliency Status of all the Base resources constituting Service Fabric Managed Clusters."]
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                cluster_name: cluster_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        type Response = models::ManagedAzResiliencyStatus;
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ServiceFabric/managedClusters/{}/getazresiliencystatus" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . cluster_name)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ManagedAzResiliencyStatus = serde_json::from_slice(&rsp_body)?;
+                                Ok(rsp_value)
+                            }
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -2175,7 +2254,7 @@ pub mod managed_cluster_version {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2229,7 +2308,7 @@ pub mod managed_cluster_version {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2279,7 +2358,7 @@ pub mod managed_cluster_version {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2331,7 +2410,7 @@ pub mod managed_cluster_version {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2342,6 +2421,304 @@ pub mod managed_cluster_version {
                                 let rsp_value: models::ManagedClusterCodeVersionListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod managed_unsupported_vm_sizes {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Get the lists of unsupported vm sizes for Service Fabric Managed Clusters."]
+        pub fn list(&self, location: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                location: location.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        #[doc = "Get unsupported vm size for Service Fabric Managed Clusters."]
+        pub fn get(&self, location: impl Into<String>, subscription_id: impl Into<String>, vm_size: impl Into<String>) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                location: location.into(),
+                subscription_id: subscription_id.into(),
+                vm_size: vm_size.into(),
+            }
+        }
+    }
+    pub mod list {
+        use super::models;
+        type Response = models::ManagedVmSizesResult;
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) location: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
+                    let this = self.clone();
+                    async move {
+                        let mut url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/providers/Microsoft.ServiceFabric/locations/{}/managedUnsupportedVMSizes",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.location
+                        ))?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ManagedVmSizesResult = serde_json::from_slice(&rsp_body)?;
+                                Ok(rsp_value)
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        }
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        type Response = models::ManagedVmSize;
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) location: String,
+            pub(crate) subscription_id: String,
+            pub(crate) vm_size: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/providers/Microsoft.ServiceFabric/locations/{}/managedUnsupportedVMSizes/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.location,
+                            &this.vm_size
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ManagedVmSize = serde_json::from_slice(&rsp_body)?;
+                                Ok(rsp_value)
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod operation_status {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Get long running operation status."]
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            location: impl Into<String>,
+            operation_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                location: location.into(),
+                operation_id: operation_id.into(),
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        type Response = models::LongRunningOperationResult;
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) location: String,
+            pub(crate) operation_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/providers/Microsoft.ServiceFabric/locations/{}/managedClusterOperations/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.location,
+                            &this.operation_id
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::LongRunningOperationResult = serde_json::from_slice(&rsp_body)?;
+                                Ok(rsp_value)
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod operation_results {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Get long running operation result."]
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            location: impl Into<String>,
+            operation_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                location: location.into(),
+                operation_id: operation_id.into(),
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+            NoContent204,
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) location: String,
+            pub(crate) operation_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/providers/Microsoft.ServiceFabric/locations/{}/managedClusterOperationResults/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.location,
+                            &this.operation_id
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => Ok(Response::Ok200),
+                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
+                            azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
@@ -2392,7 +2769,7 @@ pub mod operations {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -2408,7 +2785,7 @@ pub mod operations {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -2612,7 +2989,7 @@ pub mod node_types {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -2628,7 +3005,7 @@ pub mod node_types {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -2684,7 +3061,7 @@ pub mod node_types {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -2735,7 +3112,7 @@ pub mod node_types {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -2786,7 +3163,7 @@ pub mod node_types {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -2838,7 +3215,7 @@ pub mod node_types {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2898,7 +3275,7 @@ pub mod node_types {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -2959,7 +3336,7 @@ pub mod node_types {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -3020,7 +3397,7 @@ pub mod node_types {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -3101,7 +3478,7 @@ pub mod node_type_skus {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -3117,7 +3494,7 @@ pub mod node_type_skus {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-07-01-preview");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-06-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?

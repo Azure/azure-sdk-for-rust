@@ -612,7 +612,7 @@ pub mod front_door_name_availability {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.check_front_door_name_availability_input)?;
                         req.set_body(req_body);
@@ -679,7 +679,7 @@ pub mod front_door_name_availability_with_subscription {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.check_front_door_name_availability_input)?;
                         req.set_body(req_body);
@@ -814,7 +814,7 @@ pub mod front_doors {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -830,7 +830,7 @@ pub mod front_doors {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -890,7 +890,7 @@ pub mod front_doors {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -906,7 +906,7 @@ pub mod front_doors {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -961,7 +961,7 @@ pub mod front_doors {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1020,7 +1020,7 @@ pub mod front_doors {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.front_door_parameters)?;
                         req.set_body(req_body);
@@ -1088,7 +1088,7 @@ pub mod front_doors {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1138,7 +1138,7 @@ pub mod front_doors {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.custom_domain_properties)?;
                         req.set_body(req_body);
@@ -1264,7 +1264,7 @@ pub mod frontend_endpoints {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1280,7 +1280,7 @@ pub mod frontend_endpoints {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -1337,7 +1337,7 @@ pub mod frontend_endpoints {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1390,7 +1390,7 @@ pub mod frontend_endpoints {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.custom_https_configuration)?;
                         req.set_body(req_body);
@@ -1440,7 +1440,7 @@ pub mod frontend_endpoints {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -1517,7 +1517,7 @@ pub mod endpoints {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.content_file_paths)?;
                         req.set_body(req_body);
@@ -1640,7 +1640,7 @@ pub mod rules_engines {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1656,7 +1656,7 @@ pub mod rules_engines {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -1713,7 +1713,7 @@ pub mod rules_engines {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1774,7 +1774,7 @@ pub mod rules_engines {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.rules_engine_parameters)?;
                         req.set_body(req_body);
@@ -1844,7 +1844,7 @@ pub mod rules_engines {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2020-05-01");
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-06-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;

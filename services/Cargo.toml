@@ -190,6 +190,7 @@ members = [
   "mgmt/storage",
   "mgmt/storagecache",
   "mgmt/storageimportexport",
+  "mgmt/storagemover",
   "mgmt/storagepool",
   "mgmt/storagesync",
   "mgmt/storsimple1200series",

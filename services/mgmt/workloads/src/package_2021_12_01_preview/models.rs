@@ -1012,6 +1012,9 @@ pub struct MonitorProperties {
     #[doc = "Sets the routing preference of the SAP monitor. By default only RFC1918 traffic is routed to the customer VNET."]
     #[serde(rename = "routingPreference", default, skip_serializing_if = "Option::is_none")]
     pub routing_preference: Option<monitor_properties::RoutingPreference>,
+    #[doc = "Sets the preference for zone redundancy on resources created for the SAP monitor. By default resources will be created which do not support zone redundancy."]
+    #[serde(rename = "zoneRedundancyPreference", default, skip_serializing_if = "Option::is_none")]
+    pub zone_redundancy_preference: Option<String>,
     #[doc = "Managed resource group configuration"]
     #[serde(rename = "managedResourceGroupConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub managed_resource_group_configuration: Option<ManagedRgConfiguration>,

@@ -110,6 +110,12 @@ pub struct Backend {
     #[doc = "The Alias of the Private Link resource. Populating this optional field indicates that this backend is 'Private'"]
     #[serde(rename = "privateLinkAlias", default, skip_serializing_if = "Option::is_none")]
     pub private_link_alias: Option<String>,
+    #[doc = "The Resource Id of the Private Link resource. Populating this optional field indicates that this backend is 'Private'"]
+    #[serde(rename = "privateLinkResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub private_link_resource_id: Option<String>,
+    #[doc = "The location of the Private Link resource. Required only if 'privateLinkResourceId' is populated"]
+    #[serde(rename = "privateLinkLocation", default, skip_serializing_if = "Option::is_none")]
+    pub private_link_location: Option<String>,
     #[doc = "The Approval status for the connection to the Private Link"]
     #[serde(rename = "privateEndpointStatus", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint_status: Option<backend::PrivateEndpointStatus>,
@@ -1221,6 +1227,9 @@ pub struct FrontDoorProperties {
     #[doc = "Rules Engine Configurations available to routing rules."]
     #[serde(rename = "rulesEngines", default, skip_serializing_if = "Vec::is_empty")]
     pub rules_engines: Vec<RulesEngine>,
+    #[doc = "Key-Value pair representing additional properties for frontdoor."]
+    #[serde(rename = "extendedProperties", default, skip_serializing_if = "Option::is_none")]
+    pub extended_properties: Option<serde_json::Value>,
 }
 impl FrontDoorProperties {
     pub fn new() -> Self {
@@ -2107,6 +2116,7 @@ pub mod managed_rule_exclusion {
         RequestCookieNames,
         QueryStringArgNames,
         RequestBodyPostArgNames,
+        RequestBodyJsonArgNames,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -2136,6 +2146,7 @@ pub mod managed_rule_exclusion {
                 Self::RequestCookieNames => serializer.serialize_unit_variant("MatchVariable", 1u32, "RequestCookieNames"),
                 Self::QueryStringArgNames => serializer.serialize_unit_variant("MatchVariable", 2u32, "QueryStringArgNames"),
                 Self::RequestBodyPostArgNames => serializer.serialize_unit_variant("MatchVariable", 3u32, "RequestBodyPostArgNames"),
+                Self::RequestBodyJsonArgNames => serializer.serialize_unit_variant("MatchVariable", 4u32, "RequestBodyJsonArgNames"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -2259,6 +2270,9 @@ pub struct ManagedRuleSet {
     #[doc = "Defines the version of the rule set to use."]
     #[serde(rename = "ruleSetVersion")]
     pub rule_set_version: String,
+    #[doc = "Defines the action to take when a managed rule set score threshold is met."]
+    #[serde(rename = "ruleSetAction", default, skip_serializing_if = "Option::is_none")]
+    pub rule_set_action: Option<ManagedRuleSetActionType>,
     #[doc = "Describes the exclusions that are applied to all rules in the set."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub exclusions: Vec<ManagedRuleExclusion>,
@@ -2271,8 +2285,48 @@ impl ManagedRuleSet {
         Self {
             rule_set_type,
             rule_set_version,
+            rule_set_action: None,
             exclusions: Vec::new(),
             rule_group_overrides: Vec::new(),
+        }
+    }
+}
+#[doc = "Defines the action to take when a managed rule set score threshold is met."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ManagedRuleSetActionType")]
+pub enum ManagedRuleSetActionType {
+    Block,
+    Log,
+    Redirect,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ManagedRuleSetActionType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for ManagedRuleSetActionType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for ManagedRuleSetActionType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Block => serializer.serialize_unit_variant("ManagedRuleSetActionType", 0u32, "Block"),
+            Self::Log => serializer.serialize_unit_variant("ManagedRuleSetActionType", 1u32, "Log"),
+            Self::Redirect => serializer.serialize_unit_variant("ManagedRuleSetActionType", 2u32, "Redirect"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
 }
@@ -2555,6 +2609,9 @@ pub struct PolicySettings {
     #[doc = "If the action type is block, customer can override the response body. The body must be specified in base64 encoding."]
     #[serde(rename = "customBlockResponseBody", default, skip_serializing_if = "Option::is_none")]
     pub custom_block_response_body: Option<String>,
+    #[doc = "Describes if policy managed rules will inspect the request body content."]
+    #[serde(rename = "requestBodyCheck", default, skip_serializing_if = "Option::is_none")]
+    pub request_body_check: Option<policy_settings::RequestBodyCheck>,
 }
 impl PolicySettings {
     pub fn new() -> Self {
@@ -2633,6 +2690,43 @@ pub mod policy_settings {
             match self {
                 Self::Prevention => serializer.serialize_unit_variant("Mode", 0u32, "Prevention"),
                 Self::Detection => serializer.serialize_unit_variant("Mode", 1u32, "Detection"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Describes if policy managed rules will inspect the request body content."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "RequestBodyCheck")]
+    pub enum RequestBodyCheck {
+        Disabled,
+        Enabled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for RequestBodyCheck {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for RequestBodyCheck {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for RequestBodyCheck {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Disabled => serializer.serialize_unit_variant("RequestBodyCheck", 0u32, "Disabled"),
+                Self::Enabled => serializer.serialize_unit_variant("RequestBodyCheck", 1u32, "Enabled"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -3072,6 +3166,8 @@ pub enum ResourceState {
     Disabling,
     Disabled,
     Deleting,
+    Migrating,
+    Migrated,
     #[serde(skip_deserializing)]
     UnknownValue(String),
 }
@@ -3103,6 +3199,8 @@ impl Serialize for ResourceState {
             Self::Disabling => serializer.serialize_unit_variant("ResourceState", 3u32, "Disabling"),
             Self::Disabled => serializer.serialize_unit_variant("ResourceState", 4u32, "Disabled"),
             Self::Deleting => serializer.serialize_unit_variant("ResourceState", 5u32, "Deleting"),
+            Self::Migrating => serializer.serialize_unit_variant("ResourceState", 6u32, "Migrating"),
+            Self::Migrated => serializer.serialize_unit_variant("ResourceState", 7u32, "Migrated"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -3142,6 +3240,18 @@ pub struct RoutingRule {
     pub type_: Option<String>,
 }
 impl RoutingRule {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Defines the Resource ID for a Routing Rule."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RoutingRuleLink {
+    #[doc = "Resource ID."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+impl RoutingRuleLink {
     pub fn new() -> Self {
         Self::default()
     }
@@ -3195,6 +3305,9 @@ pub struct RoutingRuleUpdateParameters {
     #[doc = "Reference to another subresource."]
     #[serde(rename = "rulesEngine", default, skip_serializing_if = "Option::is_none")]
     pub rules_engine: Option<SubResource>,
+    #[doc = "Defines the Web Application Firewall policy for each routing rule (if applicable)"]
+    #[serde(rename = "webApplicationFirewallPolicyLink", default, skip_serializing_if = "Option::is_none")]
+    pub web_application_firewall_policy_link: Option<routing_rule_update_parameters::WebApplicationFirewallPolicyLink>,
 }
 impl RoutingRuleUpdateParameters {
     pub fn new() -> Self {
@@ -3238,6 +3351,18 @@ pub mod routing_rule_update_parameters {
                 Self::Disabled => serializer.serialize_unit_variant("EnabledState", 1u32, "Disabled"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
+        }
+    }
+    #[doc = "Defines the Web Application Firewall policy for each routing rule (if applicable)"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct WebApplicationFirewallPolicyLink {
+        #[doc = "Resource ID."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub id: Option<String>,
+    }
+    impl WebApplicationFirewallPolicyLink {
+        pub fn new() -> Self {
+            Self::default()
         }
     }
 }
@@ -3549,6 +3674,75 @@ impl RulesEngineUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Defines the Resource ID for a Security Policy."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SecurityPolicyLink {
+    #[doc = "Resource ID."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+impl SecurityPolicyLink {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The pricing tier of the web application firewall policy."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Sku {
+    #[doc = "Name of the pricing tier."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<sku::Name>,
+}
+impl Sku {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod sku {
+    use super::*;
+    #[doc = "Name of the pricing tier."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Name")]
+    pub enum Name {
+        #[serde(rename = "Classic_AzureFrontDoor")]
+        ClassicAzureFrontDoor,
+        #[serde(rename = "Standard_AzureFrontDoor")]
+        StandardAzureFrontDoor,
+        #[serde(rename = "Premium_AzureFrontDoor")]
+        PremiumAzureFrontDoor,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Name {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Name {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Name {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::ClassicAzureFrontDoor => serializer.serialize_unit_variant("Name", 0u32, "Classic_AzureFrontDoor"),
+                Self::StandardAzureFrontDoor => serializer.serialize_unit_variant("Name", 1u32, "Standard_AzureFrontDoor"),
+                Self::PremiumAzureFrontDoor => serializer.serialize_unit_variant("Name", 2u32, "Premium_AzureFrontDoor"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "Reference to another subresource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubResource {
@@ -3799,6 +3993,9 @@ pub struct WebApplicationFirewallPolicy {
     #[doc = "Gets a unique read-only string that changes whenever the resource is updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "The pricing tier of the web application firewall policy."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
 }
 impl WebApplicationFirewallPolicy {
     pub fn new() -> Self {
@@ -3841,11 +4038,20 @@ pub struct WebApplicationFirewallPolicyProperties {
     #[doc = "Describes Frontend Endpoints associated with this Web Application Firewall policy."]
     #[serde(rename = "frontendEndpointLinks", default, skip_serializing_if = "Vec::is_empty")]
     pub frontend_endpoint_links: Vec<FrontendEndpointLink>,
+    #[doc = "Describes Routing Rules associated with this Web Application Firewall policy."]
+    #[serde(rename = "routingRuleLinks", default, skip_serializing_if = "Vec::is_empty")]
+    pub routing_rule_links: Vec<RoutingRuleLink>,
+    #[doc = "Describes Security Policy associated with this Web Application Firewall policy."]
+    #[serde(rename = "securityPolicyLinks", default, skip_serializing_if = "Vec::is_empty")]
+    pub security_policy_links: Vec<SecurityPolicyLink>,
     #[doc = "Provisioning state of the policy."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
+    pub provisioning_state: Option<web_application_firewall_policy_properties::ProvisioningState>,
     #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<web_application_firewall_policy_properties::ResourceState>,
+    #[doc = "Key-Value pair representing additional properties for Web Application Firewall policy."]
+    #[serde(rename = "extendedProperties", default, skip_serializing_if = "Option::is_none")]
+    pub extended_properties: Option<serde_json::Value>,
 }
 impl WebApplicationFirewallPolicyProperties {
     pub fn new() -> Self {
@@ -3854,6 +4060,47 @@ impl WebApplicationFirewallPolicyProperties {
 }
 pub mod web_application_firewall_policy_properties {
     use super::*;
+    #[doc = "Provisioning state of the policy."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ProvisioningState")]
+    pub enum ProvisioningState {
+        Creating,
+        Succeeded,
+        Failed,
+        Canceled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ProvisioningState {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ProvisioningState {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ProvisioningState {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Creating => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Creating"),
+                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Succeeded"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Failed"),
+                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Canceled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ResourceState")]
     pub enum ResourceState {

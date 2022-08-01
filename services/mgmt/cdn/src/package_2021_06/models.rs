@@ -2466,6 +2466,38 @@ impl CustomerCertificateParameters {
         }
     }
 }
+#[doc = "Custom domains created on the CDN endpoint."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeepCreatedCustomDomain {
+    #[doc = "Custom domain name."]
+    pub name: String,
+    #[doc = "Properties of the custom domain created on the CDN endpoint."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DeepCreatedCustomDomainProperties>,
+}
+impl DeepCreatedCustomDomain {
+    pub fn new(name: String) -> Self {
+        Self { name, properties: None }
+    }
+}
+#[doc = "Properties of the custom domain created on the CDN endpoint."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeepCreatedCustomDomainProperties {
+    #[doc = "The host name of the custom domain. Must be a domain name."]
+    #[serde(rename = "hostName")]
+    pub host_name: String,
+    #[doc = "Special validation or data may be required when delivering CDN to some regions due to local compliance reasons. E.g. ICP license number of a custom domain is required to deliver content in China."]
+    #[serde(rename = "validationData", default, skip_serializing_if = "Option::is_none")]
+    pub validation_data: Option<String>,
+}
+impl DeepCreatedCustomDomainProperties {
+    pub fn new(host_name: String) -> Self {
+        Self {
+            host_name,
+            validation_data: None,
+        }
+    }
+}
 #[doc = "The main origin of CDN content which is added when creating a CDN endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeepCreatedOrigin {
@@ -3276,7 +3308,7 @@ pub struct EndpointProperties {
     pub origin_groups: Vec<DeepCreatedOriginGroup>,
     #[doc = "The custom domains under the endpoint."]
     #[serde(rename = "customDomains", default, skip_serializing_if = "Vec::is_empty")]
-    pub custom_domains: Vec<CustomDomain>,
+    pub custom_domains: Vec<DeepCreatedCustomDomain>,
     #[doc = "Resource status of the endpoint."]
     #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<endpoint_properties::ResourceState>,

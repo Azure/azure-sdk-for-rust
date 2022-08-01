@@ -678,6 +678,48 @@ impl ErrorModelError {
         Self::default()
     }
 }
+#[doc = "Specifies the eviction policy for virtual machines in a SPOT node type."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "EvictionPolicyType")]
+pub enum EvictionPolicyType {
+    Delete,
+    Deallocate,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for EvictionPolicyType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for EvictionPolicyType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for EvictionPolicyType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Delete => serializer.serialize_unit_variant("EvictionPolicyType", 0u32, "Delete"),
+            Self::Deallocate => serializer.serialize_unit_variant("EvictionPolicyType", 1u32, "Deallocate"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+impl Default for EvictionPolicyType {
+    fn default() -> Self {
+        Self::Delete
+    }
+}
 pub type ForceRestart = bool;
 #[doc = "Describes the frontend configurations for the node type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -776,6 +818,9 @@ pub struct LoadBalancingRule {
     #[doc = "The probe request path. Only supported for HTTP/HTTPS probes."]
     #[serde(rename = "probeRequestPath", default, skip_serializing_if = "Option::is_none")]
     pub probe_request_path: Option<String>,
+    #[doc = "The load distribution policy for this rule."]
+    #[serde(rename = "loadDistribution", default, skip_serializing_if = "Option::is_none")]
+    pub load_distribution: Option<String>,
 }
 impl LoadBalancingRule {
     pub fn new(
@@ -791,6 +836,7 @@ impl LoadBalancingRule {
             probe_port: None,
             probe_protocol,
             probe_request_path: None,
+            load_distribution: None,
         }
     }
 }
@@ -878,6 +924,48 @@ pub mod load_balancing_rule {
         }
     }
 }
+#[doc = "Long running operation result."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct LongRunningOperationResult {
+    #[doc = "The name of the operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The start time of the operation."]
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[doc = "The end time of the operation."]
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+    #[doc = "The completion percentage of the operation."]
+    #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
+    pub percent_complete: Option<f64>,
+    #[doc = "The status of the operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[doc = "The error details."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorModelError>,
+}
+impl LongRunningOperationResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describes the result of the request to list Managed VM Sizes for Service Fabric Managed Clusters."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedAzResiliencyStatus {
+    #[doc = "List of Managed VM Sizes for Service Fabric Managed Clusters."]
+    #[serde(rename = "baseResourceStatus", default, skip_serializing_if = "Vec::is_empty")]
+    pub base_resource_status: Vec<ResourceAzStatus>,
+    #[doc = "URL to get the next set of Managed VM Sizes if there are any."]
+    #[serde(rename = "isClusterZoneResilient", default, skip_serializing_if = "Option::is_none")]
+    pub is_cluster_zone_resilient: Option<bool>,
+}
+impl ManagedAzResiliencyStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The manged cluster resource\n"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedCluster {
@@ -901,10 +989,42 @@ impl ManagedCluster {
 }
 #[doc = "Available cluster add-on features"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ManagedClusterAddOnFeature")]
 pub enum ManagedClusterAddOnFeature {
     DnsService,
     BackupRestoreService,
     ResourceMonitorService,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ManagedClusterAddOnFeature {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for ManagedClusterAddOnFeature {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for ManagedClusterAddOnFeature {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::DnsService => serializer.serialize_unit_variant("ManagedClusterAddOnFeature", 0u32, "DnsService"),
+            Self::BackupRestoreService => serializer.serialize_unit_variant("ManagedClusterAddOnFeature", 1u32, "BackupRestoreService"),
+            Self::ResourceMonitorService => serializer.serialize_unit_variant("ManagedClusterAddOnFeature", 2u32, "ResourceMonitorService"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
 }
 pub type ManagedClusterCodeVersionListResult = Vec<ManagedClusterCodeVersionResult>;
 #[doc = "The result of the Service Fabric runtime versions"]
@@ -1032,6 +1152,18 @@ pub struct ManagedClusterProperties {
     #[doc = "The list of IP tags associated with the default public IP address of the cluster."]
     #[serde(rename = "ipTags", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_tags: Vec<IpTag>,
+    #[doc = "IPv6 address for the cluster if IPv6 is enabled."]
+    #[serde(rename = "ipv6Address", default, skip_serializing_if = "Option::is_none")]
+    pub ipv6_address: Option<String>,
+    #[doc = "Setting this to true will link the IPv4 address as the ServicePublicIP of the IPv6 address. It can only be set to True if IPv6 is enabled on the cluster."]
+    #[serde(rename = "enableServicePublicIP", default, skip_serializing_if = "Option::is_none")]
+    pub enable_service_public_ip: Option<bool>,
+    #[doc = "Auxiliary subnets for the cluster."]
+    #[serde(rename = "auxiliarySubnets", default, skip_serializing_if = "Vec::is_empty")]
+    pub auxiliary_subnets: Vec<Subnet>,
+    #[doc = "Service endpoints for subnets in the cluster."]
+    #[serde(rename = "serviceEndpoints", default, skip_serializing_if = "Vec::is_empty")]
+    pub service_endpoints: Vec<ServiceEndpoint>,
 }
 impl ManagedClusterProperties {
     pub fn new(dns_name: String, admin_user_name: String) -> Self {
@@ -1063,6 +1195,10 @@ impl ManagedClusterProperties {
             enable_ipv6: None,
             subnet_id: None,
             ip_tags: Vec::new(),
+            ipv6_address: None,
+            enable_service_public_ip: None,
+            auxiliary_subnets: Vec::new(),
+            service_endpoints: Vec::new(),
         }
     }
 }
@@ -1203,6 +1339,48 @@ impl Serialize for ManagedResourceProvisioningState {
         }
     }
 }
+#[doc = "Describes a VM Sizes."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedVmSize {
+    #[doc = "VM Sizes properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VmSize>,
+    #[doc = "VM Size id."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "VM Size name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "VM Size type."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+impl ManagedVmSize {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describes the result of the request to list Managed VM Sizes for Service Fabric Managed Clusters."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedVmSizesResult {
+    #[doc = "List of Managed VM Sizes for Service Fabric Managed Clusters."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ManagedVmSize>,
+    #[doc = "URL to get the next set of Managed VM Sizes if there are any."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ManagedVmSizesResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl ManagedVmSizesResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Specifies the move cost for the service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "MoveCost")]
@@ -1279,6 +1457,18 @@ pub struct NetworkSecurityRule {
     #[doc = "The destination port ranges."]
     #[serde(rename = "destinationPortRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub destination_port_ranges: Vec<String>,
+    #[doc = "The CIDR or source IP range. Asterisk '*' can also be used to match all source IPs. Default tags such as 'VirtualNetwork', 'AzureLoadBalancer' and 'Internet' can also be used. If this is an ingress rule, specifies where network traffic originates from."]
+    #[serde(rename = "sourceAddressPrefix", default, skip_serializing_if = "Option::is_none")]
+    pub source_address_prefix: Option<String>,
+    #[doc = "The destination address prefix. CIDR or destination IP range. Asterisk '*' can also be used to match all source IPs. Default tags such as 'VirtualNetwork', 'AzureLoadBalancer' and 'Internet' can also be used."]
+    #[serde(rename = "destinationAddressPrefix", default, skip_serializing_if = "Option::is_none")]
+    pub destination_address_prefix: Option<String>,
+    #[doc = "The source port or range. Integer or range between 0 and 65535. Asterisk '*' can also be used to match all ports."]
+    #[serde(rename = "sourcePortRange", default, skip_serializing_if = "Option::is_none")]
+    pub source_port_range: Option<String>,
+    #[doc = "he destination port or range. Integer or range between 0 and 65535. Asterisk '*' can also be used to match all ports."]
+    #[serde(rename = "destinationPortRange", default, skip_serializing_if = "Option::is_none")]
+    pub destination_port_range: Option<String>,
     #[doc = "The network traffic is allowed or denied."]
     pub access: network_security_rule::Access,
     #[doc = "The priority of the rule. The value can be in the range 1000 to 3000. Values outside this range are reserved for Service Fabric ManagerCluster Resource Provider. The priority number must be unique for each rule in the collection. The lower the priority number, the higher the priority of the rule."]
@@ -1302,6 +1492,10 @@ impl NetworkSecurityRule {
             destination_address_prefixes: Vec::new(),
             source_port_ranges: Vec::new(),
             destination_port_ranges: Vec::new(),
+            source_address_prefix: None,
+            destination_address_prefix: None,
+            source_port_range: None,
+            destination_port_range: None,
             access,
             priority,
             direction,
@@ -1543,12 +1737,15 @@ pub struct NodeTypeProperties {
     #[doc = "The number of nodes in the node type. <br /><br />**Values:** <br />-1 - Use when auto scale rules are configured or sku.capacity is defined <br /> 0 - Not supported <br /> >0 - Use for manual scale."]
     #[serde(rename = "vmInstanceCount")]
     pub vm_instance_count: i32,
-    #[doc = "Disk size for each vm in the node type in GBs."]
-    #[serde(rename = "dataDiskSizeGB")]
-    pub data_disk_size_gb: i32,
+    #[doc = "Disk size for the managed disk attached to the vms on the node type in GBs."]
+    #[serde(rename = "dataDiskSizeGB", default, skip_serializing_if = "Option::is_none")]
+    pub data_disk_size_gb: Option<i32>,
     #[doc = "Managed data disk type. IOPS and throughput are given by the disk size, to see more information go to https://docs.microsoft.com/en-us/azure/virtual-machines/disks-types.\n"]
     #[serde(rename = "dataDiskType", default, skip_serializing_if = "Option::is_none")]
     pub data_disk_type: Option<DiskType>,
+    #[doc = "Managed data disk letter. It can not use the reserved letter C or D and it can not change after created."]
+    #[serde(rename = "dataDiskLetter", default, skip_serializing_if = "Option::is_none")]
+    pub data_disk_letter: Option<String>,
     #[doc = "The placement tags applied to nodes in the node type, which can be used to indicate where certain services (workload) should run."]
     #[serde(rename = "placementProperties", default, skip_serializing_if = "Option::is_none")]
     pub placement_properties: Option<serde_json::Value>,
@@ -1597,17 +1794,54 @@ pub struct NodeTypeProperties {
     #[doc = "The Network Security Rules for this node type. This setting can only be specified for node types that are configured with frontend configurations."]
     #[serde(rename = "networkSecurityRules", default, skip_serializing_if = "Vec::is_empty")]
     pub network_security_rules: Vec<NetworkSecurityRule>,
+    #[doc = "Additional managed data disks."]
+    #[serde(rename = "additionalDataDisks", default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_data_disks: Vec<VmssDataDisk>,
+    #[doc = "Enable or disable the Host Encryption for the virtual machines on the node type. This will enable the encryption for all the disks including Resource/Temp disk at host itself. Default: The Encryption at host will be disabled unless this property is set to true for the resource."]
+    #[serde(rename = "enableEncryptionAtHost", default, skip_serializing_if = "Option::is_none")]
+    pub enable_encryption_at_host: Option<bool>,
     #[doc = "The provisioning state of the managed resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ManagedResourceProvisioningState>,
+    #[doc = "Specifies whether the network interface is accelerated networking-enabled."]
+    #[serde(rename = "enableAcceleratedNetworking", default, skip_serializing_if = "Option::is_none")]
+    pub enable_accelerated_networking: Option<bool>,
+    #[doc = "Specifies whether the use public load balancer. If not specified and the node type doesn't have its own frontend configuration, it will be attached to the default load balancer. If the node type uses its own Load balancer and useDefaultPublicLoadBalancer is true, then the frontend has to be an Internal Load Balancer. If the node type uses its own Load balancer and useDefaultPublicLoadBalancer is false or not set, then the custom load balancer must include a public load balancer to provide outbound connectivity."]
+    #[serde(rename = "useDefaultPublicLoadBalancer", default, skip_serializing_if = "Option::is_none")]
+    pub use_default_public_load_balancer: Option<bool>,
+    #[doc = "Specifies whether to use the temporary disk for the service fabric data root, in which case no managed data disk will be attached and the temporary disk will be used. It is only allowed for stateless node types."]
+    #[serde(rename = "useTempDataDisk", default, skip_serializing_if = "Option::is_none")]
+    pub use_temp_data_disk: Option<bool>,
+    #[doc = "Specifies whether the node type should be overprovisioned. It is only allowed for stateless node types."]
+    #[serde(rename = "enableOverProvisioning", default, skip_serializing_if = "Option::is_none")]
+    pub enable_over_provisioning: Option<bool>,
+    #[doc = "Specifies the availability zones where the node type would span across. If the cluster is not spanning across availability zones, initiates az migration for the cluster."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub zones: Vec<String>,
+    #[doc = "Indicates whether the node type will be Spot Virtual Machines. Azure will allocate the VMs if there is capacity available and the VMs can be evicted at any time."]
+    #[serde(rename = "isSpotVM", default, skip_serializing_if = "Option::is_none")]
+    pub is_spot_vm: Option<bool>,
+    #[doc = "Specifies the full host group resource Id. This property is used for deploying on azure dedicated hosts."]
+    #[serde(rename = "hostGroupId", default, skip_serializing_if = "Option::is_none")]
+    pub host_group_id: Option<String>,
+    #[doc = "Indicates whether to use ephemeral os disk. The sku selected on the vmSize property needs to support this feature."]
+    #[serde(rename = "useEphemeralOSDisk", default, skip_serializing_if = "Option::is_none")]
+    pub use_ephemeral_os_disk: Option<bool>,
+    #[doc = "Indicates the time duration after which the platform will not try to restore the VMSS SPOT instances specified as ISO 8601."]
+    #[serde(rename = "spotRestoreTimeout", default, skip_serializing_if = "Option::is_none")]
+    pub spot_restore_timeout: Option<String>,
+    #[doc = "Specifies the eviction policy for virtual machines in a SPOT node type."]
+    #[serde(rename = "evictionPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub eviction_policy: Option<EvictionPolicyType>,
 }
 impl NodeTypeProperties {
-    pub fn new(is_primary: bool, vm_instance_count: i32, data_disk_size_gb: i32) -> Self {
+    pub fn new(is_primary: bool, vm_instance_count: i32) -> Self {
         Self {
             is_primary,
             vm_instance_count,
-            data_disk_size_gb,
+            data_disk_size_gb: None,
             data_disk_type: None,
+            data_disk_letter: None,
             placement_properties: None,
             capacities: None,
             application_ports: None,
@@ -1624,7 +1858,19 @@ impl NodeTypeProperties {
             multiple_placement_groups: None,
             frontend_configurations: Vec::new(),
             network_security_rules: Vec::new(),
+            additional_data_disks: Vec::new(),
+            enable_encryption_at_host: None,
             provisioning_state: None,
+            enable_accelerated_networking: None,
+            use_default_public_load_balancer: None,
+            use_temp_data_disk: None,
+            enable_over_provisioning: None,
+            zones: Vec::new(),
+            is_spot_vm: None,
+            host_group_id: None,
+            use_ephemeral_os_disk: None,
+            spot_restore_timeout: None,
+            eviction_policy: None,
         }
     }
 }
@@ -1738,8 +1984,6 @@ pub struct NodeTypeUpdateParameters {
     #[doc = "Describes a node type sku."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<NodeTypeSku>,
-    #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
-    pub additional_properties: Option<String>,
 }
 impl NodeTypeUpdateParameters {
     pub fn new() -> Self {
@@ -1793,8 +2037,38 @@ impl OperationResult {
 }
 #[doc = "Cluster operating system, the default will be Windows"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "OsType")]
 pub enum OsType {
     Windows,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for OsType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for OsType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for OsType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Windows => serializer.serialize_unit_variant("OsType", 0u32, "Windows"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
 }
 #[doc = "Describes how the service is partitioned."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1934,6 +2208,24 @@ impl Resource {
             etag: None,
             system_data: None,
         }
+    }
+}
+#[doc = "Describes Az Resiliency status of Base resources"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceAzStatus {
+    #[doc = "VM Size properties."]
+    #[serde(rename = "resourceName", default, skip_serializing_if = "Option::is_none")]
+    pub resource_name: Option<String>,
+    #[doc = "VM Size id."]
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<String>,
+    #[doc = "VM Size name."]
+    #[serde(rename = "isZoneResilient", default, skip_serializing_if = "Option::is_none")]
+    pub is_zone_resilient: Option<bool>,
+}
+impl ResourceAzStatus {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The mode used to monitor health during a rolling upgrade. The values are Monitored, and UnmonitoredAuto."]
@@ -2143,6 +2435,23 @@ impl Serialize for ServiceCorrelationScheme {
             Self::AlignedAffinity => serializer.serialize_unit_variant("ServiceCorrelationScheme", 0u32, "AlignedAffinity"),
             Self::NonAlignedAffinity => serializer.serialize_unit_variant("ServiceCorrelationScheme", 1u32, "NonAlignedAffinity"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "The service endpoint properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServiceEndpoint {
+    #[doc = "The type of the endpoint service."]
+    pub service: String,
+    #[doc = "A list of locations."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub locations: Vec<String>,
+}
+impl ServiceEndpoint {
+    pub fn new(service: String) -> Self {
+        Self {
+            service,
+            locations: Vec::new(),
         }
     }
 }
@@ -2573,8 +2882,8 @@ impl Serialize for ServiceScalingMechanismKind {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ServiceScalingTriggerKind")]
 pub enum ServiceScalingTriggerKind {
-    AveragePartitionLoad,
-    AverageServiceLoad,
+    AveragePartitionLoadTrigger,
+    AverageServiceLoadTrigger,
     #[serde(skip_deserializing)]
     UnknownValue(String),
 }
@@ -2600,8 +2909,12 @@ impl Serialize for ServiceScalingTriggerKind {
         S: Serializer,
     {
         match self {
-            Self::AveragePartitionLoad => serializer.serialize_unit_variant("ServiceScalingTriggerKind", 0u32, "AveragePartitionLoad"),
-            Self::AverageServiceLoad => serializer.serialize_unit_variant("ServiceScalingTriggerKind", 1u32, "AverageServiceLoad"),
+            Self::AveragePartitionLoadTrigger => {
+                serializer.serialize_unit_variant("ServiceScalingTriggerKind", 0u32, "AveragePartitionLoadTrigger")
+            }
+            Self::AverageServiceLoadTrigger => {
+                serializer.serialize_unit_variant("ServiceScalingTriggerKind", 1u32, "AverageServiceLoadTrigger")
+            }
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -2815,6 +3128,116 @@ impl SubResource {
         Self::default()
     }
 }
+#[doc = "Describes a Subnet."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Subnet {
+    #[doc = "Subnet name."]
+    pub name: String,
+    #[doc = "Indicates wether to enable Ipv6 or not. If not provided, it will take the same configuration as the cluster."]
+    #[serde(rename = "enableIpv6", default, skip_serializing_if = "Option::is_none")]
+    pub enable_ipv6: Option<bool>,
+    #[doc = "Enable or Disable apply network policies on private end point in the subnet."]
+    #[serde(rename = "privateEndpointNetworkPolicies", default, skip_serializing_if = "Option::is_none")]
+    pub private_endpoint_network_policies: Option<subnet::PrivateEndpointNetworkPolicies>,
+    #[doc = "Enable or Disable apply network policies on private link service in the subnet."]
+    #[serde(rename = "privateLinkServiceNetworkPolicies", default, skip_serializing_if = "Option::is_none")]
+    pub private_link_service_network_policies: Option<subnet::PrivateLinkServiceNetworkPolicies>,
+    #[doc = "Full resource id for the network security group."]
+    #[serde(rename = "networkSecurityGroupId", default, skip_serializing_if = "Option::is_none")]
+    pub network_security_group_id: Option<String>,
+}
+impl Subnet {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            enable_ipv6: None,
+            private_endpoint_network_policies: None,
+            private_link_service_network_policies: None,
+            network_security_group_id: None,
+        }
+    }
+}
+pub mod subnet {
+    use super::*;
+    #[doc = "Enable or Disable apply network policies on private end point in the subnet."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "PrivateEndpointNetworkPolicies")]
+    pub enum PrivateEndpointNetworkPolicies {
+        #[serde(rename = "enabled")]
+        Enabled,
+        #[serde(rename = "disabled")]
+        Disabled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for PrivateEndpointNetworkPolicies {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for PrivateEndpointNetworkPolicies {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for PrivateEndpointNetworkPolicies {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Enabled => serializer.serialize_unit_variant("PrivateEndpointNetworkPolicies", 0u32, "enabled"),
+                Self::Disabled => serializer.serialize_unit_variant("PrivateEndpointNetworkPolicies", 1u32, "disabled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Enable or Disable apply network policies on private link service in the subnet."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "PrivateLinkServiceNetworkPolicies")]
+    pub enum PrivateLinkServiceNetworkPolicies {
+        #[serde(rename = "enabled")]
+        Enabled,
+        #[serde(rename = "disabled")]
+        Disabled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for PrivateLinkServiceNetworkPolicies {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for PrivateLinkServiceNetworkPolicies {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for PrivateLinkServiceNetworkPolicies {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Enabled => serializer.serialize_unit_variant("PrivateLinkServiceNetworkPolicies", 0u32, "enabled"),
+                Self::Disabled => serializer.serialize_unit_variant("PrivateLinkServiceNetworkPolicies", 1u32, "disabled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
@@ -2932,6 +3355,9 @@ pub struct VmssExtensionProperties {
     #[doc = "The provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "Indicates whether the extension should be automatically upgraded by the platform if there is a newer version of the extension available."]
+    #[serde(rename = "enableAutomaticUpgrade", default, skip_serializing_if = "Option::is_none")]
+    pub enable_automatic_upgrade: Option<bool>,
 }
 impl VmssExtensionProperties {
     pub fn new(publisher: String, type_: String, type_handler_version: String) -> Self {
@@ -2945,7 +3371,20 @@ impl VmssExtensionProperties {
             force_update_tag: None,
             provision_after_extensions: Vec::new(),
             provisioning_state: None,
+            enable_automatic_upgrade: None,
         }
+    }
+}
+#[doc = "VM Sizes properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct VmSize {
+    #[doc = "VM Size name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size: Option<String>,
+}
+impl VmSize {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Describes a single certificate reference in a Key Vault, and where the certificate should reside on the VM."]
@@ -2994,5 +3433,30 @@ pub struct VmManagedIdentity {
 impl VmManagedIdentity {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Managed data disk description."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VmssDataDisk {
+    #[doc = "Specifies the logical unit number of the data disk. This value is used to identify data disks within the VM and therefore must be unique for each data disk attached to a VM. Lun 0 is reserved for the service fabric data disk."]
+    pub lun: i32,
+    #[doc = "Disk size for each vm in the node type in GBs."]
+    #[serde(rename = "diskSizeGB")]
+    pub disk_size_gb: i32,
+    #[doc = "Managed data disk type. IOPS and throughput are given by the disk size, to see more information go to https://docs.microsoft.com/en-us/azure/virtual-machines/disks-types.\n"]
+    #[serde(rename = "diskType")]
+    pub disk_type: DiskType,
+    #[doc = "Managed data disk letter. It can not use the reserved letter C or D and it can not change after created."]
+    #[serde(rename = "diskLetter")]
+    pub disk_letter: String,
+}
+impl VmssDataDisk {
+    pub fn new(lun: i32, disk_size_gb: i32, disk_type: DiskType, disk_letter: String) -> Self {
+        Self {
+            lun,
+            disk_size_gb,
+            disk_type,
+            disk_letter,
+        }
     }
 }

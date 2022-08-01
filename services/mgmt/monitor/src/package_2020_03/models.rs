@@ -579,7 +579,7 @@ pub struct AutoscaleSetting {
     #[doc = "the collection of notifications."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub notifications: Vec<AutoscaleNotification>,
-    #[doc = "the enabled flag. Specifies whether automatic scaling is enabled for the resource. The default value is 'true'."]
+    #[doc = "the enabled flag. Specifies whether automatic scaling is enabled for the resource. The default value is 'false'."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
     #[doc = "the name of the autoscale setting."]
@@ -776,12 +776,6 @@ pub struct AzureResource {
     #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[doc = "Azure resource kind"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-    #[doc = "Azure resource identity"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<String>,
     #[doc = "Resource location"]
     pub location: String,
     #[doc = "Resource tags"]
@@ -794,8 +788,6 @@ impl AzureResource {
             id: None,
             name: None,
             type_: None,
-            kind: None,
-            identity: None,
             location,
             tags: None,
         }

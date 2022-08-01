@@ -626,6 +626,9 @@ pub struct MachineProperties {
     #[doc = "Public Key that the client provides to be used during initial resource onboarding"]
     #[serde(rename = "clientPublicKey", default, skip_serializing_if = "Option::is_none")]
     pub client_public_key: Option<String>,
+    #[doc = "The Operating System running on the hybrid machine."]
+    #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
+    pub os_name: Option<String>,
     #[doc = "The version of Operating System running on the hybrid machine."]
     #[serde(rename = "osVersion", default, skip_serializing_if = "Option::is_none")]
     pub os_version: Option<String>,
