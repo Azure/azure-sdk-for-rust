@@ -19,10 +19,10 @@ pub fn client_request_id_from_headers_optional(headers: &Headers) -> Option<Stri
 pub fn last_modified_from_headers_optional(
     headers: &Headers,
 ) -> crate::Result<Option<OffsetDateTime>> {
-    Ok(headers
+    headers
         .get_optional_str(&LAST_MODIFIED)
         .map(date::parse_rfc1123)
-        .transpose()?)
+        .transpose()
 }
 
 pub fn date_from_headers(headers: &Headers) -> crate::Result<OffsetDateTime> {
