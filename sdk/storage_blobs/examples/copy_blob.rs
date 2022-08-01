@@ -1,6 +1,6 @@
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
-use chrono::{Duration, Utc};
+use time::{Duration, OffsetDateTime};
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -40,7 +40,7 @@ async fn main() -> azure_core::Result<()> {
 
     // let's get a SAS key for the source
     let sas_url = {
-        let now = Utc::now();
+        let now = OffsetDateTime::now_utc();
         let later = now + Duration::hours(1);
         let sas = source_storage_client
             .shared_access_signature(

@@ -1,13 +1,13 @@
 use azure_core::error::{Error, ErrorKind};
 use azure_storage::StoredAccessPolicy;
-use chrono::{DateTime, FixedOffset};
 use std::convert::TryFrom;
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone)]
 pub struct QueueStoredAccessPolicy {
     pub id: String,
-    pub start: DateTime<FixedOffset>,
-    pub expiry: DateTime<FixedOffset>,
+    pub start: OffsetDateTime,
+    pub expiry: OffsetDateTime,
     pub is_read_enabled: bool,
     pub is_add_enabled: bool,
     pub is_update_enabled: bool,
@@ -17,8 +17,8 @@ pub struct QueueStoredAccessPolicy {
 impl QueueStoredAccessPolicy {
     pub fn new(
         id: impl Into<String>,
-        start: impl Into<DateTime<FixedOffset>>,
-        expiry: impl Into<DateTime<FixedOffset>>,
+        start: impl Into<OffsetDateTime>,
+        expiry: impl Into<OffsetDateTime>,
     ) -> Self {
         Self {
             id: id.into(),

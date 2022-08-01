@@ -4,7 +4,7 @@ extern crate log;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use bytes::Bytes;
-use std::time::Duration;
+use time::Duration;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -80,7 +80,7 @@ async fn main() -> azure_core::Result<()> {
     println!("PutBlockList == {:?}", res);
 
     let res = blob_client
-        .acquire_lease(Duration::from_secs(60))
+        .acquire_lease(Duration::seconds(60))
         .into_future()
         .await?;
     println!("Acquire lease == {:?}", res);
@@ -92,7 +92,7 @@ async fn main() -> azure_core::Result<()> {
 
     let res = blob_client
         .break_lease()
-        .lease_break_period(Duration::from_secs(15))
+        .lease_break_period(Duration::seconds(15))
         .into_future()
         .await?;
     println!("Break lease == {:?}", res);

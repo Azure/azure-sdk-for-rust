@@ -9,7 +9,7 @@ use azure_core::headers::{
 };
 use azure_core::prelude::*;
 use azure_core::{Pageable, Response as HttpResponse, SessionToken};
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     #[stream]
@@ -84,7 +84,7 @@ pub struct ListAttachmentsResponse {
 
     pub max_media_storage_usage_mb: u64,
     pub media_storage_usage_mb: u64,
-    pub last_change: DateTime<Utc>,
+    pub last_change: OffsetDateTime,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
     pub lsn: u64,
@@ -100,7 +100,7 @@ pub struct ListAttachmentsResponse {
     pub service_version: String,
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
     pub continuation_token: Option<Continuation>,
 }
 

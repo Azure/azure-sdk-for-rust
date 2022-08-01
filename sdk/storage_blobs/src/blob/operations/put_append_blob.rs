@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use azure_core::{headers::*, prelude::*, RequestId};
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     PutAppendBlob,
@@ -48,9 +48,9 @@ type PutAppendBlobResponse = PutBlobResponse;
 #[derive(Debug, Clone)]
 pub struct PutBlobResponse {
     pub etag: String,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: OffsetDateTime,
     pub request_id: RequestId,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
     pub request_server_encrypted: bool,
 }
 

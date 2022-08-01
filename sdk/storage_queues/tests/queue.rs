@@ -2,9 +2,8 @@
 use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage_queues::prelude::*;
-use chrono::Utc;
 use futures::StreamExt;
-use std::time::Duration;
+use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
 #[tokio::test]
@@ -30,9 +29,10 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
     metadata
         .as_mut()
         .insert("source".into(), "Azure SDK for Rust".into());
-    metadata
-        .as_mut()
-        .insert("created".into(), format!("{:?}", Utc::now()).into());
+    metadata.as_mut().insert(
+        "created".into(),
+        format!("{:?}", OffsetDateTime::now_utc()).into(),
+    );
 
     let response = queue
         .create()
@@ -43,7 +43,10 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
 
     // let's add some more metadata
     metadata.insert("version".to_owned(), "TBD".to_owned());
-    metadata.insert("updated".to_owned(), format!("{:?}", Utc::now()));
+    metadata.insert(
+        "updated".to_owned(),
+        format!("{:?}", OffsetDateTime::now_utc()),
+    );
 
     println!("metadata == {:#?}", metadata);
 
@@ -58,15 +61,15 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
     let policies = vec![
         QueueStoredAccessPolicy::new(
             "first_sap_read_process",
-            Utc::now() - chrono::Duration::hours(1),
-            Utc::now() + chrono::Duration::days(1),
+            OffsetDateTime::now_utc() - Duration::hours(1),
+            OffsetDateTime::now_utc() + Duration::days(1),
         )
         .enable_read()
         .enable_process(),
         QueueStoredAccessPolicy::new(
             "sap_admin",
-            Utc::now() - chrono::Duration::hours(1),
-            Utc::now() + chrono::Duration::hours(5),
+            OffsetDateTime::now_utc() - Duration::hours(1),
+            OffsetDateTime::now_utc() + Duration::hours(5),
         )
         .enable_all(),
     ];
@@ -88,7 +91,7 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
         println!("putting message {}", i);
 
         let response = queue
-            .put_message(format!("Azure SDK for Rust {}", chrono::Utc::now()))
+            .put_message(format!("Azure SDK for Rust {}", OffsetDateTime::now_utc()))
             .into_future()
             .await?;
 
@@ -98,7 +101,7 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
     let get_messages_response = queue
         .get_messages()
         .number_of_messages(2)
-        .visibility_timeout(Duration::from_secs(10))
+        .visibility_timeout(Duration::seconds(10))
         .into_future()
         .await?;
     println!("get_messages_response == {:#?}", get_messages_response);
@@ -108,8 +111,8 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
 
         let response = pop_receipt
             .update(
-                format!("new body at {}", chrono::Utc::now()),
-                Duration::from_secs(4),
+                format!("new body at {}", OffsetDateTime::now_utc()),
+                Duration::seconds(4),
             )
             .into_future()
             .await?;
@@ -119,7 +122,7 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
     let get_response = queue
         .get_messages()
         .number_of_messages(2)
-        .visibility_timeout(Duration::from_secs(5))
+        .visibility_timeout(Duration::seconds(5))
         .into_future()
         .await?;
 

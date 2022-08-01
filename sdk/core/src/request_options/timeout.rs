@@ -1,5 +1,5 @@
 use crate::AppendToUrlQuery;
-use std::time::Duration;
+use time::Duration;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Timeout(Duration);
@@ -13,7 +13,7 @@ impl Timeout {
 impl AppendToUrlQuery for Timeout {
     fn append_to_url_query(&self, url: &mut url::Url) {
         url.query_pairs_mut()
-            .append_pair("timeout", &format!("{}", self.0.as_secs()));
+            .append_pair("timeout", &format!("{}", self.0.whole_seconds()));
     }
 }
 

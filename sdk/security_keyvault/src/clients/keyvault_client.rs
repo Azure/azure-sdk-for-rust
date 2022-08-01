@@ -3,6 +3,7 @@ use azure_core::auth::{TokenCredential, TokenResponse};
 use azure_core::error::{Error, ErrorKind, ResultExt};
 use const_format::formatcp;
 use std::sync::Arc;
+use time::OffsetDateTime;
 use url::Url;
 
 pub const API_VERSION: &str = "7.0";
@@ -99,7 +100,7 @@ impl KeyvaultClient {
 
     pub(crate) async fn get_token(&mut self) -> azure_core::Result<&str> {
         if self.token.is_none()
-            || matches!(&self.token, Some(token) if token.expires_on < chrono::Utc::now())
+            || matches!(&self.token, Some(token) if token.expires_on < OffsetDateTime::now_utc())
         {
             let token = self
                 .token_credential

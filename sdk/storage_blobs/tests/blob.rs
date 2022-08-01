@@ -5,12 +5,9 @@ extern crate log;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::{blob::BlockListType, container::PublicAccess, prelude::*};
 use bytes::Bytes;
-use chrono::{FixedOffset, Utc};
 use futures::StreamExt;
-use std::{
-    ops::{Add, Deref},
-    time::Duration,
-};
+use std::ops::{Add, Deref};
+use time::{Duration, OffsetDateTime};
 use url::Url;
 use uuid::Uuid;
 
@@ -32,8 +29,8 @@ async fn create_and_delete_container() -> azure_core::Result<()> {
     let _result = container.get_acl().into_future().await?;
 
     // set stored acess policy list
-    let dt_start = Utc::now().with_timezone(&FixedOffset::east(0));
-    let dt_end = dt_start.add(chrono::Duration::days(7));
+    let dt_start = OffsetDateTime::now_utc();
+    let dt_end = dt_start.add(Duration::days(7));
 
     let mut sapl = StoredAccessPolicyList::default();
     sapl.stored_access
@@ -83,7 +80,7 @@ async fn create_and_delete_container() -> azure_core::Result<()> {
     }
 
     let res = container
-        .acquire_lease(Duration::from_secs(30))
+        .acquire_lease(Duration::seconds(30))
         .into_future()
         .await
         .unwrap();
@@ -159,7 +156,7 @@ async fn put_and_get_block_list() {
         .unwrap();
 
     let res = blob
-        .acquire_lease(Duration::from_secs(60))
+        .acquire_lease(Duration::seconds(60))
         .into_future()
         .await
         .unwrap();
@@ -173,7 +170,7 @@ async fn put_and_get_block_list() {
 
     let res = blob
         .break_lease()
-        .lease_break_period(Duration::from_secs(15))
+        .lease_break_period(Duration::seconds(15))
         .into_future()
         .await
         .unwrap();
@@ -471,7 +468,7 @@ fn send_check() {
     let client = initialize();
     let blob = client.container_client("a").blob_client("b");
 
-    let _ = requires_send_future(blob.acquire_lease(Duration::from_secs(10)).into_future());
+    let _ = requires_send_future(blob.acquire_lease(Duration::seconds(10)).into_future());
     let _ = requires_send_future(
         blob.clear_page(BA512Range::new(0, 1024).unwrap())
             .into_future(),

@@ -71,7 +71,7 @@ async fn main() -> azure_core::Result<()> {
             id: format!("unique_id{}", i),
             a_string: "Something here".to_owned(),
             a_number: i * 100, // this is the partition key
-            a_timestamp: chrono::Utc::now().timestamp(),
+            a_timestamp: OffsetDateTime::now_utc().unix_timestamp(),
         };
 
         // insert it

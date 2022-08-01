@@ -1,5 +1,5 @@
 use azure_core::AppendToUrlQuery;
-use std::time::Duration;
+use time::Duration;
 
 #[derive(Debug, Clone)]
 pub struct MessageTTL(Duration);
@@ -13,7 +13,7 @@ impl MessageTTL {
 impl AppendToUrlQuery for MessageTTL {
     fn append_to_url_query(&self, url: &mut url::Url) {
         url.query_pairs_mut()
-            .append_pair("messagettl", &self.0.as_secs().to_string());
+            .append_pair("messagettl", &self.0.whole_seconds().to_string());
     }
 }
 

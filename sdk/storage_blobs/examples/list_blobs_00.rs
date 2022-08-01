@@ -2,7 +2,8 @@ use azure_core::{prelude::Timeout, Context};
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::StreamExt;
-use std::{num::NonZeroU32, time::Duration};
+use std::num::NonZeroU32;
+use time::Duration;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -37,7 +38,7 @@ async fn main() -> azure_core::Result<()> {
 
     // create the container
     let mut context = Context::new();
-    context.insert(Timeout::new(Duration::from_secs(100)));
+    context.insert(Timeout::new(Duration::seconds(100)));
     container_client
         .create()
         .public_access(PublicAccess::None)

@@ -1,5 +1,5 @@
 use azure_core::AppendToUrlQuery;
-use std::time::Duration;
+use time::Duration;
 
 #[derive(Debug, Clone)]
 pub struct VisibilityTimeout(Duration);
@@ -13,7 +13,7 @@ impl VisibilityTimeout {
 impl AppendToUrlQuery for VisibilityTimeout {
     fn append_to_url_query(&self, url: &mut url::Url) {
         url.query_pairs_mut()
-            .append_pair("visibilitytimeout", &self.0.as_secs().to_string());
+            .append_pair("visibilitytimeout", &self.0.whole_seconds().to_string());
     }
 }
 

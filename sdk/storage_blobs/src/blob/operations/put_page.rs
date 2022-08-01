@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use azure_core::{headers::*, prelude::*, Body, RequestId};
 use azure_storage::{headers::content_md5_from_headers, ConsistencyMD5};
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     PutPage,
@@ -50,11 +50,11 @@ impl PutPageBuilder {
 #[derive(Debug, Clone, PartialEq)]
 pub struct PutPageResponse {
     pub etag: String,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: OffsetDateTime,
     pub content_md5: ConsistencyMD5,
     pub sequence_number: u64,
     pub request_id: RequestId,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
     pub request_server_encrypted: bool,
 }
 

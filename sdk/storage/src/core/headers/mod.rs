@@ -5,15 +5,15 @@ use azure_core::headers::{
     server_from_headers, version_from_headers, HeaderName, Headers, CONTENT_MD5,
 };
 use azure_core::RequestId;
-use chrono::{DateTime, Utc};
 use std::convert::TryFrom;
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone)]
 pub struct CommonStorageResponseHeaders {
     pub request_id: RequestId,
     pub client_request_id: Option<String>,
     pub version: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
     pub server: String,
 }
 

@@ -4,7 +4,7 @@ use azure_core::{
     Response as AzureResponse,
 };
 use bytes::Bytes;
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 const DEFAULT_CHUNK_SIZE: u64 = 0x1000 * 0x1000;
 
@@ -66,7 +66,7 @@ pub struct GetBlobResponse {
     pub request_id: RequestId,
     pub blob: Blob,
     pub data: Bytes,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
     pub remaining_range: Option<Range>,
 }
 

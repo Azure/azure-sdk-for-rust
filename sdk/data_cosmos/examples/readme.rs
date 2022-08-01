@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use azure_data_cosmos::prelude::*;
 use clap::Parser;
 use futures::stream::StreamExt;
+use time::OffsetDateTime;
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -73,7 +74,7 @@ async fn main() -> azure_core::Result<()> {
             id: format!("unique_id{i}"),
             string: "Something here".into(),
             number: i * 100,
-            timestamp: chrono::Utc::now().timestamp(),
+            timestamp: OffsetDateTime::now_utc().unix_timestamp(),
         };
 
         // Insert the document and store the returned session token for later use in the cosmos consistency level!

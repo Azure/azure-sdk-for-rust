@@ -72,14 +72,14 @@ impl KeyClient {
 mod tests {
     use super::*;
 
-    use chrono::{DateTime, Duration, Utc};
     use mockito::{mock, Matcher};
     use serde_json::json;
+    use time::{Duration, OffsetDateTime};
 
     use crate::mock_client;
     use crate::tests::MockCredential;
 
-    fn diff(first: DateTime<Utc>, second: DateTime<Utc>) -> Duration {
+    fn diff(first: OffsetDateTime, second: OffsetDateTime) -> Duration {
         if first > second {
             first - second
         } else {
@@ -89,8 +89,8 @@ mod tests {
 
     #[tokio::test]
     async fn can_get_key() -> azure_core::Result<()> {
-        let time_created = Utc::now() - Duration::days(7);
-        let time_updated = Utc::now();
+        let time_created = OffsetDateTime::now_utc() - Duration::days(7);
+        let time_updated = OffsetDateTime::now_utc();
         let _m = mock("GET", "/keys/test-key/78deebed173b48e48f55abf87ed4cf71")
             .match_query(Matcher::UrlEncoded("api-version".into(), API_VERSION.into()))
             .with_header("content-type", "application/json")
@@ -113,8 +113,8 @@ mod tests {
                     },
                     "attributes": {
                         "enabled": true,
-                        "created": time_created.timestamp(),
-                        "updated": time_updated.timestamp(),
+                        "created": time_created.unix_timestamp(),
+                        "updated": time_updated.unix_timestamp(),
                         "recoveryLevel": "Recoverable+Purgeable"
                       },
                     "tags": {

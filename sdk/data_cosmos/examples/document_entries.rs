@@ -4,6 +4,7 @@ use azure_data_cosmos::prelude::*;
 use clap::Parser;
 use futures::stream::StreamExt;
 use serde::{Deserialize, Serialize};
+use time::OffsetDateTime;
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -54,7 +55,7 @@ async fn main() -> azure_core::Result<()> {
             id: format!("unique_id{}", i),
             a_string: "Something here".into(),
             a_number: i,
-            a_timestamp: chrono::Utc::now().timestamp(),
+            a_timestamp: OffsetDateTime::now_utc().unix_timestamp(),
         };
 
         // let's add an entity.

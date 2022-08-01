@@ -1,7 +1,7 @@
 use crate::{blob::PageRangeList, prelude::*};
 use azure_core::{collect_pinned_stream, headers::*, prelude::*, RequestId};
-use chrono::{DateTime, Utc};
 use std::str::from_utf8;
+use time::OffsetDateTime;
 
 operation! {
     GetPageRanges,
@@ -44,9 +44,9 @@ impl GetPageRangesBuilder {
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetPageRangesResponse {
     pub etag: String,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: OffsetDateTime,
     pub request_id: RequestId,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
     pub page_list: PageRangeList,
 }
 

@@ -1,8 +1,8 @@
 use azure_core::{error::Error, headers, CollectedResponse, HttpClient, Request, Url};
 use azure_core::{Method, StatusCode};
-use chrono::Duration;
 use ring::hmac;
 use std::{ops::Add, sync::Arc};
+use time::{Duration, OffsetDateTime};
 use url::form_urlencoded::{self, Serializer};
 
 mod client;
@@ -56,7 +56,7 @@ fn generate_signature(
     ttl: Duration,
 ) -> String {
     let sr: String = form_urlencoded::byte_serialize(url.as_bytes()).collect(); // <namespace>.servicebus.windows.net
-    let se = ::chrono::Utc::now().add(ttl).timestamp(); // token expiry instant
+    let se = OffsetDateTime::now_utc().add(ttl).unix_timestamp(); // token expiry instant
 
     let str_to_sign = format!("{}\n{}", sr, se);
     let sig = hmac::sign(signing_key, str_to_sign.as_bytes()); // shared access key

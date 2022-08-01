@@ -1,12 +1,15 @@
 use azure_storage::storage_shared_key_credential::StorageSharedKeyCredential;
 use azure_storage_datalake::prelude::*;
-use chrono::Utc;
+use time::OffsetDateTime;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
     let data_lake_client = create_data_lake_client().await.unwrap();
 
-    let file_system_name = format!("azurerustsdk-datalake-example01-{}", Utc::now().timestamp());
+    let file_system_name = format!(
+        "azurerustsdk-datalake-example01-{}",
+        OffsetDateTime::now_utc().unix_timestamp()
+    );
     let file_system_client = data_lake_client
         .clone()
         .into_file_system_client(file_system_name.to_string());

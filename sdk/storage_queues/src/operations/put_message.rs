@@ -1,11 +1,10 @@
 use crate::prelude::*;
 use azure_core::{
-    collect_pinned_stream, headers::utc_date_from_rfc2822, headers::Headers, prelude::*, Method,
-    Response as AzureResponse,
+    collect_pinned_stream, date, headers::Headers, prelude::*, Method, Response as AzureResponse,
 };
 use azure_storage::{core::headers::CommonStorageResponseHeaders, xml::read_xml};
-use chrono::{DateTime, Utc};
 use std::convert::TryInto;
+use time::OffsetDateTime;
 
 operation! {
     PutMessage,
@@ -60,10 +59,10 @@ struct PutMessageResponseInternal {
 #[derive(Debug, Clone)]
 pub struct QueueMessage {
     pub message_id: String,
-    pub insertion_time: DateTime<Utc>,
-    pub expiration_time: DateTime<Utc>,
+    pub insertion_time: OffsetDateTime,
+    pub expiration_time: OffsetDateTime,
     pub pop_receipt: String,
-    pub time_next_visible: DateTime<Utc>,
+    pub time_next_visible: OffsetDateTime,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -90,10 +89,10 @@ impl PutMessageResponse {
 
         let queue_message = QueueMessage {
             message_id: queue_message.message_id,
-            insertion_time: utc_date_from_rfc2822(&queue_message.insertion_time)?,
-            expiration_time: utc_date_from_rfc2822(&queue_message.expiration_time)?,
+            insertion_time: date::parse_http_date(&queue_message.insertion_time)?,
+            expiration_time: date::parse_http_date(&queue_message.expiration_time)?,
             pop_receipt: queue_message.pop_receipt,
-            time_next_visible: utc_date_from_rfc2822(&queue_message.time_next_visible)?,
+            time_next_visible: date::parse_http_date(&queue_message.time_next_visible)?,
         };
 
         Ok(Self {

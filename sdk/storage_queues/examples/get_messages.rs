@@ -3,7 +3,7 @@ extern crate log;
 
 use azure_storage::core::prelude::*;
 use azure_storage_queues::prelude::*;
-use std::time::Duration;
+use time::{Duration, OffsetDateTime};
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -26,7 +26,7 @@ async fn main() -> azure_core::Result<()> {
     let response = queue
         .get_messages()
         .number_of_messages(2)
-        .visibility_timeout(Duration::from_secs(5)) // the message will become visible again after 5 secs
+        .visibility_timeout(Duration::seconds(5)) // the message will become visible again after 5 secs
         .into_future()
         .await?;
 
@@ -35,7 +35,7 @@ async fn main() -> azure_core::Result<()> {
     let get_messages_response = queue
         .get_messages()
         .number_of_messages(2)
-        .visibility_timeout(Duration::from_secs(10)) // the message will become visible again after 10 secs
+        .visibility_timeout(Duration::seconds(10)) // the message will become visible again after 10 secs
         .into_future()
         .await?;
     println!("get_messages_response == {:#?}", get_messages_response);
@@ -48,8 +48,8 @@ async fn main() -> azure_core::Result<()> {
 
         let response = pop_receipt
             .update(
-                format!("new body at {}", chrono::Utc::now()),
-                Duration::from_secs(4),
+                format!("new body at {}", OffsetDateTime::now_utc()),
+                Duration::seconds(4),
             )
             .into_future()
             .await?;

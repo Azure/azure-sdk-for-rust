@@ -10,8 +10,8 @@ use crate::device_update::UpdateOperation;
 mod tests {
     use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
     use azure_identity::AutoRefreshingTokenCredential;
-    use chrono::{Duration, Utc};
     use std::sync::Arc;
+    use time::{Duration, OffsetDateTime};
 
     pub(crate) fn mock_client() -> crate::client::DeviceUpdateClient {
         crate::client::DeviceUpdateClient {
@@ -32,7 +32,7 @@ mod tests {
         ) -> Result<TokenResponse, azure_core::error::Error> {
             Ok(TokenResponse::new(
                 AccessToken::new("TOKEN".to_owned()),
-                Utc::now() + Duration::days(14),
+                OffsetDateTime::now_utc() + Duration::days(14),
             ))
         }
     }

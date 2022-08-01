@@ -5,6 +5,7 @@ use crate::shared_access_signature::account_sas::{
 };
 use crate::ConnectionString;
 use crate::TimeoutPolicy;
+use azure_core::date;
 use azure_core::{
     auth::TokenCredential,
     error::{Error, ErrorKind, ResultExt},
@@ -12,8 +13,8 @@ use azure_core::{
     prelude::Timeout,
     Body, ClientOptions, Context, Method, Pipeline, Request, Response,
 };
-use chrono::{DateTime, Utc};
 use std::sync::Arc;
+use time::OffsetDateTime;
 use url::Url;
 
 /// The well-known account used by Azurite and the legacy Azure Storage Emulator.
@@ -371,8 +372,8 @@ impl StorageClient {
         headers: Headers,
         request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
-        let dt = chrono::Utc::now();
-        let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
+        let dt = OffsetDateTime::now_utc();
+        let time = date::to_http_date(&dt);
 
         let mut request = Request::new(url, method);
         for (k, v) in headers {
@@ -425,7 +426,7 @@ impl StorageClient {
         &self,
         resource: AccountSasResource,
         resource_type: AccountSasResourceType,
-        expiry: DateTime<Utc>,
+        expiry: OffsetDateTime,
         permissions: AccountSasPermissions,
     ) -> azure_core::Result<AccountSharedAccessSignature> {
         match &self.storage_credentials {

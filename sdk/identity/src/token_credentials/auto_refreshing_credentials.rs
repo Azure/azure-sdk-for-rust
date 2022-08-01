@@ -1,11 +1,12 @@
 use async_lock::RwLock;
 use azure_core::auth::{TokenCredential, TokenResponse};
 use azure_core::error::{Error, ErrorKind};
-use chrono::{Duration, Utc};
 use std::sync::Arc;
+use time::Duration;
+use time::OffsetDateTime;
 
 fn is_expired(token: &TokenResponse) -> bool {
-    token.expires_on < Utc::now() + Duration::seconds(20)
+    token.expires_on < OffsetDateTime::now_utc() + Duration::seconds(20)
 }
 
 #[derive(Clone)]

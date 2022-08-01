@@ -10,7 +10,7 @@ license = "MIT"
 azure_core = { path = "../core", version = "0.3", default_features = false }
 base64 = "0.13"
 bytes = "1.0"
-chrono = "0.4"
+time = "0.3"
 hmac = "0.12"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

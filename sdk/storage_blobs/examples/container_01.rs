@@ -1,8 +1,7 @@
 use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
-use chrono::{FixedOffset, Utc};
-use std::{ops::Add, time::Duration};
+use time::{Duration, OffsetDateTime};
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -38,9 +37,9 @@ async fn main() -> azure_core::Result<()> {
     let result = container_client.get_acl().into_future().await?;
     println!("\nget_acl() == {:?}", result);
 
-    // set stored acess policy list
-    let dt_start = Utc::now().with_timezone(&FixedOffset::east(0));
-    let dt_end = dt_start.add(chrono::Duration::days(7));
+    // set stored access policy list
+    let dt_start = OffsetDateTime::now_utc();
+    let dt_end = dt_start + Duration::days(7);
 
     let mut sapl = StoredAccessPolicyList::default();
     sapl.stored_access
@@ -81,7 +80,7 @@ async fn main() -> azure_core::Result<()> {
     println!("\nget_properties() == {:?}", res);
 
     let res = container_client
-        .acquire_lease(Duration::from_secs(15))
+        .acquire_lease(Duration::seconds(15))
         .into_future()
         .await?;
     println!("\nacquire_lease() == {:?}", res);

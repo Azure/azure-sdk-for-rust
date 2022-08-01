@@ -4,7 +4,7 @@ use crate::resources::StoredProcedure;
 use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use azure_core::{collect_pinned_stream, Response as HttpResponse};
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     CreateStoredProcedure,
@@ -57,7 +57,7 @@ pub struct CreateStoredProcedureResponse {
     pub activity_id: uuid::Uuid,
     pub etag: String,
     pub session_token: String,
-    pub last_change: DateTime<Utc>,
+    pub last_change: OffsetDateTime,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
     pub quorum_acked_lsn: u64,

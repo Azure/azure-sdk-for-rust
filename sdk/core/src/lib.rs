@@ -14,6 +14,7 @@ mod macros;
 mod bytes_stream;
 mod constants;
 mod context;
+pub mod date;
 pub mod error;
 mod http_client;
 mod models;
@@ -32,6 +33,7 @@ pub mod mock;
 pub mod parsing;
 pub mod prelude;
 pub mod request_options;
+pub mod serde;
 pub mod sleep;
 pub mod util;
 

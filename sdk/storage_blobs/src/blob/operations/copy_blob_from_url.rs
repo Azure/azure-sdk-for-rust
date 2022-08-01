@@ -8,8 +8,8 @@ use azure_storage::{
     headers::content_md5_from_headers_optional,
     ConsistencyMD5,
 };
-use chrono::{DateTime, Utc};
 use std::convert::{TryFrom, TryInto};
+use time::OffsetDateTime;
 use url::Url;
 
 operation! {
@@ -63,14 +63,14 @@ impl CopyBlobFromUrlBuilder {
 #[derive(Debug, Clone, PartialEq)]
 pub struct CopyBlobFromUrlResponse {
     pub content_md5: Option<ConsistencyMD5>,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: OffsetDateTime,
     pub etag: String,
     pub server: String,
     pub request_id: RequestId,
     pub version: String,
     pub copy_id: CopyId,
     pub copy_status: CopyStatus,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
 }
 
 impl TryFrom<&Headers> for CopyBlobFromUrlResponse {

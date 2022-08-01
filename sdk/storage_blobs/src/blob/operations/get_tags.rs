@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use azure_core::{collect_pinned_stream, headers::*, prelude::*, RequestId};
 use azure_storage::xml::read_xml;
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     GetTags,
@@ -41,7 +41,7 @@ impl GetTagsBuilder {
 #[derive(Debug, Clone)]
 pub struct GetTagsResponse {
     pub request_id: RequestId,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
     pub tags: Tags,
 }
 

@@ -1,13 +1,13 @@
 use crate::QueueServiceClient;
 use azure_core::{
-    collect_pinned_stream,
+    collect_pinned_stream, date,
     error::{ErrorKind, ResultExt},
     headers::Headers,
     Method, Response as AzureResponse,
 };
 use azure_storage::core::{headers::CommonStorageResponseHeaders, xml::read_xml};
-use chrono::{DateTime, Utc};
 use std::convert::TryInto;
+use time::OffsetDateTime;
 
 operation! {
     GetQueueServiceStats,
@@ -52,7 +52,7 @@ pub enum Status {
 pub struct GetQueueServiceStatsResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub status: Status,
-    pub last_sync_time: Option<DateTime<Utc>>,
+    pub last_sync_time: Option<OffsetDateTime>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -81,10 +81,11 @@ impl GetQueueServiceStatsResponse {
             last_sync_time: response
                 .geo_replication
                 .last_sync_time
-                .map(|t| DateTime::parse_from_rfc2822(&t))
-                .transpose()
-                .context(ErrorKind::DataConversion, "failed to parse last sync time")?
-                .map(|t| DateTime::from_utc(t.naive_utc(), Utc)),
+                .map(|t| {
+                    date::parse_http_date(&t)
+                        .context(ErrorKind::DataConversion, "failed to parse last sync time")
+                })
+                .transpose()?,
         })
     }
 }

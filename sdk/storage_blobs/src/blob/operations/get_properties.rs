@@ -1,6 +1,6 @@
 use crate::{blob::Blob, prelude::*};
 use azure_core::{headers::*, prelude::*, RequestId};
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     GetProperties,
@@ -42,7 +42,7 @@ impl GetPropertiesBuilder {
 pub struct GetPropertiesResponse {
     pub blob: Blob,
     pub request_id: RequestId,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
 }
 
 impl GetPropertiesResponse {

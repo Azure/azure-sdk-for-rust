@@ -11,7 +11,7 @@ use azure_core::SessionToken;
 use azure_core::{collect_pinned_stream, headers};
 use azure_core::{content_type, prelude::*};
 use bytes::Bytes;
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     CreateOrReplaceSlugAttachment,
@@ -79,7 +79,7 @@ pub struct CreateOrReplaceSlugAttachmentResponse {
     pub attachment: Attachment,
     pub max_media_storage_usage_mb: u64,
     pub media_storage_usage_mb: u64,
-    pub last_change: DateTime<Utc>,
+    pub last_change: OffsetDateTime,
     pub etag: String,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
@@ -98,7 +98,7 @@ pub struct CreateOrReplaceSlugAttachmentResponse {
     pub service_version: String,
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
 }
 
 impl CreateOrReplaceSlugAttachmentResponse {

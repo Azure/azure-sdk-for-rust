@@ -14,9 +14,9 @@ use azure_core::Method;
 use azure_core::Pageable;
 use azure_core::Response as HttpResponse;
 use azure_core::SessionToken;
-use chrono::{DateTime, Utc};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
+use time::OffsetDateTime;
 
 operation! {
     #[stream]
@@ -108,7 +108,7 @@ pub type QueryDocuments<T> = Pageable<QueryDocumentsResponse<T>, azure_core::err
 pub struct QueryDocumentsResponse<T> {
     pub query_response_meta: QueryResponseMeta,
     pub results: Vec<(T, Option<DocumentAttributes>)>,
-    pub last_state_change: DateTime<Utc>,
+    pub last_state_change: OffsetDateTime,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
     pub lsn: u64,
@@ -130,7 +130,7 @@ pub struct QueryDocumentsResponse<T> {
     pub service_version: String,
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
     pub continuation_token: Option<Continuation>,
 }
 

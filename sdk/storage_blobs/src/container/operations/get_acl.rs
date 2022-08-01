@@ -3,14 +3,10 @@ use crate::{
     prelude::*,
 };
 use azure_core::{
-    collect_pinned_stream,
-    error::{ErrorKind, ResultExt},
-    headers::*,
-    prelude::*,
-    Method, RequestId, Response,
+    collect_pinned_stream, date, headers::*, prelude::*, Method, RequestId, Response,
 };
 use azure_storage::core::StoredAccessPolicyList;
-use chrono::{DateTime, FixedOffset};
+use time::OffsetDateTime;
 
 operation! {
     GetACL,
@@ -40,9 +36,9 @@ impl GetACLBuilder {
 pub struct GetACLResponse {
     pub public_access: PublicAccess,
     pub etag: String,
-    pub last_modified: DateTime<FixedOffset>,
+    pub last_modified: OffsetDateTime,
     pub request_id: RequestId,
-    pub date: DateTime<FixedOffset>,
+    pub date: OffsetDateTime,
     pub stored_access_policy_list: StoredAccessPolicyList,
 }
 
@@ -58,13 +54,12 @@ impl GetACLResponse {
         let etag = headers.get_as(&ETAG)?;
 
         let last_modified = headers.get_str(&LAST_MODIFIED)?;
-        let last_modified =
-            DateTime::parse_from_rfc2822(last_modified).map_kind(ErrorKind::DataConversion)?;
+        let last_modified = date::parse_http_date(last_modified)?;
 
         let request_id = headers.get_as(&REQUEST_ID)?;
 
         let date = headers.get_str(&DATE)?;
-        let date = DateTime::parse_from_rfc2822(date).map_kind(ErrorKind::DataConversion)?;
+        let date = date::parse_http_date(date)?;
 
         let stored_access_policy_list = StoredAccessPolicyList::from_xml(&body)?;
 

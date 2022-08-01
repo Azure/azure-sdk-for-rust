@@ -1,5 +1,5 @@
 use crate::headers::{self, Header};
-use std::time::Duration;
+use time::Duration;
 
 #[derive(Debug, Clone, Copy)]
 pub struct LeaseBreakPeriod(Duration);
@@ -16,6 +16,6 @@ impl Header for LeaseBreakPeriod {
     }
 
     fn value(&self) -> headers::HeaderValue {
-        format!("{}", self.0.as_secs()).into()
+        format!("{}", self.0.whole_seconds()).into()
     }
 }

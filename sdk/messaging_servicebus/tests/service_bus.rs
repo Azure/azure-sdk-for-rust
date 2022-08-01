@@ -2,7 +2,7 @@
 extern crate log;
 
 use azure_messaging_servicebus::service_bus::Client;
-use chrono::Duration;
+use time::Duration;
 
 #[tokio::test]
 async fn send_message_test() {
