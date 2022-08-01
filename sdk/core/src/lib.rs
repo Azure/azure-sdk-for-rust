@@ -33,7 +33,6 @@ pub mod mock;
 pub mod parsing;
 pub mod prelude;
 pub mod request_options;
-pub mod serde;
 pub mod sleep;
 pub mod util;
 

@@ -4,9 +4,9 @@ use time::OffsetDateTime;
 #[derive(Deserialize, Debug)]
 pub(crate) struct KeyVaultSecretBaseIdentifierAttributedRaw {
     pub enabled: bool,
-    #[serde(with = "time::serde::timestamp")]
+    #[serde(with = "azure_core::date::timestamp")]
     pub created: OffsetDateTime,
-    #[serde(with = "time::serde::timestamp")]
+    #[serde(with = "azure_core::date::timestamp")]
     pub updated: OffsetDateTime,
 }
 
@@ -34,11 +34,11 @@ pub(crate) struct KeyVaultGetSecretResponse {
 pub(crate) struct KeyVaultGetSecretResponseAttributes {
     pub enabled: bool,
     #[serde(default)]
-    #[serde(with = "time::serde::timestamp::option")]
+    #[serde(with = "azure_core::date::timestamp::option")]
     pub exp: Option<OffsetDateTime>,
-    #[serde(with = "time::serde::timestamp")]
+    #[serde(with = "azure_core::date::timestamp")]
     pub created: OffsetDateTime,
-    #[serde(with = "time::serde::timestamp")]
+    #[serde(with = "azure_core::date::timestamp")]
     pub updated: OffsetDateTime,
     #[serde(rename = "recoveryLevel")]
     #[allow(unused)]

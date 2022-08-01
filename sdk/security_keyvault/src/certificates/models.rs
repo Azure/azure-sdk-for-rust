@@ -5,14 +5,14 @@ use time::OffsetDateTime;
 pub(crate) struct KeyVaultCertificateBaseIdentifierAttributedRaw {
     pub enabled: bool,
     #[serde(default)]
-    #[serde(with = "time::serde::timestamp::option")]
+    #[serde(with = "azure_core::date::timestamp::option")]
     pub exp: Option<OffsetDateTime>,
     #[serde(default)]
-    #[serde(with = "time::serde::timestamp::option")]
+    #[serde(with = "azure_core::date::timestamp::option")]
     pub nbf: Option<OffsetDateTime>,
-    #[serde(with = "time::serde::timestamp")]
+    #[serde(with = "azure_core::date::timestamp")]
     pub created: OffsetDateTime,
-    #[serde(with = "time::serde::timestamp")]
+    #[serde(with = "azure_core::date::timestamp")]
     pub updated: OffsetDateTime,
 }
 
@@ -46,14 +46,14 @@ pub(crate) struct KeyVaultGetCertificateResponse {
 pub(crate) struct KeyVaultGetCertificateResponseAttributes {
     pub enabled: bool,
     #[serde(default)]
-    #[serde(with = "time::serde::timestamp::option")]
+    #[serde(with = "azure_core::date::timestamp::option")]
     pub exp: Option<OffsetDateTime>,
     #[serde(default)]
-    #[serde(with = "time::serde::timestamp::option")]
+    #[serde(with = "azure_core::date::timestamp::option")]
     pub nbf: Option<OffsetDateTime>,
-    #[serde(with = "time::serde::timestamp")]
+    #[serde(with = "azure_core::date::timestamp")]
     pub created: OffsetDateTime,
-    #[serde(with = "time::serde::timestamp")]
+    #[serde(with = "azure_core::date::timestamp")]
     pub updated: OffsetDateTime,
     #[serde(rename = "recoveryLevel")]
     #[allow(unused)]
@@ -103,9 +103,9 @@ pub(crate) struct KeyVaultGetCertificateResponsePolicyIssuer {
 #[allow(unused)]
 pub(crate) struct KeyVaultGetCertificateResponsePolicyAttributes {
     pub enabled: bool,
-    #[serde(with = "time::serde::timestamp")]
+    #[serde(with = "azure_core::date::timestamp")]
     pub created: OffsetDateTime,
-    #[serde(with = "time::serde::timestamp")]
+    #[serde(with = "azure_core::date::timestamp")]
     pub updated: OffsetDateTime,
 }
 

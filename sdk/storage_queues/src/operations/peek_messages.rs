@@ -50,9 +50,9 @@ pub struct PeekMessagesBody {
 #[serde(rename_all = "PascalCase")]
 pub struct PeekMessage {
     pub message_id: String,
-    #[serde(with = "azure_core::serde::http_date")]
+    #[serde(with = "azure_core::date::rfc1123")]
     pub insertion_time: OffsetDateTime,
-    #[serde(with = "azure_core::serde::http_date")]
+    #[serde(with = "azure_core::date::rfc1123")]
     pub expiration_time: OffsetDateTime,
     pub dequeue_count: u64,
     pub message_text: String,

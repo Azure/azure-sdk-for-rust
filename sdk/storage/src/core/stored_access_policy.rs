@@ -107,9 +107,9 @@ struct SignedIdentifier {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 struct AccessPolicy {
-    #[serde(with = "time::serde::rfc3339")]
+    #[serde(with = "azure_core::date::rfc3339")]
     start: OffsetDateTime,
-    #[serde(with = "time::serde::rfc3339")]
+    #[serde(with = "azure_core::date::rfc3339")]
     expiry: OffsetDateTime,
     permission: String,
 }

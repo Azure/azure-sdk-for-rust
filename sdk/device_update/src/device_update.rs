@@ -83,12 +83,12 @@ pub struct Instructions {
 #[serde(rename_all = "camelCase")]
 pub struct Update {
     compatibility: Vec<Map<String, Value>>,
-    #[serde(with = "time::serde::rfc3339")]
+    #[serde(with = "azure_core::date::rfc3339")]
     created_date_time: OffsetDateTime,
     description: Option<String>,
     etag: String,
     friendly_name: Option<String>,
-    #[serde(with = "time::serde::rfc3339")]
+    #[serde(with = "azure_core::date::rfc3339")]
     imported_date_time: OffsetDateTime,
     installed_criteria: Option<String>,
     instructions: Option<Instructions>,
@@ -127,11 +127,11 @@ pub enum OperationStatus {
 #[getset(get = "pub")]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateOperation {
-    #[serde(with = "time::serde::rfc3339")]
+    #[serde(with = "azure_core::date::rfc3339")]
     pub created_date_time: OffsetDateTime,
     pub error: Option<Value>,
     pub etag: String,
-    #[serde(with = "time::serde::rfc3339")]
+    #[serde(with = "azure_core::date::rfc3339")]
     pub last_action_date_time: OffsetDateTime,
     pub operation_id: String,
     pub resource_location: Option<String>,

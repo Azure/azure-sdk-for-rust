@@ -14,7 +14,7 @@ where
     pub id: String,
     pub event_type: String,
     pub subject: String,
-    #[serde(with = "time::serde::rfc3339")]
+    #[serde(with = "azure_core::date::rfc3339")]
     pub event_time: OffsetDateTime,
     pub data: Option<T>,
     pub data_version: String,

@@ -28,22 +28,30 @@ pub struct KeyProperties {
 #[serde(rename_all = "camelCase")]
 pub struct KeyAttributes {
     /// Creation time in UTC.
-    #[serde(rename = "created", with = "time::serde::timestamp::option", default)]
+    #[serde(
+        rename = "created",
+        with = "azure_core::date::timestamp::option",
+        default
+    )]
     pub created_on: Option<OffsetDateTime>,
     /// Determines whether the object is enabled.
     pub enabled: Option<bool>,
     /// Expiry date in UTC.
-    #[serde(rename = "exp", with = "time::serde::timestamp::option", default)]
+    #[serde(rename = "exp", with = "azure_core::date::timestamp::option", default)]
     pub expires_on: Option<OffsetDateTime>,
     /// Not before date in UTC.
-    #[serde(rename = "nbf", with = "time::serde::timestamp::option", default)]
+    #[serde(rename = "nbf", with = "azure_core::date::timestamp::option", default)]
     pub not_before: Option<OffsetDateTime>,
     /// softDelete data retention days. Value should be >=7 and <=90 when softDelete enabled, otherwise 0.
     pub recoverable_days: Option<u8>,
     /// Reflects the deletion recovery level currently in effect for keys in the current vault. If it contains 'Purgeable' the key can be permanently deleted by a privileged user; otherwise, only the system can purge the key, at the end of the retention interval.
     pub recovery_level: Option<String>,
     /// Last updated time in UTC.
-    #[serde(rename = "updated", with = "time::serde::timestamp::option", default)]
+    #[serde(
+        rename = "updated",
+        with = "azure_core::date::timestamp::option",
+        default
+    )]
     pub updated_on: Option<OffsetDateTime>,
 }
 

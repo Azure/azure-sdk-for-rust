@@ -22,9 +22,9 @@ operation! {
 #[serde(rename_all = "camelCase")]
 struct Attributes {
     enabled: Option<bool>,
-    #[serde(with = "time::serde::timestamp::option", rename = "exp")]
+    #[serde(with = "azure_core::date::timestamp::option", rename = "exp")]
     expiration: Option<OffsetDateTime>,
-    #[serde(with = "time::serde::timestamp::option", rename = "nbf")]
+    #[serde(with = "azure_core::date::timestamp::option", rename = "nbf")]
     not_before: Option<OffsetDateTime>,
     recovery_level: Option<String>,
 }

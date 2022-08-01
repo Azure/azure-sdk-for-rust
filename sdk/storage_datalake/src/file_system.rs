@@ -8,7 +8,7 @@ use time::OffsetDateTime;
 #[serde(rename_all = "camelCase")]
 pub struct FileSystem {
     pub name: String,
-    #[serde(with = "azure_core::serde::http_date")]
+    #[serde(with = "azure_core::date::rfc1123")]
     pub last_modified: OffsetDateTime,
     pub etag: Etag,
 }
@@ -36,7 +36,7 @@ pub struct Path {
     pub group: String,
     #[serde(default, deserialize_with = "deserialize_bool")]
     pub is_directory: bool,
-    #[serde(with = "azure_core::serde::http_date")]
+    #[serde(with = "azure_core::date::rfc1123")]
     pub last_modified: OffsetDateTime,
     pub name: String,
     pub owner: String,

@@ -47,11 +47,11 @@ pub struct GetMessagesResponse {
 pub struct Message {
     message_id: String,
     pop_receipt: String,
-    #[serde(with = "azure_core::serde::http_date")]
+    #[serde(with = "azure_core::date::rfc1123")]
     pub insertion_time: OffsetDateTime,
-    #[serde(with = "azure_core::serde::http_date")]
+    #[serde(with = "azure_core::date::rfc1123")]
     pub expiration_time: OffsetDateTime,
-    #[serde(with = "azure_core::serde::http_date")]
+    #[serde(with = "azure_core::date::rfc1123")]
     pub time_next_visible: OffsetDateTime,
     pub dequeue_count: u64,
     pub message_text: String,
