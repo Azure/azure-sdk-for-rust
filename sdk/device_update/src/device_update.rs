@@ -8,7 +8,8 @@ use log::debug;
 use serde::Deserialize;
 use serde_json::{Map, Value};
 use std::fmt::Debug;
-use time::{Duration, OffsetDateTime};
+use std::time::Duration;
+use time::OffsetDateTime;
 
 #[derive(Debug, Deserialize, Getters)]
 #[getset(get = "pub")]
@@ -183,7 +184,7 @@ impl DeviceUpdateClient {
         debug!("Import response: {}", &resp_body);
 
         loop {
-            sleep(Duration::seconds(5)).await;
+            sleep(Duration::from_secs(5)).await;
             let mut uri = self.device_update_url.clone();
             uri.set_path(&resp_body);
             debug!("Requesting operational status: {}", &uri);

@@ -247,25 +247,18 @@ impl SecretClient {
 #[cfg(test)]
 #[allow(unused_must_use)]
 mod tests {
-    use mockito::{mock, Matcher};
-    use serde_json::json;
-    use time::{Duration, OffsetDateTime};
-
     use crate::mock_client;
     use crate::prelude::API_VERSION;
     use crate::tests::MockCredential;
-
-    fn diff(first: OffsetDateTime, second: OffsetDateTime) -> Duration {
-        if first > second {
-            first - second
-        } else {
-            second - first
-        }
-    }
+    use azure_core::date;
+    use mockito::{mock, Matcher};
+    use serde_json::json;
+    use std::time::Duration;
+    use time::OffsetDateTime;
 
     #[tokio::test]
     async fn get_secret() -> azure_core::Result<()> {
-        let time_created = OffsetDateTime::now_utc() - Duration::days(7);
+        let time_created = OffsetDateTime::now_utc() - date::duration_from_days(7);
         let time_updated = OffsetDateTime::now_utc();
         let _m = mock("GET", "/secrets/test-secret/")
             .match_query(Matcher::UrlEncoded("api-version".into(), API_VERSION.into()))
@@ -298,17 +291,17 @@ mod tests {
             "https://test-keyvault.vault.azure.net/secrets/test-secret/4387e9f3d6e14c459867679a90fd0f79",
             secret.id
         );
-        assert!(diff(time_created, secret.created_on) < Duration::seconds(1));
-        assert!(diff(time_updated, secret.updated_on) < Duration::seconds(1));
+        assert!(date::diff(time_created, secret.created_on) < Duration::from_secs(1));
+        assert!(date::diff(time_updated, secret.updated_on) < Duration::from_secs(1));
         Ok(())
     }
 
     #[tokio::test]
     async fn get_secret_versions() -> azure_core::Result<()> {
-        let time_created_1 = OffsetDateTime::now_utc() - Duration::days(7);
+        let time_created_1 = OffsetDateTime::now_utc() - date::duration_from_days(7);
         let time_updated_1 = OffsetDateTime::now_utc();
-        let time_created_2 = OffsetDateTime::now_utc() - Duration::days(9);
-        let time_updated_2 = OffsetDateTime::now_utc() - Duration::days(2);
+        let time_created_2 = OffsetDateTime::now_utc() - date::duration_from_days(9);
+        let time_updated_2 = OffsetDateTime::now_utc() - date::duration_from_days(2);
 
         let _m1 = mock("GET", "/secrets/test-secret/versions")
             .match_query(Matcher::AllOf(vec![
@@ -370,16 +363,16 @@ mod tests {
             "https://test-keyvault.vault.azure.net/secrets/test-secret/VERSION_1",
             secret_1.id
         );
-        assert!(diff(time_created_1, secret_1.created_on) < Duration::seconds(1));
-        assert!(diff(time_updated_1, secret_1.updated_on) < Duration::seconds(1));
+        assert!(date::diff(time_created_1, secret_1.created_on) < Duration::from_secs(1));
+        assert!(date::diff(time_updated_1, secret_1.updated_on) < Duration::from_secs(1));
 
         let secret_2 = &secret_versions[1];
         assert_eq!(
             "https://test-keyvault.vault.azure.net/secrets/test-secret/VERSION_2",
             secret_2.id
         );
-        assert!(diff(time_created_2, secret_2.created_on) < Duration::seconds(1));
-        assert!(diff(time_updated_2, secret_2.updated_on) < Duration::seconds(1));
+        assert!(date::diff(time_created_2, secret_2.created_on) < Duration::from_secs(1));
+        assert!(date::diff(time_updated_2, secret_2.updated_on) < Duration::from_secs(1));
         Ok(())
     }
 }

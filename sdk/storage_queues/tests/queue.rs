@@ -3,7 +3,8 @@ use azure_core::prelude::*;
 use azure_storage::core::prelude::*;
 use azure_storage_queues::prelude::*;
 use futures::StreamExt;
-use time::{Duration, OffsetDateTime};
+use std::time::Duration;
+use time::OffsetDateTime;
 use uuid::Uuid;
 
 #[tokio::test]
@@ -61,15 +62,15 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
     let policies = vec![
         QueueStoredAccessPolicy::new(
             "first_sap_read_process",
-            OffsetDateTime::now_utc() - Duration::hours(1),
-            OffsetDateTime::now_utc() + Duration::days(1),
+            OffsetDateTime::now_utc() - date::duration_from_hours(1),
+            OffsetDateTime::now_utc() + date::duration_from_days(1),
         )
         .enable_read()
         .enable_process(),
         QueueStoredAccessPolicy::new(
             "sap_admin",
-            OffsetDateTime::now_utc() - Duration::hours(1),
-            OffsetDateTime::now_utc() + Duration::hours(5),
+            OffsetDateTime::now_utc() - date::duration_from_hours(1),
+            OffsetDateTime::now_utc() + date::duration_from_hours(5),
         )
         .enable_all(),
     ];
@@ -101,7 +102,7 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
     let get_messages_response = queue
         .get_messages()
         .number_of_messages(2)
-        .visibility_timeout(Duration::seconds(10))
+        .visibility_timeout(Duration::from_secs(10))
         .into_future()
         .await?;
     println!("get_messages_response == {:#?}", get_messages_response);
@@ -112,7 +113,7 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
         let response = pop_receipt
             .update(
                 format!("new body at {}", OffsetDateTime::now_utc()),
-                Duration::seconds(4),
+                Duration::from_secs(4),
             )
             .into_future()
             .await?;
@@ -122,7 +123,7 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
     let get_response = queue
         .get_messages()
         .number_of_messages(2)
-        .visibility_timeout(Duration::seconds(5))
+        .visibility_timeout(Duration::from_secs(5))
         .into_future()
         .await?;
 

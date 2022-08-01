@@ -1,5 +1,5 @@
 use crate::headers::{self, Header};
-use time::Duration;
+use std::time::Duration;
 
 #[derive(Debug, Clone)]
 pub enum LeaseDuration {
@@ -25,6 +25,6 @@ impl Header for LeaseDuration {
 
 impl From<Duration> for LeaseDuration {
     fn from(d: Duration) -> Self {
-        LeaseDuration::Seconds(d.whole_seconds() as u8)
+        LeaseDuration::Seconds(d.as_secs() as u8)
     }
 }

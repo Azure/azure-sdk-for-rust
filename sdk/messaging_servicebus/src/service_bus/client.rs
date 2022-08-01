@@ -8,7 +8,7 @@ use crate::{
     utils::body_bytes_to_utf8,
 };
 use ring::hmac::Key;
-use time::Duration;
+use std::time::Duration;
 
 use azure_core::{error::Error, HttpClient};
 

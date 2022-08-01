@@ -1,7 +1,7 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::{container::PublicAccess, prelude::*};
-use time::Duration;
+use std::time::Duration;
 
 #[tokio::test]
 async fn lease() {
@@ -18,7 +18,7 @@ async fn lease() {
         .unwrap();
 
     let res = container
-        .acquire_lease(Duration::seconds(30))
+        .acquire_lease(Duration::from_secs(30))
         .into_future()
         .await
         .unwrap();
@@ -46,7 +46,7 @@ async fn break_lease() {
         .unwrap();
 
     let res = container
-        .acquire_lease(Duration::seconds(30))
+        .acquire_lease(Duration::from_secs(30))
         .into_future()
         .await
         .unwrap();
@@ -56,7 +56,7 @@ async fn break_lease() {
 
     let res = container
         .break_lease()
-        .lease_break_period(Duration::seconds(0))
+        .lease_break_period(Duration::from_secs(0))
         .into_future()
         .await
         .unwrap();

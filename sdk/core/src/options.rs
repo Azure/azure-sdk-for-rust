@@ -2,7 +2,7 @@ use crate::http_client;
 use crate::policies::{ExponentialRetryPolicy, FixedRetryPolicy, NoRetryPolicy, Policy};
 use crate::HttpClient;
 use std::sync::Arc;
-use time::Duration;
+use std::time::Duration;
 
 /// Client options allow customization of policies, retry options, and more.
 ///
@@ -134,9 +134,9 @@ impl Default for RetryOptions {
     fn default() -> Self {
         RetryOptions {
             mode: RetryMode::default(),
-            delay: Duration::milliseconds(800),
+            delay: Duration::from_millis(800),
             max_retries: 3,
-            max_delay: Duration::seconds(60),
+            max_delay: Duration::from_secs(60),
         }
     }
 }

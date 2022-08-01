@@ -2,7 +2,7 @@ use futures::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::thread;
-use time::Duration;
+use std::time::Duration;
 
 pub fn sleep(duration: Duration) -> Sleep {
     Sleep {
@@ -25,7 +25,7 @@ impl Future for Sleep {
             let waker = cx.waker().clone();
             let duration = self.duration;
             self.get_mut().thread = Some(thread::spawn(move || {
-                thread::sleep(duration.try_into().unwrap_or_default());
+                thread::sleep(duration);
                 waker.wake();
             }));
             Poll::Pending

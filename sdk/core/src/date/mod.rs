@@ -3,12 +3,8 @@
 // RFC 3339 vs ISO 8601
 // https://ijmacd.github.io/rfc3339-iso8601/
 
-// Serde modules
-pub use time::serde::rfc3339;
-pub use time::serde::timestamp;
-pub mod rfc1123;
-
 use crate::error::{ErrorKind, ResultExt};
+use std::time::Duration;
 use time::{
     format_description::{
         well_known::{Rfc2822, Rfc3339},
@@ -17,6 +13,11 @@ use time::{
     macros::format_description,
     OffsetDateTime, PrimitiveDateTime, UtcOffset,
 };
+
+// Serde modules
+pub use time::serde::rfc3339;
+pub use time::serde::timestamp;
+pub mod rfc1123;
 
 /// RFC 2822: Internet Message Format
 ///
@@ -143,6 +144,26 @@ pub fn to_last_state_change(date: &OffsetDateTime) -> String {
 /// Assumes the local offset. Default to UTC if unable to get local offset.
 pub fn assume_local(date: &PrimitiveDateTime) -> OffsetDateTime {
     date.assume_offset(UtcOffset::current_local_offset().unwrap_or(UtcOffset::UTC))
+}
+
+// Create a duration from the number of minutes.
+pub fn duration_from_minutes(minutes: u64) -> Duration {
+    Duration::from_secs(minutes * 60)
+}
+
+// Create a duration from the number of hours.
+pub fn duration_from_hours(hours: u64) -> Duration {
+    Duration::from_secs(hours * 3_600)
+}
+
+// Create a duration from the number of days.
+pub fn duration_from_days(days: u64) -> Duration {
+    Duration::from_secs(days * 86_400)
+}
+
+/// Get the difference between two dates.
+pub fn diff(first: OffsetDateTime, second: OffsetDateTime) -> Duration {
+    (first - second).unsigned_abs()
 }
 
 #[cfg(test)]

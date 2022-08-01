@@ -1,10 +1,10 @@
 #[macro_use]
 extern crate log;
-use azure_core::prelude::*;
+use azure_core::{date, prelude::*};
 
 use azure_storage::core::prelude::*;
 use azure_storage_queues::prelude::*;
-use time::{Duration, OffsetDateTime};
+use time::OffsetDateTime;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -62,15 +62,15 @@ async fn main() -> azure_core::Result<()> {
     let policies = vec![
         QueueStoredAccessPolicy::new(
             "first_sap_read_process",
-            OffsetDateTime::now_utc() - Duration::hours(1),
-            OffsetDateTime::now_utc() + Duration::days(1),
+            OffsetDateTime::now_utc() - date::duration_from_hours(1),
+            OffsetDateTime::now_utc() + date::duration_from_days(1),
         )
         .enable_read()
         .enable_process(),
         QueueStoredAccessPolicy::new(
             "sap_admin",
-            OffsetDateTime::now_utc() - Duration::hours(1),
-            OffsetDateTime::now_utc() + Duration::hours(5),
+            OffsetDateTime::now_utc() - date::duration_from_hours(1),
+            OffsetDateTime::now_utc() + date::duration_from_hours(5),
         )
         .enable_all(),
     ];

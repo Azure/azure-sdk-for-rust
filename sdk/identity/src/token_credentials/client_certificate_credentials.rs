@@ -13,7 +13,7 @@ use openssl::{
 };
 use serde::Deserialize;
 use std::str;
-use time::Duration;
+use std::time::Duration;
 
 /// Refresh time to use in seconds
 const DEFAULT_REFRESH_TIME: i64 = 300;
@@ -225,7 +225,7 @@ impl TokenCredential for ClientCertificateCredential {
 
         Ok(TokenResponse::new(
             AccessToken::new(response.access_token.to_string()),
-            OffsetDateTime::now_utc() + Duration::seconds(response.expires_in),
+            OffsetDateTime::now_utc() + Duration::from_secs(response.expires_in),
         ))
     }
 }

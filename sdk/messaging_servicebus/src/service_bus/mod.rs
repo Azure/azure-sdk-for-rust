@@ -1,8 +1,9 @@
 use azure_core::{error::Error, headers, CollectedResponse, HttpClient, Request, Url};
 use azure_core::{Method, StatusCode};
 use ring::hmac;
+use std::time::Duration;
 use std::{ops::Add, sync::Arc};
-use time::{Duration, OffsetDateTime};
+use time::OffsetDateTime;
 use url::form_urlencoded::{self, Serializer};
 
 mod client;
@@ -12,7 +13,7 @@ use crate::utils::{body_bytes_to_utf8, craft_peek_lock_url};
 pub use self::client::Client;
 
 /// Default duration for the SAS token in days — We might want to make this configurable at some point
-const DEFAULT_SAS_DURATION: i64 = 1;
+const DEFAULT_SAS_DURATION: u64 = 3_600; // seconds = 1 hour
 
 /// Prepares an HTTP request
 fn finalize_request(
@@ -27,7 +28,7 @@ fn finalize_request(
         policy_name,
         signing_key,
         url,
-        Duration::hours(DEFAULT_SAS_DURATION),
+        Duration::from_secs(DEFAULT_SAS_DURATION),
     );
 
     // create request builder

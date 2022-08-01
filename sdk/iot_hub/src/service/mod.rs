@@ -5,7 +5,8 @@ use base64::{decode, encode_config};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use std::sync::Arc;
-use time::{Duration, OffsetDateTime};
+use std::time::Duration;
+use time::OffsetDateTime;
 
 /// Contains any operation that the IoT Hub service client can perform.
 pub mod operations;
@@ -80,10 +81,10 @@ impl ServiceClient {
         iot_hub_name: &str,
         key_name: &str,
         private_key: &str,
-        expires_in_seconds: i64,
+        expires_in_seconds: u64,
     ) -> azure_core::Result<String> {
         type HmacSHA256 = Hmac<Sha256>;
-        let expiry_date = OffsetDateTime::now_utc() + Duration::seconds(expires_in_seconds);
+        let expiry_date = OffsetDateTime::now_utc() + Duration::from_secs(expires_in_seconds);
         let expiry_date_seconds = expiry_date.unix_timestamp();
         let data = format!(
             "{}.azure-devices.net\n{}",
@@ -135,7 +136,7 @@ impl ServiceClient {
         iot_hub_name: S,
         key_name: T,
         private_key: U,
-        expires_in_seconds: i64,
+        expires_in_seconds: u64,
     ) -> azure_core::Result<Self>
     where
         S: Into<String>,
@@ -175,7 +176,7 @@ impl ServiceClient {
     pub fn from_connection_string<S>(
         http_client: Arc<dyn HttpClient>,
         connection_string: S,
-        expires_in_seconds: i64,
+        expires_in_seconds: u64,
     ) -> azure_core::Result<Self>
     where
         S: AsRef<str>,

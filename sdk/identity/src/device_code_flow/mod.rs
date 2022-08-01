@@ -16,8 +16,8 @@ pub use device_code_responses::*;
 use futures::stream::unfold;
 use oauth2::ClientId;
 use serde::Deserialize;
+use std::time::Duration;
 use std::{borrow::Cow, sync::Arc};
-use time::Duration;
 use url::{form_urlencoded, Url};
 
 /// Start the device authorization grant flow.
@@ -71,8 +71,8 @@ pub struct DeviceCodePhaseOneResponse<'a> {
     device_code: String,
     user_code: String,
     verification_uri: String,
-    expires_in: i64,
-    interval: i64,
+    expires_in: u64,
+    interval: u64,
     message: String,
     // The skipped fields below do not come from the Azure answer.
     // They will be added manually after deserialization
@@ -114,12 +114,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                     // Throttle down as specified by Azure. This could be
                     // smarter: we could calculate the elapsed time since the
                     // last poll and wait only the delta.
-                    new_timer(
-                        Duration::seconds(self.interval)
-                            .try_into()
-                            .unwrap_or_default(),
-                    )
-                    .await;
+                    new_timer(Duration::from_secs(self.interval)).await;
 
                     let mut encoded = form_urlencoded::Serializer::new(String::new());
                     let encoded = encoded

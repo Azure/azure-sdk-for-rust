@@ -1,4 +1,5 @@
-use time::{Duration, OffsetDateTime};
+use std::time::Duration;
+use time::OffsetDateTime;
 
 /// Retry policy with fixed back-off.
 ///
@@ -33,7 +34,7 @@ impl super::RetryPolicy for FixedRetryPolicy {
     }
 
     fn sleep_duration(&self, _retry_count: u32) -> Duration {
-        let sleep_ms = self.delay.whole_milliseconds() as i64 + i64::from(rand::random::<u8>());
-        Duration::milliseconds(sleep_ms)
+        let sleep_ms = self.delay.as_millis() as u64 + u64::from(rand::random::<u8>());
+        Duration::from_millis(sleep_ms)
     }
 }

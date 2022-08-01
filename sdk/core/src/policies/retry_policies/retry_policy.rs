@@ -3,7 +3,8 @@ use crate::policies::{Policy, PolicyResult, Request};
 use crate::sleep::sleep;
 use crate::{Context, StatusCode};
 use std::sync::Arc;
-use time::{Duration, OffsetDateTime};
+use std::time::Duration;
+use time::OffsetDateTime;
 
 /// A retry policy.
 ///

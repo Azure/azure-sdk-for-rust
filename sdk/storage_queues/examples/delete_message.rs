@@ -3,7 +3,7 @@ extern crate log;
 
 use azure_storage::core::prelude::*;
 use azure_storage_queues::prelude::*;
-use time::Duration;
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -26,7 +26,7 @@ async fn main() -> azure_core::Result<()> {
     let get_response = queue
         .get_messages()
         .number_of_messages(2)
-        .visibility_timeout(Duration::seconds(5)) // the message will become visible again after 5 secs
+        .visibility_timeout(Duration::from_secs(5)) // the message will become visible again after 5 secs
         .into_future()
         .await?;
 

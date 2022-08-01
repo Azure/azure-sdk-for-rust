@@ -1,7 +1,8 @@
-use azure_core::prelude::*;
+use azure_core::{date, prelude::*};
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
-use time::{Duration, OffsetDateTime};
+use std::time::Duration;
+use time::OffsetDateTime;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -39,7 +40,7 @@ async fn main() -> azure_core::Result<()> {
 
     // set stored access policy list
     let dt_start = OffsetDateTime::now_utc();
-    let dt_end = dt_start + Duration::days(7);
+    let dt_end = dt_start + date::duration_from_days(7);
 
     let mut sapl = StoredAccessPolicyList::default();
     sapl.stored_access
@@ -80,7 +81,7 @@ async fn main() -> azure_core::Result<()> {
     println!("\nget_properties() == {:?}", res);
 
     let res = container_client
-        .acquire_lease(Duration::seconds(15))
+        .acquire_lease(Duration::from_secs(15))
         .into_future()
         .await?;
     println!("\nacquire_lease() == {:?}", res);

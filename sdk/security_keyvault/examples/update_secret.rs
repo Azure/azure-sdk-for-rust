@@ -1,8 +1,9 @@
+use azure_core::date;
 use azure_identity::{ClientSecretCredential, TokenCredentialOptions};
 use azure_security_keyvault::SecretClient;
 use std::env;
 use std::sync::Arc;
-use time::{Duration, OffsetDateTime};
+use time::OffsetDateTime;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -30,7 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .version(secret_version)
         .enabled(false)
         .recovery_level("Purgeable")
-        .expiration(OffsetDateTime::now_utc() + Duration::days(14))
+        .expiration(OffsetDateTime::now_utc() + date::duration_from_days(14))
         .into_future()
         .await?;
 
