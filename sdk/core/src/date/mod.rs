@@ -144,9 +144,9 @@ mod tests {
     use time::macros::datetime;
 
     #[test]
-    fn test_roundtrip_internet_date() -> crate::Result<()> {
+    fn test_roundtrip_rfc3339() -> crate::Result<()> {
         let s = "2019-10-12T07:20:50.52Z";
-        let dt = OffsetDateTime::parse(s, &Rfc3339)?;
+        let dt = parse_rfc3339(s)?;
         assert_eq!(s, to_rfc3339(&dt));
         Ok(())
     }
