@@ -57,7 +57,7 @@ pub fn to_rfc3339(date: &OffsetDateTime) -> String {
 pub fn parse_rfc1123(s: &str) -> crate::Result<OffsetDateTime> {
     Ok(PrimitiveDateTime::parse(s, RFC1123_FORMAT)
         .with_context(ErrorKind::DataConversion, || {
-            format!("unable to parse http date '{s}")
+            format!("unable to parse rfc1123 date '{s}")
         })?
         .assume_utc())
 }
