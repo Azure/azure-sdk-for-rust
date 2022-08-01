@@ -3,6 +3,11 @@
 // RFC 3339 vs ISO 8601
 // https://ijmacd.github.io/rfc3339-iso8601/
 
+// Serde modules
+pub use time::serde::rfc3339;
+pub use time::serde::timestamp;
+pub mod rfc1123;
+
 use crate::error::{ErrorKind, ResultExt};
 use time::{
     format_description::{
