@@ -2,7 +2,7 @@ use crate::{clients::PopReceiptClient, prelude::*};
 use azure_core::{
     error::Error,
     headers::Headers,
-    headers::{http_date_from_headers_mandatory, HeaderName},
+    headers::{rfc1123_from_headers_mandatory, HeaderName},
     prelude::*,
     Method, Response as AzureResponse,
 };
@@ -60,7 +60,7 @@ impl std::convert::TryFrom<AzureResponse> for UpdateMessageResponse {
         let headers = response.headers();
         Ok(UpdateMessageResponse {
             common_storage_response_headers: response.headers().try_into()?,
-            time_next_visible: http_date_from_headers_mandatory(
+            time_next_visible: rfc1123_from_headers_mandatory(
                 headers,
                 &HeaderName::from_static("x-ms-time-next-visible"),
             )?,

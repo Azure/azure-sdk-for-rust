@@ -26,14 +26,14 @@ pub fn last_modified_from_headers_optional(
 }
 
 pub fn date_from_headers(headers: &Headers) -> crate::Result<OffsetDateTime> {
-    http_date_from_headers_mandatory(headers, &DATE)
+    rfc1123_from_headers_mandatory(headers, &DATE)
 }
 
 pub fn last_modified_from_headers(headers: &Headers) -> crate::Result<OffsetDateTime> {
-    http_date_from_headers_mandatory(headers, &LAST_MODIFIED)
+    rfc1123_from_headers_mandatory(headers, &LAST_MODIFIED)
 }
 
-pub fn http_date_from_headers_mandatory(
+pub fn rfc1123_from_headers_mandatory(
     headers: &Headers,
     header_name: &HeaderName,
 ) -> crate::Result<OffsetDateTime> {
