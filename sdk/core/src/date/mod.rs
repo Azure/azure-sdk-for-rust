@@ -6,10 +6,7 @@
 use crate::error::{ErrorKind, ResultExt};
 use std::time::Duration;
 use time::{
-    format_description::{
-        well_known::{Rfc2822, Rfc3339},
-        FormatItem,
-    },
+    format_description::{well_known::Rfc3339, FormatItem},
     macros::format_description,
     OffsetDateTime, PrimitiveDateTime, UtcOffset,
 };
@@ -18,31 +15,6 @@ use time::{
 pub use time::serde::rfc3339;
 pub use time::serde::timestamp;
 pub mod rfc1123;
-
-/// RFC 2822: Internet Message Format
-///
-/// https://www.rfc-editor.org/rfc/rfc2822#section-3.3
-/// https://www.rfc-editor.org/rfc/rfc2822#section-4.3
-/// A "GMT" zone is obsolete, instead "+0000" is used.
-///
-/// Date: Fri, 21 Nov 1997 10:01:10 -0600
-pub fn parse_rfc2822(s: &str) -> crate::Result<OffsetDateTime> {
-    OffsetDateTime::parse(s, &Rfc2822).with_context(ErrorKind::DataConversion, || {
-        format!("unable to parse rfc2822 date '{s}")
-    })
-}
-
-/// RFC 2822: Internet Message Format
-///
-/// https://www.rfc-editor.org/rfc/rfc2822#section-3.3
-/// https://www.rfc-editor.org/rfc/rfc2822#section-4.3
-/// A "GMT" zone is obsolete, instead "+0000" is used.
-///
-/// Date: Fri, 21 Nov 1997 10:01:10 -0600
-pub fn to_rfc2822(date: &OffsetDateTime) -> String {
-    // known format does not panic
-    date.format(&Rfc2822).unwrap()
-}
 
 /// RFC 3339: Date and Time on the Internet: Timestamps
 ///

@@ -257,12 +257,6 @@ impl From<url::ParseError> for Error {
     }
 }
 
-impl From<time::error::Parse> for Error {
-    fn from(error: time::error::Parse) -> Self {
-        Self::new(ErrorKind::DataConversion, error)
-    }
-}
-
 impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.context {

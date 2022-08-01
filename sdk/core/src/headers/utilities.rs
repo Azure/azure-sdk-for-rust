@@ -2,7 +2,6 @@ use super::*;
 use crate::prelude::Continuation;
 use crate::request_options::LeaseId;
 use crate::{date, RequestId, SessionToken};
-use time::format_description::well_known::Rfc2822;
 use time::OffsetDateTime;
 
 pub fn lease_id_from_headers(headers: &Headers) -> crate::Result<LeaseId> {
@@ -22,7 +21,7 @@ pub fn last_modified_from_headers_optional(
 ) -> crate::Result<Option<OffsetDateTime>> {
     Ok(headers
         .get_optional_str(&LAST_MODIFIED)
-        .map(|date| OffsetDateTime::parse(date, &Rfc2822))
+        .map(date::parse_rfc1123)
         .transpose()?)
 }
 

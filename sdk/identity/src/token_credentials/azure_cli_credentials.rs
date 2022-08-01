@@ -7,6 +7,7 @@ use time::OffsetDateTime;
 
 mod az_cli_date_format {
     use azure_core::date;
+    use azure_core::error::{ErrorKind, ResultExt};
     use serde::{self, Deserialize, Deserializer};
     use time::format_description::FormatItem;
     use time::macros::format_description;
@@ -16,8 +17,11 @@ mod az_cli_date_format {
         format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:6]");
 
     pub fn parse(s: &str) -> azure_core::Result<OffsetDateTime> {
-        let dt = PrimitiveDateTime::parse(s, FORMAT)?;
         // expiresOn from azure cli uses the local timezone and needs to be converted to UTC
+        let dt = PrimitiveDateTime::parse(s, FORMAT)
+            .with_context(ErrorKind::DataConversion, || {
+                format!("unable to parse expiresOn '{s}")
+            })?;
         Ok(date::assume_local(&dt))
     }
 
