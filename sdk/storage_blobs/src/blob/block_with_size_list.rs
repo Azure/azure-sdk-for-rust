@@ -30,9 +30,9 @@ struct OuterBlock {
 #[derive(Debug, Deserialize)]
 struct BlockList {
     #[serde(rename = "CommittedBlocks")]
-    pub committed_blocks: OuterBlock,
+    pub committed_blocks: Option<OuterBlock>,
     #[serde(rename = "UncommittedBlocks")]
-    pub uncommitted_blocks: OuterBlock,
+    pub uncommitted_blocks: Option<OuterBlock>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq)]
@@ -47,7 +47,7 @@ impl BlockWithSizeList {
 
         let mut lbs = BlockWithSizeList { blocks: Vec::new() };
 
-        if let Some(b) = bl.committed_blocks.block {
+        if let Some(b) = bl.committed_blocks.and_then(|c| c.block) {
             for b_val in b {
                 lbs.blocks.push(BlobBlockWithSize {
                     block_list_type: BlobBlockType::Committed(
@@ -60,7 +60,7 @@ impl BlockWithSizeList {
             }
         }
 
-        if let Some(b) = bl.uncommitted_blocks.block {
+        if let Some(b) = bl.uncommitted_blocks.and_then(|c| c.block) {
             for b_val in b {
                 lbs.blocks.push(BlobBlockWithSize {
                     block_list_type: BlobBlockType::Uncommitted(
@@ -125,5 +125,61 @@ mod test {
         assert!(bl.blocks[0].size_in_bytes == 62);
         assert!(bl.blocks[1].size_in_bytes == 62);
         assert!(bl.blocks[2].size_in_bytes == 62);
+    }
+
+    #[test]
+    fn test_incomplete_response() {
+        let range = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+        <BlockList>
+          <CommittedBlocks>
+               <Block>
+                   <Name>YmFzZTY0LWVuY29kZWQtYmxvY2staWQ=</Name>
+                   <Size>200</Size>
+                </Block>
+           </CommittedBlocks>
+        </BlockList>  ";
+
+        let bl = BlockWithSizeList::try_from_xml(range).unwrap();
+        assert!(bl.blocks.len() == 1);
+        assert!(bl.blocks[0].size_in_bytes == 200);
+
+        let range = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+        <BlockList>
+          <UncommittedBlocks>
+                <Block>
+                    <Name>YmFzZTY0LWVuY29kZWQtYmxvY2staWQtbnVtYmVyMg==</Name>
+                    <Size>4096</Size>
+                </Block>
+          </UncommittedBlocks>
+        </BlockList>  ";
+
+        let bl = BlockWithSizeList::try_from_xml(range).unwrap();
+        assert!(bl.blocks.len() == 1);
+        assert!(bl.blocks[0].size_in_bytes == 4096);
+
+        let range = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+        <BlockList>
+          <UncommittedBlocks>
+                <Block>
+                    <Name>YmFzZTY0LWVuY29kZWQtYmxvY2staWQtbnVtYmVyMg==</Name>
+                    <Size>4096</Size>
+                </Block>
+                <Block>
+                    <Name>YmFzZTY0LWVuY29kZWQtYmxvY2sfaWQtbnVtYmVyMg==</Name>
+                    <Size>200</Size>
+                </Block>
+          </UncommittedBlocks>
+        </BlockList>  ";
+
+        let bl = BlockWithSizeList::try_from_xml(range).unwrap();
+        assert!(bl.blocks.len() == 2);
+        assert!(bl.blocks[0].size_in_bytes == 4096);
+        assert!(bl.blocks[1].size_in_bytes == 200);
+
+        let range = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+        <BlockList>
+        </BlockList>  ";
+        let bl = BlockWithSizeList::try_from_xml(range).unwrap();
+        assert!(bl.blocks.len() == 0);
     }
 }
