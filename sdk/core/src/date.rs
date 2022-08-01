@@ -22,7 +22,7 @@ use time::{
 /// Date: Fri, 21 Nov 1997 10:01:10 -0600
 pub fn parse_rfc2822(s: &str) -> crate::Result<OffsetDateTime> {
     OffsetDateTime::parse(s, &Rfc2822).with_context(ErrorKind::DataConversion, || {
-        format!("unable to parse smtp date '{s}")
+        format!("unable to parse rfc2822 date '{s}")
     })
 }
 
@@ -45,7 +45,7 @@ pub fn to_rfc2822(date: &OffsetDateTime) -> String {
 /// 1985-04-12T23:20:50.52Z
 pub fn parse_rfc3339(s: &str) -> crate::Result<OffsetDateTime> {
     OffsetDateTime::parse(s, &Rfc3339).with_context(ErrorKind::DataConversion, || {
-        format!("unable to parse internet date '{s}")
+        format!("unable to parse rfc3339 date '{s}")
     })
 }
 
