@@ -370,6 +370,58 @@ async fn put_block_blob_and_get_properties() -> azure_core::Result<()> {
 }
 
 #[tokio::test]
+async fn put_block_blob_and_snapshot() {
+    let blob_name: &'static str = "snapshot-blob.txt";
+    let container_name: &'static str = "rust-snapshot-test";
+    let data = Bytes::from_static(b"abcdef");
+
+    let storage = initialize();
+    let blob_service = storage.blob_service_client();
+    let container = storage.container_client(container_name);
+    let blob = container.blob_client(blob_name);
+
+    if blob_service
+        .list_containers()
+        .into_stream()
+        .next()
+        .await
+        .unwrap()
+        .unwrap()
+        .containers
+        .iter()
+        .find(|x| x.name == container_name)
+        .is_none()
+    {
+        container
+            .create()
+            .public_access(PublicAccess::None)
+            .into_future()
+            .await
+            .unwrap();
+    }
+
+    // calculate md5 too!
+    let digest = md5::compute(&data[..]);
+
+    blob.put_block_blob(data)
+        .content_type("text/plain")
+        .hash(digest)
+        .into_future()
+        .await
+        .unwrap();
+
+    trace!("created {:?}", blob_name);
+
+    let snapshot = blob.snapshot().into_future().await.unwrap().snapshot;
+
+    trace!("crated snapshot: {:?} of {:?}", snapshot, blob_name);
+
+    // Clean-up test
+    container.delete().into_future().await.unwrap();
+    trace!("container {} deleted!", container_name);
+}
+
+#[tokio::test]
 async fn set_blobtier() {
     let blob_name: &'static str = "m9";
     let container_name: &'static str = "rust-set-blobtier-test";

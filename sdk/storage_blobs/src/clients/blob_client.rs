@@ -88,7 +88,7 @@ impl BlobClient {
         SetBlobTierBuilder::new(self.clone(), access_tier)
     }
 
-    /// Set an expiry time on an existing blob.  
+    /// Set an expiry time on an existing blob.
     ///
     /// This operation is only allowed on Hierarchical Namespace enabled
     /// accounts.
@@ -248,6 +248,11 @@ impl BlobClient {
             }
         }
         result
+    }
+
+    /// Create a blob snapshot
+    pub fn snapshot(&self) -> SnapshotBlobBuilder {
+        SnapshotBlobBuilder::new(self.clone())
     }
 
     pub fn blob_name(&self) -> &str {
