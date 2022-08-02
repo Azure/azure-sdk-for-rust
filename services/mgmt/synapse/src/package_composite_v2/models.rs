@@ -953,6 +953,9 @@ pub struct ClusterPrincipalProperties {
     #[doc = "The provisioned state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ResourceProvisioningState>,
+    #[doc = "The service principal object id in AAD (Azure active directory)"]
+    #[serde(rename = "aadObjectId", default, skip_serializing_if = "Option::is_none")]
+    pub aad_object_id: Option<String>,
 }
 impl ClusterPrincipalProperties {
     pub fn new(
@@ -968,6 +971,7 @@ impl ClusterPrincipalProperties {
             tenant_name: None,
             principal_name: None,
             provisioning_state: None,
+            aad_object_id: None,
         }
     }
 }
@@ -1756,6 +1760,9 @@ pub struct DatabasePrincipalProperties {
     #[doc = "The provisioned state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ResourceProvisioningState>,
+    #[doc = "The service principal object id in AAD (Azure active directory)"]
+    #[serde(rename = "aadObjectId", default, skip_serializing_if = "Option::is_none")]
+    pub aad_object_id: Option<String>,
 }
 impl DatabasePrincipalProperties {
     pub fn new(
@@ -1771,6 +1778,7 @@ impl DatabasePrincipalProperties {
             tenant_name: None,
             principal_name: None,
             provisioning_state: None,
+            aad_object_id: None,
         }
     }
 }

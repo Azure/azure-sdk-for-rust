@@ -1181,6 +1181,19 @@ pub mod backups {
                 backup_name: backup_name.into(),
             }
         }
+        pub fn list_by_server(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            server_name: impl Into<String>,
+        ) -> list_by_server::Builder {
+            list_by_server::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                server_name: server_name.into(),
+            }
+        }
     }
     pub mod get {
         use super::models;
@@ -1236,97 +1249,82 @@ pub mod backups {
             }
         }
     }
-}
-impl Client {
-    pub fn backup_list_by_server(
-        &self,
-        subscription_id: impl Into<String>,
-        resource_group_name: impl Into<String>,
-        server_name: impl Into<String>,
-    ) -> backup_list_by_server::Builder {
-        backup_list_by_server::Builder {
-            client: self.clone(),
-            subscription_id: subscription_id.into(),
-            resource_group_name: resource_group_name.into(),
-            server_name: server_name.into(),
+    pub mod list_by_server {
+        use super::models;
+        type Response = models::ServerBackupListResult;
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) server_name: String,
         }
-    }
-}
-pub mod backup_list_by_server {
-    use super::models;
-    type Response = models::ServerBackupListResult;
-    #[derive(Clone)]
-    pub struct Builder {
-        pub(crate) client: super::Client,
-        pub(crate) subscription_id: String,
-        pub(crate) resource_group_name: String,
-        pub(crate) server_name: String,
-    }
-    impl Builder {
-        pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-            let make_request = move |continuation: Option<String>| {
-                let this = self.clone();
-                async move {
-                    let mut url = azure_core::Url::parse(&format!(
-                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/backups",
-                        this.client.endpoint(),
-                        &this.subscription_id,
-                        &this.resource_group_name,
-                        &this.server_name
-                    ))?;
-                    let rsp = match continuation {
-                        Some(value) => {
-                            url.set_path("");
-                            url = url.join(&value)?;
-                            let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                            let credential = this.client.token_credential();
-                            let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
-                            let has_api_version_already =
-                                req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                            if !has_api_version_already {
+        impl Builder {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
+                    let this = self.clone();
+                    async move {
+                        let mut url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBforPostgreSQL/flexibleServers/{}/backups",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.server_name
+                        ))?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-01-20-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
                                 req.url_mut()
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2022-01-20-preview");
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
                             }
-                            let req_body = azure_core::EMPTY_BODY;
-                            req.set_body(req_body);
-                            this.client.send(&mut req).await?
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ServerBackupListResult = serde_json::from_slice(&rsp_body)?;
+                                Ok(rsp_value)
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
                         }
-                        None => {
-                            let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                            let credential = this.client.token_credential();
-                            let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
-                            req.url_mut()
-                                .query_pairs_mut()
-                                .append_pair(azure_core::query_param::API_VERSION, "2022-01-20-preview");
-                            let req_body = azure_core::EMPTY_BODY;
-                            req.set_body(req_body);
-                            this.client.send(&mut req).await?
-                        }
-                    };
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                            let rsp_value: models::ServerBackupListResult = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
                     }
-                }
-            };
-            azure_core::Pageable::new(make_request)
+                };
+                azure_core::Pageable::new(make_request)
+            }
         }
     }
 }
