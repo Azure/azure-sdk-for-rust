@@ -10,7 +10,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(1)
         .expect("Please pass the configuration id as the first parameter");
 
-    let service_client = ServiceClient::from_connection_string(iot_hub_connection_string, 3600)?;
+    let service_client = ServiceClient::new_connection_string(iot_hub_connection_string, 3600)?;
 
     println!("Creating a new configuration with id: {}", configuration_id);
 

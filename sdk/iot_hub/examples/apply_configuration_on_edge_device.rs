@@ -56,7 +56,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         }
     });
 
-    let service_client = ServiceClient::from_connection_string(iot_hub_connection_string, 3600)?;
+    let service_client = ServiceClient::new_connection_string(iot_hub_connection_string, 3600)?;
     service_client
         .apply_on_edge_device(device_id)
         .modules_content(modules_content)

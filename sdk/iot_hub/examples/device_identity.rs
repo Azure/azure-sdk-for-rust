@@ -13,7 +13,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .expect("Please pass the device id as the first parameter");
 
     println!("Getting device twin for device '{}'", device_id);
-    let service_client = ServiceClient::from_connection_string(iot_hub_connection_string, 3600)?;
+    let service_client = ServiceClient::new_connection_string(iot_hub_connection_string, 3600)?;
     let device = service_client
         .create_device_identity(
             &device_id,

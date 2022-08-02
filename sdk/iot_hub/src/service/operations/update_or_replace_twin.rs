@@ -29,7 +29,7 @@ impl UpdateOrReplaceTwinBuilder {
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     /// use azure_iot_hub::service::ServiceClient;
     ///
-    /// let iot_hub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let iot_hub = ServiceClient::new_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let twin = iot_hub.update_device_twin("some-device")
     ///                  .tag("TagName", "TagValue")
     ///                  .tag("AnotherTag", "WithAnotherValue")
@@ -50,7 +50,7 @@ impl UpdateOrReplaceTwinBuilder {
     /// use azure_iot_hub::service::ServiceClient;
     ///
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// let iot_hub = ServiceClient::from_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let iot_hub = ServiceClient::new_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let twin = iot_hub.update_device_twin("some-device")
     ///              .tag("TagName", "TagValue")
     ///              .desired_properties(serde_json::json!({"PropertyName": "PropertyValue"}))

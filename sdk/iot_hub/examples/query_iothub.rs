@@ -11,7 +11,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let query = "SELECT * FROM devices";
     println!("Invoking query '{}' on the IoT Hub", query);
 
-    let service_client = ServiceClient::from_connection_string(iot_hub_connection_string, 3600)?;
+    let service_client = ServiceClient::new_connection_string(iot_hub_connection_string, 3600)?;
 
     let response = service_client
         .query(query)

@@ -17,7 +17,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("Updating device twin for device: {}", device_id);
 
-    let service_client = ServiceClient::from_connection_string(iot_hub_connection_string, 3600)?;
+    let service_client = ServiceClient::new_connection_string(iot_hub_connection_string, 3600)?;
     let updated_twin = service_client
         .update_device_twin(device_id)
         .desired_properties(serde_json::from_str(&payload)?)
