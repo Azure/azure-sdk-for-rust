@@ -336,6 +336,11 @@ impl StorageClient {
         }
     }
 
+    pub fn with_options(mut self, options: StorageOptions) -> Self {
+        self.pipeline = new_pipeline_from_options(options, self.storage_credentials.clone());
+        self
+    }
+
     pub fn blob_storage_url(&self) -> &Url {
         &self.blob_storage_url
     }
@@ -543,6 +548,11 @@ pub struct StorageOptions {
 impl StorageOptions {
     fn new() -> StorageOptions {
         Self::default()
+    }
+
+    setters! {
+        options: ClientOptions => options,
+        timeout_policy: TimeoutPolicy => timeout_policy,
     }
 
     pub fn set_timeout(&mut self, default_timeout: Timeout) {
