@@ -4,6 +4,37 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ArmIdentity {
+    #[doc = "Principal Id"]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "Tenant Id"]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "Identity type. Only allowed values are SystemAssigned and UserAssigned. Comma separated if both for ex: SystemAssigned,UserAssigned"]
+    #[serde(rename = "identityType", default, skip_serializing_if = "Option::is_none")]
+    pub identity_type: Option<String>,
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<serde_json::Value>,
+}
+impl ArmIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ArmUserIdentity {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
+}
+impl ArmUserIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The JSON-serialized X509 Certificate."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateBodyDescription {
@@ -169,6 +200,21 @@ impl CloudToDeviceProperties {
         Self::default()
     }
 }
+#[doc = "The encryption properties for the IoT hub."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EncryptionPropertiesDescription {
+    #[doc = "The source of the key."]
+    #[serde(rename = "keySource", default, skip_serializing_if = "Option::is_none")]
+    pub key_source: Option<String>,
+    #[doc = "The properties of the KeyVault key."]
+    #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Vec::is_empty")]
+    pub key_vault_properties: Vec<KeyVaultKeyProperties>,
+}
+impl EncryptionPropertiesDescription {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The health data for an endpoint"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointHealthData {
@@ -178,6 +224,18 @@ pub struct EndpointHealthData {
     #[doc = "Health statuses have following meanings. The 'healthy' status shows that the endpoint is accepting messages as expected. The 'unhealthy' status shows that the endpoint is not accepting messages as expected and IoT Hub is retrying to send data to this endpoint. The status of an unhealthy endpoint will be updated to healthy when IoT Hub has established an eventually consistent state of health. The 'dead' status shows that the endpoint is not accepting messages, after IoT Hub retried sending messages for the retrial period. See IoT Hub metrics to identify errors and monitor issues with endpoints. The 'unknown' status shows that the IoT Hub has not established a connection with the endpoint. No messages have been delivered to or rejected from this endpoint"]
     #[serde(rename = "healthStatus", default, skip_serializing_if = "Option::is_none")]
     pub health_status: Option<endpoint_health_data::HealthStatus>,
+    #[doc = "Last error obtained when a message failed to be delivered to iot hub"]
+    #[serde(rename = "lastKnownError", default, skip_serializing_if = "Option::is_none")]
+    pub last_known_error: Option<String>,
+    #[doc = "Time at which the last known error occurred"]
+    #[serde(rename = "lastKnownErrorTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_known_error_time: Option<String>,
+    #[doc = "Last time iot hub successfully sent a message to the endpoint"]
+    #[serde(rename = "lastSuccessfulSendAttemptTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_successful_send_attempt_time: Option<String>,
+    #[doc = "Last time iot hub tried to send a message to the endpoint"]
+    #[serde(rename = "lastSendAttemptTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_send_attempt_time: Option<String>,
 }
 impl EndpointHealthData {
     pub fn new() -> Self {
@@ -194,6 +252,8 @@ pub mod endpoint_health_data {
         Unknown,
         #[serde(rename = "healthy")]
         Healthy,
+        #[serde(rename = "degraded")]
+        Degraded,
         #[serde(rename = "unhealthy")]
         Unhealthy,
         #[serde(rename = "dead")]
@@ -225,8 +285,9 @@ pub mod endpoint_health_data {
             match self {
                 Self::Unknown => serializer.serialize_unit_variant("HealthStatus", 0u32, "unknown"),
                 Self::Healthy => serializer.serialize_unit_variant("HealthStatus", 1u32, "healthy"),
-                Self::Unhealthy => serializer.serialize_unit_variant("HealthStatus", 2u32, "unhealthy"),
-                Self::Dead => serializer.serialize_unit_variant("HealthStatus", 3u32, "dead"),
+                Self::Degraded => serializer.serialize_unit_variant("HealthStatus", 2u32, "degraded"),
+                Self::Unhealthy => serializer.serialize_unit_variant("HealthStatus", 3u32, "unhealthy"),
+                Self::Dead => serializer.serialize_unit_variant("HealthStatus", 4u32, "dead"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -300,6 +361,18 @@ impl ErrorDetails {
         Self::default()
     }
 }
+#[doc = "The EventHub consumer group."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EventHubConsumerGroupBodyDescription {
+    #[doc = "The EventHub consumer group name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<EventHubConsumerGroupName>,
+}
+impl EventHubConsumerGroupBodyDescription {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The properties of the EventHubConsumerGroupInfo object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubConsumerGroupInfo {
@@ -320,6 +393,18 @@ pub struct EventHubConsumerGroupInfo {
     pub etag: Option<String>,
 }
 impl EventHubConsumerGroupInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The EventHub consumer group name."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EventHubConsumerGroupName {
+    #[doc = "EventHub consumer group name"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+impl EventHubConsumerGroupName {
     pub fn new() -> Self {
         Self::default()
     }
@@ -378,12 +463,62 @@ pub struct ExportDevicesRequest {
     #[doc = "The value indicating whether keys should be excluded during export."]
     #[serde(rename = "excludeKeys")]
     pub exclude_keys: bool,
+    #[doc = "The name of the blob that will be created in the provided output blob container. This blob will contain the exported device registry information for the IoT Hub."]
+    #[serde(rename = "exportBlobName", default, skip_serializing_if = "Option::is_none")]
+    pub export_blob_name: Option<String>,
+    #[doc = "Specifies authentication type being used for connecting to the storage account."]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<export_devices_request::AuthenticationType>,
 }
 impl ExportDevicesRequest {
     pub fn new(export_blob_container_uri: String, exclude_keys: bool) -> Self {
         Self {
             export_blob_container_uri,
             exclude_keys,
+            export_blob_name: None,
+            authentication_type: None,
+        }
+    }
+}
+pub mod export_devices_request {
+    use super::*;
+    #[doc = "Specifies authentication type being used for connecting to the storage account."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AuthenticationType")]
+    pub enum AuthenticationType {
+        #[serde(rename = "keyBased")]
+        KeyBased,
+        #[serde(rename = "identityBased")]
+        IdentityBased,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AuthenticationType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AuthenticationType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AuthenticationType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::KeyBased => serializer.serialize_unit_variant("AuthenticationType", 0u32, "keyBased"),
+                Self::IdentityBased => serializer.serialize_unit_variant("AuthenticationType", 1u32, "identityBased"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
         }
     }
 }
@@ -484,6 +619,49 @@ impl FeedbackProperties {
         Self::default()
     }
 }
+#[doc = "The group information for creating a private endpoint on an IotHub"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GroupIdInformation {
+    #[doc = "The resource identifier."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The resource name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The resource type."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "The properties for a group information object"]
+    pub properties: GroupIdInformationProperties,
+}
+impl GroupIdInformation {
+    pub fn new(properties: GroupIdInformationProperties) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            properties,
+        }
+    }
+}
+#[doc = "The properties for a group information object"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GroupIdInformationProperties {
+    #[doc = "The group id"]
+    #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
+    pub group_id: Option<String>,
+    #[doc = "The required members for a specific group id"]
+    #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
+    pub required_members: Vec<String>,
+    #[doc = "The required DNS zones for a specific group id"]
+    #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
+    pub required_zone_names: Vec<String>,
+}
+impl GroupIdInformationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Use to provide parameters when requesting an import of all devices in the hub."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImportDevicesRequest {
@@ -493,12 +671,66 @@ pub struct ImportDevicesRequest {
     #[doc = "The output blob container URI."]
     #[serde(rename = "outputBlobContainerUri")]
     pub output_blob_container_uri: String,
+    #[doc = "The blob name to be used when importing from the provided input blob container."]
+    #[serde(rename = "inputBlobName", default, skip_serializing_if = "Option::is_none")]
+    pub input_blob_name: Option<String>,
+    #[doc = "The blob name to use for storing the status of the import job."]
+    #[serde(rename = "outputBlobName", default, skip_serializing_if = "Option::is_none")]
+    pub output_blob_name: Option<String>,
+    #[doc = "Specifies authentication type being used for connecting to the storage account."]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<import_devices_request::AuthenticationType>,
 }
 impl ImportDevicesRequest {
     pub fn new(input_blob_container_uri: String, output_blob_container_uri: String) -> Self {
         Self {
             input_blob_container_uri,
             output_blob_container_uri,
+            input_blob_name: None,
+            output_blob_name: None,
+            authentication_type: None,
+        }
+    }
+}
+pub mod import_devices_request {
+    use super::*;
+    #[doc = "Specifies authentication type being used for connecting to the storage account."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AuthenticationType")]
+    pub enum AuthenticationType {
+        #[serde(rename = "keyBased")]
+        KeyBased,
+        #[serde(rename = "identityBased")]
+        IdentityBased,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AuthenticationType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AuthenticationType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AuthenticationType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::KeyBased => serializer.serialize_unit_variant("AuthenticationType", 0u32, "keyBased"),
+                Self::IdentityBased => serializer.serialize_unit_variant("AuthenticationType", 1u32, "identityBased"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
         }
     }
 }
@@ -546,6 +778,8 @@ pub struct IotHubDescription {
     pub properties: Option<IotHubProperties>,
     #[doc = "Information about the SKU of the IoT hub."]
     pub sku: IotHubSkuInfo,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<ArmIdentity>,
 }
 impl IotHubDescription {
     pub fn new(resource: Resource, sku: IotHubSkuInfo) -> Self {
@@ -554,6 +788,7 @@ impl IotHubDescription {
             etag: None,
             properties: None,
             sku,
+            identity: None,
         }
     }
 }
@@ -581,10 +816,10 @@ impl IotHubDescriptionListResult {
 #[doc = "Public representation of one of the locations where a resource is provisioned."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IotHubLocationDescription {
-    #[doc = "Azure Geo Regions"]
+    #[doc = "The name of the Azure region"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[doc = "Specific Role assigned to this location"]
+    #[doc = "The role of the region, can be either primary or secondary. The primary region is where the IoT hub is currently provisioned. The secondary region is the Azure disaster recovery (DR) paired region and also the region where the IoT hub can failover to."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<iot_hub_location_description::Role>,
 }
@@ -595,7 +830,7 @@ impl IotHubLocationDescription {
 }
 pub mod iot_hub_location_description {
     use super::*;
-    #[doc = "Specific Role assigned to this location"]
+    #[doc = "The role of the region, can be either primary or secondary. The primary region is where the IoT hub is currently provisioned. The secondary region is the Azure disaster recovery (DR) paired region and also the region where the IoT hub can failover to."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Role")]
     pub enum Role {
@@ -668,9 +903,18 @@ pub struct IotHubProperties {
     #[doc = "The shared access policies you can use to secure a connection to the IoT hub."]
     #[serde(rename = "authorizationPolicies", default, skip_serializing_if = "Vec::is_empty")]
     pub authorization_policies: Vec<SharedAccessSignatureAuthorizationRule>,
+    #[doc = "Whether requests from Public Network are allowed"]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    pub public_network_access: Option<iot_hub_properties::PublicNetworkAccess>,
     #[doc = "The IP filter rules."]
     #[serde(rename = "ipFilterRules", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_filter_rules: Vec<IpFilterRule>,
+    #[doc = "Specifies the minimum TLS version to support for this hub. Can be set to \"1.2\" to have clients that use a TLS version below 1.2 to be rejected."]
+    #[serde(rename = "minTlsVersion", default, skip_serializing_if = "Option::is_none")]
+    pub min_tls_version: Option<String>,
+    #[doc = "Private endpoint connections created on this IotHub"]
+    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "The provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
@@ -707,6 +951,9 @@ pub struct IotHubProperties {
     #[doc = "The capabilities and features enabled for the IoT hub."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub features: Option<iot_hub_properties::Features>,
+    #[doc = "The encryption properties for the IoT hub."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub encryption: Option<EncryptionPropertiesDescription>,
     #[doc = "Primary and secondary location for iot hub"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub locations: Vec<IotHubLocationDescription>,
@@ -718,6 +965,43 @@ impl IotHubProperties {
 }
 pub mod iot_hub_properties {
     use super::*;
+    #[doc = "Whether requests from Public Network are allowed"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "PublicNetworkAccess")]
+    pub enum PublicNetworkAccess {
+        Enabled,
+        Disabled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for PublicNetworkAccess {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for PublicNetworkAccess {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for PublicNetworkAccess {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Enabled => serializer.serialize_unit_variant("PublicNetworkAccess", 0u32, "Enabled"),
+                Self::Disabled => serializer.serialize_unit_variant("PublicNetworkAccess", 1u32, "Disabled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
     #[doc = "The device streams properties of iothub."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct DeviceStreams {
@@ -1092,6 +1376,33 @@ impl JobResponseListResult {
         Self::default()
     }
 }
+#[doc = "The properties of the KeyVault identity."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct KekIdentity {
+    #[doc = "The user assigned identity."]
+    #[serde(rename = "userAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identity: Option<String>,
+}
+impl KekIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The properties of the KeyVault key."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct KeyVaultKeyProperties {
+    #[doc = "The identifier of the key."]
+    #[serde(rename = "keyIdentifier", default, skip_serializing_if = "Option::is_none")]
+    pub key_identifier: Option<String>,
+    #[doc = "The properties of the KeyVault identity."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<KekIdentity>,
+}
+impl KeyVaultKeyProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Routes that matched"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MatchedRoute {
@@ -1206,6 +1517,138 @@ impl azure_core::Continuable for OperationListResult {
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "The private endpoint property of a private endpoint connection"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PrivateEndpoint {
+    #[doc = "The resource identifier."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+impl PrivateEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The private endpoint connection of an IotHub"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnection {
+    #[doc = "The resource identifier."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The resource name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The resource type."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "The properties of a private endpoint connection"]
+    pub properties: PrivateEndpointConnectionProperties,
+}
+impl PrivateEndpointConnection {
+    pub fn new(properties: PrivateEndpointConnectionProperties) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            properties,
+        }
+    }
+}
+#[doc = "The properties of a private endpoint connection"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnectionProperties {
+    #[doc = "The private endpoint property of a private endpoint connection"]
+    #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub private_endpoint: Option<PrivateEndpoint>,
+    #[doc = "The current state of a private endpoint connection"]
+    #[serde(rename = "privateLinkServiceConnectionState")]
+    pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
+}
+impl PrivateEndpointConnectionProperties {
+    pub fn new(private_link_service_connection_state: PrivateLinkServiceConnectionState) -> Self {
+        Self {
+            private_endpoint: None,
+            private_link_service_connection_state,
+        }
+    }
+}
+pub type PrivateEndpointConnectionsList = Vec<PrivateEndpointConnection>;
+#[doc = "The available private link resources for an IotHub"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PrivateLinkResources {
+    #[doc = "The list of available private link resources for an IotHub"]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<GroupIdInformation>,
+}
+impl PrivateLinkResources {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The current state of a private endpoint connection"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkServiceConnectionState {
+    #[doc = "The status of a private endpoint connection"]
+    pub status: private_link_service_connection_state::Status,
+    #[doc = "The description for the current state of a private endpoint connection"]
+    pub description: String,
+    #[doc = "Actions required for a private endpoint connection"]
+    #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
+    pub actions_required: Option<String>,
+}
+impl PrivateLinkServiceConnectionState {
+    pub fn new(status: private_link_service_connection_state::Status, description: String) -> Self {
+        Self {
+            status,
+            description,
+            actions_required: None,
+        }
+    }
+}
+pub mod private_link_service_connection_state {
+    use super::*;
+    #[doc = "The status of a private endpoint connection"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Status")]
+    pub enum Status {
+        Pending,
+        Approved,
+        Rejected,
+        Disconnected,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Status {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Status {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Status {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Pending => serializer.serialize_unit_variant("Status", 0u32, "Pending"),
+                Self::Approved => serializer.serialize_unit_variant("Status", 1u32, "Approved"),
+                Self::Rejected => serializer.serialize_unit_variant("Status", 2u32, "Rejected"),
+                Self::Disconnected => serializer.serialize_unit_variant("Status", 3u32, "Disconnected"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "Identity registry statistics."]
@@ -1445,9 +1888,21 @@ impl RoutingEndpoints {
 #[doc = "The properties related to an event hub endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoutingEventHubProperties {
+    #[doc = "Id of the event hub endpoint"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     #[doc = "The connection string of the event hub endpoint. "]
-    #[serde(rename = "connectionString")]
-    pub connection_string: String,
+    #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
+    pub connection_string: Option<String>,
+    #[doc = "The url of the event hub endpoint. It must include the protocol sb://"]
+    #[serde(rename = "endpointUri", default, skip_serializing_if = "Option::is_none")]
+    pub endpoint_uri: Option<String>,
+    #[doc = "Event hub name on the event hub namespace"]
+    #[serde(rename = "entityPath", default, skip_serializing_if = "Option::is_none")]
+    pub entity_path: Option<String>,
+    #[doc = "Method used to authenticate against the event hub endpoint"]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<routing_event_hub_properties::AuthenticationType>,
     #[doc = "The name that identifies this endpoint. The name can only include alphanumeric characters, periods, underscores, hyphens and has a maximum length of 64 characters. The following names are reserved:  events, fileNotifications, $default. Endpoint names must be unique across endpoint types."]
     pub name: String,
     #[doc = "The subscription identifier of the event hub endpoint."]
@@ -1458,12 +1913,58 @@ pub struct RoutingEventHubProperties {
     pub resource_group: Option<String>,
 }
 impl RoutingEventHubProperties {
-    pub fn new(connection_string: String, name: String) -> Self {
+    pub fn new(name: String) -> Self {
         Self {
-            connection_string,
+            id: None,
+            connection_string: None,
+            endpoint_uri: None,
+            entity_path: None,
+            authentication_type: None,
             name,
             subscription_id: None,
             resource_group: None,
+        }
+    }
+}
+pub mod routing_event_hub_properties {
+    use super::*;
+    #[doc = "Method used to authenticate against the event hub endpoint"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AuthenticationType")]
+    pub enum AuthenticationType {
+        #[serde(rename = "keyBased")]
+        KeyBased,
+        #[serde(rename = "identityBased")]
+        IdentityBased,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AuthenticationType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AuthenticationType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AuthenticationType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::KeyBased => serializer.serialize_unit_variant("AuthenticationType", 0u32, "keyBased"),
+                Self::IdentityBased => serializer.serialize_unit_variant("AuthenticationType", 1u32, "identityBased"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
         }
     }
 }
@@ -1497,7 +1998,7 @@ pub struct RoutingProperties {
     #[doc = "The properties of the fallback route. IoT Hub uses these properties when it routes messages to the fallback endpoint."]
     #[serde(rename = "fallbackRoute", default, skip_serializing_if = "Option::is_none")]
     pub fallback_route: Option<FallbackRouteProperties>,
-    #[doc = "The list of user-provided enrichments that the IoT hub applies to messages to be delivered to built-in and custom endpoints. See: https://aka.ms/iotmsgenrich"]
+    #[doc = "The list of user-provided enrichments that the IoT hub applies to messages to be delivered to built-in and custom endpoints. See: https://aka.ms/telemetryoneventgrid"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub enrichments: Vec<EnrichmentProperties>,
 }
@@ -1509,9 +2010,21 @@ impl RoutingProperties {
 #[doc = "The properties related to service bus queue endpoint types."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoutingServiceBusQueueEndpointProperties {
+    #[doc = "Id of the service bus queue endpoint"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     #[doc = "The connection string of the service bus queue endpoint."]
-    #[serde(rename = "connectionString")]
-    pub connection_string: String,
+    #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
+    pub connection_string: Option<String>,
+    #[doc = "The url of the service bus queue endpoint. It must include the protocol sb://"]
+    #[serde(rename = "endpointUri", default, skip_serializing_if = "Option::is_none")]
+    pub endpoint_uri: Option<String>,
+    #[doc = "Queue name on the service bus namespace"]
+    #[serde(rename = "entityPath", default, skip_serializing_if = "Option::is_none")]
+    pub entity_path: Option<String>,
+    #[doc = "Method used to authenticate against the service bus queue endpoint"]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<routing_service_bus_queue_endpoint_properties::AuthenticationType>,
     #[doc = "The name that identifies this endpoint. The name can only include alphanumeric characters, periods, underscores, hyphens and has a maximum length of 64 characters. The following names are reserved:  events, fileNotifications, $default. Endpoint names must be unique across endpoint types. The name need not be the same as the actual queue name."]
     pub name: String,
     #[doc = "The subscription identifier of the service bus queue endpoint."]
@@ -1522,21 +2035,79 @@ pub struct RoutingServiceBusQueueEndpointProperties {
     pub resource_group: Option<String>,
 }
 impl RoutingServiceBusQueueEndpointProperties {
-    pub fn new(connection_string: String, name: String) -> Self {
+    pub fn new(name: String) -> Self {
         Self {
-            connection_string,
+            id: None,
+            connection_string: None,
+            endpoint_uri: None,
+            entity_path: None,
+            authentication_type: None,
             name,
             subscription_id: None,
             resource_group: None,
         }
     }
 }
+pub mod routing_service_bus_queue_endpoint_properties {
+    use super::*;
+    #[doc = "Method used to authenticate against the service bus queue endpoint"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AuthenticationType")]
+    pub enum AuthenticationType {
+        #[serde(rename = "keyBased")]
+        KeyBased,
+        #[serde(rename = "identityBased")]
+        IdentityBased,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AuthenticationType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AuthenticationType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AuthenticationType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::KeyBased => serializer.serialize_unit_variant("AuthenticationType", 0u32, "keyBased"),
+                Self::IdentityBased => serializer.serialize_unit_variant("AuthenticationType", 1u32, "identityBased"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "The properties related to service bus topic endpoint types."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoutingServiceBusTopicEndpointProperties {
+    #[doc = "Id of the service bus topic endpoint"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     #[doc = "The connection string of the service bus topic endpoint."]
-    #[serde(rename = "connectionString")]
-    pub connection_string: String,
+    #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
+    pub connection_string: Option<String>,
+    #[doc = "The url of the service bus topic endpoint. It must include the protocol sb://"]
+    #[serde(rename = "endpointUri", default, skip_serializing_if = "Option::is_none")]
+    pub endpoint_uri: Option<String>,
+    #[doc = "Queue name on the service bus topic"]
+    #[serde(rename = "entityPath", default, skip_serializing_if = "Option::is_none")]
+    pub entity_path: Option<String>,
+    #[doc = "Method used to authenticate against the service bus topic endpoint"]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<routing_service_bus_topic_endpoint_properties::AuthenticationType>,
     #[doc = "The name that identifies this endpoint. The name can only include alphanumeric characters, periods, underscores, hyphens and has a maximum length of 64 characters. The following names are reserved:  events, fileNotifications, $default. Endpoint names must be unique across endpoint types.  The name need not be the same as the actual topic name."]
     pub name: String,
     #[doc = "The subscription identifier of the service bus topic endpoint."]
@@ -1547,21 +2118,76 @@ pub struct RoutingServiceBusTopicEndpointProperties {
     pub resource_group: Option<String>,
 }
 impl RoutingServiceBusTopicEndpointProperties {
-    pub fn new(connection_string: String, name: String) -> Self {
+    pub fn new(name: String) -> Self {
         Self {
-            connection_string,
+            id: None,
+            connection_string: None,
+            endpoint_uri: None,
+            entity_path: None,
+            authentication_type: None,
             name,
             subscription_id: None,
             resource_group: None,
         }
     }
 }
+pub mod routing_service_bus_topic_endpoint_properties {
+    use super::*;
+    #[doc = "Method used to authenticate against the service bus topic endpoint"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AuthenticationType")]
+    pub enum AuthenticationType {
+        #[serde(rename = "keyBased")]
+        KeyBased,
+        #[serde(rename = "identityBased")]
+        IdentityBased,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AuthenticationType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AuthenticationType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AuthenticationType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::KeyBased => serializer.serialize_unit_variant("AuthenticationType", 0u32, "keyBased"),
+                Self::IdentityBased => serializer.serialize_unit_variant("AuthenticationType", 1u32, "identityBased"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "The properties related to a storage container endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoutingStorageContainerProperties {
+    #[doc = "Id of the storage container endpoint"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     #[doc = "The connection string of the storage account."]
-    #[serde(rename = "connectionString")]
-    pub connection_string: String,
+    #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
+    pub connection_string: Option<String>,
+    #[doc = "The url of the storage endpoint. It must include the protocol https://"]
+    #[serde(rename = "endpointUri", default, skip_serializing_if = "Option::is_none")]
+    pub endpoint_uri: Option<String>,
+    #[doc = "Method used to authenticate against the storage endpoint"]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<routing_storage_container_properties::AuthenticationType>,
     #[doc = "The name that identifies this endpoint. The name can only include alphanumeric characters, periods, underscores, hyphens and has a maximum length of 64 characters. The following names are reserved:  events, fileNotifications, $default. Endpoint names must be unique across endpoint types."]
     pub name: String,
     #[doc = "The subscription identifier of the storage account."]
@@ -1587,9 +2213,12 @@ pub struct RoutingStorageContainerProperties {
     pub encoding: Option<routing_storage_container_properties::Encoding>,
 }
 impl RoutingStorageContainerProperties {
-    pub fn new(connection_string: String, name: String, container_name: String) -> Self {
+    pub fn new(name: String, container_name: String) -> Self {
         Self {
-            connection_string,
+            id: None,
+            connection_string: None,
+            endpoint_uri: None,
+            authentication_type: None,
             name,
             subscription_id: None,
             resource_group: None,
@@ -1603,6 +2232,45 @@ impl RoutingStorageContainerProperties {
 }
 pub mod routing_storage_container_properties {
     use super::*;
+    #[doc = "Method used to authenticate against the storage endpoint"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AuthenticationType")]
+    pub enum AuthenticationType {
+        #[serde(rename = "keyBased")]
+        KeyBased,
+        #[serde(rename = "identityBased")]
+        IdentityBased,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AuthenticationType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AuthenticationType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AuthenticationType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::KeyBased => serializer.serialize_unit_variant("AuthenticationType", 0u32, "keyBased"),
+                Self::IdentityBased => serializer.serialize_unit_variant("AuthenticationType", 1u32, "identityBased"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
     #[doc = "Encoding that is used to serialize messages to blobs. Supported values are 'avro', 'avrodeflate', and 'JSON'. Default value is 'avro'."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Encoding {
@@ -1734,6 +2402,9 @@ pub struct StorageEndpointProperties {
     #[doc = "The name of the root container where you upload files. The container need not exist but should be creatable using the connectionString specified."]
     #[serde(rename = "containerName")]
     pub container_name: String,
+    #[doc = "Specifies authentication type being used for connecting to the storage account."]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<storage_endpoint_properties::AuthenticationType>,
 }
 impl StorageEndpointProperties {
     pub fn new(connection_string: String, container_name: String) -> Self {
@@ -1741,6 +2412,49 @@ impl StorageEndpointProperties {
             sas_ttl_as_iso8601: None,
             connection_string,
             container_name,
+            authentication_type: None,
+        }
+    }
+}
+pub mod storage_endpoint_properties {
+    use super::*;
+    #[doc = "Specifies authentication type being used for connecting to the storage account."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AuthenticationType")]
+    pub enum AuthenticationType {
+        #[serde(rename = "keyBased")]
+        KeyBased,
+        #[serde(rename = "identityBased")]
+        IdentityBased,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AuthenticationType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AuthenticationType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AuthenticationType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::KeyBased => serializer.serialize_unit_variant("AuthenticationType", 0u32, "keyBased"),
+                Self::IdentityBased => serializer.serialize_unit_variant("AuthenticationType", 1u32, "identityBased"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
         }
     }
 }
