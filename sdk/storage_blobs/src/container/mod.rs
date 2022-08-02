@@ -1,4 +1,5 @@
 use azure_core::{
+    date,
     error::{Error, ErrorKind, ResultExt},
     headers::{self, AsHeaders, Headers},
 };
@@ -12,8 +13,8 @@ use azure_core::{
     LeaseDuration, LeaseState, LeaseStatus,
 };
 use azure_storage::parsing_xml::{cast_must, cast_optional, traverse};
-use chrono::{DateTime, Utc};
 use std::collections::HashMap;
+use time::OffsetDateTime;
 use xml::{Element, Xml};
 
 create_enum!(
@@ -45,7 +46,7 @@ pub(crate) fn public_access_from_header(header_map: &Headers) -> azure_core::Res
 #[derive(Debug, Clone)]
 pub struct Container {
     pub name: String,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: OffsetDateTime,
     pub e_tag: String,
     pub lease_status: LeaseStatus,
     pub lease_state: LeaseState,
@@ -66,7 +67,7 @@ impl Container {
     pub fn new(name: &str) -> Container {
         Container {
             name: name.to_owned(),
-            last_modified: Utc::now(),
+            last_modified: OffsetDateTime::now_utc(),
             e_tag: "".to_owned(),
             lease_status: LeaseStatus::Unlocked,
             lease_state: LeaseState::Available,
@@ -86,9 +87,7 @@ impl Container {
         NAME: Into<String>,
     {
         let last_modified = headers.get_str(&headers::LAST_MODIFIED)?;
-        let last_modified =
-            DateTime::parse_from_rfc2822(last_modified).map_kind(ErrorKind::DataConversion)?;
-        let last_modified = DateTime::from_utc(last_modified.naive_utc(), Utc);
+        let last_modified = date::parse_rfc1123(last_modified)?;
 
         let e_tag = headers.get_as(&headers::ETAG)?;
 

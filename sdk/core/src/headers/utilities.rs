@@ -1,32 +1,8 @@
 use super::*;
-use crate::error::{Error, ErrorKind};
 use crate::prelude::Continuation;
 use crate::request_options::LeaseId;
-use crate::{RequestId, SessionToken};
-use chrono::{DateTime, FixedOffset, Utc};
-
-pub fn parse_date_from_str(date: &str, fmt: &str) -> crate::Result<DateTime<FixedOffset>> {
-    DateTime::parse_from_str(date, fmt).map_err(|e| {
-        Error::full(
-            ErrorKind::DataConversion,
-            e,
-            format!(
-                "failed to parse date '{}' with format string {:?}",
-                date, fmt
-            ),
-        )
-    })
-}
-
-pub fn parse_date_from_rfc2822(date: &str) -> crate::Result<DateTime<FixedOffset>> {
-    DateTime::parse_from_rfc2822(date).map_err(|e| {
-        Error::full(
-            ErrorKind::DataConversion,
-            e,
-            format!("failed to parse date '{}' with as rfc2822", date),
-        )
-    })
-}
+use crate::{date, RequestId, SessionToken};
+use time::OffsetDateTime;
 
 pub fn lease_id_from_headers(headers: &Headers) -> crate::Result<LeaseId> {
     headers.get_as(&LEASE_ID)
@@ -42,29 +18,27 @@ pub fn client_request_id_from_headers_optional(headers: &Headers) -> Option<Stri
 
 pub fn last_modified_from_headers_optional(
     headers: &Headers,
-) -> crate::Result<Option<DateTime<Utc>>> {
-    headers.get_optional_as(&LAST_MODIFIED)
+) -> crate::Result<Option<OffsetDateTime>> {
+    headers
+        .get_optional_str(&LAST_MODIFIED)
+        .map(date::parse_rfc1123)
+        .transpose()
 }
 
-pub fn date_from_headers(headers: &Headers) -> crate::Result<DateTime<Utc>> {
-    rfc2822_from_headers_mandatory(headers, &DATE)
+pub fn date_from_headers(headers: &Headers) -> crate::Result<OffsetDateTime> {
+    rfc1123_from_headers_mandatory(headers, &DATE)
 }
 
-pub fn last_modified_from_headers(headers: &Headers) -> crate::Result<DateTime<Utc>> {
-    rfc2822_from_headers_mandatory(headers, &LAST_MODIFIED)
+pub fn last_modified_from_headers(headers: &Headers) -> crate::Result<OffsetDateTime> {
+    rfc1123_from_headers_mandatory(headers, &LAST_MODIFIED)
 }
 
-pub fn rfc2822_from_headers_mandatory(
+pub fn rfc1123_from_headers_mandatory(
     headers: &Headers,
     header_name: &HeaderName,
-) -> crate::Result<DateTime<Utc>> {
+) -> crate::Result<OffsetDateTime> {
     let date = headers.get_str(header_name)?;
-    utc_date_from_rfc2822(date)
-}
-
-pub fn utc_date_from_rfc2822(date: &str) -> crate::Result<DateTime<Utc>> {
-    let date = parse_date_from_rfc2822(date)?;
-    Ok(DateTime::from_utc(date.naive_utc(), Utc))
+    date::parse_rfc1123(date)
 }
 
 pub fn continuation_token_from_headers_optional(

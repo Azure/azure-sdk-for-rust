@@ -4,8 +4,8 @@ use azure_core::{collect_pinned_stream, AppendToUrlQuery, Response as HttpRespon
 use azure_core::{prelude::*, Request};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
-use chrono::{DateTime, Utc};
 use std::convert::TryInto;
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone)]
 pub struct GetFileBuilder {
@@ -79,7 +79,7 @@ azure_core::future!(GetFile);
 pub struct GetFileResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub etag: String,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: OffsetDateTime,
     pub data: Bytes,
     pub content_range: Option<ContentRange>,
 }

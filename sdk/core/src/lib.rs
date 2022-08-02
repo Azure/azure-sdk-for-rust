@@ -14,6 +14,7 @@ mod macros;
 mod bytes_stream;
 mod constants;
 mod context;
+pub mod date;
 pub mod error;
 mod http_client;
 mod models;

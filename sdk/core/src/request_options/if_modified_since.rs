@@ -1,11 +1,14 @@
-use crate::headers::{self, Header};
-use chrono::{DateTime, Utc};
+use crate::{
+    date,
+    headers::{self, Header},
+};
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone, Copy)]
-pub struct IfModifiedSince(DateTime<Utc>);
+pub struct IfModifiedSince(OffsetDateTime);
 
 impl IfModifiedSince {
-    pub fn new(time: DateTime<Utc>) -> Self {
+    pub fn new(time: OffsetDateTime) -> Self {
         Self(time)
     }
 }
@@ -16,12 +19,12 @@ impl Header for IfModifiedSince {
     }
 
     fn value(&self) -> headers::HeaderValue {
-        self.0.to_rfc2822().into()
+        date::to_rfc1123(&self.0).into()
     }
 }
 
-impl From<DateTime<Utc>> for IfModifiedSince {
-    fn from(time: DateTime<Utc>) -> Self {
+impl From<OffsetDateTime> for IfModifiedSince {
+    fn from(time: OffsetDateTime) -> Self {
         Self::new(time)
     }
 }

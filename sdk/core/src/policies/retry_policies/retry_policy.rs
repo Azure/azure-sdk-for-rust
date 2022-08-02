@@ -2,9 +2,9 @@ use crate::error::{Error, ErrorKind, HttpError};
 use crate::policies::{Policy, PolicyResult, Request};
 use crate::sleep::sleep;
 use crate::{Context, StatusCode};
-use chrono::{DateTime, Local};
 use std::sync::Arc;
 use std::time::Duration;
+use time::OffsetDateTime;
 
 /// A retry policy.
 ///
@@ -15,7 +15,7 @@ pub trait RetryPolicy {
     /// Determine if no more retries should be performed.
     ///
     /// Must return true if no more retries should be attempted.
-    fn is_expired(&self, first_retry_time: &mut Option<DateTime<Local>>, retry_count: u32) -> bool;
+    fn is_expired(&self, first_retry_time: &mut Option<OffsetDateTime>, retry_count: u32) -> bool;
     /// Determine how long before the next retry should be attempted.
     fn sleep_duration(&self, retry_count: u32) -> Duration;
 }
@@ -51,7 +51,7 @@ where
             let error = match next[0].send(ctx, request, &next[1..]).await {
                 Ok(response) if response.status().is_success() => {
                     log::trace!(
-                        "Succesful response. Request={:?} response={:?}",
+                        "Successful response. Request={:?} response={:?}",
                         request,
                         response
                     );

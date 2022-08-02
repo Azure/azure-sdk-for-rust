@@ -2,15 +2,14 @@
 #[macro_use]
 extern crate log;
 
+use azure_core::date;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::{blob::BlockListType, container::PublicAccess, prelude::*};
 use bytes::Bytes;
-use chrono::{FixedOffset, Utc};
 use futures::StreamExt;
-use std::{
-    ops::{Add, Deref},
-    time::Duration,
-};
+use std::ops::{Add, Deref};
+use std::time::Duration;
+use time::OffsetDateTime;
 use url::Url;
 use uuid::Uuid;
 
@@ -32,8 +31,8 @@ async fn create_and_delete_container() -> azure_core::Result<()> {
     let _result = container.get_acl().into_future().await?;
 
     // set stored acess policy list
-    let dt_start = Utc::now().with_timezone(&FixedOffset::east(0));
-    let dt_end = dt_start.add(chrono::Duration::days(7));
+    let dt_start = OffsetDateTime::now_utc();
+    let dt_end = dt_start.add(date::duration_from_days(7));
 
     let mut sapl = StoredAccessPolicyList::default();
     sapl.stored_access

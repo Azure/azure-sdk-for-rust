@@ -2,8 +2,8 @@ use crate::core::{
     hmac::sign,
     shared_access_signature::{format_date, format_form, SasProtocol, SasToken},
 };
-use chrono::{DateTime, Utc};
 use std::fmt;
+use time::OffsetDateTime;
 
 /// Service version of the shared access signature ([Azure documentation](https://docs.microsoft.com/rest/api/storageservices/create-service-sas#specifying-the-signed-version-field)).
 #[derive(Copy, Clone)]
@@ -134,9 +134,9 @@ pub struct AccountSharedAccessSignature {
     version: AccountSasVersion,
     resource: AccountSasResource,
     resource_type: AccountSasResourceType,
-    expiry: DateTime<Utc>,
+    expiry: OffsetDateTime,
     permissions: AccountSasPermissions,
-    start: Option<DateTime<Utc>>,
+    start: Option<OffsetDateTime>,
     ip: Option<String>,
     protocol: Option<SasProtocol>,
 }
@@ -147,7 +147,7 @@ impl AccountSharedAccessSignature {
         key: String,
         resource: AccountSasResource,
         resource_type: AccountSasResourceType,
-        expiry: DateTime<Utc>,
+        expiry: OffsetDateTime,
         permissions: AccountSasPermissions,
     ) -> Self {
         Self {
@@ -166,7 +166,7 @@ impl AccountSharedAccessSignature {
 
     setters! {
         version: AccountSasVersion => version,
-        start: DateTime<Utc> => Some(start),
+        start: OffsetDateTime => Some(start),
         ip: String => Some(ip),
         protocol: SasProtocol => Some(protocol),
     }

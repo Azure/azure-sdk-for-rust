@@ -4,8 +4,8 @@ use crate::{
 };
 use azure_core::{headers::*, prelude::*, RequestId};
 use azure_storage::core::{copy_id_from_headers, CopyId};
-use chrono::{DateTime, Utc};
 use std::convert::{TryFrom, TryInto};
+use time::OffsetDateTime;
 use url::Url;
 
 operation! {
@@ -64,11 +64,11 @@ impl CopyBlobBuilder {
 #[derive(Debug, Clone, PartialEq)]
 pub struct CopyBlobResponse {
     pub etag: String,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: OffsetDateTime,
     pub request_id: RequestId,
     pub version: String,
     pub server: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
     pub copy_id: CopyId,
     pub copy_status: CopyStatus,
 }

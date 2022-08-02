@@ -8,7 +8,7 @@ use azure_core::{
     Pageable, RequestId, Response as AzureResponse,
 };
 use azure_storage::xml::read_xml;
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     #[stream]
@@ -97,7 +97,7 @@ pub struct ListBlobsResponse {
     pub next_marker: Option<NextMarker>,
     pub blobs: Blobs,
     pub request_id: RequestId,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]

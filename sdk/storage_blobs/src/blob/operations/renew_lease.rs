@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use azure_core::{headers::*, prelude::*, RequestId};
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     RenewLease,
@@ -31,8 +31,8 @@ impl RenewLeaseBuilder {
 
 azure_storage::response_from_headers!(RenewLeaseResponse,
     etag_from_headers => etag: String,
-    last_modified_from_headers => last_modified: DateTime<Utc>,
+    last_modified_from_headers => last_modified: OffsetDateTime,
     lease_id_from_headers => lease_id: LeaseId,
     request_id_from_headers => request_id: RequestId,
-    date_from_headers => date: DateTime<Utc>
+    date_from_headers => date: OffsetDateTime
 );

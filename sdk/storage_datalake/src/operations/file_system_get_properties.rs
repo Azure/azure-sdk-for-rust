@@ -6,8 +6,8 @@ use azure_core::{
 };
 use azure_core::{prelude::*, Request};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
-use chrono::{DateTime, Utc};
 use std::convert::TryInto;
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone)]
 pub struct GetFileSystemPropertiesBuilder {
@@ -61,7 +61,7 @@ azure_core::future!(GetFileSystemProperties);
 pub struct GetFileSystemPropertiesResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub etag: Etag,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: OffsetDateTime,
     pub namespace_enabled: bool,
     pub properties: Properties,
 }

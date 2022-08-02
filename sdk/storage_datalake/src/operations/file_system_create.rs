@@ -8,8 +8,8 @@ use azure_core::{
     AppendToUrlQuery, Etag, Response as HttpResponse,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
-use chrono::{DateTime, Utc};
 use std::convert::TryInto;
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone)]
 pub struct CreateFileSystemBuilder {
@@ -67,7 +67,7 @@ azure_core::future!(CreateFileSystem);
 pub struct CreateFileSystemResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub etag: Etag,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: OffsetDateTime,
     pub namespace_enabled: bool,
 }
 

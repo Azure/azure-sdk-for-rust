@@ -5,9 +5,9 @@ use crate::resources::document::DocumentAttributes;
 use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use azure_core::{prelude::*, StatusCode};
-use chrono::{DateTime, Utc};
 use serde::Serialize;
 use std::convert::TryFrom;
+use time::OffsetDateTime;
 
 use azure_core::{collect_pinned_stream, Response as HttpResponse};
 
@@ -83,7 +83,7 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
 pub struct CreateDocumentResponse {
     pub document_attributes: DocumentAttributes,
     pub is_update: bool,
-    pub last_state_change: DateTime<Utc>,
+    pub last_state_change: OffsetDateTime,
     pub etag: String,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
@@ -105,7 +105,7 @@ pub struct CreateDocumentResponse {
     pub service_version: String,
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
 }
 
 impl CreateDocumentResponse {

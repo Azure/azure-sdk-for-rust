@@ -6,8 +6,8 @@ use azure_core::prelude::*;
 use azure_core::Request;
 use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
-use chrono::{DateTime, Utc};
 use std::convert::TryInto;
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone)]
 pub struct PutPathBuilder<C>
@@ -93,7 +93,7 @@ azure_core::future!(PutPath);
 pub struct PutPathResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub etag: String,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: OffsetDateTime,
     pub continuation: Option<NextMarker>,
 }
 

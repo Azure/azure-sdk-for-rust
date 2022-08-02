@@ -6,8 +6,8 @@ pub fn main() {
     let access_key =
         std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
-    let start = Utc::now() - Duration::days(1);
-    let end = Utc::now() + Duration::days(1);
+    let start = OffsetDateTime::now_utc() - date::duration_from_days(1);
+    let end = OffsetDateTime::now_utc() + date::duration_from_days(1);
 
     let path =
         Url::parse("https://azureskdforrust.blob.core.windows.net/test/ERRORLOG.1.cut").unwrap();

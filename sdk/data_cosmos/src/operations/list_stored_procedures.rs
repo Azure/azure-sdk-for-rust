@@ -7,7 +7,7 @@ use azure_core::collect_pinned_stream;
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
 use azure_core::prelude::*;
 use azure_core::{Pageable, Response as HttpResponse};
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     #[stream]
@@ -63,7 +63,7 @@ pub struct ListStoredProceduresResponse {
     pub charge: f64,
     pub activity_id: uuid::Uuid,
     pub session_token: String,
-    pub last_change: DateTime<Utc>,
+    pub last_change: OffsetDateTime,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
     pub gateway_version: String,

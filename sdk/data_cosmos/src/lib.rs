@@ -104,10 +104,8 @@ mod consistency_level;
 mod cosmos_entity;
 mod headers;
 mod resource_quota;
-mod time_nonce;
 
 pub(crate) use authorization_policy::AuthorizationPolicy;
-pub(crate) use time_nonce::TimeNonce;
 
 pub use consistency_level::ConsistencyLevel;
 pub use cosmos_entity::CosmosEntity;

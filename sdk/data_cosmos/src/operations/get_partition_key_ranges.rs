@@ -3,7 +3,7 @@ use crate::prelude::*;
 use crate::resources::ResourceType;
 use azure_core::headers::{item_count_from_headers, session_token_from_headers};
 use azure_core::{collect_pinned_stream, prelude::*, Response as HttpResponse};
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     GetPartitionKeyRanges,
@@ -52,7 +52,7 @@ pub struct GetPartitionKeyRangesResponse {
     pub rid: String,
     pub content_location: String,
     pub server: String,
-    pub last_state_change: DateTime<Utc>,
+    pub last_state_change: OffsetDateTime,
     pub lsn: u64,
     pub item_count: u32,
     pub schema_version: String,
@@ -67,7 +67,7 @@ pub struct GetPartitionKeyRangesResponse {
     pub service_version: String,
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
     pub partition_key_ranges: Vec<PartitionKeyRange>,
 }
 

@@ -3,12 +3,13 @@ use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     sleep,
 };
-use chrono::{DateTime, Utc};
 use getset::Getters;
 use log::debug;
 use serde::Deserialize;
 use serde_json::{Map, Value};
 use std::fmt::Debug;
+use std::time::Duration;
+use time::OffsetDateTime;
 
 #[derive(Debug, Deserialize, Getters)]
 #[getset(get = "pub")]
@@ -83,11 +84,13 @@ pub struct Instructions {
 #[serde(rename_all = "camelCase")]
 pub struct Update {
     compatibility: Vec<Map<String, Value>>,
-    created_date_time: DateTime<Utc>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    created_date_time: OffsetDateTime,
     description: Option<String>,
     etag: String,
     friendly_name: Option<String>,
-    imported_date_time: DateTime<Utc>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    imported_date_time: OffsetDateTime,
     installed_criteria: Option<String>,
     instructions: Option<Instructions>,
     is_deployable: bool,
@@ -125,10 +128,12 @@ pub enum OperationStatus {
 #[getset(get = "pub")]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateOperation {
-    pub created_date_time: DateTime<Utc>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub created_date_time: OffsetDateTime,
     pub error: Option<Value>,
     pub etag: String,
-    pub last_action_date_time: DateTime<Utc>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub last_action_date_time: OffsetDateTime,
     pub operation_id: String,
     pub resource_location: Option<String>,
     pub status: OperationStatus,
@@ -179,7 +184,7 @@ impl DeviceUpdateClient {
         debug!("Import response: {}", &resp_body);
 
         loop {
-            sleep(std::time::Duration::from_secs(5)).await;
+            sleep(Duration::from_secs(5)).await;
             let mut uri = self.device_update_url.clone();
             uri.set_path(&resp_body);
             debug!("Requesting operational status: {}", &uri);
@@ -503,7 +508,7 @@ impl DeviceUpdateClient {
 
 #[cfg(test)]
 mod tests {
-    use chrono::DateTime;
+    use azure_core::date;
     use mockito::{mock, Matcher};
     use serde_json::json;
 
@@ -553,11 +558,11 @@ mod tests {
         assert_eq!(update.operation_id, "some_op_id");
         assert_eq!(
             update.created_date_time,
-            DateTime::parse_from_rfc3339("1999-09-10T21:59:22Z").unwrap()
+            date::parse_rfc3339("1999-09-10T21:59:22Z").unwrap()
         );
         assert_eq!(
             update.last_action_date_time,
-            DateTime::parse_from_rfc3339("1999-09-10T02:05:07.3845533Z").unwrap()
+            date::parse_rfc3339("1999-09-10T02:05:07.3845533Z").unwrap()
         );
 
         Ok(())

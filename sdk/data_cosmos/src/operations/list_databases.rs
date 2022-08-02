@@ -5,7 +5,7 @@ use crate::ResourceQuota;
 
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
 use azure_core::{collect_pinned_stream, prelude::*, Pageable, Response};
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     #[stream]
@@ -52,7 +52,7 @@ pub struct ListDatabasesResponse {
     pub activity_id: uuid::Uuid,
     pub charge: f64,
     pub session_token: String,
-    pub last_state_change: DateTime<Utc>,
+    pub last_state_change: OffsetDateTime,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
     pub schema_version: String,

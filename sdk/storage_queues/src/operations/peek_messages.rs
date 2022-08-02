@@ -3,8 +3,8 @@ use azure_core::{
     collect_pinned_stream, headers::Headers, prelude::*, Method, Response as AzureResponse,
 };
 use azure_storage::core::{headers::CommonStorageResponseHeaders, xml::read_xml};
-use chrono::{DateTime, Utc};
 use std::convert::TryInto;
+use time::OffsetDateTime;
 
 operation! {
     PeekMessages,
@@ -50,10 +50,10 @@ pub struct PeekMessagesBody {
 #[serde(rename_all = "PascalCase")]
 pub struct PeekMessage {
     pub message_id: String,
-    #[serde(deserialize_with = "deserialize_utc_date_from_rfc2822")]
-    pub insertion_time: DateTime<Utc>,
-    #[serde(deserialize_with = "deserialize_utc_date_from_rfc2822")]
-    pub expiration_time: DateTime<Utc>,
+    #[serde(with = "azure_core::date::rfc1123")]
+    pub insertion_time: OffsetDateTime,
+    #[serde(with = "azure_core::date::rfc1123")]
+    pub expiration_time: OffsetDateTime,
     pub dequeue_count: u64,
     pub message_text: String,
 }

@@ -1,8 +1,8 @@
 use crate::prelude::*;
 use azure_core::error::{ErrorKind, ResultExt};
-use chrono::{serde::ts_seconds_option, DateTime, Utc};
 use serde::Serialize;
 use std::collections::HashMap;
+use time::OffsetDateTime;
 
 operation! {
     UpdateSecret,
@@ -11,8 +11,8 @@ operation! {
     ?version: String,
     ?enabled: bool,
     ?content_type: String,
-    ?expiration: DateTime<Utc>,
-    ?not_before: DateTime<Utc>,
+    ?expiration: OffsetDateTime,
+    ?not_before: OffsetDateTime,
     ?recoverable_days: usize,
     ?tags: HashMap<String, String>,
     ?recovery_level: String
@@ -22,10 +22,10 @@ operation! {
 #[serde(rename_all = "camelCase")]
 struct Attributes {
     enabled: Option<bool>,
-    #[serde(with = "ts_seconds_option", rename = "exp")]
-    expiration: Option<DateTime<Utc>>,
-    #[serde(with = "ts_seconds_option", rename = "nbf")]
-    not_before: Option<DateTime<Utc>>,
+    #[serde(with = "azure_core::date::timestamp::option", rename = "exp")]
+    expiration: Option<OffsetDateTime>,
+    #[serde(with = "azure_core::date::timestamp::option", rename = "nbf")]
+    not_before: Option<OffsetDateTime>,
     recovery_level: Option<String>,
 }
 

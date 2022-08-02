@@ -6,7 +6,7 @@ use crate::ResourceQuota;
 use azure_core::collect_pinned_stream;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use azure_core::Response as HttpResponse;
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     CreateOrReplaceTrigger,
@@ -67,7 +67,7 @@ impl CreateOrReplaceTriggerBuilder {
 pub struct CreateOrReplaceTriggerResponse {
     pub trigger: Trigger,
     pub server: String,
-    pub last_state_change: DateTime<Utc>,
+    pub last_state_change: OffsetDateTime,
     pub etag: String,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
@@ -89,7 +89,7 @@ pub struct CreateOrReplaceTriggerResponse {
     pub service_version: String,
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
 }
 
 impl CreateOrReplaceTriggerResponse {
