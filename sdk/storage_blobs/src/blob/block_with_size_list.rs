@@ -127,6 +127,8 @@ mod test {
         assert!(bl.blocks[2].size_in_bytes == 62);
     }
 
+    /// Tests that we can explicitly deserialize the response even if not all
+    /// block types are present in the response
     #[test]
     fn test_incomplete_response() {
         let range = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
