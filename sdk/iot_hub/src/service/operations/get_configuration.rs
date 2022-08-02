@@ -1,3 +1,4 @@
+use crate::service::responses::ConfigurationResponse;
 use crate::service::{ServiceClient, API_VERSION};
 use azure_core::Method;
 
@@ -11,7 +12,7 @@ azure_core::operation! {
 
 impl GetConfigurationBuilder {
     /// Execute the request to get the configuration of a given identifier.
-    pub fn into_future(self) -> GetConfiguration {
+    pub fn into_future(mut self) -> GetConfiguration {
         Box::pin(async move {
             let uri = match self.configuration_id {
                 Some(val) => format!(
@@ -27,12 +28,11 @@ impl GetConfigurationBuilder {
             let mut request = self.client.finalize_request(&uri, Method::Get)?;
             request.set_body(azure_core::EMPTY_BODY);
 
-            self.client
-                .http_client()
-                .execute_request_check_status(&request)
-                .await
+            let response = self.client.send(&mut self.context, &mut request).await?;
+
+            GetConfigurationResponse::try_from(response).await
         })
     }
 }
 
-pub type GetConfigurationResponse = crate::service::CollectedResponse;
+pub type GetConfigurationResponse = ConfigurationResponse;

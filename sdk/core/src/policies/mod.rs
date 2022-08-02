@@ -1,11 +1,13 @@
 mod custom_headers_policy;
 mod retry_policies;
 mod telemetry_policy;
+mod timeout_policy;
 mod transport;
 
 pub use custom_headers_policy::{CustomHeaders, CustomHeadersPolicy};
 pub use retry_policies::*;
 pub use telemetry_policy::*;
+pub use timeout_policy::*;
 pub use transport::*;
 
 use crate::{Context, Request, Response};

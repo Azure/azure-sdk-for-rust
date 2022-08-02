@@ -1,4 +1,4 @@
-use crate::service::{ServiceClient, API_VERSION};
+use crate::service::{CollectedResponse, ServiceClient, API_VERSION};
 use azure_core::Method;
 
 azure_core::operation! {
@@ -11,7 +11,7 @@ azure_core::operation! {
 
 impl GetIdentityBuilder {
     /// Execute the request to get the identity of a device or module.
-    pub fn into_future(self) -> GetIdentity {
+    pub fn into_future(mut self) -> GetIdentity {
         Box::pin(async move {
             let uri = match self.module_id {
                 Some(module_id) => format!(
@@ -27,12 +27,11 @@ impl GetIdentityBuilder {
             let mut request = self.client.finalize_request(&uri, Method::Get)?;
             request.set_body(azure_core::EMPTY_BODY);
 
-            self.client
-                .http_client()
-                .execute_request_check_status(&request)
-                .await
+            let response = self.client.send(&mut self.context, &mut request).await?;
+
+            GetIdentityResponse::from_response(response).await
         })
     }
 }
 
-pub type GetIdentityResponse = crate::service::CollectedResponse;
+pub type GetIdentityResponse = CollectedResponse;

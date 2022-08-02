@@ -8,7 +8,6 @@ use azure_core::error::{Error, ErrorKind};
 use azure_core::headers;
 use azure_core::Method;
 use serde::Serialize;
-use std::convert::TryInto;
 
 azure_core::operation! {
     /// The CreateOrUpdateDeviceIdentityBuilder is used to construct a new device identity
@@ -38,7 +37,7 @@ impl CreateOrUpdateDeviceIdentityBuilder {
     }
 
     /// Performs the create or update request on the device identity
-    pub fn into_future(self) -> CreateOrUpdateDeviceIdentity {
+    pub fn into_future(mut self) -> CreateOrUpdateDeviceIdentity {
         Box::pin(async move {
             let uri = format!(
                 "https://{}.azure-devices.net/devices/{}?api-version={}",
@@ -67,16 +66,22 @@ impl CreateOrUpdateDeviceIdentityBuilder {
             let body = azure_core::to_json(&body)?;
             request.set_body(body);
 
-            self.client
-                .http_client()
-                .execute_request_check_status(&request)
-                .await?
-                .try_into()
+            let response = self.client.send(&mut self.context, &mut request).await?;
+
+            CreateOrUpdateDeviceIdentityResponse::try_from(response).await
         })
     }
 }
 
 pub type CreateOrUpdateDeviceIdentityResponse = DeviceIdentityResponse;
+
+impl CreateOrUpdateDeviceIdentityResponse {
+    pub(crate) async fn try_from(response: azure_core::Response) -> azure_core::Result<Self> {
+        let collected = azure_core::CollectedResponse::from_response(response).await?;
+        let body = collected.body();
+        Ok(serde_json::from_slice(body)?)
+    }
+}
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
