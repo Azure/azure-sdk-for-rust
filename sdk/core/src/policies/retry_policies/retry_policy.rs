@@ -2,9 +2,11 @@ use crate::error::{Error, ErrorKind, HttpError};
 use crate::policies::{Policy, PolicyResult, Request};
 use crate::sleep::sleep;
 use crate::{Context, StatusCode};
+
+use time::OffsetDateTime;
+
 use std::sync::Arc;
 use std::time::Duration;
-use time::OffsetDateTime;
 
 /// A retry policy.
 ///
@@ -15,7 +17,7 @@ pub trait RetryPolicy {
     /// Determine if no more retries should be performed.
     ///
     /// Must return true if no more retries should be attempted.
-    fn is_expired(&self, first_retry_time: &mut Option<OffsetDateTime>, retry_count: u32) -> bool;
+    fn is_expired(&self, duration_since_start: Duration, retry_count: u32) -> bool;
     /// Determine how long before the next retry should be attempted.
     fn sleep_duration(&self, retry_count: u32) -> Duration;
 }
@@ -44,11 +46,14 @@ where
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        let mut first_retry_time = None;
         let mut retry_count = 0;
+        let mut start = None;
 
         loop {
-            let error = match next[0].send(ctx, request, &next[1..]).await {
+            let result = next[0].send(ctx, request, &next[1..]).await;
+            // only start keeping track of time after the first request is made
+            let start = start.get_or_insert_with(OffsetDateTime::now_utc);
+            let error = match result {
                 Ok(response) if response.status().is_success() => {
                     log::trace!(
                         "Successful response. Request={:?} response={:?}",
@@ -94,7 +99,10 @@ where
                 }
             };
 
-            if self.is_expired(&mut first_retry_time, retry_count) {
+            let time_since_start = (OffsetDateTime::now_utc() - *start)
+                .try_into()
+                .unwrap_or_default();
+            if self.is_expired(time_since_start, retry_count) {
                 return Err(error);
             }
             retry_count += 1;

@@ -1,5 +1,5 @@
+use super::RetryPolicy;
 use std::time::Duration;
-use time::OffsetDateTime;
 
 /// Retry policy with exponential back-off.
 ///
@@ -12,31 +12,75 @@ use time::OffsetDateTime;
 pub struct ExponentialRetryPolicy {
     delay: Duration,
     max_retries: u32,
+    max_elapsed: Duration,
     max_delay: Duration,
 }
 
 impl ExponentialRetryPolicy {
-    pub(crate) fn new(delay: Duration, max_retries: u32, max_delay: Duration) -> Self {
-        ExponentialRetryPolicy {
+    pub(crate) fn new(
+        delay: Duration,
+        max_retries: u32,
+        max_elapsed: Duration,
+        max_delay: Duration,
+    ) -> Self {
+        Self {
             delay,
             max_retries,
+            max_elapsed,
             max_delay,
         }
     }
 }
 
-impl super::RetryPolicy for ExponentialRetryPolicy {
-    fn is_expired(&self, first_retry_time: &mut Option<OffsetDateTime>, retry_count: u32) -> bool {
-        if retry_count > self.max_retries {
-            return true;
-        }
-        let first_retry_time = first_retry_time.get_or_insert_with(OffsetDateTime::now_utc);
-        OffsetDateTime::now_utc() > *first_retry_time + self.max_delay
+impl RetryPolicy for ExponentialRetryPolicy {
+    fn is_expired(&self, time_since_start: Duration, retry_count: u32) -> bool {
+        retry_count >= self.max_retries || time_since_start >= self.max_elapsed
     }
 
     fn sleep_duration(&self, retry_count: u32) -> Duration {
-        let sleep_ms = self.delay.as_millis() as u64 * u64::pow(2, retry_count - 1)
-            + u64::from(rand::random::<u8>());
+        let sleep_ms =
+            self.delay.as_millis() as u64 * 2u64.pow(retry_count) + u64::from(rand::random::<u8>());
+        let sleep_ms = sleep_ms.min(self.max_delay.as_millis().try_into().unwrap_or(u64::MAX));
         Duration::from_millis(sleep_ms)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn increases_correctly() {
+        let options = crate::options::RetryOptions::default();
+        let policy = ExponentialRetryPolicy::new(
+            options.delay,
+            options.max_retries,
+            options.max_elapsed,
+            options.max_delay,
+        );
+
+        let mut elapsed_time = Duration::from_secs(0);
+        let mut retry_count = 0;
+        let mut durations = vec![];
+        while !policy.is_expired(elapsed_time, retry_count) {
+            retry_count += 1; // increase at beginning since we only check expiration if we need to retry
+            let duration = policy.sleep_duration(retry_count);
+            durations.push(duration);
+            elapsed_time += duration; // simulate sleep
+        }
+
+        let actual = durations
+            .into_iter()
+            .map(|d| d.as_secs())
+            .collect::<Vec<_>>();
+        let expected = &[0, 0, 1, 3, 6, 12, 25, 30];
+
+        for (&a, &e) in actual.iter().zip(expected.iter()) {
+            // Check within one second to account for the gitter
+            assert!(
+                a == e || a + 1 == e || a == e + 1,
+                "actual != expected\nActual: {actual:?}\nExpected: {expected:?}"
+            )
+        }
     }
 }
