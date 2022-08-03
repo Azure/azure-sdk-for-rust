@@ -337,6 +337,42 @@ impl StorageClient {
         }
     }
 
+    #[cfg(feature = "mock_transport_framework")]
+    /// Create a new instance of `CosmosClient` using a mock backend. The
+    /// transaction name is used to look up which files to read to validate the
+    /// request and mock the response.
+    // TODO(yosh): consider adding a general way to replace transports, and remove this method.
+    pub fn with_mock(
+        account: impl Into<String>,
+        storage_credentials: StorageCredentials,
+        transaction_name: impl Into<String>,
+    ) -> Self {
+        let account = account.into();
+        let options = ClientOptions::new_with_transaction_name(transaction_name.into());
+        let pipeline = new_pipeline_from_options(
+            StorageOptions {
+                options,
+                timeout_policy: Default::default(),
+            },
+            storage_credentials.clone(),
+        );
+        Self {
+            blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
+            table_storage_url: get_endpoint_uri(None, &account, "table").unwrap(),
+            queue_storage_url: get_endpoint_uri(None, &account, "queue").unwrap(),
+            queue_storage_secondary_url: get_endpoint_uri(
+                None,
+                &format!("{}-secondary", account),
+                "queue",
+            )
+            .unwrap(),
+            filesystem_url: get_endpoint_uri(None, &account, "dfs").unwrap(),
+            storage_credentials,
+            account,
+            pipeline,
+        }
+    }
+
     pub fn blob_storage_url(&self) -> &Url {
         &self.blob_storage_url
     }

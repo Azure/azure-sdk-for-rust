@@ -6,7 +6,7 @@ use azure_core::{
     Method::Put,
     RequestId,
 };
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     SnapshotBlob,
@@ -46,9 +46,9 @@ impl SnapshotBlobBuilder {
 pub struct SnapshotBlobResponse {
     pub request_id: RequestId,
     pub etag: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
     pub snapshot: Snapshot,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: OffsetDateTime,
 }
 
 impl TryFrom<&Headers> for SnapshotBlobResponse {
