@@ -47,10 +47,6 @@ pub enum IoTHubCredentials {
 impl std::fmt::Debug for IoTHubCredentials {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self {
-            // IoTHubCredentials::Key(_, _) => f
-            //     .debug_struct("IoTHubCredentials")
-            //     .field("credential", &"Key")
-            //     .finish(),
             IoTHubCredentials::SASToken(_) => f
                 .debug_struct("IoTHubCredentials")
                 .field("credential", &"SASToken")

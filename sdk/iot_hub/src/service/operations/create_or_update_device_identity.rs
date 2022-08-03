@@ -2,7 +2,7 @@ use crate::service::resources::{
     identity::DesiredCapability, identity::IdentityOperation, AuthenticationMechanism,
     DeviceCapabilities, Status,
 };
-use crate::service::responses::DeviceIdentityResponse;
+use crate::service::responses::CreateOrUpdateDeviceIdentityResponse;
 use crate::service::{ServiceClient, API_VERSION};
 use azure_core::error::{Error, ErrorKind};
 use azure_core::headers;
@@ -70,16 +70,6 @@ impl CreateOrUpdateDeviceIdentityBuilder {
 
             CreateOrUpdateDeviceIdentityResponse::try_from(response).await
         })
-    }
-}
-
-pub type CreateOrUpdateDeviceIdentityResponse = DeviceIdentityResponse;
-
-impl CreateOrUpdateDeviceIdentityResponse {
-    pub(crate) async fn try_from(response: azure_core::Response) -> azure_core::Result<Self> {
-        let collected = azure_core::CollectedResponse::from_response(response).await?;
-        let body = collected.body();
-        Ok(serde_json::from_slice(body)?)
     }
 }
 

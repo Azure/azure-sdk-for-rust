@@ -1,5 +1,5 @@
 use crate::service::resources::{identity::IdentityOperation, AuthenticationMechanism};
-use crate::service::responses::ModuleIdentityResponse;
+use crate::service::responses::CreateOrUpdateModuleIdentityResponse;
 use crate::service::{ServiceClient, API_VERSION};
 use azure_core::error::{Error, ErrorKind};
 use azure_core::headers;
@@ -54,16 +54,6 @@ impl CreateOrUpdateModuleIdentityBuilder {
 
             CreateOrUpdateModuleIdentityResponse::try_from(response).await
         })
-    }
-}
-
-pub type CreateOrUpdateModuleIdentityResponse = ModuleIdentityResponse;
-
-impl CreateOrUpdateModuleIdentityResponse {
-    pub(crate) async fn try_from(response: azure_core::Response) -> azure_core::Result<Self> {
-        let collected = azure_core::CollectedResponse::from_response(response).await?;
-        let body = collected.body();
-        Ok(serde_json::from_slice(body)?)
     }
 }
 
