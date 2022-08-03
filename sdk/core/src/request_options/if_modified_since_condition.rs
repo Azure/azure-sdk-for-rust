@@ -1,25 +1,27 @@
-use crate::headers::{self, Header};
-use chrono::{DateTime, Utc};
-use headers::{IF_MODIFIED_SINCE, IF_UNMODIFIED_SINCE};
+use crate::{
+    date,
+    headers::{self, Header, HeaderName},
+};
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum IfModifiedSinceCondition {
-    Modified(DateTime<Utc>),
-    Unmodified(DateTime<Utc>),
+    Modified(OffsetDateTime),
+    Unmodified(OffsetDateTime),
 }
 
 impl Header for IfModifiedSinceCondition {
-    fn name(&self) -> headers::HeaderName {
+    fn name(&self) -> HeaderName {
         match self {
-            IfModifiedSinceCondition::Modified(_) => IF_MODIFIED_SINCE,
-            IfModifiedSinceCondition::Unmodified(_) => IF_UNMODIFIED_SINCE,
+            IfModifiedSinceCondition::Modified(_) => headers::IF_MODIFIED_SINCE,
+            IfModifiedSinceCondition::Unmodified(_) => headers::IF_UNMODIFIED_SINCE,
         }
     }
 
     fn value(&self) -> headers::HeaderValue {
         match self {
             IfModifiedSinceCondition::Modified(date)
-            | IfModifiedSinceCondition::Unmodified(date) => date.to_rfc2822(),
+            | IfModifiedSinceCondition::Unmodified(date) => date::to_rfc1123(date),
         }
         .into()
     }

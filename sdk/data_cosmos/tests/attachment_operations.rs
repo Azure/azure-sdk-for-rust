@@ -2,6 +2,7 @@
 use azure_data_cosmos::prelude::*;
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
+use time::OffsetDateTime;
 
 mod setup;
 
@@ -80,7 +81,7 @@ async fn attachment_operations() -> azure_core::Result<()> {
         id: id.clone(),
         a_string: "Something here".into(),
         a_number: 100,
-        a_timestamp: chrono::Utc::now().timestamp(),
+        a_timestamp: OffsetDateTime::now_utc().unix_timestamp(),
     };
 
     // let's add an entity.

@@ -817,6 +817,12 @@ impl MhsmPrivateEndpointConnection {
 #[doc = "Private endpoint connection item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MhsmPrivateEndpointConnectionItem {
+    #[doc = "Id of private endpoint connection."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Modified whenever there is a change in the state of private endpoint connection."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
     #[doc = "Properties of the private endpoint connection resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MhsmPrivateEndpointConnectionProperties>,

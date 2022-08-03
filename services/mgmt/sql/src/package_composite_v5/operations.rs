@@ -233,6 +233,11 @@ impl Client {
     pub fn managed_backup_short_term_retention_policies_client(&self) -> managed_backup_short_term_retention_policies::Client {
         managed_backup_short_term_retention_policies::Client(self.clone())
     }
+    pub fn managed_database_advanced_threat_protection_settings_client(
+        &self,
+    ) -> managed_database_advanced_threat_protection_settings::Client {
+        managed_database_advanced_threat_protection_settings::Client(self.clone())
+    }
     pub fn managed_database_columns_client(&self) -> managed_database_columns::Client {
         managed_database_columns::Client(self.clone())
     }
@@ -279,6 +284,11 @@ impl Client {
     }
     pub fn managed_instance_administrators_client(&self) -> managed_instance_administrators::Client {
         managed_instance_administrators::Client(self.clone())
+    }
+    pub fn managed_instance_advanced_threat_protection_settings_client(
+        &self,
+    ) -> managed_instance_advanced_threat_protection_settings::Client {
+        managed_instance_advanced_threat_protection_settings::Client(self.clone())
     }
     pub fn managed_instance_azure_ad_only_authentications_client(&self) -> managed_instance_azure_ad_only_authentications::Client {
         managed_instance_azure_ad_only_authentications::Client(self.clone())
@@ -1553,7 +1563,7 @@ pub mod databases {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1569,7 +1579,7 @@ pub mod databases {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
                                 if let Some(skip_token) = &this.skip_token {
                                     req.url_mut().query_pairs_mut().append_pair("$skipToken", skip_token);
                                 }
@@ -1629,7 +1639,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1690,7 +1700,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -1757,7 +1767,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -1819,7 +1829,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -1877,7 +1887,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -1943,7 +1953,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
                         if let Some(replica_type) = &this.replica_type {
                             req.url_mut().query_pairs_mut().append_pair("replicaType", replica_type);
                         }
@@ -2004,7 +2014,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -2061,7 +2071,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -2117,7 +2127,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -2178,7 +2188,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -2239,7 +2249,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -2298,7 +2308,7 @@ pub mod databases {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -2314,7 +2324,7 @@ pub mod databases {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -2376,7 +2386,7 @@ pub mod databases {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -2392,7 +2402,7 @@ pub mod databases {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -34389,484 +34399,6 @@ pub mod endpoint_certificates {
         }
     }
 }
-pub mod replication_links {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        pub fn list_by_database(
-            &self,
-            resource_group_name: impl Into<String>,
-            server_name: impl Into<String>,
-            database_name: impl Into<String>,
-            subscription_id: impl Into<String>,
-        ) -> list_by_database::Builder {
-            list_by_database::Builder {
-                client: self.0.clone(),
-                resource_group_name: resource_group_name.into(),
-                server_name: server_name.into(),
-                database_name: database_name.into(),
-                subscription_id: subscription_id.into(),
-            }
-        }
-        pub fn get(
-            &self,
-            resource_group_name: impl Into<String>,
-            server_name: impl Into<String>,
-            database_name: impl Into<String>,
-            link_id: impl Into<String>,
-            subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
-                client: self.0.clone(),
-                resource_group_name: resource_group_name.into(),
-                server_name: server_name.into(),
-                database_name: database_name.into(),
-                link_id: link_id.into(),
-                subscription_id: subscription_id.into(),
-            }
-        }
-        pub fn delete(
-            &self,
-            resource_group_name: impl Into<String>,
-            server_name: impl Into<String>,
-            database_name: impl Into<String>,
-            link_id: impl Into<String>,
-            subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
-                client: self.0.clone(),
-                resource_group_name: resource_group_name.into(),
-                server_name: server_name.into(),
-                database_name: database_name.into(),
-                link_id: link_id.into(),
-                subscription_id: subscription_id.into(),
-            }
-        }
-        pub fn failover(
-            &self,
-            resource_group_name: impl Into<String>,
-            server_name: impl Into<String>,
-            database_name: impl Into<String>,
-            link_id: impl Into<String>,
-            subscription_id: impl Into<String>,
-        ) -> failover::Builder {
-            failover::Builder {
-                client: self.0.clone(),
-                resource_group_name: resource_group_name.into(),
-                server_name: server_name.into(),
-                database_name: database_name.into(),
-                link_id: link_id.into(),
-                subscription_id: subscription_id.into(),
-            }
-        }
-        pub fn failover_allow_data_loss(
-            &self,
-            resource_group_name: impl Into<String>,
-            server_name: impl Into<String>,
-            database_name: impl Into<String>,
-            link_id: impl Into<String>,
-            subscription_id: impl Into<String>,
-        ) -> failover_allow_data_loss::Builder {
-            failover_allow_data_loss::Builder {
-                client: self.0.clone(),
-                resource_group_name: resource_group_name.into(),
-                server_name: server_name.into(),
-                database_name: database_name.into(),
-                link_id: link_id.into(),
-                subscription_id: subscription_id.into(),
-            }
-        }
-        pub fn list_by_server(
-            &self,
-            resource_group_name: impl Into<String>,
-            server_name: impl Into<String>,
-            subscription_id: impl Into<String>,
-        ) -> list_by_server::Builder {
-            list_by_server::Builder {
-                client: self.0.clone(),
-                resource_group_name: resource_group_name.into(),
-                server_name: server_name.into(),
-                subscription_id: subscription_id.into(),
-            }
-        }
-    }
-    pub mod list_by_database {
-        use super::models;
-        type Response = models::ReplicationLinkListResult;
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) resource_group_name: String,
-            pub(crate) server_name: String,
-            pub(crate) database_name: String,
-            pub(crate) subscription_id: String,
-        }
-        impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<String>| {
-                    let this = self.clone();
-                    async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/replicationLinks",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.server_name,
-                            &this.database_name
-                        ))?;
-                        let rsp = match continuation {
-                            Some(value) => {
-                                url.set_path("");
-                                url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
-                                let has_api_version_already =
-                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                                if !has_api_version_already {
-                                    req.url_mut()
-                                        .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-11-01-preview");
-                                }
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                            None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-11-01-preview");
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                        };
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ReplicationLinkListResult = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
-                    }
-                };
-                azure_core::Pageable::new(make_request)
-            }
-        }
-    }
-    pub mod get {
-        use super::models;
-        type Response = models::ReplicationLink;
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) resource_group_name: String,
-            pub(crate) server_name: String,
-            pub(crate) database_name: String,
-            pub(crate) link_id: String,
-            pub(crate) subscription_id: String,
-        }
-        impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/replicationLinks/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.server_name,
-                            &this.database_name,
-                            &this.link_id
-                        ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01-preview");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ReplicationLink = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
-                    }
-                })
-            }
-        }
-    }
-    pub mod delete {
-        use super::models;
-        type Response = ();
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) resource_group_name: String,
-            pub(crate) server_name: String,
-            pub(crate) database_name: String,
-            pub(crate) link_id: String,
-            pub(crate) subscription_id: String,
-        }
-        impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/replicationLinks/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.server_name,
-                            &this.database_name,
-                            &this.link_id
-                        ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01-preview");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
-                    }
-                })
-            }
-        }
-    }
-    pub mod failover {
-        use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(models::ReplicationLink),
-            Accepted202,
-        }
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) resource_group_name: String,
-            pub(crate) server_name: String,
-            pub(crate) database_name: String,
-            pub(crate) link_id: String,
-            pub(crate) subscription_id: String,
-        }
-        impl Builder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/replicationLinks/{}/failover" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . server_name , & this . database_name , & this . link_id)) ? ;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01-preview");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
-                        req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ReplicationLink = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::Ok200(rsp_value))
-                            }
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
-                    }
-                })
-            }
-        }
-    }
-    pub mod failover_allow_data_loss {
-        use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(models::ReplicationLink),
-            Accepted202,
-        }
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) resource_group_name: String,
-            pub(crate) server_name: String,
-            pub(crate) database_name: String,
-            pub(crate) link_id: String,
-            pub(crate) subscription_id: String,
-        }
-        impl Builder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/replicationLinks/{}/forceFailoverAllowDataLoss" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . server_name , & this . database_name , & this . link_id)) ? ;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-11-01-preview");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
-                        req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ReplicationLink = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::Ok200(rsp_value))
-                            }
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
-                    }
-                })
-            }
-        }
-    }
-    pub mod list_by_server {
-        use super::models;
-        type Response = models::ReplicationLinkListResult;
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: super::super::Client,
-            pub(crate) resource_group_name: String,
-            pub(crate) server_name: String,
-            pub(crate) subscription_id: String,
-        }
-        impl Builder {
-            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
-                let make_request = move |continuation: Option<String>| {
-                    let this = self.clone();
-                    async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/replicationLinks",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.server_name
-                        ))?;
-                        let rsp = match continuation {
-                            Some(value) => {
-                                url.set_path("");
-                                url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
-                                let has_api_version_already =
-                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                                if !has_api_version_already {
-                                    req.url_mut()
-                                        .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-11-01-preview");
-                                }
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                            None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-11-01-preview");
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                        };
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
-                                let rsp_value: models::ReplicationLinkListResult = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
-                    }
-                };
-                azure_core::Pageable::new(make_request)
-            }
-        }
-    }
-}
 pub mod managed_database_sensitivity_labels {
     use super::models;
     pub struct Client(pub(crate) super::Client);
@@ -38457,6 +37989,954 @@ pub mod managed_instance_dtcs {
                         }
                     }
                 })
+            }
+        }
+    }
+}
+pub mod managed_database_advanced_threat_protection_settings {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn list_by_database(
+            &self,
+            resource_group_name: impl Into<String>,
+            managed_instance_name: impl Into<String>,
+            database_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_database::Builder {
+            list_by_database::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                managed_instance_name: managed_instance_name.into(),
+                database_name: database_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            managed_instance_name: impl Into<String>,
+            database_name: impl Into<String>,
+            advanced_threat_protection_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                managed_instance_name: managed_instance_name.into(),
+                database_name: database_name.into(),
+                advanced_threat_protection_name: advanced_threat_protection_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            managed_instance_name: impl Into<String>,
+            database_name: impl Into<String>,
+            advanced_threat_protection_name: impl Into<String>,
+            parameters: impl Into<models::ManagedDatabaseAdvancedThreatProtection>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                managed_instance_name: managed_instance_name.into(),
+                database_name: database_name.into(),
+                advanced_threat_protection_name: advanced_threat_protection_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+    }
+    pub mod list_by_database {
+        use super::models;
+        type Response = models::ManagedDatabaseAdvancedThreatProtectionListResult;
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) managed_instance_name: String,
+            pub(crate) database_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
+                    let this = self.clone();
+                    async move {
+                        let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}/advancedThreatProtectionSettings" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . managed_instance_name , & this . database_name)) ? ;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ManagedDatabaseAdvancedThreatProtectionListResult =
+                                    serde_json::from_slice(&rsp_body)?;
+                                Ok(rsp_value)
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        }
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        type Response = models::ManagedDatabaseAdvancedThreatProtection;
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) managed_instance_name: String,
+            pub(crate) database_name: String,
+            pub(crate) advanced_threat_protection_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}/advancedThreatProtectionSettings/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . managed_instance_name , & this . database_name , & this . advanced_threat_protection_name)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ManagedDatabaseAdvancedThreatProtection = serde_json::from_slice(&rsp_body)?;
+                                Ok(rsp_value)
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::ManagedDatabaseAdvancedThreatProtection),
+            Created201(models::ManagedDatabaseAdvancedThreatProtection),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) managed_instance_name: String,
+            pub(crate) database_name: String,
+            pub(crate) advanced_threat_protection_name: String,
+            pub(crate) parameters: models::ManagedDatabaseAdvancedThreatProtection,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}/advancedThreatProtectionSettings/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . managed_instance_name , & this . database_name , & this . advanced_threat_protection_name)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.parameters)?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ManagedDatabaseAdvancedThreatProtection = serde_json::from_slice(&rsp_body)?;
+                                Ok(Response::Ok200(rsp_value))
+                            }
+                            azure_core::StatusCode::Created => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ManagedDatabaseAdvancedThreatProtection = serde_json::from_slice(&rsp_body)?;
+                                Ok(Response::Created201(rsp_value))
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod managed_instance_advanced_threat_protection_settings {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn list_by_instance(
+            &self,
+            resource_group_name: impl Into<String>,
+            managed_instance_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_instance::Builder {
+            list_by_instance::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                managed_instance_name: managed_instance_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            managed_instance_name: impl Into<String>,
+            advanced_threat_protection_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                managed_instance_name: managed_instance_name.into(),
+                advanced_threat_protection_name: advanced_threat_protection_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            managed_instance_name: impl Into<String>,
+            advanced_threat_protection_name: impl Into<String>,
+            parameters: impl Into<models::ManagedInstanceAdvancedThreatProtection>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                managed_instance_name: managed_instance_name.into(),
+                advanced_threat_protection_name: advanced_threat_protection_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+    }
+    pub mod list_by_instance {
+        use super::models;
+        type Response = models::ManagedInstanceAdvancedThreatProtectionListResult;
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) managed_instance_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
+                    let this = self.clone();
+                    async move {
+                        let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/advancedThreatProtectionSettings" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . managed_instance_name)) ? ;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ManagedInstanceAdvancedThreatProtectionListResult =
+                                    serde_json::from_slice(&rsp_body)?;
+                                Ok(rsp_value)
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        }
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        type Response = models::ManagedInstanceAdvancedThreatProtection;
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) managed_instance_name: String,
+            pub(crate) advanced_threat_protection_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/advancedThreatProtectionSettings/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . managed_instance_name , & this . advanced_threat_protection_name)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ManagedInstanceAdvancedThreatProtection = serde_json::from_slice(&rsp_body)?;
+                                Ok(rsp_value)
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::ManagedInstanceAdvancedThreatProtection),
+            Accepted202,
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) managed_instance_name: String,
+            pub(crate) advanced_threat_protection_name: String,
+            pub(crate) parameters: models::ManagedInstanceAdvancedThreatProtection,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/advancedThreatProtectionSettings/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . managed_instance_name , & this . advanced_threat_protection_name)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.parameters)?;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ManagedInstanceAdvancedThreatProtection = serde_json::from_slice(&rsp_body)?;
+                                Ok(Response::Ok200(rsp_value))
+                            }
+                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod replication_links {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn list_by_database(
+            &self,
+            resource_group_name: impl Into<String>,
+            server_name: impl Into<String>,
+            database_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_database::Builder {
+            list_by_database::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                server_name: server_name.into(),
+                database_name: database_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            server_name: impl Into<String>,
+            database_name: impl Into<String>,
+            link_id: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                server_name: server_name.into(),
+                database_name: database_name.into(),
+                link_id: link_id.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            server_name: impl Into<String>,
+            database_name: impl Into<String>,
+            link_id: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                server_name: server_name.into(),
+                database_name: database_name.into(),
+                link_id: link_id.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn failover(
+            &self,
+            resource_group_name: impl Into<String>,
+            server_name: impl Into<String>,
+            database_name: impl Into<String>,
+            link_id: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> failover::Builder {
+            failover::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                server_name: server_name.into(),
+                database_name: database_name.into(),
+                link_id: link_id.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn failover_allow_data_loss(
+            &self,
+            resource_group_name: impl Into<String>,
+            server_name: impl Into<String>,
+            database_name: impl Into<String>,
+            link_id: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> failover_allow_data_loss::Builder {
+            failover_allow_data_loss::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                server_name: server_name.into(),
+                database_name: database_name.into(),
+                link_id: link_id.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_by_server(
+            &self,
+            resource_group_name: impl Into<String>,
+            server_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_server::Builder {
+            list_by_server::Builder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                server_name: server_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+    }
+    pub mod list_by_database {
+        use super::models;
+        type Response = models::ReplicationLinkListResult;
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) server_name: String,
+            pub(crate) database_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
+                    let this = self.clone();
+                    async move {
+                        let mut url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/replicationLinks",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.server_name,
+                            &this.database_name
+                        ))?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationLinkListResult = serde_json::from_slice(&rsp_body)?;
+                                Ok(rsp_value)
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        }
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        type Response = models::ReplicationLink;
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) server_name: String,
+            pub(crate) database_name: String,
+            pub(crate) link_id: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/replicationLinks/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.server_name,
+                            &this.database_name,
+                            &this.link_id
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationLink = serde_json::from_slice(&rsp_body)?;
+                                Ok(rsp_value)
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            Accepted202,
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) server_name: String,
+            pub(crate) database_name: String,
+            pub(crate) link_id: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/replicationLinks/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.server_name,
+                            &this.database_name,
+                            &this.link_id
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => Ok(Response::Ok200),
+                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod failover {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::ReplicationLink),
+            Accepted202,
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) server_name: String,
+            pub(crate) database_name: String,
+            pub(crate) link_id: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/replicationLinks/{}/failover" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . server_name , & this . database_name , & this . link_id)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationLink = serde_json::from_slice(&rsp_body)?;
+                                Ok(Response::Ok200(rsp_value))
+                            }
+                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod failover_allow_data_loss {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::ReplicationLink),
+            Accepted202,
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) server_name: String,
+            pub(crate) database_name: String,
+            pub(crate) link_id: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/replicationLinks/{}/forceFailoverAllowDataLoss" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . server_name , & this . database_name , & this . link_id)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationLink = serde_json::from_slice(&rsp_body)?;
+                                Ok(Response::Ok200(rsp_value))
+                            }
+                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list_by_server {
+        use super::models;
+        type Response = models::ReplicationLinkListResult;
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) server_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
+                    let this = self.clone();
+                    async move {
+                        let mut url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/replicationLinks",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.server_name
+                        ))?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            azure_core::StatusCode::Ok => {
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_value: models::ReplicationLinkListResult = serde_json::from_slice(&rsp_body)?;
+                                Ok(rsp_value)
+                            }
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        }
+                    }
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }

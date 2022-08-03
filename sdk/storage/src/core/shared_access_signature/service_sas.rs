@@ -2,8 +2,8 @@ use crate::{
     core::shared_access_signature::{format_date, format_form, SasProtocol, SasToken},
     hmac,
 };
-use chrono::{DateTime, Utc};
 use std::fmt;
+use time::OffsetDateTime;
 
 const SERVICE_SAS_VERSION: &str = "2020-06-12";
 
@@ -95,8 +95,8 @@ pub struct BlobSharedAccessSignature {
     canonicalized_resource: String,
     resource: BlobSignedResource,
     permissions: BlobSasPermissions, // sp
-    expiry: DateTime<Utc>,           // se
-    start: Option<DateTime<Utc>>,    // st
+    expiry: OffsetDateTime,          // se
+    start: Option<OffsetDateTime>,   // st
     identifier: Option<String>,
     ip: Option<String>,
     protocol: Option<SasProtocol>,
@@ -107,7 +107,7 @@ impl BlobSharedAccessSignature {
         key: String,
         canonicalized_resource: String,
         permissions: BlobSasPermissions,
-        expiry: DateTime<Utc>,
+        expiry: OffsetDateTime,
         resource: BlobSignedResource,
     ) -> Self {
         Self {
@@ -124,7 +124,7 @@ impl BlobSharedAccessSignature {
     }
 
     setters! {
-        start: DateTime<Utc> => Some(start),
+        start: OffsetDateTime => Some(start),
         identifier: String => Some(identifier),
         ip: String => Some(ip),
         protocol: SasProtocol => Some(protocol),

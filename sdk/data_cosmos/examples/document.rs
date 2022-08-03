@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use azure_core::prelude::*;
 
 use azure_data_cosmos::prelude::*;
+use time::OffsetDateTime;
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -121,7 +122,7 @@ async fn main() -> azure_core::Result<()> {
         id: "unique_id100".into(),
         a_string: "Something here".into(),
         a_number: 100,
-        a_timestamp: chrono::Utc::now().timestamp(),
+        a_timestamp: OffsetDateTime::now_utc().unix_timestamp(),
     };
 
     // Now we store the struct in Azure Cosmos DB.

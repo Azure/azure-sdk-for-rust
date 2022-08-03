@@ -19,23 +19,20 @@ pub use page_range_list::PageRangeList;
 
 use crate::options::{AccessTier, Tags};
 use azure_core::{
-    content_type,
-    error::{ErrorKind, ResultExt},
+    content_type, date,
     headers::{self, Headers},
     parsing::from_azure_time,
     Etag, LeaseDuration, LeaseState, LeaseStatus,
 };
 use azure_storage::{ConsistencyCRC64, ConsistencyMD5, CopyId, CopyProgress};
-use chrono::{DateTime, Utc};
 use std::collections::HashMap;
+use time::OffsetDateTime;
 
 #[cfg(feature = "azurite_workaround")]
-fn get_creation_time(h: &Headers) -> azure_core::Result<Option<DateTime<Utc>>> {
+fn get_creation_time(h: &Headers) -> azure_core::Result<Option<OffsetDateTime>> {
     if let Some(creation_time) = h.get_optional_str(&headers::CREATION_TIME) {
         // Check that the creation time is valid
-        let creation_time =
-            DateTime::parse_from_rfc2822(creation_time).map_kind(ErrorKind::DataConversion)?;
-        let creation_time = DateTime::from_utc(creation_time.naive_utc(), Utc);
+        let creation_time = date::parse_rfc1123(creation_time).unwrap_or(OffsetDateTime::now_utc());
         Ok(Some(creation_time))
     } else {
         // Not having a creation time is ok
@@ -91,7 +88,7 @@ where
 #[serde(rename_all = "PascalCase")]
 pub struct Blob {
     pub name: String,
-    pub snapshot: Option<DateTime<Utc>>,
+    pub snapshot: Option<OffsetDateTime>,
     pub version_id: Option<String>,
     pub is_current_version: Option<bool>,
     pub deleted: Option<bool>,
@@ -105,18 +102,18 @@ pub struct Blob {
 pub struct BlobProperties {
     #[cfg(not(feature = "azurite_workaround"))]
     #[serde(rename = "Creation-Time")]
-    #[serde(with = "azure_core::parsing::rfc2822_time_format")]
-    pub creation_time: DateTime<Utc>,
+    #[serde(with = "azure_core::date::rfc1123")]
+    pub creation_time: OffsetDateTime,
     #[cfg(feature = "azurite_workaround")]
     #[serde(rename = "Creation-Time")]
-    #[serde(with = "azure_core::parsing::rfc2822_time_format_optional")]
-    pub creation_time: Option<DateTime<Utc>>,
+    #[serde(with = "azure_core::date::rfc1123::option")]
+    pub creation_time: Option<OffsetDateTime>,
     #[serde(rename = "Last-Modified")]
-    #[serde(with = "azure_core::parsing::rfc2822_time_format")]
-    pub last_modified: DateTime<Utc>,
+    #[serde(with = "azure_core::date::rfc1123")]
+    pub last_modified: OffsetDateTime,
     #[serde(default)]
-    #[serde(with = "azure_core::parsing::rfc2822_time_format_optional")]
-    pub last_access_time: Option<DateTime<Utc>>,
+    #[serde(with = "azure_core::date::rfc1123::option")]
+    pub last_access_time: Option<OffsetDateTime>,
     pub etag: Etag,
     #[serde(rename = "Content-Length")]
     pub content_length: u64,
@@ -143,8 +140,8 @@ pub struct BlobProperties {
     pub blob_type: BlobType,
     pub access_tier: Option<AccessTier>,
     #[serde(default)]
-    #[serde(with = "azure_core::parsing::rfc2822_time_format_optional")]
-    pub access_tier_change_time: Option<DateTime<Utc>>,
+    #[serde(with = "azure_core::date::rfc1123::option")]
+    pub access_tier_change_time: Option<OffsetDateTime>,
     pub lease_status: LeaseStatus,
     pub lease_state: LeaseState,
     pub lease_duration: Option<LeaseDuration>,
@@ -153,8 +150,8 @@ pub struct BlobProperties {
     pub copy_source: Option<String>,
     pub copy_progress: Option<CopyProgress>,
     #[serde(default)]
-    #[serde(with = "azure_core::parsing::rfc2822_time_format_optional")]
-    pub copy_completion_time: Option<DateTime<Utc>>,
+    #[serde(with = "azure_core::date::rfc1123::option")]
+    pub copy_completion_time: Option<OffsetDateTime>,
     pub copy_status_description: Option<String>,
     pub server_encrypted: bool,
     pub customer_provided_key_sha256: Option<String>,
@@ -162,15 +159,15 @@ pub struct BlobProperties {
     pub incremental_copy: Option<bool>,
     pub access_tier_inferred: Option<bool>,
     #[serde(default)]
-    #[serde(with = "azure_core::parsing::rfc2822_time_format_optional")]
-    pub deleted_time: Option<DateTime<Utc>>,
+    #[serde(with = "azure_core::date::rfc1123::option")]
+    pub deleted_time: Option<OffsetDateTime>,
     pub remaining_retention_days: Option<u32>,
     pub tag_count: Option<u32>,
     pub rehydrate_priority: Option<RehydratePriority>,
     #[serde(default)]
     #[serde(rename = "Expiry-Time")]
-    #[serde(with = "azure_core::parsing::rfc2822_time_format_optional")]
-    pub expiry_time: Option<DateTime<Utc>>,
+    #[serde(with = "azure_core::date::rfc1123::option")]
+    pub expiry_time: Option<OffsetDateTime>,
     #[serde(flatten)]
     extra: HashMap<String, String>, // For debug purposes, should be compiled out in the future
 }
@@ -183,9 +180,7 @@ impl Blob {
         #[cfg(not(feature = "azurite_workaround"))]
         let creation_time = {
             let creation_time = h.get_str(&headers::CREATION_TIME)?;
-            let creation_time =
-                DateTime::parse_from_rfc2822(creation_time).map_kind(ErrorKind::DataConversion)?;
-            DateTime::from_utc(creation_time.naive_utc(), Utc)
+            date::parse_rfc1123(creation_time)?
         };
         #[cfg(feature = "azurite_workaround")]
         let creation_time = get_creation_time(h)?;
@@ -214,14 +209,9 @@ impl Blob {
         let copy_status = h.get_optional_as(&headers::COPY_STATUS)?;
         let copy_source = h.get_optional_string(&headers::COPY_SOURCE);
         let copy_progress = h.get_optional_as(&headers::COPY_PROGRESS)?;
-        let copy_completion_time: Option<DateTime<Utc>> = h
+        let copy_completion_time: Option<OffsetDateTime> = h
             .get_optional_str(&headers::COPY_COMPLETION_TIME)
-            .and_then(|cct| {
-                Some(DateTime::from_utc(
-                    DateTime::parse_from_rfc2822(cct).ok()?.naive_utc(),
-                    Utc,
-                ))
-            });
+            .and_then(|cct| date::parse_rfc1123(cct).ok());
         let copy_status_description = h.get_optional_string(&headers::COPY_STATUS_DESCRIPTION);
         let server_encrypted = h.get_as(&headers::SERVER_ENCRYPTED)?;
 

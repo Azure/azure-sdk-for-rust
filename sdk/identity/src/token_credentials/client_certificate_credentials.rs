@@ -12,7 +12,8 @@ use openssl::{
     x509::X509,
 };
 use serde::Deserialize;
-use std::{str, time::Duration};
+use std::str;
+use std::time::Duration;
 
 /// Refresh time to use in seconds
 const DEFAULT_REFRESH_TIME: i64 = 300;
@@ -161,7 +162,7 @@ impl TokenCredential for ClientCertificateCredential {
             .map_err(ClientCertificateCredentialError::OpensslError)?;
 
         let uuid = uuid::Uuid::new_v4();
-        let current_time = Utc::now().timestamp();
+        let current_time = OffsetDateTime::now_utc().unix_timestamp();
         let expiry_time = current_time + DEFAULT_REFRESH_TIME;
         let x5t = base64::encode(&thumbprint);
 
@@ -224,8 +225,7 @@ impl TokenCredential for ClientCertificateCredential {
 
         Ok(TokenResponse::new(
             AccessToken::new(response.access_token.to_string()),
-            Utc::now()
-                + chrono::Duration::from_std(Duration::from_secs(response.expires_in)).unwrap(),
+            OffsetDateTime::now_utc() + Duration::from_secs(response.expires_in),
         ))
     }
 }

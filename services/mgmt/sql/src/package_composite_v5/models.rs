@@ -1788,7 +1788,7 @@ pub struct DatabaseProperties {
     #[doc = "The number of secondary replicas associated with the database that are used to provide high availability. Not applicable to a Hyperscale database within an elastic pool."]
     #[serde(rename = "highAvailabilityReplicaCount", default, skip_serializing_if = "Option::is_none")]
     pub high_availability_replica_count: Option<i32>,
-    #[doc = "The secondary type of the database if it is a secondary.  Valid values are Geo and Named."]
+    #[doc = "The secondary type of the database if it is a secondary.  Valid values are Geo, Named and Standby."]
     #[serde(rename = "secondaryType", default, skip_serializing_if = "Option::is_none")]
     pub secondary_type: Option<database_properties::SecondaryType>,
     #[doc = "An ARM Resource SKU."]
@@ -1824,7 +1824,7 @@ pub struct DatabaseProperties {
     #[doc = "The Client id used for cross tenant per database CMK scenario"]
     #[serde(rename = "federatedClientId", default, skip_serializing_if = "Option::is_none")]
     pub federated_client_id: Option<String>,
-    #[doc = "The resource identifier of the source associated with the create operation of this database.\r\n\r\nWhen sourceResourceId is specified, sourceDatabaseId, recoverableDatabaseId, restorableDroppedDatabaseId and sourceDatabaseDeletionDate must not be specified and CreateMode must be PointInTimeRestore, Restore or Recover.\r\n\r\nWhen createMode is PointInTimeRestore, sourceResourceId must be the resource ID of an existing database or existing sql pool, and restorePointInTime must be specified.\r\n\r\nWhen createMode is Restore, sourceResourceId must be the resource ID of restorable dropped database or restorable dropped sql pool.\r\n\r\nWhen createMode is Recover, sourceResourceId must be the resource ID of recoverable database or recoverable sql pool.\r\n\r\nThis property allows to restore across subscriptions which is only supported for DataWarehouse edition.\r\n\r\nWhen source subscription belongs to a different tenant than target subscription, “x-ms-authorization-auxiliary” header must contain authentication token for the source tenant. For more details about “x-ms-authorization-auxiliary” header see https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/authenticate-multi-tenant "]
+    #[doc = "The resource identifier of the source associated with the create operation of this database.\r\n\r\nThis property is only supported for DataWarehouse edition and allows to restore across subscriptions.\r\n\r\nWhen sourceResourceId is specified, sourceDatabaseId, recoverableDatabaseId, restorableDroppedDatabaseId and sourceDatabaseDeletionDate must not be specified and CreateMode must be PointInTimeRestore, Restore or Recover.\r\n\r\nWhen createMode is PointInTimeRestore, sourceResourceId must be the resource ID of the existing database or existing sql pool, and restorePointInTime must be specified.\r\n\r\nWhen createMode is Restore, sourceResourceId must be the resource ID of restorable dropped database or restorable dropped sql pool.\r\n\r\nWhen createMode is Recover, sourceResourceId must be the resource ID of recoverable database or recoverable sql pool.\r\n\r\nWhen source subscription belongs to a different tenant than target subscription, “x-ms-authorization-auxiliary” header must contain authentication token for the source tenant. For more details about “x-ms-authorization-auxiliary” header see https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/authenticate-multi-tenant "]
     #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_resource_id: Option<String>,
 }
@@ -2132,12 +2132,13 @@ pub mod database_properties {
             }
         }
     }
-    #[doc = "The secondary type of the database if it is a secondary.  Valid values are Geo and Named."]
+    #[doc = "The secondary type of the database if it is a secondary.  Valid values are Geo, Named and Standby."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "SecondaryType")]
     pub enum SecondaryType {
         Geo,
         Named,
+        Standby,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -2165,6 +2166,7 @@ pub mod database_properties {
             match self {
                 Self::Geo => serializer.serialize_unit_variant("SecondaryType", 0u32, "Geo"),
                 Self::Named => serializer.serialize_unit_variant("SecondaryType", 1u32, "Named"),
+                Self::Standby => serializer.serialize_unit_variant("SecondaryType", 2u32, "Standby"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -2518,7 +2520,7 @@ pub struct DatabaseUpdateProperties {
     #[doc = "The number of secondary replicas associated with the database that are used to provide high availability. Not applicable to a Hyperscale database within an elastic pool."]
     #[serde(rename = "highAvailabilityReplicaCount", default, skip_serializing_if = "Option::is_none")]
     pub high_availability_replica_count: Option<i32>,
-    #[doc = "The secondary type of the database if it is a secondary.  Valid values are Geo and Named."]
+    #[doc = "The secondary type of the database if it is a secondary.  Valid values are Geo, Named and Standby."]
     #[serde(rename = "secondaryType", default, skip_serializing_if = "Option::is_none")]
     pub secondary_type: Option<database_update_properties::SecondaryType>,
     #[doc = "An ARM Resource SKU."]
@@ -2859,12 +2861,13 @@ pub mod database_update_properties {
             }
         }
     }
-    #[doc = "The secondary type of the database if it is a secondary.  Valid values are Geo and Named."]
+    #[doc = "The secondary type of the database if it is a secondary.  Valid values are Geo, Named and Standby."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "SecondaryType")]
     pub enum SecondaryType {
         Geo,
         Named,
+        Standby,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -2892,6 +2895,7 @@ pub mod database_update_properties {
             match self {
                 Self::Geo => serializer.serialize_unit_variant("SecondaryType", 0u32, "Geo"),
                 Self::Named => serializer.serialize_unit_variant("SecondaryType", 1u32, "Named"),
+                Self::Standby => serializer.serialize_unit_variant("SecondaryType", 2u32, "Standby"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -7518,6 +7522,44 @@ impl ManagedDatabase {
         }
     }
 }
+#[doc = "A managed database Advanced Threat Protection."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedDatabaseAdvancedThreatProtection {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "Properties of an Advanced Threat Protection state."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AdvancedThreatProtectionProperties>,
+}
+impl ManagedDatabaseAdvancedThreatProtection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A list of the managed database's Advanced Threat Protection settings."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedDatabaseAdvancedThreatProtectionListResult {
+    #[doc = "Array of results."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ManagedDatabaseAdvancedThreatProtection>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ManagedDatabaseAdvancedThreatProtectionListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl ManagedDatabaseAdvancedThreatProtectionListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "A list of managed databases."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedDatabaseListResult {
@@ -7958,6 +8000,44 @@ pub mod managed_instance_administrator_properties {
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
+    }
+}
+#[doc = "A managed instance Advanced Threat Protection."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedInstanceAdvancedThreatProtection {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "Properties of an Advanced Threat Protection state."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AdvancedThreatProtectionProperties>,
+}
+impl ManagedInstanceAdvancedThreatProtection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A list of the managed instance's Advanced Threat Protection settings."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedInstanceAdvancedThreatProtectionListResult {
+    #[doc = "Array of results."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ManagedInstanceAdvancedThreatProtection>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ManagedInstanceAdvancedThreatProtectionListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl ManagedInstanceAdvancedThreatProtectionListResult {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "A list of active directory only authentications."]
@@ -11608,7 +11688,7 @@ pub struct ReplicationLinkProperties {
     #[doc = "Whether the user is currently allowed to terminate the link."]
     #[serde(rename = "isTerminationAllowed", default, skip_serializing_if = "Option::is_none")]
     pub is_termination_allowed: Option<bool>,
-    #[doc = "Link type (GEO, NAMED)."]
+    #[doc = "Link type (GEO, NAMED, STANDBY)."]
     #[serde(rename = "linkType", default, skip_serializing_if = "Option::is_none")]
     pub link_type: Option<replication_link_properties::LinkType>,
 }
@@ -11682,7 +11762,7 @@ pub mod replication_link_properties {
             }
         }
     }
-    #[doc = "Link type (GEO, NAMED)."]
+    #[doc = "Link type (GEO, NAMED, STANDBY)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "LinkType")]
     pub enum LinkType {
@@ -11690,6 +11770,8 @@ pub mod replication_link_properties {
         Geo,
         #[serde(rename = "NAMED")]
         Named,
+        #[serde(rename = "STANDBY")]
+        Standby,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -11717,6 +11799,7 @@ pub mod replication_link_properties {
             match self {
                 Self::Geo => serializer.serialize_unit_variant("LinkType", 0u32, "GEO"),
                 Self::Named => serializer.serialize_unit_variant("LinkType", 1u32, "NAMED"),
+                Self::Standby => serializer.serialize_unit_variant("LinkType", 2u32, "STANDBY"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

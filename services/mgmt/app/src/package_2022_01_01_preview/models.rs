@@ -1054,11 +1054,39 @@ pub mod custom_domain {
 #[doc = "Custom domain analysis."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomHostnameAnalysisResult {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[doc = "CustomHostnameAnalysisResult resource specific properties"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<custom_hostname_analysis_result::Properties>,
+    #[doc = "Host name that was analyzed"]
+    #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
+    pub host_name: Option<String>,
+    #[doc = "<code>true</code> if hostname is already verified; otherwise, <code>false</code>."]
+    #[serde(rename = "isHostnameAlreadyVerified", default, skip_serializing_if = "Option::is_none")]
+    pub is_hostname_already_verified: Option<bool>,
+    #[doc = "DNS verification test result."]
+    #[serde(rename = "customDomainVerificationTest", default, skip_serializing_if = "Option::is_none")]
+    pub custom_domain_verification_test: Option<custom_hostname_analysis_result::CustomDomainVerificationTest>,
+    #[doc = "App Service error response."]
+    #[serde(rename = "customDomainVerificationFailureInfo", default, skip_serializing_if = "Option::is_none")]
+    pub custom_domain_verification_failure_info: Option<DefaultErrorResponse>,
+    #[doc = "<code>true</code> if there is a conflict on the Container App's managed environment; otherwise, <code>false</code>."]
+    #[serde(rename = "hasConflictOnManagedEnvironment", default, skip_serializing_if = "Option::is_none")]
+    pub has_conflict_on_managed_environment: Option<bool>,
+    #[doc = "Name of the conflicting Container App on the Managed Environment if it's within the same subscription."]
+    #[serde(rename = "conflictingContainerAppResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub conflicting_container_app_resource_id: Option<String>,
+    #[doc = "CName records visible for this hostname."]
+    #[serde(rename = "cNameRecords", default, skip_serializing_if = "Vec::is_empty")]
+    pub c_name_records: Vec<String>,
+    #[doc = "TXT records visible for this hostname."]
+    #[serde(rename = "txtRecords", default, skip_serializing_if = "Vec::is_empty")]
+    pub txt_records: Vec<String>,
+    #[doc = "A records visible for this hostname."]
+    #[serde(rename = "aRecords", default, skip_serializing_if = "Vec::is_empty")]
+    pub a_records: Vec<String>,
+    #[doc = "Alternate CName records visible for this hostname."]
+    #[serde(rename = "alternateCNameRecords", default, skip_serializing_if = "Vec::is_empty")]
+    pub alternate_c_name_records: Vec<String>,
+    #[doc = "Alternate TXT records visible for this hostname."]
+    #[serde(rename = "alternateTxtRecords", default, skip_serializing_if = "Vec::is_empty")]
+    pub alternate_txt_records: Vec<String>,
 }
 impl CustomHostnameAnalysisResult {
     pub fn new() -> Self {
@@ -1067,57 +1095,12 @@ impl CustomHostnameAnalysisResult {
 }
 pub mod custom_hostname_analysis_result {
     use super::*;
-    #[doc = "CustomHostnameAnalysisResult resource specific properties"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct Properties {
-        #[doc = "Host name that was analyzed"]
-        #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
-        pub host_name: Option<String>,
-        #[doc = "<code>true</code> if hostname is already verified; otherwise, <code>false</code>."]
-        #[serde(rename = "isHostnameAlreadyVerified", default, skip_serializing_if = "Option::is_none")]
-        pub is_hostname_already_verified: Option<bool>,
-        #[doc = "DNS verification test result."]
-        #[serde(rename = "customDomainVerificationTest", default, skip_serializing_if = "Option::is_none")]
-        pub custom_domain_verification_test: Option<properties::CustomDomainVerificationTest>,
-        #[doc = "App Service error response."]
-        #[serde(rename = "customDomainVerificationFailureInfo", default, skip_serializing_if = "Option::is_none")]
-        pub custom_domain_verification_failure_info: Option<DefaultErrorResponse>,
-        #[doc = "<code>true</code> if there is a conflict on the Container App's managed environment; otherwise, <code>false</code>."]
-        #[serde(rename = "hasConflictOnManagedEnvironment", default, skip_serializing_if = "Option::is_none")]
-        pub has_conflict_on_managed_environment: Option<bool>,
-        #[doc = "Name of the conflicting Container App on the Managed Environment if it's within the same subscription."]
-        #[serde(rename = "conflictingContainerAppResourceId", default, skip_serializing_if = "Option::is_none")]
-        pub conflicting_container_app_resource_id: Option<String>,
-        #[doc = "CName records visible for this hostname."]
-        #[serde(rename = "cNameRecords", default, skip_serializing_if = "Vec::is_empty")]
-        pub c_name_records: Vec<String>,
-        #[doc = "TXT records visible for this hostname."]
-        #[serde(rename = "txtRecords", default, skip_serializing_if = "Vec::is_empty")]
-        pub txt_records: Vec<String>,
-        #[doc = "A records visible for this hostname."]
-        #[serde(rename = "aRecords", default, skip_serializing_if = "Vec::is_empty")]
-        pub a_records: Vec<String>,
-        #[doc = "Alternate CName records visible for this hostname."]
-        #[serde(rename = "alternateCNameRecords", default, skip_serializing_if = "Vec::is_empty")]
-        pub alternate_c_name_records: Vec<String>,
-        #[doc = "Alternate TXT records visible for this hostname."]
-        #[serde(rename = "alternateTxtRecords", default, skip_serializing_if = "Vec::is_empty")]
-        pub alternate_txt_records: Vec<String>,
-    }
-    impl Properties {
-        pub fn new() -> Self {
-            Self::default()
-        }
-    }
-    pub mod properties {
-        use super::*;
-        #[doc = "DNS verification test result."]
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-        pub enum CustomDomainVerificationTest {
-            Passed,
-            Failed,
-            Skipped,
-        }
+    #[doc = "DNS verification test result."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CustomDomainVerificationTest {
+        Passed,
+        Failed,
+        Skipped,
     }
 }
 #[doc = "The configuration settings of the custom Open ID Connect provider."]

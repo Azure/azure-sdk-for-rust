@@ -17,8 +17,8 @@ use azure_storage::core::{
         SasToken,
     },
 };
-use chrono::{DateTime, Utc};
 use futures::StreamExt;
+use time::OffsetDateTime;
 use url::Url;
 
 /// A client for handling blobs
@@ -208,7 +208,7 @@ impl BlobClient {
     pub fn shared_access_signature(
         &self,
         permissions: BlobSasPermissions,
-        expiry: DateTime<Utc>,
+        expiry: OffsetDateTime,
     ) -> azure_core::Result<BlobSharedAccessSignature> {
         let canonicalized_resource = format!(
             "/blob/{}/{}/{}",

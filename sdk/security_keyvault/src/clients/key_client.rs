@@ -71,26 +71,18 @@ impl KeyClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    use chrono::{DateTime, Duration, Utc};
-    use mockito::{mock, Matcher};
-    use serde_json::json;
-
     use crate::mock_client;
     use crate::tests::MockCredential;
-
-    fn diff(first: DateTime<Utc>, second: DateTime<Utc>) -> Duration {
-        if first > second {
-            first - second
-        } else {
-            second - first
-        }
-    }
+    use azure_core::date;
+    use mockito::{mock, Matcher};
+    use serde_json::json;
+    use std::time::Duration;
+    use time::OffsetDateTime;
 
     #[tokio::test]
     async fn can_get_key() -> azure_core::Result<()> {
-        let time_created = Utc::now() - Duration::days(7);
-        let time_updated = Utc::now();
+        let time_created = OffsetDateTime::now_utc() - date::duration_from_days(7);
+        let time_updated = OffsetDateTime::now_utc();
         let _m = mock("GET", "/keys/test-key/78deebed173b48e48f55abf87ed4cf71")
             .match_query(Matcher::UrlEncoded("api-version".into(), API_VERSION.into()))
             .with_header("content-type", "application/json")
@@ -113,8 +105,8 @@ mod tests {
                     },
                     "attributes": {
                         "enabled": true,
-                        "created": time_created.timestamp(),
-                        "updated": time_updated.timestamp(),
+                        "created": time_created.unix_timestamp(),
+                        "updated": time_updated.unix_timestamp(),
                         "recoveryLevel": "Recoverable+Purgeable"
                       },
                     "tags": {
@@ -158,8 +150,8 @@ mod tests {
         assert!(managed.is_none());
         assert_eq!(tags.unwrap().get("purpose").unwrap(), "unit test");
         assert!(enabled.unwrap());
-        assert!(diff(time_created, created_on.unwrap()) < Duration::seconds(1));
-        assert!(diff(time_updated, updated_on.unwrap()) < Duration::seconds(1));
+        assert!(date::diff(time_created, created_on.unwrap()) < Duration::from_secs(1));
+        assert!(date::diff(time_updated, updated_on.unwrap()) < Duration::from_secs(1));
         Ok(())
     }
 

@@ -1,5 +1,5 @@
 use azure_core::error::{Error, ErrorKind, ResultExt};
-use chrono::Duration;
+use std::time::Duration;
 use url::Url;
 
 pub fn craft_peek_lock_url(
@@ -19,7 +19,7 @@ pub fn craft_peek_lock_url(
     // add timeout, if given
     if let Some(t) = lock_expiry {
         url.query_pairs_mut()
-            .append_pair("timeout", &t.num_seconds().to_string());
+            .append_pair("timeout", &t.as_secs().to_string());
     };
 
     Ok(url)

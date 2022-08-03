@@ -1,6 +1,7 @@
+use azure_core::date;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
-use chrono::{Duration, Utc};
+use time::OffsetDateTime;
 
 fn main() {
     env_logger::init();
@@ -22,8 +23,8 @@ fn code() -> azure_core::Result<()> {
         .expect("please specify blob name as command line parameter");
 
     // allow for some time skew
-    let now = Utc::now() - Duration::minutes(15);
-    let later = now + Duration::hours(1);
+    let now = OffsetDateTime::now_utc() - date::duration_from_minutes(15);
+    let later = now + date::duration_from_hours(1);
 
     let storage_client = StorageClient::new_access_key(&account, &access_key);
     let container_client = storage_client.container_client(&container_name);

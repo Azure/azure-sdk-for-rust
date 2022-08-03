@@ -2,6 +2,7 @@ use azure_data_cosmos::prelude::*;
 use clap::Parser;
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
+use time::OffsetDateTime;
 
 // Now we create a sample struct.
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -49,7 +50,7 @@ async fn main() -> azure_core::Result<()> {
         id: format!("unique_id{}", 100),
         a_string: "Something here".into(),
         a_number: 100,
-        a_timestamp: chrono::Utc::now().timestamp(),
+        a_timestamp: OffsetDateTime::now_utc().unix_timestamp(),
     };
 
     // let's add an entity.

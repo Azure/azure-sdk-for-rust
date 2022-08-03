@@ -1,13 +1,12 @@
 use crate::{container::Container, prelude::*};
-use azure_core::Method;
+use azure_core::{date, Method};
 use azure_core::{
-    error::{ErrorKind, ResultExt},
     headers::{self, Headers},
     prelude::*,
     RequestId,
 };
-use chrono::{DateTime, FixedOffset};
 use std::convert::{TryFrom, TryInto};
+use time::OffsetDateTime;
 
 operation! {
     GetProperties,
@@ -40,7 +39,7 @@ impl GetPropertiesBuilder {
 pub struct GetPropertiesResponse {
     pub container: Container,
     pub request_id: RequestId,
-    pub date: DateTime<FixedOffset>,
+    pub date: OffsetDateTime,
 }
 
 impl TryFrom<(&str, &Headers)> for GetPropertiesResponse {
@@ -58,8 +57,7 @@ impl GetPropertiesResponse {
     ) -> azure_core::Result<GetPropertiesResponse> {
         let request_id = headers.get_as(&headers::REQUEST_ID)?;
 
-        let date = DateTime::parse_from_rfc2822(headers.get_str(&headers::DATE)?)
-            .map_kind(ErrorKind::DataConversion)?;
+        let date = date::parse_rfc1123(headers.get_str(&headers::DATE)?)?;
 
         let container = Container::from_response(container_name, headers)?;
 

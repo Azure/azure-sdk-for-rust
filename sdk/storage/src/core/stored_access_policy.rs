@@ -1,7 +1,6 @@
-use azure_core::prelude::*;
-use chrono::{DateTime, FixedOffset};
-
 use crate::xml::read_xml;
+use azure_core::date;
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct StoredAccessPolicyList {
@@ -33,11 +32,11 @@ impl StoredAccessPolicyList {
             s.push_str("<AccessPolicy>\n");
 
             s.push_str("\t\t\t<Start>");
-            s.push_str(&sa.start.format("%Y-%m-%dT%H:%M:%SZ").to_string());
+            s.push_str(&date::to_rfc3339(&sa.start));
             s.push_str("</Start>\n");
 
             s.push_str("\t\t\t<Expiry>");
-            s.push_str(&sa.expiry.format("%Y-%m-%dT%H:%M:%SZ").to_string());
+            s.push_str(&date::to_rfc3339(&sa.expiry));
             s.push_str("</Expiry>\n");
 
             s.push_str("\t\t\t<Permission>");
@@ -72,18 +71,13 @@ impl From<SignedIdentifiers> for StoredAccessPolicyList {
 #[derive(Debug, Clone, PartialEq)]
 pub struct StoredAccessPolicy {
     pub id: String,
-    pub start: DateTime<FixedOffset>,
-    pub expiry: DateTime<FixedOffset>,
+    pub start: OffsetDateTime,
+    pub expiry: OffsetDateTime,
     pub permission: String,
 }
 
 impl StoredAccessPolicy {
-    pub fn new<A, B>(
-        id: A,
-        start: DateTime<FixedOffset>,
-        expiry: DateTime<FixedOffset>,
-        permission: B,
-    ) -> Self
+    pub fn new<A, B>(id: A, start: OffsetDateTime, expiry: OffsetDateTime, permission: B) -> Self
     where
         A: Into<String>,
         B: Into<String>,
@@ -113,10 +107,10 @@ struct SignedIdentifier {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 struct AccessPolicy {
-    #[serde(deserialize_with = "deserialize_date_from_rfc3339")]
-    start: DateTime<FixedOffset>,
-    #[serde(deserialize_with = "deserialize_date_from_rfc3339")]
-    expiry: DateTime<FixedOffset>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    start: OffsetDateTime,
+    #[serde(with = "azure_core::date::rfc3339")]
+    expiry: OffsetDateTime,
     permission: String,
 }
 

@@ -1,6 +1,6 @@
 use azure_core::auth::AccessToken;
-use chrono::{DateTime, TimeZone, Utc};
 use serde::{de, Deserialize, Deserializer};
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone, Deserialize)]
 struct _LoginResponse {
@@ -18,8 +18,8 @@ pub struct LoginResponse {
     pub token_type: String,
     pub expires_in: u64,
     pub ext_expires_in: u64,
-    pub expires_on: Option<DateTime<Utc>>,
-    pub not_before: Option<DateTime<Utc>>,
+    pub expires_on: Option<OffsetDateTime>,
+    pub not_before: Option<OffsetDateTime>,
     pub resource: Option<String>,
     pub access_token: AccessToken,
 }
@@ -40,14 +40,14 @@ impl LoginResponse {
     }
 
     fn from_base_response(r: _LoginResponse) -> Result<LoginResponse, std::num::ParseIntError> {
-        let expires_on: Option<DateTime<Utc>> = match r.expires_on {
-            Some(d) => Some(Utc.timestamp(d.parse()?, 0)),
-            None => None,
-        };
-        let not_before: Option<DateTime<Utc>> = match r.not_before {
-            Some(d) => Some(Utc.timestamp(d.parse()?, 0)),
-            None => None,
-        };
+        let expires_on: Option<OffsetDateTime> = r.expires_on.map(|d| {
+            OffsetDateTime::from_unix_timestamp(d.parse::<i64>().unwrap_or(0))
+                .unwrap_or(OffsetDateTime::UNIX_EPOCH)
+        });
+        let not_before: Option<OffsetDateTime> = r.not_before.map(|d| {
+            OffsetDateTime::from_unix_timestamp(d.parse::<i64>().unwrap_or(0))
+                .unwrap_or(OffsetDateTime::UNIX_EPOCH)
+        });
 
         Ok(LoginResponse {
             token_type: r.token_type,

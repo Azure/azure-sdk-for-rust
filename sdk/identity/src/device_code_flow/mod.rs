@@ -16,7 +16,8 @@ pub use device_code_responses::*;
 use futures::stream::unfold;
 use oauth2::ClientId;
 use serde::Deserialize;
-use std::{borrow::Cow, sync::Arc, time::Duration};
+use std::time::Duration;
+use std::{borrow::Cow, sync::Arc};
 use url::{form_urlencoded, Url};
 
 /// Start the device authorization grant flow.

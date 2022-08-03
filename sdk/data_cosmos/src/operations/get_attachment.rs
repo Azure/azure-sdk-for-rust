@@ -8,7 +8,7 @@ use azure_core::headers::{
 };
 use azure_core::SessionToken;
 use azure_core::{collect_pinned_stream, prelude::*, Response as HttpResponse};
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     GetAttachment,
@@ -51,7 +51,7 @@ pub struct GetAttachmentResponse {
 
     pub content_type: String,
     pub content_location: String,
-    pub last_change: DateTime<Utc>,
+    pub last_change: OffsetDateTime,
     pub etag: String,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
@@ -70,7 +70,7 @@ pub struct GetAttachmentResponse {
     pub service_version: String,
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
 }
 
 impl GetAttachmentResponse {

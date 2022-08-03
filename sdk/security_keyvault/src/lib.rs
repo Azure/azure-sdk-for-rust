@@ -14,7 +14,8 @@ pub use clients::*;
 mod tests {
     use azure_core::auth::AccessToken;
     use azure_core::auth::{TokenCredential, TokenResponse};
-    use chrono::{Duration, Utc};
+    use azure_core::date;
+    use time::OffsetDateTime;
 
     #[macro_export]
     macro_rules! mock_client {
@@ -44,7 +45,7 @@ mod tests {
         ) -> Result<TokenResponse, azure_core::error::Error> {
             Ok(TokenResponse::new(
                 AccessToken::new("TOKEN".to_owned()),
-                Utc::now() + Duration::days(14),
+                OffsetDateTime::now_utc() + date::duration_from_days(14),
             ))
         }
     }

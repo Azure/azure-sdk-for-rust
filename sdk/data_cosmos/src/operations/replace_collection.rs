@@ -5,7 +5,7 @@ use azure_core::headers::{
     content_type_from_headers, etag_from_headers, session_token_from_headers,
 };
 use azure_core::{collect_pinned_stream, Response as HttpResponse};
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     ReplaceCollection,
@@ -78,8 +78,8 @@ pub struct ReplaceCollectionResponse {
     pub alt_content_path: String,
     pub service_version: String,
     pub quorum_acked_lsn: u64,
-    pub last_state_change: DateTime<Utc>,
-    pub date: DateTime<Utc>,
+    pub last_state_change: OffsetDateTime,
+    pub date: OffsetDateTime,
     pub content_location: String,
     pub activity_id: uuid::Uuid,
     pub schema_version: String,

@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use azure_core::{headers::*, prelude::*, Body, RequestId};
 use azure_storage::{headers::consistency_from_headers, ConsistencyCRC64, ConsistencyMD5};
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     PutBlockBlob,
@@ -55,11 +55,11 @@ impl PutBlockBlobBuilder {
 #[derive(Debug, Clone)]
 pub struct PutBlockBlobResponse {
     pub etag: String,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: OffsetDateTime,
     pub content_md5: Option<ConsistencyMD5>,
     pub content_crc64: Option<ConsistencyCRC64>,
     pub request_id: RequestId,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
     pub request_server_encrypted: bool,
 }
 

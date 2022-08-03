@@ -1,5 +1,5 @@
-use chrono::{DateTime, Utc};
 use std::fmt;
+use time::OffsetDateTime;
 use url::form_urlencoded;
 
 pub mod account_sas;
@@ -9,8 +9,8 @@ pub trait SasToken {
     fn token(&self) -> String;
 }
 
-pub(crate) fn format_date(d: DateTime<Utc>) -> String {
-    d.format("%Y-%m-%dT%H:%M:%SZ").to_string()
+pub(crate) fn format_date(d: OffsetDateTime) -> String {
+    azure_core::date::to_rfc3339(&d)
 }
 
 pub(crate) fn format_form(d: String) -> String {

@@ -1,8 +1,9 @@
 use azure_core::headers::{self, HeaderName, HeaderValue, Headers};
-use azure_core::Method;
+use azure_core::{date, Method};
 use azure_core::{Context, Policy, PolicyResult, Request};
 use azure_storage::{core::storage_shared_key_credential::StorageSharedKeyCredential, hmac::sign};
 use std::sync::Arc;
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SharedKeyAuthorizationPolicy {
@@ -31,10 +32,7 @@ impl Policy for SharedKeyAuthorizationPolicy {
 
         request.insert_header(
             azure_core::headers::MS_DATE,
-            HeaderValue::from(format!(
-                "{}",
-                chrono::Utc::now().format("%a, %d %h %Y %T GMT")
-            )),
+            HeaderValue::from(date::to_rfc1123(&OffsetDateTime::now_utc())),
         );
         request.insert_header(
             azure_core::headers::VERSION,

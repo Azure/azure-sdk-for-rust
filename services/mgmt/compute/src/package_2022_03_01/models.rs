@@ -5118,7 +5118,7 @@ pub struct ImageOsDisk {
     #[doc = "This property allows you to specify the type of the OS that is included in the disk if creating a VM from a custom image. <br><br> Possible values are: <br><br> **Windows** <br><br> **Linux**"]
     #[serde(rename = "osType")]
     pub os_type: image_os_disk::OsType,
-    #[doc = "The OS State."]
+    #[doc = "The OS State. For managed images, use Generalized."]
     #[serde(rename = "osState")]
     pub os_state: image_os_disk::OsState,
 }
@@ -5139,7 +5139,7 @@ pub mod image_os_disk {
         Windows,
         Linux,
     }
-    #[doc = "The OS State."]
+    #[doc = "The OS State. For managed images, use Generalized."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsState {
         Generalized,

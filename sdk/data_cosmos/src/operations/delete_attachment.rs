@@ -6,7 +6,7 @@ use azure_core::headers::session_token_from_headers;
 use azure_core::prelude::*;
 use azure_core::Response as HttpResponse;
 use azure_core::SessionToken;
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     DeleteAttachment,
@@ -47,7 +47,7 @@ impl DeleteAttachmentBuilder {
 pub struct DeleteAttachmentResponse {
     pub max_media_storage_usage_mb: u64,
     pub media_storage_usage_mb: u64,
-    pub last_change: DateTime<Utc>,
+    pub last_change: OffsetDateTime,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
     pub lsn: u64,
@@ -66,7 +66,7 @@ pub struct DeleteAttachmentResponse {
     pub service_version: String,
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
 }
 
 impl DeleteAttachmentResponse {

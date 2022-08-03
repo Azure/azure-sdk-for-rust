@@ -4,8 +4,8 @@ use azure_core::{
     headers::{date_from_headers, request_id_from_headers, Headers},
     Method, RequestId,
 };
-use chrono::{DateTime, Utc};
 use std::convert::{TryFrom, TryInto};
+use time::OffsetDateTime;
 
 operation! {
     SetTags,
@@ -40,7 +40,7 @@ impl SetTagsBuilder {
 #[derive(Debug, Clone)]
 pub struct SetTagsResponse {
     pub request_id: RequestId,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
 }
 
 impl TryFrom<&Headers> for SetTagsResponse {

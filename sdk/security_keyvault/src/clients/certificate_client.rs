@@ -216,22 +216,16 @@ mod tests {
     use crate::mock_client;
     use crate::prelude::*;
     use crate::tests::MockCredential;
-    use chrono::{DateTime, Duration, Utc};
+    use azure_core::date;
     use mockito::{mock, Matcher};
     use serde_json::json;
-
-    fn diff(first: DateTime<Utc>, second: DateTime<Utc>) -> Duration {
-        if first > second {
-            first - second
-        } else {
-            second - first
-        }
-    }
+    use std::time::Duration;
+    use time::OffsetDateTime;
 
     #[tokio::test]
     async fn get_certificate() {
-        let time_created = Utc::now() - Duration::days(7);
-        let time_updated = Utc::now();
+        let time_created = OffsetDateTime::now_utc() - date::duration_from_days(7);
+        let time_updated = OffsetDateTime::now_utc();
         let _m = mock("GET", "/certificates/test-certificate/")
             .match_query(Matcher::UrlEncoded("api-version".into(), API_VERSION.into()))
             .with_header("content-type", "application/json")
@@ -244,8 +238,8 @@ mod tests {
                     "cer": "MIICODCCAeagAwIBAgIQqHmpBAv+CY9IJFoUhlbziTAJBgUrDgMCHQUAMBYxFDASBgNVBAMTC1Jvb3QgQWdlbmN5MB4XDTE1MDQyOTIxNTM0MVoXDTM5MTIzMTIzNTk1OVowFzEVMBMGA1UEAxMMS2V5VmF1bHRUZXN0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5bVAT73zr4+N4WVv2+SvTunAw08ksS4BrJW/nNliz3S9XuzMBMXvmYzU5HJ8TtEgluBiZZYd5qsMJD+OXHSNbsLdmMhni0jYX09h3XlC2VJw2sGKeYF+xEaavXm337aZZaZyjrFBrrUl51UePaN+kVFXNlBb3N3TYpqa7KokXenJQuR+i9Gv9a77c0UsSsDSryxppYhKK7HvTZCpKrhVtulF5iPMswWe9np3uggfMamyIsK/0L7X9w9B2qN7993RR0A00nOk4H6CnkuwO77dSsD0KJsk6FyAoZBzRXDZh9+d9R76zCL506NcQy/jl0lCiQYwsUX73PG5pxOh02OwKwIDAQABo0swSTBHBgNVHQEEQDA+gBAS5AktBh0dTwCNYSHcFmRjoRgwFjEUMBIGA1UEAxMLUm9vdCBBZ2VuY3mCEAY3bACqAGSKEc+41KpcNfQwCQYFKw4DAh0FAANBAGqIjo2geVagzuzaZOe1ClGKhZeiCKfWAxklaGN+qlGUbVS4IN4V1lot3VKnzabasmkEHeNxPwLn1qvSD0cX9CE=",
                     "attributes": {
                         "enabled": true,
-                        "created": time_created.timestamp(),
-                        "updated": time_updated.timestamp(),
+                        "created": time_created.unix_timestamp(),
+                        "updated": time_updated.unix_timestamp(),
                         "recoveryLevel": "Recoverable+Purgeable"
                     },
                     "policy": {
@@ -295,16 +289,20 @@ mod tests {
             "https://test-keyvault.vault.azure.net/keys/test-certificate/002ade539442463aba45c0efb42e3e84",
             certificate.key_id
         );
-        assert!(diff(time_created, certificate.properties.created_on) < Duration::seconds(1));
-        assert!(diff(time_updated, certificate.properties.updated_on) < Duration::seconds(1));
+        assert!(
+            date::diff(time_created, certificate.properties.created_on) < Duration::from_secs(1)
+        );
+        assert!(
+            date::diff(time_updated, certificate.properties.updated_on) < Duration::from_secs(1)
+        );
     }
 
     #[tokio::test]
     async fn get_certificate_versions() {
-        let time_created_1 = Utc::now() - Duration::days(7);
-        let time_updated_1 = Utc::now();
-        let time_created_2 = Utc::now() - Duration::days(9);
-        let time_updated_2 = Utc::now() - Duration::days(2);
+        let time_created_1 = OffsetDateTime::now_utc() - date::duration_from_days(7);
+        let time_updated_1 = OffsetDateTime::now_utc();
+        let time_created_2 = OffsetDateTime::now_utc() - date::duration_from_days(9);
+        let time_updated_2 = OffsetDateTime::now_utc() - date::duration_from_days(2);
 
         let _m1 = mock("GET", "/certificates/test-certificate/versions")
             .match_query(Matcher::AllOf(vec![
@@ -318,8 +316,8 @@ mod tests {
                         "x5t": "fLi3U52HunIVNXubkEnf8tP6Wbo",
                         "attributes": {
                             "enabled": true,
-                            "created": time_created_1.timestamp(),
-                            "updated": time_updated_1.timestamp(),
+                            "created": time_created_1.unix_timestamp(),
+                            "updated": time_updated_1.unix_timestamp(),
                         }
                     }],
                     "nextLink": format!("{}/certificates/text-certificate/versions?api-version={}&maxresults=1&$skiptoken=SKIP_TOKEN_MOCK", mockito::server_url(), API_VERSION)
@@ -343,8 +341,8 @@ mod tests {
                         "x5t": "fLi3U52HunIVNXubkEnf8tP6Wbo",
                         "attributes": {
                             "enabled": true,
-                            "created": time_created_2.timestamp(),
-                            "updated": time_updated_2.timestamp(),
+                            "created": time_created_2.unix_timestamp(),
+                            "updated": time_updated_2.unix_timestamp(),
                         }
                     }],
                     "nextLink": null
@@ -369,15 +367,15 @@ mod tests {
             "https://test-keyvault.vault.azure.net/certificates/test-certificate/VERSION_1",
             certificate_1.id
         );
-        assert!(diff(time_created_1, certificate_1.created_on) < Duration::seconds(1));
-        assert!(diff(time_updated_1, certificate_1.updated_on) < Duration::seconds(1));
+        assert!(date::diff(time_created_1, certificate_1.created_on) < Duration::from_secs(1));
+        assert!(date::diff(time_updated_1, certificate_1.updated_on) < Duration::from_secs(1));
 
         let certificate_2 = &certificate_versions[1];
         assert_eq!(
             "https://test-keyvault.vault.azure.net/certificates/test-certificate/VERSION_2",
             certificate_2.id
         );
-        assert!(diff(time_created_2, certificate_2.created_on) < Duration::seconds(1));
-        assert!(diff(time_updated_2, certificate_2.updated_on) < Duration::seconds(1));
+        assert!(date::diff(time_created_2, certificate_2.created_on) < Duration::from_secs(1));
+        assert!(date::diff(time_updated_2, certificate_2.updated_on) < Duration::from_secs(1));
     }
 }

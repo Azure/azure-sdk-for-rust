@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use azure_core::{headers::*, prelude::*, Method, RequestId};
-use chrono::{DateTime, Utc};
 use std::convert::{TryFrom, TryInto};
+use time::OffsetDateTime;
 
 operation! {
     GetMetadata,
@@ -43,7 +43,7 @@ pub struct GetMetadataResponse {
     pub request_id: RequestId,
     pub etag: String,
     pub server: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
     pub metadata: Metadata,
 }
 

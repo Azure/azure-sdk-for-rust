@@ -1,13 +1,13 @@
 use crate::headers::{HEADER_DATE, HEADER_VERSION};
 use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
-use crate::TimeNonce;
 use azure_core::headers::{HeaderValue, AUTHORIZATION};
-use azure_core::{Context, Policy, PolicyResult, Request};
+use azure_core::{date, Context, Policy, PolicyResult, Request};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use std::borrow::Cow;
 use std::sync::Arc;
+use time::OffsetDateTime;
 use url::form_urlencoded;
 
 const AZURE_VERSION: &str = "2018-12-31";
@@ -55,7 +55,7 @@ impl Policy for AuthorizationPolicy {
             "Authorization policies cannot be the last policy of a pipeline"
         );
 
-        let time_nonce = TimeNonce::new();
+        let time_nonce = OffsetDateTime::now_utc();
 
         let auth = {
             let resource_link = generate_resource_link(request);
@@ -145,7 +145,7 @@ fn generate_authorization(
     http_method: &azure_core::Method,
     resource_type: &ResourceType,
     resource_link: &str,
-    time_nonce: TimeNonce,
+    time_nonce: OffsetDateTime,
 ) -> String {
     let (authorization_type, signature) = match auth_token {
         AuthorizationToken::Primary(key) => {
@@ -178,7 +178,7 @@ fn string_to_sign(
     http_method: &azure_core::Method,
     rt: &ResourceType,
     resource_link: &str,
-    time_nonce: TimeNonce,
+    time_nonce: OffsetDateTime,
 ) -> String {
     // From official docs:
     // StringToSign =
@@ -216,13 +216,13 @@ fn string_to_sign(
             ResourceType::Triggers => "triggers",
         },
         resource_link,
-        time_nonce.to_string().to_lowercase()
+        date::to_rfc1123(&time_nonce).to_lowercase()
     )
 }
 
 /// This function HMAC_SHA256 signs the passed string, given the supplied key. The passed string
 /// will be encoded as per its UTF-8 representation. The resulting byte array is then base64
-/// encoded and returned to the caller. Possibile optimization: profile if the HMAC struct
+/// encoded and returned to the caller. Possible optimization: profile if the HMAC struct
 /// initialization is expensive and, if so, cache it somehow to avoid recreating it at every
 /// request.
 fn encode_str_to_sign(data: &str, key: &[u8]) -> String {
@@ -235,12 +235,11 @@ fn encode_str_to_sign(data: &str, key: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use azure_core::date;
 
     #[test]
     fn string_to_sign_00() {
-        let time =
-            chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
-        let time = time.with_timezone(&chrono::Utc).into();
+        let time = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
 
         let ret = string_to_sign(
             &azure_core::Method::Get,
@@ -261,9 +260,7 @@ mon, 01 jan 1900 01:00:00 gmt
 
     #[test]
     fn generate_authorization_00() {
-        let time =
-            chrono::DateTime::parse_from_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
-        let time = time.with_timezone(&chrono::Utc).into();
+        let time = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
 
         let auth_token = AuthorizationToken::primary_from_base64(
             "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==",
@@ -285,9 +282,7 @@ mon, 01 jan 1900 01:00:00 gmt
 
     #[test]
     fn generate_authorization_01() {
-        let time =
-            chrono::DateTime::parse_from_rfc3339("2017-04-27T00:51:12.000000000+00:00").unwrap();
-        let time = time.with_timezone(&chrono::Utc).into();
+        let time = date::parse_rfc3339("2017-04-27T00:51:12.000000000+00:00").unwrap();
 
         let auth_token = AuthorizationToken::primary_from_base64(
             "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL",

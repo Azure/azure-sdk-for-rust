@@ -8,8 +8,8 @@ use azure_core::headers::{
 };
 use azure_core::{collect_pinned_stream, Response, SessionToken};
 use azure_core::{prelude::*, Pageable};
-use chrono::{DateTime, Utc};
 use serde::de::DeserializeOwned;
+use time::OffsetDateTime;
 
 operation! {
     #[stream]
@@ -78,7 +78,7 @@ pub struct ListDocumentsResponse<T> {
     pub rid: String,
     pub documents: Vec<Document<T>>,
     pub content_location: String,
-    pub last_state_change: DateTime<Utc>,
+    pub last_state_change: OffsetDateTime,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
     pub lsn: u64,
@@ -100,7 +100,7 @@ pub struct ListDocumentsResponse<T> {
     pub service_version: String,
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
     pub continuation_token: Option<Continuation>,
 }
 

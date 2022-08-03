@@ -3,8 +3,8 @@ use azure_core::headers::{self, etag_from_headers, last_modified_from_headers};
 use azure_core::{prelude::*, Request};
 use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
-use chrono::{DateTime, Utc};
 use std::convert::TryInto;
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone)]
 pub struct HeadPathBuilder<C>
@@ -85,7 +85,7 @@ pub struct HeadPathResponse {
     pub etag: String,
     pub content_length: Option<i64>,
     pub content_type: Option<String>,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: OffsetDateTime,
     pub properties: Option<Properties>,
     pub acl: Option<String>,
 }

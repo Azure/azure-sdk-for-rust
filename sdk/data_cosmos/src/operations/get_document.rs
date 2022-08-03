@@ -7,8 +7,8 @@ use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers, Headers};
 use azure_core::{collect_pinned_stream, Response as HttpResponse, SessionToken};
 use azure_core::{prelude::*, StatusCode};
-use chrono::{DateTime, Utc};
 use serde::de::DeserializeOwned;
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone)]
 pub struct GetDocumentBuilder<T> {
@@ -35,7 +35,7 @@ impl<T> GetDocumentBuilder<T> {
     setters! {
         consistency_level: ConsistencyLevel => Some(consistency_level),
         if_match_condition: IfMatchCondition => Some(if_match_condition),
-        if_modified_since: DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
+        if_modified_since: OffsetDateTime => Some(IfModifiedSince::new(if_modified_since)),
         context: Context => context,
     }
 }
@@ -126,7 +126,7 @@ where
 pub struct FoundDocumentResponse<T> {
     pub document: Document<T>,
     pub content_location: String,
-    pub last_state_change: DateTime<Utc>,
+    pub last_state_change: OffsetDateTime,
     pub etag: String,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
@@ -146,7 +146,7 @@ pub struct FoundDocumentResponse<T> {
     pub service_version: String,
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
 }
 
 impl<T> FoundDocumentResponse<T>
@@ -186,7 +186,7 @@ where
 #[derive(Debug, Clone)]
 pub struct NotFoundDocumentResponse {
     pub content_location: String,
-    pub last_state_change: DateTime<Utc>,
+    pub last_state_change: OffsetDateTime,
     pub lsn: u64,
     pub schema_version: String,
     pub current_write_quorum: Option<u64>,
@@ -202,7 +202,7 @@ pub struct NotFoundDocumentResponse {
     pub service_version: String,
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
 }
 
 impl NotFoundDocumentResponse {

@@ -1,8 +1,8 @@
 //! Azure authentication and authorization.
 
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, fmt::Debug};
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AccessToken(Cow<'static, str>);
@@ -26,12 +26,12 @@ pub struct TokenResponse {
     /// Get the access token value.
     pub token: AccessToken,
     /// Gets the time when the provided token expires.
-    pub expires_on: DateTime<Utc>,
+    pub expires_on: OffsetDateTime,
 }
 
 impl TokenResponse {
     /// Create a new `TokenResponse`.
-    pub fn new(token: AccessToken, expires_on: DateTime<Utc>) -> Self {
+    pub fn new(token: AccessToken, expires_on: OffsetDateTime) -> Self {
         Self { token, expires_on }
     }
 }

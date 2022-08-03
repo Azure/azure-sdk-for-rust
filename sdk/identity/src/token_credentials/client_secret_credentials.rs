@@ -1,8 +1,8 @@
 use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
 use azure_core::error::{ErrorKind, ResultExt};
-use chrono::Utc;
 use oauth2::{basic::BasicClient, reqwest::async_http_client, AuthType, AuthUrl, Scope, TokenUrl};
-use std::{str, time::Duration};
+use std::str;
+use time::OffsetDateTime;
 use url::Url;
 
 /// Provides options to configure how the Identity library makes authentication
@@ -141,11 +141,7 @@ impl TokenCredential for ClientSecretCredential {
                 use oauth2::TokenResponse as _;
                 TokenResponse::new(
                     AccessToken::new(r.access_token().secret().to_owned()),
-                    Utc::now()
-                        + chrono::Duration::from_std(
-                            r.expires_in().unwrap_or_else(|| Duration::from_secs(0)),
-                        )
-                        .unwrap(),
+                    OffsetDateTime::now_utc() + r.expires_in().unwrap_or_default(),
                 )
             })
             .context(ErrorKind::Credential, "request token error")?;

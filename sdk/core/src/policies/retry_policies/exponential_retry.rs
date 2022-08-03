@@ -1,5 +1,5 @@
-use chrono::{DateTime, Local};
 use std::time::Duration;
+use time::OffsetDateTime;
 
 /// Retry policy with exponential back-off.
 ///
@@ -26,20 +26,16 @@ impl ExponentialRetryPolicy {
 }
 
 impl super::RetryPolicy for ExponentialRetryPolicy {
-    fn is_expired(&self, first_retry_time: &mut Option<DateTime<Local>>, retry_count: u32) -> bool {
+    fn is_expired(&self, first_retry_time: &mut Option<OffsetDateTime>, retry_count: u32) -> bool {
         if retry_count > self.max_retries {
             return true;
         }
-
-        let first_retry_time = first_retry_time.get_or_insert_with(Local::now);
-        let max_delay = chrono::Duration::from_std(self.max_delay)
-            .unwrap_or_else(|_| chrono::Duration::max_value());
-
-        Local::now() > *first_retry_time + max_delay
+        let first_retry_time = first_retry_time.get_or_insert_with(OffsetDateTime::now_utc);
+        OffsetDateTime::now_utc() > *first_retry_time + self.max_delay
     }
 
     fn sleep_duration(&self, retry_count: u32) -> Duration {
-        let sleep_ms = self.delay.as_millis() as u64 * u64::pow(2u64, retry_count - 1)
+        let sleep_ms = self.delay.as_millis() as u64 * u64::pow(2, retry_count - 1)
             + u64::from(rand::random::<u8>());
         Duration::from_millis(sleep_ms)
     }

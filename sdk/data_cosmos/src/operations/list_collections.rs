@@ -6,7 +6,7 @@ use azure_core::headers::{continuation_token_from_headers_optional, session_toke
 use azure_core::prelude::*;
 use azure_core::Response as HttpResponse;
 use azure_core::{collect_pinned_stream, Pageable};
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     #[stream]
@@ -50,7 +50,7 @@ pub struct ListCollectionsResponse {
     pub rid: String,
     pub collections: Vec<Collection>,
     pub count: u32,
-    pub last_state_change: DateTime<Utc>,
+    pub last_state_change: OffsetDateTime,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
     pub schema_version: String,

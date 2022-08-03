@@ -1227,6 +1227,9 @@ pub struct FrontDoorProperties {
     #[doc = "Rules Engine Configurations available to routing rules."]
     #[serde(rename = "rulesEngines", default, skip_serializing_if = "Vec::is_empty")]
     pub rules_engines: Vec<RulesEngine>,
+    #[doc = "Key-Value pair representing additional properties for frontdoor."]
+    #[serde(rename = "extendedProperties", default, skip_serializing_if = "Option::is_none")]
+    pub extended_properties: Option<serde_json::Value>,
 }
 impl FrontDoorProperties {
     pub fn new() -> Self {
@@ -3163,6 +3166,8 @@ pub enum ResourceState {
     Disabling,
     Disabled,
     Deleting,
+    Migrating,
+    Migrated,
     #[serde(skip_deserializing)]
     UnknownValue(String),
 }
@@ -3194,6 +3199,8 @@ impl Serialize for ResourceState {
             Self::Disabling => serializer.serialize_unit_variant("ResourceState", 3u32, "Disabling"),
             Self::Disabled => serializer.serialize_unit_variant("ResourceState", 4u32, "Disabled"),
             Self::Deleting => serializer.serialize_unit_variant("ResourceState", 5u32, "Deleting"),
+            Self::Migrating => serializer.serialize_unit_variant("ResourceState", 6u32, "Migrating"),
+            Self::Migrated => serializer.serialize_unit_variant("ResourceState", 7u32, "Migrated"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
