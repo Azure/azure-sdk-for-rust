@@ -10,7 +10,7 @@ use std::time::Duration;
 /// wait time is not precise.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExponentialRetryPolicy {
-    delay: Duration,
+    initial_delay: Duration,
     max_retries: u32,
     max_elapsed: Duration,
     max_delay: Duration,
@@ -18,16 +18,16 @@ pub struct ExponentialRetryPolicy {
 
 impl ExponentialRetryPolicy {
     pub(crate) fn new(
-        delay: Duration,
+        initial_delay: Duration,
         max_retries: u32,
         max_elapsed: Duration,
         max_delay: Duration,
     ) -> Self {
         Self {
-            delay,
+            initial_delay: initial_delay.max(Duration::from_millis(1)),
             max_retries,
             max_elapsed,
-            max_delay,
+            max_delay: max_delay.max(Duration::from_secs(1)),
         }
     }
 }
@@ -38,8 +38,8 @@ impl RetryPolicy for ExponentialRetryPolicy {
     }
 
     fn sleep_duration(&self, retry_count: u32) -> Duration {
-        let sleep_ms =
-            self.delay.as_millis() as u64 * 2u64.pow(retry_count) + u64::from(rand::random::<u8>());
+        let sleep_ms = self.initial_delay.as_millis() as u64 * 2u64.pow(retry_count)
+            + u64::from(rand::random::<u8>());
         let sleep_ms = sleep_ms.min(self.max_delay.as_millis().try_into().unwrap_or(u64::MAX));
         Duration::from_millis(sleep_ms)
     }
@@ -50,7 +50,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn increases_correctly() {
+    fn exponentialy_increases_correctly() {
         let options = crate::options::RetryOptions::default();
         let policy = ExponentialRetryPolicy::new(
             options.delay,
@@ -74,9 +74,14 @@ mod tests {
             .map(|d| d.as_secs())
             .collect::<Vec<_>>();
         let expected = &[0, 0, 1, 3, 6, 12, 25, 30];
+        assert_eq!(
+            actual.len(),
+            expected.len(),
+            "Different number of durations than expected"
+        );
 
         for (&a, &e) in actual.iter().zip(expected.iter()) {
-            // Check within one second to account for the gitter
+            // Check within one second to account for the jitter
             assert!(
                 a == e || a + 1 == e || a == e + 1,
                 "actual != expected\nActual: {actual:?}\nExpected: {expected:?}"

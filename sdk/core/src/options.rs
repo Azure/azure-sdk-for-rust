@@ -112,7 +112,7 @@ pub struct RetryOptions {
 
     /// The maximum number of retry attempts before giving up.
     ///
-    /// The default is 10.
+    /// The default is 8.
     pub max_retries: u32,
 
     /// The maximum permissible elapsed time since starting to retry.
@@ -133,6 +133,7 @@ impl RetryOptions {
         delay: Duration => delay,
         max_retries: u32 => max_retries,
         max_elapsed: Duration => max_elapsed,
+        max_delay: Duration => max_delay,
     }
 }
 
@@ -141,7 +142,7 @@ impl Default for RetryOptions {
         RetryOptions {
             mode: RetryMode::default(),
             delay: Duration::from_millis(200),
-            max_retries: 10,
+            max_retries: 8,
             max_elapsed: Duration::from_secs(60),
             max_delay: Duration::from_secs(30),
         }
@@ -150,13 +151,12 @@ impl Default for RetryOptions {
 
 impl RetryOptions {
     pub(crate) fn to_policy(&self) -> Arc<dyn Policy> {
-        let max_delay = self.max_delay.min(Duration::from_secs(1));
         match self.mode {
             RetryMode::Exponential => Arc::new(ExponentialRetryPolicy::new(
                 self.delay,
                 self.max_retries,
                 self.max_elapsed,
-                max_delay,
+                self.max_delay,
             )),
             RetryMode::Fixed => Arc::new(FixedRetryPolicy::new(
                 self.delay,
