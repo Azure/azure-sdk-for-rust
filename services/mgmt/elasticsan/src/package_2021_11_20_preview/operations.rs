@@ -94,6 +94,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of ElasticSan operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -213,12 +214,21 @@ pub mod elastic_sans {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of ElasticSans in a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of ElasticSan in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -230,6 +240,12 @@ pub mod elastic_sans {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get a ElasticSan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `elastic_san_name`: The name of the ElasticSan."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -243,6 +259,13 @@ pub mod elastic_sans {
                 elastic_san_name: elastic_san_name.into(),
             }
         }
+        #[doc = "Create ElasticSan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `elastic_san_name`: The name of the ElasticSan."]
+        #[doc = "* `parameters`: Elastic San object."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -258,6 +281,13 @@ pub mod elastic_sans {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Update a Elastic San."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `elastic_san_name`: The name of the ElasticSan."]
+        #[doc = "* `parameters`: Elastic San object."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -273,6 +303,12 @@ pub mod elastic_sans {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a Elastic San."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `elastic_san_name`: The name of the ElasticSan."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -674,6 +710,12 @@ pub mod volume_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List VolumeGroups."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `elastic_san_name`: The name of the ElasticSan."]
         pub fn list_by_elastic_san(
             &self,
             subscription_id: impl Into<String>,
@@ -687,6 +729,13 @@ pub mod volume_groups {
                 elastic_san_name: elastic_san_name.into(),
             }
         }
+        #[doc = "Get an VolumeGroups."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `elastic_san_name`: The name of the ElasticSan."]
+        #[doc = "* `volume_group_name`: The name of the VolumeGroup."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -702,6 +751,14 @@ pub mod volume_groups {
                 volume_group_name: volume_group_name.into(),
             }
         }
+        #[doc = "Create a Volume Group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `elastic_san_name`: The name of the ElasticSan."]
+        #[doc = "* `volume_group_name`: The name of the VolumeGroup."]
+        #[doc = "* `parameters`: Volume Group object."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -719,6 +776,14 @@ pub mod volume_groups {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Update an VolumeGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `elastic_san_name`: The name of the ElasticSan."]
+        #[doc = "* `volume_group_name`: The name of the VolumeGroup."]
+        #[doc = "* `parameters`: Volume Group object."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -736,6 +801,13 @@ pub mod volume_groups {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete an VolumeGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `elastic_san_name`: The name of the ElasticSan."]
+        #[doc = "* `volume_group_name`: The name of the VolumeGroup."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1075,6 +1147,14 @@ pub mod volumes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get an Volume."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `elastic_san_name`: The name of the ElasticSan."]
+        #[doc = "* `volume_group_name`: The name of the VolumeGroup."]
+        #[doc = "* `volume_name`: The name of the Volume."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1092,6 +1172,15 @@ pub mod volumes {
                 volume_name: volume_name.into(),
             }
         }
+        #[doc = "Create a Volume."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `elastic_san_name`: The name of the ElasticSan."]
+        #[doc = "* `volume_group_name`: The name of the VolumeGroup."]
+        #[doc = "* `volume_name`: The name of the Volume."]
+        #[doc = "* `parameters`: Volume object."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1111,6 +1200,15 @@ pub mod volumes {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Update an Volume."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `elastic_san_name`: The name of the ElasticSan."]
+        #[doc = "* `volume_group_name`: The name of the VolumeGroup."]
+        #[doc = "* `volume_name`: The name of the Volume."]
+        #[doc = "* `parameters`: Volume object."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1130,6 +1228,14 @@ pub mod volumes {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete an Volume."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `elastic_san_name`: The name of the ElasticSan."]
+        #[doc = "* `volume_group_name`: The name of the VolumeGroup."]
+        #[doc = "* `volume_name`: The name of the Volume."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1147,6 +1253,13 @@ pub mod volumes {
                 volume_name: volume_name.into(),
             }
         }
+        #[doc = "List Volumes in a VolumeGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `elastic_san_name`: The name of the ElasticSan."]
+        #[doc = "* `volume_group_name`: The name of the VolumeGroup."]
         pub fn list_by_volume_group(
             &self,
             subscription_id: impl Into<String>,

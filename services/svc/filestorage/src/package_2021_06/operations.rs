@@ -91,6 +91,10 @@ pub mod service {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the properties of a storage account's File service, including properties for Storage Analytics metrics and CORS (Cross-Origin Resource Sharing) rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_properties(&self, x_ms_version: impl Into<String>) -> get_properties::Builder {
             get_properties::Builder {
                 client: self.0.clone(),
@@ -98,6 +102,11 @@ pub mod service {
                 timeout: None,
             }
         }
+        #[doc = "Sets properties for a storage account's File service endpoint, including properties for Storage Analytics metrics and CORS (Cross-Origin Resource Sharing) rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `storage_service_properties`: The StorageService properties."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_properties(
             &self,
             storage_service_properties: impl Into<models::StorageServiceProperties>,
@@ -110,6 +119,10 @@ pub mod service {
                 timeout: None,
             }
         }
+        #[doc = "The List Shares Segment operation returns a list of the shares and share snapshots under the specified account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn list_shares_segment(&self, x_ms_version: impl Into<String>) -> list_shares_segment::Builder {
             list_shares_segment::Builder {
                 client: self.0.clone(),
@@ -323,6 +336,11 @@ pub mod share {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns all user-defined metadata and system properties for the specified share or share snapshot. The data returned does not include the share's list of files."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_properties(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_properties::Builder {
             get_properties::Builder {
                 client: self.0.clone(),
@@ -333,6 +351,11 @@ pub mod share {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Creates a new share under the specified account. If the share with the same name already exists, the operation fails."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn create(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -346,6 +369,11 @@ pub mod share {
                 x_ms_root_squash: None,
             }
         }
+        #[doc = "Operation marks the specified share or share snapshot for deletion. The share or share snapshot and any files contained within it are later deleted during garbage collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn delete(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -357,6 +385,12 @@ pub mod share {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "The Lease Share operation establishes and manages a lock on a share, or the specified snapshot for set and delete share operations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn acquire_lease(
             &self,
             share_name: impl Into<String>,
@@ -375,6 +409,13 @@ pub mod share {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "The Lease Share operation establishes and manages a lock on a share, or the specified snapshot for set and delete share operations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
+        #[doc = "* `x_ms_lease_id`: Specifies the current lease ID on the resource."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn release_lease(
             &self,
             share_name: impl Into<String>,
@@ -393,6 +434,13 @@ pub mod share {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "The Lease Share operation establishes and manages a lock on a share, or the specified snapshot for set and delete share operations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
+        #[doc = "* `x_ms_lease_id`: Specifies the current lease ID on the resource."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn change_lease(
             &self,
             share_name: impl Into<String>,
@@ -412,6 +460,13 @@ pub mod share {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "The Lease Share operation establishes and manages a lock on a share, or the specified snapshot for set and delete share operations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
+        #[doc = "* `x_ms_lease_id`: Specifies the current lease ID on the resource."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn renew_lease(
             &self,
             share_name: impl Into<String>,
@@ -430,6 +485,12 @@ pub mod share {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "The Lease Share operation establishes and manages a lock on a share, or the specified snapshot for set and delete share operations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn break_lease(
             &self,
             share_name: impl Into<String>,
@@ -448,6 +509,11 @@ pub mod share {
                 sharesnapshot: None,
             }
         }
+        #[doc = "Creates a read-only snapshot of a share."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn create_snapshot(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> create_snapshot::Builder {
             create_snapshot::Builder {
                 client: self.0.clone(),
@@ -457,6 +523,12 @@ pub mod share {
                 x_ms_meta: None,
             }
         }
+        #[doc = "Returns the permission (security descriptor) for a given key"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_file_permission_key`: Key of the permission to be set for the directory/file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_permission(
             &self,
             share_name: impl Into<String>,
@@ -471,6 +543,12 @@ pub mod share {
                 timeout: None,
             }
         }
+        #[doc = "Create a permission (a security descriptor)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `share_permission`: A permission (a security descriptor) at the share level."]
         pub fn create_permission(
             &self,
             share_name: impl Into<String>,
@@ -485,6 +563,11 @@ pub mod share {
                 timeout: None,
             }
         }
+        #[doc = "Sets properties for the specified share."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_properties(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_properties::Builder {
             set_properties::Builder {
                 client: self.0.clone(),
@@ -497,6 +580,11 @@ pub mod share {
                 x_ms_root_squash: None,
             }
         }
+        #[doc = "Sets one or more user-defined name-value pairs for the specified share."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_metadata(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_metadata::Builder {
             set_metadata::Builder {
                 client: self.0.clone(),
@@ -507,6 +595,11 @@ pub mod share {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Returns information about stored access policies specified on the share."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_access_policy(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_access_policy::Builder {
             get_access_policy::Builder {
                 client: self.0.clone(),
@@ -516,6 +609,11 @@ pub mod share {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Sets a stored access policy for use with shared access signatures."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_access_policy(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_access_policy::Builder {
             set_access_policy::Builder {
                 client: self.0.clone(),
@@ -526,6 +624,11 @@ pub mod share {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Retrieves statistics related to the share."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_statistics(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_statistics::Builder {
             get_statistics::Builder {
                 client: self.0.clone(),
@@ -535,6 +638,11 @@ pub mod share {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Restores a previously deleted Share."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn restore(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> restore::Builder {
             restore::Builder {
                 client: self.0.clone(),
@@ -1744,6 +1852,12 @@ pub mod directory {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns all system properties for the specified directory, and can also be used to check the existence of a directory. The data returned does not include the files in the directory or any subdirectories."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_properties(
             &self,
             share_name: impl Into<String>,
@@ -1759,6 +1873,13 @@ pub mod directory {
                 timeout: None,
             }
         }
+        #[doc = "Creates a new directory under the specified share or parent directory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `x_ms_file_attributes`: If specified, the provided file attributes shall be set. Default value: ‘Archive’ for file and ‘Directory’ for directory. ‘None’ can also be specified as default."]
         pub fn create(
             &self,
             share_name: impl Into<String>,
@@ -1781,6 +1902,12 @@ pub mod directory {
                 x_ms_file_change_time: None,
             }
         }
+        #[doc = "Removes the specified empty directory. Note that the directory must be empty before it can be deleted."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn delete(
             &self,
             share_name: impl Into<String>,
@@ -1795,6 +1922,13 @@ pub mod directory {
                 timeout: None,
             }
         }
+        #[doc = "Sets properties on the directory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `x_ms_file_attributes`: If specified, the provided file attributes shall be set. Default value: ‘Archive’ for file and ‘Directory’ for directory. ‘None’ can also be specified as default."]
         pub fn set_properties(
             &self,
             share_name: impl Into<String>,
@@ -1816,6 +1950,12 @@ pub mod directory {
                 x_ms_file_change_time: None,
             }
         }
+        #[doc = "Updates user defined metadata for the specified directory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_metadata(
             &self,
             share_name: impl Into<String>,
@@ -1831,6 +1971,12 @@ pub mod directory {
                 x_ms_meta: None,
             }
         }
+        #[doc = "Returns a list of files or directories under the specified share or directory. It lists the contents only for a single level of the directory hierarchy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn list_files_and_directories_segment(
             &self,
             share_name: impl Into<String>,
@@ -1851,6 +1997,12 @@ pub mod directory {
                 x_ms_file_extended_info: None,
             }
         }
+        #[doc = "Lists handles for directory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn list_handles(
             &self,
             share_name: impl Into<String>,
@@ -1869,6 +2021,13 @@ pub mod directory {
                 x_ms_recursive: None,
             }
         }
+        #[doc = "Closes all handles open for given directory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `x_ms_handle_id`: Specifies handle ID opened on the file or directory to be closed. Asterisk (‘*’) is a wildcard that specifies all handles."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn force_close_handles(
             &self,
             share_name: impl Into<String>,
@@ -1888,6 +2047,13 @@ pub mod directory {
                 x_ms_recursive: None,
             }
         }
+        #[doc = "Renames a directory"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `x_ms_file_rename_source`: Required. Specifies the URI-style path of the source file, up to 2 KB in length."]
         pub fn rename(
             &self,
             share_name: impl Into<String>,
@@ -2729,6 +2895,13 @@ pub mod file {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Reads or downloads a file from the system, including its metadata and properties."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn download(
             &self,
             share_name: impl Into<String>,
@@ -2748,6 +2921,16 @@ pub mod file {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Creates a new file or replaces a file. Note it only initializes the file with no content."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `x_ms_content_length`: Specifies the maximum size for the file, up to 4 TB."]
+        #[doc = "* `x_ms_type`: Dummy constant parameter, file type can only be file."]
+        #[doc = "* `x_ms_file_attributes`: If specified, the provided file attributes shall be set. Default value: ‘Archive’ for file and ‘Directory’ for directory. ‘None’ can also be specified as default."]
         pub fn create(
             &self,
             share_name: impl Into<String>,
@@ -2783,6 +2966,13 @@ pub mod file {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "removes the file from the storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn delete(
             &self,
             share_name: impl Into<String>,
@@ -2800,6 +2990,13 @@ pub mod file {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Returns all user-defined metadata, standard HTTP properties, and system properties for the file. It does not return the content of the file."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_properties(
             &self,
             share_name: impl Into<String>,
@@ -2818,6 +3015,14 @@ pub mod file {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Sets HTTP headers on the file."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `x_ms_file_attributes`: If specified, the provided file attributes shall be set. Default value: ‘Archive’ for file and ‘Directory’ for directory. ‘None’ can also be specified as default."]
         pub fn set_http_headers(
             &self,
             share_name: impl Into<String>,
@@ -2849,6 +3054,13 @@ pub mod file {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Updates user-defined metadata for the specified file."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_metadata(
             &self,
             share_name: impl Into<String>,
@@ -2867,6 +3079,14 @@ pub mod file {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "[Update] The Lease File operation establishes and manages a lock on a file for write and delete operations"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn acquire_lease(
             &self,
             share_name: impl Into<String>,
@@ -2888,6 +3108,15 @@ pub mod file {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "[Update] The Lease File operation establishes and manages a lock on a file for write and delete operations"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
+        #[doc = "* `x_ms_lease_id`: Specifies the current lease ID on the resource."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn release_lease(
             &self,
             share_name: impl Into<String>,
@@ -2909,6 +3138,15 @@ pub mod file {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "[Update] The Lease File operation establishes and manages a lock on a file for write and delete operations"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
+        #[doc = "* `x_ms_lease_id`: Specifies the current lease ID on the resource."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn change_lease(
             &self,
             share_name: impl Into<String>,
@@ -2931,6 +3169,14 @@ pub mod file {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "[Update] The Lease File operation establishes and manages a lock on a file for write and delete operations"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn break_lease(
             &self,
             share_name: impl Into<String>,
@@ -2951,6 +3197,16 @@ pub mod file {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Upload a range of bytes to a file."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_range`: Specifies the range of bytes to be written. Both the start and end of the range must be specified. For an update operation, the range can be up to 4 MB in size. For a clear operation, the range can be up to the value of the file's full size. The File service accepts only a single byte range for the Range and 'x-ms-range' headers, and the byte range must be specified in the following format: bytes=startByte-endByte."]
+        #[doc = "* `x_ms_write`: Specify one of the following options: - Update: Writes the bytes specified by the request body into the specified range. The Range and Content-Length headers must match to perform the update. - Clear: Clears the specified range and releases the space used in storage for that range. To clear a range, set the Content-Length header to zero, and set the Range header to a value that indicates the range to clear, up to maximum file size."]
+        #[doc = "* `content_length`: Specifies the number of bytes being transmitted in the request body. When the x-ms-write header is set to clear, the value of this header must be set to zero."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn upload_range(
             &self,
             share_name: impl Into<String>,
@@ -2977,6 +3233,17 @@ pub mod file {
                 x_ms_file_last_write_time: None,
             }
         }
+        #[doc = "Upload a range of bytes to a file where the contents are read from a URL."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_range`: Writes data to the specified byte range in the file."]
+        #[doc = "* `x_ms_copy_source`: Specifies the URL of the source file or blob, up to 2 KB in length. To copy a file to another file within the same storage account, you may use Shared Key to authenticate the source file. If you are copying a file from another storage account, or if you are copying a blob from the same storage account or another storage account, then you must authenticate the source file or blob using a shared access signature. If the source is a public blob, no authentication is required to perform the copy operation. A file in a share snapshot can also be specified as a copy source."]
+        #[doc = "* `x_ms_write`: Only update is supported: - Update: Writes the bytes downloaded from the source url into the specified range."]
+        #[doc = "* `content_length`: Specifies the number of bytes being transmitted in the request body. When the x-ms-write header is set to clear, the value of this header must be set to zero."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn upload_range_from_url(
             &self,
             share_name: impl Into<String>,
@@ -3008,6 +3275,13 @@ pub mod file {
                 x_ms_file_last_write_time: None,
             }
         }
+        #[doc = "Returns the list of valid ranges for a file."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_range_list(
             &self,
             share_name: impl Into<String>,
@@ -3028,6 +3302,14 @@ pub mod file {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Copies a blob or file to a destination file within the storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `x_ms_copy_source`: Specifies the URL of the source file or blob, up to 2 KB in length. To copy a file to another file within the same storage account, you may use Shared Key to authenticate the source file. If you are copying a file from another storage account, or if you are copying a blob from the same storage account or another storage account, then you must authenticate the source file or blob using a shared access signature. If the source is a public blob, no authentication is required to perform the copy operation. A file in a share snapshot can also be specified as a copy source."]
         pub fn start_copy(
             &self,
             share_name: impl Into<String>,
@@ -3057,6 +3339,14 @@ pub mod file {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Aborts a pending Copy File operation, and leaves a destination file with zero length and full metadata."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_copy_action`: Abort."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn abort_copy(
             &self,
             share_name: impl Into<String>,
@@ -3076,6 +3366,13 @@ pub mod file {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Lists handles for file"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn list_handles(
             &self,
             share_name: impl Into<String>,
@@ -3095,6 +3392,14 @@ pub mod file {
                 sharesnapshot: None,
             }
         }
+        #[doc = "Closes all handles open for given file"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_handle_id`: Specifies handle ID opened on the file or directory to be closed. Asterisk (‘*’) is a wildcard that specifies all handles."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn force_close_handles(
             &self,
             share_name: impl Into<String>,
@@ -3115,6 +3420,14 @@ pub mod file {
                 sharesnapshot: None,
             }
         }
+        #[doc = "Renames a file"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `x_ms_file_rename_source`: Required. Specifies the URI-style path of the source file, up to 2 KB in length."]
         pub fn rename(
             &self,
             share_name: impl Into<String>,

@@ -85,6 +85,10 @@ pub mod b2c_tenants {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Checks the availability and validity of a domain name for the tenant."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check_name_availability(&self, subscription_id: impl Into<String>) -> check_name_availability::Builder {
             check_name_availability::Builder {
                 client: self.0.clone(),
@@ -92,6 +96,11 @@ pub mod b2c_tenants {
                 check_name_availability_request_body: None,
             }
         }
+        #[doc = "Get all the Azure AD B2C tenant resources in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -103,12 +112,22 @@ pub mod b2c_tenants {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get all the Azure AD B2C tenant resources in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the Azure AD B2C tenant resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_name`: The initial domain name of the B2C tenant."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -122,6 +141,12 @@ pub mod b2c_tenants {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Initiates an async request to create both the Azure AD B2C tenant and the corresponding Azure resource linked to a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_name`: The initial domain name of the B2C tenant."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -136,6 +161,12 @@ pub mod b2c_tenants {
                 create_tenant_request_body: None,
             }
         }
+        #[doc = "Update the Azure AD B2C tenant resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_name`: The initial domain name of the B2C tenant."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -150,6 +181,12 @@ pub mod b2c_tenants {
                 update_tenant_request_body: None,
             }
         }
+        #[doc = "Initiates an async operation to delete the Azure AD B2C tenant and Azure resource. The resource deletion can only happen as the last step in [the tenant deletion process](https://aka.ms/deleteB2Ctenant). "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_name`: The initial domain name of the B2C tenant."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -574,9 +611,15 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the operations available from this provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
+        #[doc = "Gets the status of the async operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `operation_id`: The operation ID."]
         pub fn get_async_status(&self, subscription_id: impl Into<String>, operation_id: impl Into<String>) -> get_async_status::Builder {
             get_async_status::Builder {
                 client: self.0.clone(),

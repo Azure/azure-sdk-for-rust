@@ -82,12 +82,21 @@ pub mod catalog {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Grants an access control list (ACL) entry to the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters supplied to create or update an access control list (ACL) entry for a Data Lake Analytics catalog."]
         pub fn grant_acl(&self, parameters: impl Into<models::AclCreateOrUpdateParameters>) -> grant_acl::Builder {
             grant_acl::Builder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Grants an access control list (ACL) entry to the database from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `parameters`: Parameters supplied to create or update an access control list (ACL) entry for a database."]
         pub fn grant_acl_to_database(
             &self,
             database_name: impl Into<String>,
@@ -99,12 +108,21 @@ pub mod catalog {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Revokes an access control list (ACL) entry from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters supplied to delete an access control list (ACL) entry from a Data Lake Analytics catalog."]
         pub fn revoke_acl(&self, parameters: impl Into<models::AclDeleteParameters>) -> revoke_acl::Builder {
             revoke_acl::Builder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Revokes an access control list (ACL) entry for the database from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `parameters`: Parameters supplied to delete an access control list (ACL) entry for a database."]
         pub fn revoke_acl_from_database(
             &self,
             database_name: impl Into<String>,
@@ -116,6 +134,11 @@ pub mod catalog {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Gets the specified secret in the specified database. This is deprecated and will be removed in the next release. Please use GetCredential instead."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the secret."]
+        #[doc = "* `secret_name`: The name of the secret to get"]
         pub fn get_secret(&self, database_name: impl Into<String>, secret_name: impl Into<String>) -> get_secret::Builder {
             get_secret::Builder {
                 client: self.0.clone(),
@@ -123,6 +146,12 @@ pub mod catalog {
                 secret_name: secret_name.into(),
             }
         }
+        #[doc = "Creates the specified secret for use with external data sources in the specified database. This is deprecated and will be removed in the next release. Please use CreateCredential instead."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database in which to create the secret."]
+        #[doc = "* `secret_name`: The name of the secret."]
+        #[doc = "* `parameters`: The parameters required to create the secret (name and password)"]
         pub fn create_secret(
             &self,
             database_name: impl Into<String>,
@@ -136,6 +165,12 @@ pub mod catalog {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Modifies the specified secret for use with external data sources in the specified database. This is deprecated and will be removed in the next release. Please use UpdateCredential instead."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the secret."]
+        #[doc = "* `secret_name`: The name of the secret."]
+        #[doc = "* `parameters`: The parameters required to modify the secret (name and password)"]
         pub fn update_secret(
             &self,
             database_name: impl Into<String>,
@@ -149,6 +184,11 @@ pub mod catalog {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the specified secret in the specified database. This is deprecated and will be removed in the next release. Please use DeleteCredential instead."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the secret."]
+        #[doc = "* `secret_name`: The name of the secret to delete"]
         pub fn delete_secret(&self, database_name: impl Into<String>, secret_name: impl Into<String>) -> delete_secret::Builder {
             delete_secret::Builder {
                 client: self.0.clone(),
@@ -156,12 +196,21 @@ pub mod catalog {
                 secret_name: secret_name.into(),
             }
         }
+        #[doc = "Deletes all secrets in the specified database. This is deprecated and will be removed in the next release. In the future, please only drop individual credentials using DeleteCredential"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the secret."]
         pub fn delete_all_secrets(&self, database_name: impl Into<String>) -> delete_all_secrets::Builder {
             delete_all_secrets::Builder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Retrieves the specified credential from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the schema."]
+        #[doc = "* `credential_name`: The name of the credential."]
         pub fn get_credential(&self, database_name: impl Into<String>, credential_name: impl Into<String>) -> get_credential::Builder {
             get_credential::Builder {
                 client: self.0.clone(),
@@ -169,6 +218,11 @@ pub mod catalog {
                 credential_name: credential_name.into(),
             }
         }
+        #[doc = "Deletes the specified credential in the specified database"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the credential."]
+        #[doc = "* `credential_name`: The name of the credential to delete"]
         pub fn delete_credential(
             &self,
             database_name: impl Into<String>,
@@ -182,6 +236,12 @@ pub mod catalog {
                 cascade: None,
             }
         }
+        #[doc = "Creates the specified credential for use with external data sources in the specified database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database in which to create the credential. Note: This is NOT an external database name, but the name of an existing U-SQL database that should contain the new credential object."]
+        #[doc = "* `credential_name`: The name of the credential."]
+        #[doc = "* `parameters`: The parameters required to create the credential (name and password)"]
         pub fn create_credential(
             &self,
             database_name: impl Into<String>,
@@ -195,6 +255,12 @@ pub mod catalog {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Modifies the specified credential for use with external data sources in the specified database"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the credential."]
+        #[doc = "* `credential_name`: The name of the credential."]
+        #[doc = "* `parameters`: The parameters required to modify the credential (name and password)"]
         pub fn update_credential(
             &self,
             database_name: impl Into<String>,
@@ -208,6 +274,10 @@ pub mod catalog {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Retrieves the list of credentials from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the schema."]
         pub fn list_credentials(&self, database_name: impl Into<String>) -> list_credentials::Builder {
             list_credentials::Builder {
                 client: self.0.clone(),
@@ -220,6 +290,11 @@ pub mod catalog {
                 count: None,
             }
         }
+        #[doc = "Retrieves the specified external data source from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the external data source."]
+        #[doc = "* `external_data_source_name`: The name of the external data source."]
         pub fn get_external_data_source(
             &self,
             database_name: impl Into<String>,
@@ -231,6 +306,10 @@ pub mod catalog {
                 external_data_source_name: external_data_source_name.into(),
             }
         }
+        #[doc = "Retrieves the list of external data sources from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the external data sources."]
         pub fn list_external_data_sources(&self, database_name: impl Into<String>) -> list_external_data_sources::Builder {
             list_external_data_sources::Builder {
                 client: self.0.clone(),
@@ -243,6 +322,12 @@ pub mod catalog {
                 count: None,
             }
         }
+        #[doc = "Retrieves the specified procedure from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the procedure."]
+        #[doc = "* `schema_name`: The name of the schema containing the procedure."]
+        #[doc = "* `procedure_name`: The name of the procedure."]
         pub fn get_procedure(
             &self,
             database_name: impl Into<String>,
@@ -256,6 +341,11 @@ pub mod catalog {
                 procedure_name: procedure_name.into(),
             }
         }
+        #[doc = "Retrieves the list of procedures from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the procedures."]
+        #[doc = "* `schema_name`: The name of the schema containing the procedures."]
         pub fn list_procedures(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_procedures::Builder {
             list_procedures::Builder {
                 client: self.0.clone(),
@@ -269,6 +359,12 @@ pub mod catalog {
                 count: None,
             }
         }
+        #[doc = "Retrieves the specified table from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the table."]
+        #[doc = "* `schema_name`: The name of the schema containing the table."]
+        #[doc = "* `table_name`: The name of the table."]
         pub fn get_table(
             &self,
             database_name: impl Into<String>,
@@ -282,6 +378,12 @@ pub mod catalog {
                 table_name: table_name.into(),
             }
         }
+        #[doc = "Retrieves the list of table fragments from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the table fragments."]
+        #[doc = "* `schema_name`: The name of the schema containing the table fragments."]
+        #[doc = "* `table_name`: The name of the table containing the table fragments."]
         pub fn list_table_fragments(
             &self,
             database_name: impl Into<String>,
@@ -301,6 +403,11 @@ pub mod catalog {
                 count: None,
             }
         }
+        #[doc = "Retrieves the list of tables from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the tables."]
+        #[doc = "* `schema_name`: The name of the schema containing the tables."]
         pub fn list_tables(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_tables::Builder {
             list_tables::Builder {
                 client: self.0.clone(),
@@ -315,6 +422,11 @@ pub mod catalog {
                 basic: None,
             }
         }
+        #[doc = "Retrieves the list of all table statistics within the specified schema from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the statistics."]
+        #[doc = "* `schema_name`: The name of the schema containing the statistics."]
         pub fn list_table_statistics_by_database_and_schema(
             &self,
             database_name: impl Into<String>,
@@ -332,6 +444,12 @@ pub mod catalog {
                 count: None,
             }
         }
+        #[doc = "Retrieves the specified table type from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the table type."]
+        #[doc = "* `schema_name`: The name of the schema containing the table type."]
+        #[doc = "* `table_type_name`: The name of the table type to retrieve."]
         pub fn get_table_type(
             &self,
             database_name: impl Into<String>,
@@ -345,6 +463,11 @@ pub mod catalog {
                 table_type_name: table_type_name.into(),
             }
         }
+        #[doc = "Retrieves the list of table types from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the table types."]
+        #[doc = "* `schema_name`: The name of the schema containing the table types."]
         pub fn list_table_types(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_table_types::Builder {
             list_table_types::Builder {
                 client: self.0.clone(),
@@ -358,6 +481,12 @@ pub mod catalog {
                 count: None,
             }
         }
+        #[doc = "Retrieves the specified package from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the package."]
+        #[doc = "* `schema_name`: The name of the schema containing the package."]
+        #[doc = "* `package_name`: The name of the package."]
         pub fn get_package(
             &self,
             database_name: impl Into<String>,
@@ -371,6 +500,11 @@ pub mod catalog {
                 package_name: package_name.into(),
             }
         }
+        #[doc = "Retrieves the list of packages from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the packages."]
+        #[doc = "* `schema_name`: The name of the schema containing the packages."]
         pub fn list_packages(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_packages::Builder {
             list_packages::Builder {
                 client: self.0.clone(),
@@ -384,6 +518,12 @@ pub mod catalog {
                 count: None,
             }
         }
+        #[doc = "Retrieves the specified view from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the view."]
+        #[doc = "* `schema_name`: The name of the schema containing the view."]
+        #[doc = "* `view_name`: The name of the view."]
         pub fn get_view(
             &self,
             database_name: impl Into<String>,
@@ -397,6 +537,11 @@ pub mod catalog {
                 view_name: view_name.into(),
             }
         }
+        #[doc = "Retrieves the list of views from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the views."]
+        #[doc = "* `schema_name`: The name of the schema containing the views."]
         pub fn list_views(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_views::Builder {
             list_views::Builder {
                 client: self.0.clone(),
@@ -410,6 +555,13 @@ pub mod catalog {
                 count: None,
             }
         }
+        #[doc = "Retrieves the specified table statistics from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the statistics."]
+        #[doc = "* `schema_name`: The name of the schema containing the statistics."]
+        #[doc = "* `table_name`: The name of the table containing the statistics."]
+        #[doc = "* `statistics_name`: The name of the table statistics."]
         pub fn get_table_statistic(
             &self,
             database_name: impl Into<String>,
@@ -425,6 +577,12 @@ pub mod catalog {
                 statistics_name: statistics_name.into(),
             }
         }
+        #[doc = "Retrieves the list of table statistics from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the statistics."]
+        #[doc = "* `schema_name`: The name of the schema containing the statistics."]
+        #[doc = "* `table_name`: The name of the table containing the statistics."]
         pub fn list_table_statistics(
             &self,
             database_name: impl Into<String>,
@@ -444,6 +602,13 @@ pub mod catalog {
                 count: None,
             }
         }
+        #[doc = "Retrieves a preview set of rows in given partition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the partition."]
+        #[doc = "* `schema_name`: The name of the schema containing the partition."]
+        #[doc = "* `table_name`: The name of the table containing the partition."]
+        #[doc = "* `partition_name`: The name of the table partition."]
         pub fn preview_table_partition(
             &self,
             database_name: impl Into<String>,
@@ -461,6 +626,13 @@ pub mod catalog {
                 max_columns: None,
             }
         }
+        #[doc = "Retrieves the specified table partition from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the partition."]
+        #[doc = "* `schema_name`: The name of the schema containing the partition."]
+        #[doc = "* `table_name`: The name of the table containing the partition."]
+        #[doc = "* `partition_name`: The name of the table partition."]
         pub fn get_table_partition(
             &self,
             database_name: impl Into<String>,
@@ -476,6 +648,12 @@ pub mod catalog {
                 partition_name: partition_name.into(),
             }
         }
+        #[doc = "Retrieves a preview set of rows in given table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the table."]
+        #[doc = "* `schema_name`: The name of the schema containing the table."]
+        #[doc = "* `table_name`: The name of the table."]
         pub fn preview_table(
             &self,
             database_name: impl Into<String>,
@@ -491,6 +669,12 @@ pub mod catalog {
                 max_columns: None,
             }
         }
+        #[doc = "Retrieves the list of table partitions from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the partitions."]
+        #[doc = "* `schema_name`: The name of the schema containing the partitions."]
+        #[doc = "* `table_name`: The name of the table containing the partitions."]
         pub fn list_table_partitions(
             &self,
             database_name: impl Into<String>,
@@ -510,6 +694,11 @@ pub mod catalog {
                 count: None,
             }
         }
+        #[doc = "Retrieves the list of types within the specified database and schema from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the types."]
+        #[doc = "* `schema_name`: The name of the schema containing the types."]
         pub fn list_types(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_types::Builder {
             list_types::Builder {
                 client: self.0.clone(),
@@ -523,6 +712,12 @@ pub mod catalog {
                 count: None,
             }
         }
+        #[doc = "Retrieves the specified table valued function from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the table valued function."]
+        #[doc = "* `schema_name`: The name of the schema containing the table valued function."]
+        #[doc = "* `table_valued_function_name`: The name of the tableValuedFunction."]
         pub fn get_table_valued_function(
             &self,
             database_name: impl Into<String>,
@@ -536,6 +731,11 @@ pub mod catalog {
                 table_valued_function_name: table_valued_function_name.into(),
             }
         }
+        #[doc = "Retrieves the list of table valued functions from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the table valued functions."]
+        #[doc = "* `schema_name`: The name of the schema containing the table valued functions."]
         pub fn list_table_valued_functions(
             &self,
             database_name: impl Into<String>,
@@ -553,6 +753,11 @@ pub mod catalog {
                 count: None,
             }
         }
+        #[doc = "Retrieves the specified assembly from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the assembly."]
+        #[doc = "* `assembly_name`: The name of the assembly."]
         pub fn get_assembly(&self, database_name: impl Into<String>, assembly_name: impl Into<String>) -> get_assembly::Builder {
             get_assembly::Builder {
                 client: self.0.clone(),
@@ -560,6 +765,10 @@ pub mod catalog {
                 assembly_name: assembly_name.into(),
             }
         }
+        #[doc = "Retrieves the list of assemblies from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the assembly."]
         pub fn list_assemblies(&self, database_name: impl Into<String>) -> list_assemblies::Builder {
             list_assemblies::Builder {
                 client: self.0.clone(),
@@ -572,6 +781,11 @@ pub mod catalog {
                 count: None,
             }
         }
+        #[doc = "Retrieves the specified schema from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the schema."]
+        #[doc = "* `schema_name`: The name of the schema."]
         pub fn get_schema(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> get_schema::Builder {
             get_schema::Builder {
                 client: self.0.clone(),
@@ -579,6 +793,10 @@ pub mod catalog {
                 schema_name: schema_name.into(),
             }
         }
+        #[doc = "Retrieves the list of schemas from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the schema."]
         pub fn list_schemas(&self, database_name: impl Into<String>) -> list_schemas::Builder {
             list_schemas::Builder {
                 client: self.0.clone(),
@@ -591,6 +809,10 @@ pub mod catalog {
                 count: None,
             }
         }
+        #[doc = "Retrieves the list of all statistics in a database from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the table statistics."]
         pub fn list_table_statistics_by_database(&self, database_name: impl Into<String>) -> list_table_statistics_by_database::Builder {
             list_table_statistics_by_database::Builder {
                 client: self.0.clone(),
@@ -603,6 +825,10 @@ pub mod catalog {
                 count: None,
             }
         }
+        #[doc = "Retrieves the list of all tables in a database from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the tables."]
         pub fn list_tables_by_database(&self, database_name: impl Into<String>) -> list_tables_by_database::Builder {
             list_tables_by_database::Builder {
                 client: self.0.clone(),
@@ -616,6 +842,10 @@ pub mod catalog {
                 basic: None,
             }
         }
+        #[doc = "Retrieves the list of all table valued functions in a database from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the table valued functions."]
         pub fn list_table_valued_functions_by_database(
             &self,
             database_name: impl Into<String>,
@@ -631,6 +861,10 @@ pub mod catalog {
                 count: None,
             }
         }
+        #[doc = "Retrieves the list of all views in a database from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database containing the views."]
         pub fn list_views_by_database(&self, database_name: impl Into<String>) -> list_views_by_database::Builder {
             list_views_by_database::Builder {
                 client: self.0.clone(),
@@ -643,6 +877,10 @@ pub mod catalog {
                 count: None,
             }
         }
+        #[doc = "Retrieves the list of access control list (ACL) entries for the database from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database."]
         pub fn list_acls_by_database(&self, database_name: impl Into<String>) -> list_acls_by_database::Builder {
             list_acls_by_database::Builder {
                 client: self.0.clone(),
@@ -655,6 +893,7 @@ pub mod catalog {
                 count: None,
             }
         }
+        #[doc = "Retrieves the list of access control list (ACL) entries for the Data Lake Analytics catalog."]
         pub fn list_acls(&self) -> list_acls::Builder {
             list_acls::Builder {
                 client: self.0.clone(),
@@ -666,12 +905,17 @@ pub mod catalog {
                 count: None,
             }
         }
+        #[doc = "Retrieves the specified database from the Data Lake Analytics catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `database_name`: The name of the database."]
         pub fn get_database(&self, database_name: impl Into<String>) -> get_database::Builder {
             get_database::Builder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Retrieves the list of databases from the Data Lake Analytics catalog."]
         pub fn list_databases(&self) -> list_databases::Builder {
             list_databases::Builder {
                 client: self.0.clone(),

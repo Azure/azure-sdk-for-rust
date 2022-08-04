@@ -91,6 +91,10 @@ pub mod system_assigned_identities {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the systemAssignedIdentity available under the specified RP scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The resource provider scope of the resource. Parent resource being extended by Managed Identities."]
         pub fn get_by_scope(&self, scope: impl Into<String>) -> get_by_scope::Builder {
             get_by_scope::Builder {
                 client: self.0.clone(),
@@ -151,6 +155,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists available operations for the Microsoft.ManagedIdentity provider"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -232,12 +237,21 @@ pub mod user_assigned_identities {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the userAssignedIdentities available under the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Id of the Subscription to which the identity belongs."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the userAssignedIdentities available under the specified ResourceGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Id of the Subscription to which the identity belongs."]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the identity belongs."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -249,6 +263,12 @@ pub mod user_assigned_identities {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists the associated resources for this identity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Id of the Subscription to which the identity belongs."]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the identity belongs."]
+        #[doc = "* `resource_name`: The name of the identity resource."]
         pub fn list_associated_resources(
             &self,
             subscription_id: impl Into<String>,
@@ -267,6 +287,12 @@ pub mod user_assigned_identities {
                 skiptoken: None,
             }
         }
+        #[doc = "Gets the identity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Id of the Subscription to which the identity belongs."]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the identity belongs."]
+        #[doc = "* `resource_name`: The name of the identity resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -280,6 +306,13 @@ pub mod user_assigned_identities {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create or update an identity in the specified subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Id of the Subscription to which the identity belongs."]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the identity belongs."]
+        #[doc = "* `resource_name`: The name of the identity resource."]
+        #[doc = "* `parameters`: Parameters to create or update the identity"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -295,6 +328,13 @@ pub mod user_assigned_identities {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Update an identity in the specified subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Id of the Subscription to which the identity belongs."]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the identity belongs."]
+        #[doc = "* `resource_name`: The name of the identity resource."]
+        #[doc = "* `parameters`: Parameters to update the identity"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -310,6 +350,12 @@ pub mod user_assigned_identities {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the identity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Id of the Subscription to which the identity belongs."]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the identity belongs."]
+        #[doc = "* `resource_name`: The name of the identity resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -814,6 +860,12 @@ pub mod federated_identity_credentials {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the federated identity credentials under the specified user assigned identity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Id of the Subscription to which the identity belongs."]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the identity belongs."]
+        #[doc = "* `resource_name`: The name of the identity resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -829,6 +881,13 @@ pub mod federated_identity_credentials {
                 skiptoken: None,
             }
         }
+        #[doc = "Gets the federated identity credential."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Id of the Subscription to which the identity belongs."]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the identity belongs."]
+        #[doc = "* `resource_name`: The name of the identity resource."]
+        #[doc = "* `federated_identity_credential_resource_name`: The name of the federated identity credential resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -844,6 +903,14 @@ pub mod federated_identity_credentials {
                 federated_identity_credential_resource_name: federated_identity_credential_resource_name.into(),
             }
         }
+        #[doc = "Create or update a federated identity credential under the specified user assigned identity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Id of the Subscription to which the identity belongs."]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the identity belongs."]
+        #[doc = "* `resource_name`: The name of the identity resource."]
+        #[doc = "* `federated_identity_credential_resource_name`: The name of the federated identity credential resource."]
+        #[doc = "* `parameters`: Parameters to create or update the federated identity credential."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -861,6 +928,13 @@ pub mod federated_identity_credentials {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the federated identity credential."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Id of the Subscription to which the identity belongs."]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the identity belongs."]
+        #[doc = "* `resource_name`: The name of the identity resource."]
+        #[doc = "* `federated_identity_credential_resource_name`: The name of the federated identity credential resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

@@ -86,6 +86,10 @@ pub mod subscriptions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets all available geo-locations."]
+        #[doc = "This operation provides all the locations that are available for resource providers; however, each resource provider may support a subset of this list."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_locations(&self, subscription_id: impl Into<String>) -> list_locations::Builder {
             list_locations::Builder {
                 client: self.0.clone(),
@@ -93,15 +97,25 @@ pub mod subscriptions {
                 include_extended_locations: None,
             }
         }
+        #[doc = "Gets details about a specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(&self, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all subscriptions for a tenant."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
+        #[doc = "Compares a subscriptions logical zone mapping"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `parameters`: Parameters for checking zone peers."]
         pub fn check_zone_peers(
             &self,
             subscription_id: impl Into<String>,
@@ -341,6 +355,7 @@ pub mod tenants {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the tenants for your account."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -417,6 +432,7 @@ pub mod tenants {
 }
 impl Client {
     #[doc = "Checks resource name validity"]
+    #[doc = "A resource name is valid if it is not a reserved word, does not contains a reserved word and does not start with a reserved word"]
     pub fn check_resource_name(&self) -> check_resource_name::Builder {
         check_resource_name::Builder {
             client: self.clone(),

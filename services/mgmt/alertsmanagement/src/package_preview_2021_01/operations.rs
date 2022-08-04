@@ -85,6 +85,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all operations available through Azure Alerts Management Resource Provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -166,6 +167,11 @@ pub mod migrate_from_smart_detection {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Starts an asynchronous migration process of Smart Detection to smart alerts in an Application Insights resource. Use the HTTP address in the response location header to GET the status of the migration process."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription Id."]
+        #[doc = "* `smart_detection_migration_request`: The parameters controlling the migration process."]
         pub fn start_migration(
             &self,
             subscription_id: impl Into<String>,

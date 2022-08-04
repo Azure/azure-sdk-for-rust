@@ -128,6 +128,12 @@ pub mod account_filters {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Account Filters"]
+        #[doc = "List Account Filters in the Media Services account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -142,6 +148,13 @@ pub mod account_filters {
             }
         }
         #[doc = "Get an Account Filter."]
+        #[doc = "Get the details of an Account Filter in the Media Services account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `filter_name`: The Account Filter name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -158,6 +171,14 @@ pub mod account_filters {
             }
         }
         #[doc = "Create or update an Account Filter"]
+        #[doc = "Creates or updates an Account Filter in the Media Services account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `filter_name`: The Account Filter name"]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -176,6 +197,14 @@ pub mod account_filters {
             }
         }
         #[doc = "Update an Account Filter"]
+        #[doc = "Updates an existing Account Filter in the Media Services account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `filter_name`: The Account Filter name"]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -194,6 +223,13 @@ pub mod account_filters {
             }
         }
         #[doc = "Delete an Account Filter."]
+        #[doc = "Deletes an Account Filter in the Media Services account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `filter_name`: The Account Filter name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -524,6 +560,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Operations"]
+        #[doc = "Lists all the Media Services operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -603,6 +640,11 @@ pub mod mediaservices {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Media Services accounts"]
+        #[doc = "List Media Services accounts in the resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -611,6 +653,12 @@ pub mod mediaservices {
             }
         }
         #[doc = "Get a Media Services account"]
+        #[doc = "Get the details of a Media Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -625,6 +673,13 @@ pub mod mediaservices {
             }
         }
         #[doc = "Create or update a Media Services account"]
+        #[doc = "Creates or updates a Media Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -641,6 +696,13 @@ pub mod mediaservices {
             }
         }
         #[doc = "Update a Media Services account"]
+        #[doc = "Updates an existing Media Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -657,6 +719,12 @@ pub mod mediaservices {
             }
         }
         #[doc = "Delete a Media Services account."]
+        #[doc = "Deletes a Media Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -671,6 +739,13 @@ pub mod mediaservices {
             }
         }
         #[doc = "Synchronizes Storage Account Keys"]
+        #[doc = "Synchronizes storage account keys for a storage account associated with the Media Service account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn sync_storage_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -687,6 +762,13 @@ pub mod mediaservices {
             }
         }
         #[doc = "List the media edge policies associated with the Media Services account."]
+        #[doc = "List the media edge policies associated with the Media Services account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn list_edge_policies(
             &self,
             subscription_id: impl Into<String>,
@@ -703,6 +785,10 @@ pub mod mediaservices {
             }
         }
         #[doc = "List Media Services accounts"]
+        #[doc = "List Media Services accounts in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -710,6 +796,11 @@ pub mod mediaservices {
             }
         }
         #[doc = "Get a Media Services account"]
+        #[doc = "Get the details of a Media Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
         pub fn get_by_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -1254,6 +1345,12 @@ pub mod private_link_resources {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get list of group IDs."]
+        #[doc = "Get list of group IDs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1268,6 +1365,12 @@ pub mod private_link_resources {
             }
         }
         #[doc = "Get group ID."]
+        #[doc = "Get group ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1396,6 +1499,12 @@ pub mod private_endpoint_connections {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all private endpoint connections."]
+        #[doc = "Get all private endpoint connections."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1410,6 +1519,12 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Get private endpoint connection."]
+        #[doc = "Get private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1426,6 +1541,13 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Update private endpoint connection."]
+        #[doc = "Update private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1444,6 +1566,12 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Delete private endpoint connection."]
+        #[doc = "Delete private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1657,6 +1785,12 @@ pub mod locations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Check Name Availability"]
+        #[doc = "Checks whether the Media Service resource name is available."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `location_name`: The name of the location"]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -1729,6 +1863,12 @@ pub mod assets {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Assets"]
+        #[doc = "List Assets in the Media Services account with optional filtering and ordering"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1746,6 +1886,13 @@ pub mod assets {
             }
         }
         #[doc = "Get an Asset"]
+        #[doc = "Get the details of an Asset in the Media Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `asset_name`: The Asset name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1762,6 +1909,14 @@ pub mod assets {
             }
         }
         #[doc = "Create or update an Asset"]
+        #[doc = "Creates or updates an Asset in the Media Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `asset_name`: The Asset name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1780,6 +1935,14 @@ pub mod assets {
             }
         }
         #[doc = "Update an Asset"]
+        #[doc = "Updates an existing Asset in the Media Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `asset_name`: The Asset name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1798,6 +1961,13 @@ pub mod assets {
             }
         }
         #[doc = "Delete an Asset."]
+        #[doc = "Deletes an Asset in the Media Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `asset_name`: The Asset name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1814,6 +1984,14 @@ pub mod assets {
             }
         }
         #[doc = "List the Asset URLs"]
+        #[doc = "Lists storage container URLs with shared access signatures (SAS) for uploading and downloading Asset content. The signatures are derived from the storage account keys."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `asset_name`: The Asset name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn list_container_sas(
             &self,
             subscription_id: impl Into<String>,
@@ -1832,6 +2010,13 @@ pub mod assets {
             }
         }
         #[doc = "Gets the Asset storage key"]
+        #[doc = "Gets the Asset storage encryption keys used to decrypt content created by version 2 of the Media Services API"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `asset_name`: The Asset name."]
         pub fn get_encryption_key(
             &self,
             subscription_id: impl Into<String>,
@@ -1848,6 +2033,13 @@ pub mod assets {
             }
         }
         #[doc = "List Streaming Locators"]
+        #[doc = "Lists Streaming Locators which are associated with this asset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `asset_name`: The Asset name."]
         pub fn list_streaming_locators(
             &self,
             subscription_id: impl Into<String>,
@@ -2361,6 +2553,13 @@ pub mod asset_filters {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Asset Filters"]
+        #[doc = "List Asset Filters associated with the specified Asset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `asset_name`: The Asset name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2377,6 +2576,14 @@ pub mod asset_filters {
             }
         }
         #[doc = "Get an Asset Filter."]
+        #[doc = "Get the details of an Asset Filter associated with the specified Asset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `asset_name`: The Asset name."]
+        #[doc = "* `filter_name`: The Asset Filter name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2395,6 +2602,15 @@ pub mod asset_filters {
             }
         }
         #[doc = "Create or update an Asset Filter"]
+        #[doc = "Creates or updates an Asset Filter associated with the specified Asset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `asset_name`: The Asset name."]
+        #[doc = "* `filter_name`: The Asset Filter name"]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2415,6 +2631,15 @@ pub mod asset_filters {
             }
         }
         #[doc = "Update an Asset Filter"]
+        #[doc = "Updates an existing Asset Filter associated with the specified Asset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `asset_name`: The Asset name."]
+        #[doc = "* `filter_name`: The Asset Filter name"]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2435,6 +2660,14 @@ pub mod asset_filters {
             }
         }
         #[doc = "Delete an Asset Filter."]
+        #[doc = "Deletes an Asset Filter associated with the specified Asset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `asset_name`: The Asset name."]
+        #[doc = "* `filter_name`: The Asset Filter name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2777,6 +3010,12 @@ pub mod content_key_policies {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Content Key Policies"]
+        #[doc = "Lists the Content Key Policies in the account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2794,6 +3033,13 @@ pub mod content_key_policies {
             }
         }
         #[doc = "Get a Content Key Policy"]
+        #[doc = "Get the details of a Content Key Policy in the Media Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `content_key_policy_name`: The Content Key Policy name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2810,6 +3056,14 @@ pub mod content_key_policies {
             }
         }
         #[doc = "Create or update an Content Key Policy"]
+        #[doc = "Create or update a Content Key Policy in the Media Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `content_key_policy_name`: The Content Key Policy name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2828,6 +3082,14 @@ pub mod content_key_policies {
             }
         }
         #[doc = "Update a Content Key Policy"]
+        #[doc = "Updates an existing Content Key Policy in the Media Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `content_key_policy_name`: The Content Key Policy name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2846,6 +3108,13 @@ pub mod content_key_policies {
             }
         }
         #[doc = "Delete a Content Key Policy"]
+        #[doc = "Deletes a Content Key Policy in the Media Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `content_key_policy_name`: The Content Key Policy name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2862,6 +3131,13 @@ pub mod content_key_policies {
             }
         }
         #[doc = "Get a Content Key Policy with secrets"]
+        #[doc = "Get a Content Key Policy including secret values"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `content_key_policy_name`: The Content Key Policy name."]
         pub fn get_policy_properties_with_secrets(
             &self,
             subscription_id: impl Into<String>,
@@ -3264,6 +3540,12 @@ pub mod transforms {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Transforms"]
+        #[doc = "Lists the Transforms in the account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3280,6 +3562,13 @@ pub mod transforms {
             }
         }
         #[doc = "Get Transform"]
+        #[doc = "Gets a Transform."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `transform_name`: The Transform name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3296,6 +3585,14 @@ pub mod transforms {
             }
         }
         #[doc = "Create or Update Transform"]
+        #[doc = "Creates or updates a new Transform."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `transform_name`: The Transform name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3314,6 +3611,14 @@ pub mod transforms {
             }
         }
         #[doc = "Update Transform"]
+        #[doc = "Updates a Transform."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `transform_name`: The Transform name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3332,6 +3637,13 @@ pub mod transforms {
             }
         }
         #[doc = "Delete Transform"]
+        #[doc = "Deletes a Transform."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `transform_name`: The Transform name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3678,6 +3990,13 @@ pub mod jobs {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Jobs"]
+        #[doc = "Lists all of the Jobs for the Transform."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `transform_name`: The Transform name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3696,6 +4015,14 @@ pub mod jobs {
             }
         }
         #[doc = "Get Job"]
+        #[doc = "Gets a Job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `transform_name`: The Transform name."]
+        #[doc = "* `job_name`: The Job name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3714,6 +4041,15 @@ pub mod jobs {
             }
         }
         #[doc = "Create Job"]
+        #[doc = "Creates a Job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `transform_name`: The Transform name."]
+        #[doc = "* `job_name`: The Job name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -3734,6 +4070,15 @@ pub mod jobs {
             }
         }
         #[doc = "Update Job"]
+        #[doc = "Update is only supported for description and priority. Updating Priority will take effect when the Job state is Queued or Scheduled and depending on the timing the priority update may be ignored."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `transform_name`: The Transform name."]
+        #[doc = "* `job_name`: The Job name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3754,6 +4099,14 @@ pub mod jobs {
             }
         }
         #[doc = "Delete Job"]
+        #[doc = "Deletes a Job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `transform_name`: The Transform name."]
+        #[doc = "* `job_name`: The Job name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3772,6 +4125,14 @@ pub mod jobs {
             }
         }
         #[doc = "Cancel Job"]
+        #[doc = "Cancel a Job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `transform_name`: The Transform name."]
+        #[doc = "* `job_name`: The Job name."]
         pub fn cancel_job(
             &self,
             subscription_id: impl Into<String>,
@@ -4166,6 +4527,12 @@ pub mod streaming_policies {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Streaming Policies"]
+        #[doc = "Lists the Streaming Policies in the account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4183,6 +4550,13 @@ pub mod streaming_policies {
             }
         }
         #[doc = "Get a Streaming Policy"]
+        #[doc = "Get the details of a Streaming Policy in the Media Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `streaming_policy_name`: The Streaming Policy name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4199,6 +4573,14 @@ pub mod streaming_policies {
             }
         }
         #[doc = "Create a Streaming Policy"]
+        #[doc = "Create a Streaming Policy in the Media Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `streaming_policy_name`: The Streaming Policy name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -4217,6 +4599,13 @@ pub mod streaming_policies {
             }
         }
         #[doc = "Delete a Streaming Policy"]
+        #[doc = "Deletes a Streaming Policy in the Media Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `streaming_policy_name`: The Streaming Policy name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4506,6 +4895,12 @@ pub mod streaming_locators {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Streaming Locators"]
+        #[doc = "Lists the Streaming Locators in the account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4523,6 +4918,13 @@ pub mod streaming_locators {
             }
         }
         #[doc = "Get a Streaming Locator"]
+        #[doc = "Get the details of a Streaming Locator in the Media Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `streaming_locator_name`: The Streaming Locator name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4539,6 +4941,14 @@ pub mod streaming_locators {
             }
         }
         #[doc = "Create a Streaming Locator"]
+        #[doc = "Create a Streaming Locator in the Media Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `streaming_locator_name`: The Streaming Locator name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -4557,6 +4967,13 @@ pub mod streaming_locators {
             }
         }
         #[doc = "Delete a Streaming Locator"]
+        #[doc = "Deletes a Streaming Locator in the Media Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `streaming_locator_name`: The Streaming Locator name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4573,6 +4990,13 @@ pub mod streaming_locators {
             }
         }
         #[doc = "List Content Keys"]
+        #[doc = "List Content Keys used by this Streaming Locator"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `streaming_locator_name`: The Streaming Locator name."]
         pub fn list_content_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -4589,6 +5013,13 @@ pub mod streaming_locators {
             }
         }
         #[doc = "List Paths"]
+        #[doc = "List Paths supported by this Streaming Locator"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `streaming_locator_name`: The Streaming Locator name."]
         pub fn list_paths(
             &self,
             subscription_id: impl Into<String>,
@@ -4974,6 +5405,12 @@ pub mod live_events {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List live events"]
+        #[doc = "Lists all the live events in the account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4988,6 +5425,13 @@ pub mod live_events {
             }
         }
         #[doc = "Get Live Event"]
+        #[doc = "Gets properties of a live event."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `live_event_name`: The name of the live event, maximum length is 32."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5004,6 +5448,14 @@ pub mod live_events {
             }
         }
         #[doc = "Create Live Event"]
+        #[doc = "Creates a new live event."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `live_event_name`: The name of the live event, maximum length is 32."]
+        #[doc = "* `parameters`: Live event properties needed for creation."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -5022,6 +5474,14 @@ pub mod live_events {
                 auto_start: None,
             }
         }
+        #[doc = "Updates settings on an existing live event."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `live_event_name`: The name of the live event, maximum length is 32."]
+        #[doc = "* `parameters`: Live event properties needed for patch."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -5040,6 +5500,13 @@ pub mod live_events {
             }
         }
         #[doc = "Delete Live Event"]
+        #[doc = "Deletes a live event."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `live_event_name`: The name of the live event, maximum length is 32."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5056,6 +5523,13 @@ pub mod live_events {
             }
         }
         #[doc = "Allocate resources for a live event"]
+        #[doc = "A live event is in StandBy state after allocation completes, and is ready to start."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `live_event_name`: The name of the live event, maximum length is 32."]
         pub fn allocate(
             &self,
             subscription_id: impl Into<String>,
@@ -5072,6 +5546,13 @@ pub mod live_events {
             }
         }
         #[doc = "Start Live Event"]
+        #[doc = "A live event in Stopped or StandBy state will be in Running state after the start operation completes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `live_event_name`: The name of the live event, maximum length is 32."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -5088,6 +5569,14 @@ pub mod live_events {
             }
         }
         #[doc = "Stop Live Event"]
+        #[doc = "Stops a running live event."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `live_event_name`: The name of the live event, maximum length is 32."]
+        #[doc = "* `parameters`: LiveEvent stop parameters"]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -5106,6 +5595,13 @@ pub mod live_events {
             }
         }
         #[doc = "Reset Live Event"]
+        #[doc = "Resets an existing live event. All live outputs for the live event are deleted and the live event is stopped and will be started again. All assets used by the live outputs and streaming locators created on these assets are unaffected. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `live_event_name`: The name of the live event, maximum length is 32."]
         pub fn reset(
             &self,
             subscription_id: impl Into<String>,
@@ -5687,6 +6183,13 @@ pub mod live_outputs {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Live Outputs"]
+        #[doc = "Lists the live outputs of a live event."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `live_event_name`: The name of the live event, maximum length is 32."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -5703,6 +6206,14 @@ pub mod live_outputs {
             }
         }
         #[doc = "Get Live Output"]
+        #[doc = "Gets a live output."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `live_event_name`: The name of the live event, maximum length is 32."]
+        #[doc = "* `live_output_name`: The name of the live output."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5721,6 +6232,15 @@ pub mod live_outputs {
             }
         }
         #[doc = "Create Live Output"]
+        #[doc = "Creates a new live output."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `live_event_name`: The name of the live event, maximum length is 32."]
+        #[doc = "* `live_output_name`: The name of the live output."]
+        #[doc = "* `parameters`: Live Output properties needed for creation."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -5741,6 +6261,14 @@ pub mod live_outputs {
             }
         }
         #[doc = "Delete Live Output"]
+        #[doc = "Deletes a live output. Deleting a live output does not delete the asset the live output is writing to."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `live_event_name`: The name of the live event, maximum length is 32."]
+        #[doc = "* `live_output_name`: The name of the live output."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -6029,6 +6557,12 @@ pub mod streaming_endpoints {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List StreamingEndpoints"]
+        #[doc = "Lists the streaming endpoints in the account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -6043,6 +6577,13 @@ pub mod streaming_endpoints {
             }
         }
         #[doc = "Get StreamingEndpoint"]
+        #[doc = "Gets a streaming endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `streaming_endpoint_name`: The name of the streaming endpoint, maximum length is 24."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -6059,6 +6600,14 @@ pub mod streaming_endpoints {
             }
         }
         #[doc = "Create StreamingEndpoint"]
+        #[doc = "Creates a streaming endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `streaming_endpoint_name`: The name of the streaming endpoint, maximum length is 24."]
+        #[doc = "* `parameters`: Streaming endpoint properties needed for creation."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -6078,6 +6627,14 @@ pub mod streaming_endpoints {
             }
         }
         #[doc = "Update StreamingEndpoint"]
+        #[doc = "Updates a existing streaming endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `streaming_endpoint_name`: The name of the streaming endpoint, maximum length is 24."]
+        #[doc = "* `parameters`: Streaming endpoint properties needed for creation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -6096,6 +6653,13 @@ pub mod streaming_endpoints {
             }
         }
         #[doc = "Delete StreamingEndpoint"]
+        #[doc = "Deletes a streaming endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `streaming_endpoint_name`: The name of the streaming endpoint, maximum length is 24."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -6112,6 +6676,13 @@ pub mod streaming_endpoints {
             }
         }
         #[doc = "Start StreamingEndpoint"]
+        #[doc = "Starts an existing streaming endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `streaming_endpoint_name`: The name of the streaming endpoint, maximum length is 24."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -6128,6 +6699,13 @@ pub mod streaming_endpoints {
             }
         }
         #[doc = "Stop StreamingEndpoint"]
+        #[doc = "Stops an existing streaming endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `streaming_endpoint_name`: The name of the streaming endpoint, maximum length is 24."]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -6144,6 +6722,14 @@ pub mod streaming_endpoints {
             }
         }
         #[doc = "Scale StreamingEndpoint"]
+        #[doc = "Scales an existing streaming endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the Azure subscription."]
+        #[doc = "* `account_name`: The Media Services account name."]
+        #[doc = "* `streaming_endpoint_name`: The name of the streaming endpoint, maximum length is 24."]
+        #[doc = "* `parameters`: Streaming endpoint scale parameters"]
         pub fn scale(
             &self,
             subscription_id: impl Into<String>,

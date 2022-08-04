@@ -88,6 +88,11 @@ pub mod registration_definitions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the registration definition details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: Scope of the resource."]
+        #[doc = "* `registration_definition_id`: Guid of the registration definition."]
         pub fn get(&self, scope: impl Into<String>, registration_definition_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -95,6 +100,12 @@ pub mod registration_definitions {
                 registration_definition_id: registration_definition_id.into(),
             }
         }
+        #[doc = "Creates or updates a registration definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `registration_definition_id`: Guid of the registration definition."]
+        #[doc = "* `scope`: Scope of the resource."]
+        #[doc = "* `request_body`: The parameters required to create new registration definition."]
         pub fn create_or_update(
             &self,
             registration_definition_id: impl Into<String>,
@@ -108,6 +119,11 @@ pub mod registration_definitions {
                 request_body: request_body.into(),
             }
         }
+        #[doc = "Deletes the registration definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `registration_definition_id`: Guid of the registration definition."]
+        #[doc = "* `scope`: Scope of the resource."]
         pub fn delete(&self, registration_definition_id: impl Into<String>, scope: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -115,6 +131,10 @@ pub mod registration_definitions {
                 scope: scope.into(),
             }
         }
+        #[doc = "Gets a list of the registration definitions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: Scope of the resource."]
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -364,6 +384,11 @@ pub mod registration_assignments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the details of specified registration assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: Scope of the resource."]
+        #[doc = "* `registration_assignment_id`: Guid of the registration assignment."]
         pub fn get(&self, scope: impl Into<String>, registration_assignment_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -372,6 +397,12 @@ pub mod registration_assignments {
                 expand_registration_definition: None,
             }
         }
+        #[doc = "Creates or updates a registration assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: Scope of the resource."]
+        #[doc = "* `registration_assignment_id`: Guid of the registration assignment."]
+        #[doc = "* `request_body`: The parameters required to create new registration assignment."]
         pub fn create_or_update(
             &self,
             scope: impl Into<String>,
@@ -385,6 +416,11 @@ pub mod registration_assignments {
                 request_body: request_body.into(),
             }
         }
+        #[doc = "Deletes the specified registration assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: Scope of the resource."]
+        #[doc = "* `registration_assignment_id`: Guid of the registration assignment."]
         pub fn delete(&self, scope: impl Into<String>, registration_assignment_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -392,6 +428,10 @@ pub mod registration_assignments {
                 registration_assignment_id: registration_assignment_id.into(),
             }
         }
+        #[doc = "Gets a list of the registration assignments."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: Scope of the resource."]
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -665,6 +705,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of the operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

@@ -88,6 +88,10 @@ pub mod instances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Instance Metadata for the Virtual Machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `metadata`: This must be set to 'true'."]
         pub fn get_metadata(&self, metadata: impl Into<String>) -> get_metadata::Builder {
             get_metadata::Builder {
                 client: self.0.clone(),
@@ -145,6 +149,10 @@ pub mod attested {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Attested Data for the Virtual Machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `metadata`: This must be set to 'true'."]
         pub fn get_document(&self, metadata: impl Into<String>) -> get_document::Builder {
             get_document::Builder {
                 client: self.0.clone(),
@@ -211,6 +219,11 @@ pub mod identity {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a Token from Azure AD"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `metadata`: This must be set to 'true'."]
+        #[doc = "* `resource`: This is the urlencoded identifier URI of the sink resource for the requested Azure AD token. The resulting token contains the corresponding aud for this resource."]
         pub fn get_token(&self, metadata: impl Into<String>, resource: impl Into<String>) -> get_token::Builder {
             get_token::Builder {
                 client: self.0.clone(),
@@ -223,6 +236,10 @@ pub mod identity {
                 bypass_cache: None,
             }
         }
+        #[doc = "Get information about AAD Metadata"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `metadata`: This must be set to 'true'."]
         pub fn get_info(&self, metadata: impl Into<String>) -> get_info::Builder {
             get_info::Builder {
                 client: self.0.clone(),

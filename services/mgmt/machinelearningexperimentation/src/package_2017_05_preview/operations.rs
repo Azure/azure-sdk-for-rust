@@ -91,6 +91,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Azure Machine Learning Team Accounts REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -147,6 +148,12 @@ pub mod accounts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the properties of the specified machine learning team account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the machine learning team account belongs."]
+        #[doc = "* `account_name`: The name of the machine learning team account."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -160,6 +167,13 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Creates or updates a team account with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the machine learning team account belongs."]
+        #[doc = "* `account_name`: The name of the machine learning team account."]
+        #[doc = "* `parameters`: The parameters for creating or updating a machine learning team account."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -175,6 +189,13 @@ pub mod accounts {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates a machine learning team account with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the machine learning team account belongs."]
+        #[doc = "* `account_name`: The name of the machine learning team account."]
+        #[doc = "* `parameters`: The parameters for updating a machine learning team account."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -190,6 +211,12 @@ pub mod accounts {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a machine learning team account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the machine learning team account belongs."]
+        #[doc = "* `account_name`: The name of the machine learning team account."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -203,6 +230,11 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Lists all the available machine learning team accounts under the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the machine learning team account belongs."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -214,6 +246,10 @@ pub mod accounts {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists all the available machine learning team accounts under the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -598,6 +634,13 @@ pub mod workspaces {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the properties of the specified machine learning workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the machine learning team account belongs."]
+        #[doc = "* `account_name`: The name of the machine learning team account."]
+        #[doc = "* `workspace_name`: The name of the machine learning team account workspace."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -613,6 +656,14 @@ pub mod workspaces {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Creates or updates a machine learning workspace with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the machine learning team account belongs."]
+        #[doc = "* `account_name`: The name of the machine learning team account."]
+        #[doc = "* `workspace_name`: The name of the machine learning team account workspace."]
+        #[doc = "* `parameters`: The parameters for creating or updating a machine learning workspace."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -630,6 +681,14 @@ pub mod workspaces {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates a machine learning workspace with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the machine learning team account belongs."]
+        #[doc = "* `account_name`: The name of the machine learning team account."]
+        #[doc = "* `workspace_name`: The name of the machine learning team account workspace."]
+        #[doc = "* `parameters`: The parameters for updating a machine learning workspace."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -647,6 +706,13 @@ pub mod workspaces {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a machine learning workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the machine learning team account belongs."]
+        #[doc = "* `account_name`: The name of the machine learning team account."]
+        #[doc = "* `workspace_name`: The name of the machine learning team account workspace."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -662,6 +728,12 @@ pub mod workspaces {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Lists all the available machine learning workspaces under the specified team account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `account_name`: The name of the machine learning team account."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the machine learning team account belongs."]
         pub fn list_by_accounts(
             &self,
             subscription_id: impl Into<String>,
@@ -955,6 +1027,14 @@ pub mod projects {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the properties of the specified machine learning project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the machine learning team account belongs."]
+        #[doc = "* `account_name`: The name of the machine learning team account."]
+        #[doc = "* `workspace_name`: The name of the machine learning team account workspace."]
+        #[doc = "* `project_name`: The name of the machine learning project under a team account workspace."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -972,6 +1052,15 @@ pub mod projects {
                 project_name: project_name.into(),
             }
         }
+        #[doc = "Creates or updates a project with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the machine learning team account belongs."]
+        #[doc = "* `account_name`: The name of the machine learning team account."]
+        #[doc = "* `workspace_name`: The name of the machine learning team account workspace."]
+        #[doc = "* `project_name`: The name of the machine learning project under a team account workspace."]
+        #[doc = "* `parameters`: The parameters for creating or updating a project."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -991,6 +1080,15 @@ pub mod projects {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates a project with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the machine learning team account belongs."]
+        #[doc = "* `account_name`: The name of the machine learning team account."]
+        #[doc = "* `workspace_name`: The name of the machine learning team account workspace."]
+        #[doc = "* `project_name`: The name of the machine learning project under a team account workspace."]
+        #[doc = "* `parameters`: The parameters for updating a machine learning team account."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1010,6 +1108,14 @@ pub mod projects {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the machine learning team account belongs."]
+        #[doc = "* `account_name`: The name of the machine learning team account."]
+        #[doc = "* `workspace_name`: The name of the machine learning team account workspace."]
+        #[doc = "* `project_name`: The name of the machine learning project under a team account workspace."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1027,6 +1133,13 @@ pub mod projects {
                 project_name: project_name.into(),
             }
         }
+        #[doc = "Lists all the available machine learning projects under the specified workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `account_name`: The name of the machine learning team account."]
+        #[doc = "* `workspace_name`: The name of the machine learning team account workspace."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the machine learning team account belongs."]
         pub fn list_by_workspace(
             &self,
             subscription_id: impl Into<String>,

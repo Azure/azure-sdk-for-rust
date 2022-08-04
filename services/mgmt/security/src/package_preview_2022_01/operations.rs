@@ -100,6 +100,10 @@ pub mod governance_rule {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of all relevant governanceRules over a subscription level scope"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -186,6 +190,11 @@ pub mod governance_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a specific governanceRule for the requested scope by ruleId"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
         pub fn get(&self, subscription_id: impl Into<String>, rule_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -193,6 +202,12 @@ pub mod governance_rules {
                 rule_id: rule_id.into(),
             }
         }
+        #[doc = "Creates or update a security GovernanceRule on the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
+        #[doc = "* `governance_rule`: GovernanceRule over a subscription scope"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -206,6 +221,11 @@ pub mod governance_rules {
                 governance_rule: governance_rule.into(),
             }
         }
+        #[doc = "Delete a GovernanceRule over a given scope"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
         pub fn delete(&self, subscription_id: impl Into<String>, rule_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -213,6 +233,11 @@ pub mod governance_rules {
                 rule_id: rule_id.into(),
             }
         }
+        #[doc = "Execute a security GovernanceRule on the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
         pub fn rule_id_execute_single_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -225,6 +250,13 @@ pub mod governance_rules {
                 execute_governance_rule_params: None,
             }
         }
+        #[doc = "Execute a security GovernanceRule on the given security connector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `security_connector_name`: The security connector name."]
+        #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
         pub fn rule_id_execute_single_security_connector(
             &self,
             subscription_id: impl Into<String>,
@@ -526,6 +558,12 @@ pub mod security_connector_governance_rule {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of all relevant governanceRules over a security connector level scope"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `security_connector_name`: The security connector name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -617,6 +655,13 @@ pub mod security_connector_governance_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a specific governanceRule for the requested scope by ruleId"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `security_connector_name`: The security connector name."]
+        #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -632,6 +677,14 @@ pub mod security_connector_governance_rules {
                 rule_id: rule_id.into(),
             }
         }
+        #[doc = "Creates or update a security GovernanceRule on the given security connector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `security_connector_name`: The security connector name."]
+        #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
+        #[doc = "* `governance_rule`: GovernanceRule over a subscription scope"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -649,6 +702,13 @@ pub mod security_connector_governance_rules {
                 governance_rule: governance_rule.into(),
             }
         }
+        #[doc = "Delete a GovernanceRule over a given scope"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `security_connector_name`: The security connector name."]
+        #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -823,6 +883,12 @@ pub mod subscription_governance_rules_execute_status {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a specific governanceRule execution status for the requested scope by ruleId and operationId"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
+        #[doc = "* `operation_id`: The security GovernanceRule execution key - unique key for the execution of GovernanceRule"]
         pub fn get(&self, subscription_id: impl Into<String>, rule_id: impl Into<String>, operation_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -895,6 +961,14 @@ pub mod security_connector_governance_rules_execute_status {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a specific governanceRule execution status for the requested scope by ruleId and operationId"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `security_connector_name`: The security connector name."]
+        #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
+        #[doc = "* `operation_id`: The security GovernanceRule execution key - unique key for the execution of GovernanceRule"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -972,6 +1046,11 @@ pub mod governance_assignments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get security governanceAssignments on all your resources inside a scope"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: Scope of the query, can be subscription (/subscriptions/0b06d9ea-afe6-4779-bd59-30e5c2d9d13f) or management group (/providers/Microsoft.Management/managementGroups/mgName)."]
+        #[doc = "* `assessment_name`: The Assessment Key - Unique key for the assessment type"]
         pub fn list(&self, scope: impl Into<String>, assessment_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -979,6 +1058,12 @@ pub mod governance_assignments {
                 assessment_name: assessment_name.into(),
             }
         }
+        #[doc = "Get a specific governanceAssignment for the requested scope by AssignmentKey"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: Scope of the query, can be subscription (/subscriptions/0b06d9ea-afe6-4779-bd59-30e5c2d9d13f) or management group (/providers/Microsoft.Management/managementGroups/mgName)."]
+        #[doc = "* `assessment_name`: The Assessment Key - Unique key for the assessment type"]
+        #[doc = "* `assignment_key`: The security governance assignment key - the assessment key of the required governance assignment"]
         pub fn get(&self, scope: impl Into<String>, assessment_name: impl Into<String>, assignment_key: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -987,6 +1072,13 @@ pub mod governance_assignments {
                 assignment_key: assignment_key.into(),
             }
         }
+        #[doc = "Creates or update a security GovernanceAssignment on the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: Scope of the query, can be subscription (/subscriptions/0b06d9ea-afe6-4779-bd59-30e5c2d9d13f) or management group (/providers/Microsoft.Management/managementGroups/mgName)."]
+        #[doc = "* `assessment_name`: The Assessment Key - Unique key for the assessment type"]
+        #[doc = "* `assignment_key`: The security governance assignment key - the assessment key of the required governance assignment"]
+        #[doc = "* `governance_assignment`: GovernanceAssignment over a subscription scope"]
         pub fn create_or_update(
             &self,
             scope: impl Into<String>,
@@ -1002,6 +1094,12 @@ pub mod governance_assignments {
                 governance_assignment: governance_assignment.into(),
             }
         }
+        #[doc = "Delete a GovernanceAssignment over a given scope"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: Scope of the query, can be subscription (/subscriptions/0b06d9ea-afe6-4779-bd59-30e5c2d9d13f) or management group (/providers/Microsoft.Management/managementGroups/mgName)."]
+        #[doc = "* `assessment_name`: The Assessment Key - Unique key for the assessment type"]
+        #[doc = "* `assignment_key`: The security governance assignment key - the assessment key of the required governance assignment"]
         pub fn delete(
             &self,
             scope: impl Into<String>,

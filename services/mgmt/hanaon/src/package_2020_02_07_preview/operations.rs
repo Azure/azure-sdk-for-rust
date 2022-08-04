@@ -88,6 +88,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of SAP HANA management operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -143,6 +144,10 @@ pub mod sap_monitors {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of SAP monitors in the specified subscription."]
+        #[doc = "Gets a list of SAP monitors in the specified subscription. The operations returns various properties of each SAP monitor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -150,6 +155,12 @@ pub mod sap_monitors {
             }
         }
         #[doc = "Gets properties of a SAP monitor."]
+        #[doc = "Gets properties of a SAP monitor for the specified subscription, resource group, and resource name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group."]
+        #[doc = "* `sap_monitor_name`: Name of the SAP monitor resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -164,6 +175,13 @@ pub mod sap_monitors {
             }
         }
         #[doc = "Creates a SAP monitor."]
+        #[doc = "Creates a SAP monitor for the specified subscription, resource group, and resource name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group."]
+        #[doc = "* `sap_monitor_name`: Name of the SAP monitor resource."]
+        #[doc = "* `sap_monitor_parameter`: Request body representing a SAP Monitor"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -180,6 +198,13 @@ pub mod sap_monitors {
             }
         }
         #[doc = "Patches the Tags field of a SAP monitor."]
+        #[doc = "Patches the Tags field of a SAP monitor for the specified subscription, resource group, and monitor name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group."]
+        #[doc = "* `sap_monitor_name`: Name of the SAP monitor resource."]
+        #[doc = "* `tags_parameter`: Request body that only contains the new Tags field"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -196,6 +221,12 @@ pub mod sap_monitors {
             }
         }
         #[doc = "Deletes a SAP monitor."]
+        #[doc = "Deletes a SAP monitor with the specified subscription, resource group, and monitor name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group."]
+        #[doc = "* `sap_monitor_name`: Name of the SAP monitor resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -516,6 +547,12 @@ pub mod provider_instances {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of provider instances in the specified SAP monitor."]
+        #[doc = "Gets a list of provider instances in the specified SAP monitor. The operations returns various properties of each provider instances."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group."]
+        #[doc = "* `sap_monitor_name`: Name of the SAP monitor resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -530,6 +567,13 @@ pub mod provider_instances {
             }
         }
         #[doc = "Gets properties of a provider instance."]
+        #[doc = "Gets properties of a provider instance for the specified subscription, resource group, SapMonitor name, and resource name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group."]
+        #[doc = "* `sap_monitor_name`: Name of the SAP monitor resource."]
+        #[doc = "* `provider_instance_name`: Name of the provider instance."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -546,6 +590,14 @@ pub mod provider_instances {
             }
         }
         #[doc = "Creates a provider instance."]
+        #[doc = "Creates a provider instance for the specified subscription, resource group, SapMonitor name, and resource name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group."]
+        #[doc = "* `sap_monitor_name`: Name of the SAP monitor resource."]
+        #[doc = "* `provider_instance_name`: Name of the provider instance."]
+        #[doc = "* `provider_instance_parameter`: Request body representing a provider instance"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -564,6 +616,13 @@ pub mod provider_instances {
             }
         }
         #[doc = "Deletes a provider instance."]
+        #[doc = "Deletes a provider instance for the specified subscription, resource group, SapMonitor name, and resource name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group."]
+        #[doc = "* `sap_monitor_name`: Name of the SAP monitor resource."]
+        #[doc = "* `provider_instance_name`: Name of the provider instance."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

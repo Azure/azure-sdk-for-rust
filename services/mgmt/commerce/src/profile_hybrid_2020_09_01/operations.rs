@@ -85,6 +85,12 @@ pub mod usage_aggregates {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Query aggregated Azure subscription consumption data for a date range."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `reported_start_time`: The start of the time range to retrieve data for."]
+        #[doc = "* `reported_end_time`: The end of the time range to retrieve data for."]
+        #[doc = "* `subscription_id`: It uniquely identifies Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             reported_start_time: impl Into<String>,
@@ -217,6 +223,11 @@ pub mod rate_card {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Enables you to query for the resource/meter metadata and related prices used in a given subscription by Offer ID, Currency, Locale and Region. The metadata associated with the billing meters, including but not limited to service names, types, resources, units of measure, and regions, is subject to change at any time and without notice. If you intend to use this billing data in an automated fashion, please use the billing meter GUID to uniquely identify each billable item. If the billing meter GUID is scheduled to change due to a new billing model, you will be notified in advance of the change. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filter`: The filter to apply on the operation. It ONLY supports the 'eq' and 'and' logical operators at this time. All the 4 query parameters 'OfferDurableId',  'Currency', 'Locale', 'Region' are required to be a part of the $filter."]
+        #[doc = "* `subscription_id`: It uniquely identifies Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(&self, filter: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),

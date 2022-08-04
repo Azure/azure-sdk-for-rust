@@ -101,6 +101,12 @@ pub mod application {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the application resource."]
+        #[doc = "Gets the information about the application resource with a given name. The information includes the information about the application's services and other runtime properties."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier"]
+        #[doc = "* `resource_group_name`: Azure resource group name"]
+        #[doc = "* `application_name`: The identity of the application."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -115,6 +121,13 @@ pub mod application {
             }
         }
         #[doc = "Creates or updates an application resource."]
+        #[doc = "Creates an application resource with the specified name and description. If an application with the same name already exists, then its description is updated to the one indicated in this request.\n\nUse network resources to provide public connectivity to the services of an application.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier"]
+        #[doc = "* `resource_group_name`: Azure resource group name"]
+        #[doc = "* `application_name`: The identity of the application."]
+        #[doc = "* `application_resource_description`: Description for creating an application resource."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -131,6 +144,12 @@ pub mod application {
             }
         }
         #[doc = "Deletes the application resource."]
+        #[doc = "Deletes the application resource identified by the name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier"]
+        #[doc = "* `resource_group_name`: Azure resource group name"]
+        #[doc = "* `application_name`: The identity of the application."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -145,6 +164,11 @@ pub mod application {
             }
         }
         #[doc = "Gets all the application resources in a given resource group."]
+        #[doc = "Gets the information about all application resources in a given resource group. The information includes the information about the application's services and other runtime properties."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier"]
+        #[doc = "* `resource_group_name`: Azure resource group name"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -157,6 +181,10 @@ pub mod application {
             }
         }
         #[doc = "Gets all the application resources in a given subscription."]
+        #[doc = "Gets the information about all application resources in a given subscription. The information includes the information about the application's services and other runtime properties."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -490,6 +518,12 @@ pub mod service {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets services of a given application."]
+        #[doc = "Gets the information about all services of a given service of an application. The information includes the runtime properties of the service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier"]
+        #[doc = "* `resource_group_name`: Azure resource group name"]
+        #[doc = "* `application_name`: The identity of the application."]
         pub fn list_by_application_name(
             &self,
             subscription_id: impl Into<String>,
@@ -504,6 +538,13 @@ pub mod service {
             }
         }
         #[doc = "Gets the properties of the service."]
+        #[doc = "The operation returns the properties of the service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier"]
+        #[doc = "* `resource_group_name`: Azure resource group name"]
+        #[doc = "* `application_name`: The identity of the application."]
+        #[doc = "* `service_name`: The identity of the service."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -658,6 +699,13 @@ pub mod replica {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets replicas of a given service."]
+        #[doc = "Gets the information about all replicas of a given service of an application. The information includes the runtime properties of the replica instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier"]
+        #[doc = "* `resource_group_name`: Azure resource group name"]
+        #[doc = "* `application_name`: The identity of the application."]
+        #[doc = "* `service_name`: The identity of the service."]
         pub fn list_by_service_name(
             &self,
             subscription_id: impl Into<String>,
@@ -674,6 +722,14 @@ pub mod replica {
             }
         }
         #[doc = "Gets a specific replica of a given service."]
+        #[doc = "Gets the information about the specified replica of a given service of an application. The information includes the runtime properties of the replica instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier"]
+        #[doc = "* `resource_group_name`: Azure resource group name"]
+        #[doc = "* `application_name`: The identity of the application."]
+        #[doc = "* `service_name`: The identity of the service."]
+        #[doc = "* `replica_name`: The identity of the service replica."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -819,6 +875,15 @@ pub mod code_package {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the logs for the container."]
+        #[doc = "Get the logs for the container of a given code package of an application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier"]
+        #[doc = "* `resource_group_name`: Azure resource group name"]
+        #[doc = "* `application_name`: The identity of the application."]
+        #[doc = "* `service_name`: The identity of the service."]
+        #[doc = "* `replica_name`: The identity of the service replica."]
+        #[doc = "* `code_package_name`: The name of the code package."]
         pub fn get_container_log(
             &self,
             subscription_id: impl Into<String>,
@@ -903,6 +968,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available operations."]
+        #[doc = "Lists all the available operations provided by Service Fabric SeaBreeze resource provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -985,6 +1051,12 @@ pub mod network {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the network resource."]
+        #[doc = "Gets the information about the network resource with a given name. This information includes the network description and other runtime information.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier"]
+        #[doc = "* `resource_group_name`: Azure resource group name"]
+        #[doc = "* `network_name`: The identity of the network."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -999,6 +1071,13 @@ pub mod network {
             }
         }
         #[doc = "Creates or updates a network resource."]
+        #[doc = "Creates a network resource with the specified name and description. If a network with the same name already exists, then its description is updated to the one indicated in this request.\n\nUse network resources to create private network and configure public connectivity for services within your application. \n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier"]
+        #[doc = "* `resource_group_name`: Azure resource group name"]
+        #[doc = "* `network_name`: The identity of the network."]
+        #[doc = "* `network_resource_description`: Description for creating a network resource."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1015,6 +1094,12 @@ pub mod network {
             }
         }
         #[doc = "Deletes the network resource."]
+        #[doc = "Deletes the network resource identified by the name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier"]
+        #[doc = "* `resource_group_name`: Azure resource group name"]
+        #[doc = "* `network_name`: The identity of the network."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1029,6 +1114,11 @@ pub mod network {
             }
         }
         #[doc = "Gets all the network resources in a given resource group."]
+        #[doc = "Gets the information about all network resources in a given resource group. The information includes the network description and other runtime properties.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier"]
+        #[doc = "* `resource_group_name`: Azure resource group name"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1041,6 +1131,10 @@ pub mod network {
             }
         }
         #[doc = "Gets all the network resources in a given subscription."]
+        #[doc = "Gets the information about all network resources in a given subscription. The information includes the network description and other runtime properties."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -1372,6 +1466,12 @@ pub mod volume {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the volume resource."]
+        #[doc = "Gets the information about the volume resource with a given name. This information includes the volume description and other runtime information.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier"]
+        #[doc = "* `resource_group_name`: Azure resource group name"]
+        #[doc = "* `volume_name`: The identity of the volume."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1386,6 +1486,13 @@ pub mod volume {
             }
         }
         #[doc = "Creates or updates a volume resource."]
+        #[doc = "Creates a volume resource with the specified name and description. If a volume with the same name already exists, then its description is updated to the one indicated in this request.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier"]
+        #[doc = "* `resource_group_name`: Azure resource group name"]
+        #[doc = "* `volume_name`: The identity of the volume."]
+        #[doc = "* `volume_resource_description`: Description for creating a volume resource."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1402,6 +1509,12 @@ pub mod volume {
             }
         }
         #[doc = "Deletes the volume resource."]
+        #[doc = "Deletes the volume identified by the name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier"]
+        #[doc = "* `resource_group_name`: Azure resource group name"]
+        #[doc = "* `volume_name`: The identity of the volume."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1416,6 +1529,11 @@ pub mod volume {
             }
         }
         #[doc = "Gets all the volume resources in a given resource group."]
+        #[doc = "Gets the information about all volume resources in a given resource group. The information includes the volume description and other runtime information.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier"]
+        #[doc = "* `resource_group_name`: Azure resource group name"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1428,6 +1546,10 @@ pub mod volume {
             }
         }
         #[doc = "Gets all the volume resources in a given subscription."]
+        #[doc = "Gets the information about all volume resources in a given subscription. The information includes the volume description and other runtime information.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),

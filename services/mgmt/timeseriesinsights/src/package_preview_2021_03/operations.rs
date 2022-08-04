@@ -100,6 +100,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Time Series Insights related operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -181,6 +182,12 @@ pub mod environments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the environment with the specified name in the specified subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -195,6 +202,13 @@ pub mod environments {
                 expand: None,
             }
         }
+        #[doc = "Create or update an environment in the specified subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: Name of the environment"]
+        #[doc = "* `parameters`: Parameters for creating an environment resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -210,6 +224,13 @@ pub mod environments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates the environment with the specified name in the specified subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
+        #[doc = "* `environment_update_parameters`: Request object that contains the updated information for the environment."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -225,6 +246,12 @@ pub mod environments {
                 environment_update_parameters: environment_update_parameters.into(),
             }
         }
+        #[doc = "Deletes the environment with the specified name in the specified subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -238,6 +265,11 @@ pub mod environments {
                 environment_name: environment_name.into(),
             }
         }
+        #[doc = "Lists all the available environments associated with the subscription and within the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -249,6 +281,10 @@ pub mod environments {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists all the available environments within a subscription, irrespective of the resource groups."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -591,6 +627,13 @@ pub mod event_sources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the event source with the specified name in the specified environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
+        #[doc = "* `event_source_name`: The name of the Time Series Insights event source associated with the specified environment."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -606,6 +649,14 @@ pub mod event_sources {
                 event_source_name: event_source_name.into(),
             }
         }
+        #[doc = "Create or update an event source under the specified environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
+        #[doc = "* `event_source_name`: Name of the event source."]
+        #[doc = "* `parameters`: Parameters for creating an event source resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -623,6 +674,14 @@ pub mod event_sources {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates the event source with the specified name in the specified subscription, resource group, and environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
+        #[doc = "* `event_source_name`: The name of the Time Series Insights event source associated with the specified environment."]
+        #[doc = "* `event_source_update_parameters`: Request object that contains the updated information for the event source."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -640,6 +699,13 @@ pub mod event_sources {
                 event_source_update_parameters: event_source_update_parameters.into(),
             }
         }
+        #[doc = "Deletes the event source with the specified name in the specified subscription, resource group, and environment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
+        #[doc = "* `event_source_name`: The name of the Time Series Insights event source associated with the specified environment."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -655,6 +721,12 @@ pub mod event_sources {
                 event_source_name: event_source_name.into(),
             }
         }
+        #[doc = "Lists all the available event sources associated with the subscription and within the specified resource group and environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
         pub fn list_by_environment(
             &self,
             subscription_id: impl Into<String>,
@@ -956,6 +1028,13 @@ pub mod reference_data_sets {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the reference data set with the specified name in the specified environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
+        #[doc = "* `reference_data_set_name`: The name of the Time Series Insights reference data set associated with the specified environment."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -971,6 +1050,14 @@ pub mod reference_data_sets {
                 reference_data_set_name: reference_data_set_name.into(),
             }
         }
+        #[doc = "Create or update a reference data set in the specified environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
+        #[doc = "* `reference_data_set_name`: Name of the reference data set."]
+        #[doc = "* `parameters`: Parameters for creating a reference data set."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -988,6 +1075,14 @@ pub mod reference_data_sets {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates the reference data set with the specified name in the specified subscription, resource group, and environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
+        #[doc = "* `reference_data_set_name`: The name of the Time Series Insights reference data set associated with the specified environment."]
+        #[doc = "* `reference_data_set_update_parameters`: Request object that contains the updated information for the reference data set."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1005,6 +1100,13 @@ pub mod reference_data_sets {
                 reference_data_set_update_parameters: reference_data_set_update_parameters.into(),
             }
         }
+        #[doc = "Deletes the reference data set with the specified name in the specified subscription, resource group, and environment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
+        #[doc = "* `reference_data_set_name`: The name of the Time Series Insights reference data set associated with the specified environment."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1020,6 +1122,12 @@ pub mod reference_data_sets {
                 reference_data_set_name: reference_data_set_name.into(),
             }
         }
+        #[doc = "Lists all the available reference data sets associated with the subscription and within the specified resource group and environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
         pub fn list_by_environment(
             &self,
             subscription_id: impl Into<String>,
@@ -1287,6 +1395,13 @@ pub mod access_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the access policy with the specified name in the specified environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
+        #[doc = "* `access_policy_name`: The name of the Time Series Insights access policy associated with the specified environment."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1302,6 +1417,14 @@ pub mod access_policies {
                 access_policy_name: access_policy_name.into(),
             }
         }
+        #[doc = "Create or update an access policy in the specified environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
+        #[doc = "* `access_policy_name`: Name of the access policy."]
+        #[doc = "* `parameters`: Parameters for creating an access policy."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1319,6 +1442,14 @@ pub mod access_policies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates the access policy with the specified name in the specified subscription, resource group, and environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
+        #[doc = "* `access_policy_name`: The name of the Time Series Insights access policy associated with the specified environment."]
+        #[doc = "* `access_policy_update_parameters`: Request object that contains the updated information for the access policy."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1336,6 +1467,13 @@ pub mod access_policies {
                 access_policy_update_parameters: access_policy_update_parameters.into(),
             }
         }
+        #[doc = "Deletes the access policy with the specified name in the specified subscription, resource group, and environment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
+        #[doc = "* `access_policy_name`: The name of the Time Series Insights access policy associated with the specified environment."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1351,6 +1489,12 @@ pub mod access_policies {
                 access_policy_name: access_policy_name.into(),
             }
         }
+        #[doc = "Lists all the available access policies associated with the environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
         pub fn list_by_environment(
             &self,
             subscription_id: impl Into<String>,
@@ -1624,6 +1768,13 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the details of the private endpoint connection of the environment in the given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1639,6 +1790,14 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Updates a Private Endpoint connection of the environment in the given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
+        #[doc = "* `private_endpoint_connection`: The definition of the private endpoint connection to update."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1656,6 +1815,13 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection: private_endpoint_connection.into(),
             }
         }
+        #[doc = "Disconnects the private endpoint connection and deletes it from the environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1671,6 +1837,12 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Gets a list of all private endpoint connections in the given environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
         pub fn list_by_environment(
             &self,
             subscription_id: impl Into<String>,
@@ -1880,6 +2052,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of all supported private link resource types for the given environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `environment_name`: The name of the Time Series Insights environment associated with the specified resource group."]
         pub fn list_supported(
             &self,
             subscription_id: impl Into<String>,

@@ -109,12 +109,14 @@ pub mod key_vault_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets key vault information"]
         pub fn get(&self, key_vault_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 key_vault_name: key_vault_name.into(),
             }
         }
+        #[doc = "Creates an instance of a key vault connection"]
         pub fn create(&self, key_vault_name: impl Into<String>, body: impl Into<models::AzureKeyVault>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -122,12 +124,14 @@ pub mod key_vault_connections {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes the key vault connection associated with the account"]
         pub fn delete(&self, key_vault_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 key_vault_name: key_vault_name.into(),
             }
         }
+        #[doc = "List key vault connections in account"]
         pub fn list_all(&self) -> list_all::Builder {
             list_all::Builder { client: self.0.clone() }
         }
@@ -345,12 +349,14 @@ pub mod classification_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a classification rule"]
         pub fn get(&self, classification_rule_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 classification_rule_name: classification_rule_name.into(),
             }
         }
+        #[doc = "Creates or Updates a classification rule"]
         pub fn create_or_update(&self, classification_rule_name: impl Into<String>) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -358,15 +364,18 @@ pub mod classification_rules {
                 body: None,
             }
         }
+        #[doc = "Deletes a classification rule"]
         pub fn delete(&self, classification_rule_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 classification_rule_name: classification_rule_name.into(),
             }
         }
+        #[doc = "List classification rules in Account"]
         pub fn list_all(&self) -> list_all::Builder {
             list_all::Builder { client: self.0.clone() }
         }
+        #[doc = "Lists the rule versions of a classification rule"]
         pub fn list_versions_by_classification_rule_name(
             &self,
             classification_rule_name: impl Into<String>,
@@ -376,6 +385,7 @@ pub mod classification_rules {
                 classification_rule_name: classification_rule_name.into(),
             }
         }
+        #[doc = "Sets Classification Action on a specific classification rule version."]
         pub fn tag_classification_version(
             &self,
             classification_rule_name: impl Into<String>,
@@ -760,12 +770,20 @@ pub mod credential {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets credential information"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `credential_name`: The credential name."]
         pub fn get(&self, credential_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 credential_name: credential_name.into(),
             }
         }
+        #[doc = "Creates an instance of a credential"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `credential_name`: The credential name."]
         pub fn create_or_update(
             &self,
             credential_name: impl Into<String>,
@@ -777,12 +795,17 @@ pub mod credential {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes the credentials associated with the account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `credential_name`: The credential name."]
         pub fn delete(&self, credential_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 credential_name: credential_name.into(),
             }
         }
+        #[doc = "List credentials in account"]
         pub fn list_all(&self) -> list_all::Builder {
             list_all::Builder { client: self.0.clone() }
         }
@@ -1009,12 +1032,14 @@ pub mod data_sources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a data source"]
         pub fn get(&self, data_source_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 data_source_name: data_source_name.into(),
             }
         }
+        #[doc = "Creates or Updates a data source"]
         pub fn create_or_update(&self, data_source_name: impl Into<String>) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -1022,12 +1047,14 @@ pub mod data_sources {
                 body: None,
             }
         }
+        #[doc = "Deletes a data source"]
         pub fn delete(&self, data_source_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 data_source_name: data_source_name.into(),
             }
         }
+        #[doc = "List data sources in Data catalog"]
         pub fn list_all(&self) -> list_all::Builder {
             list_all::Builder { client: self.0.clone() }
         }
@@ -1262,6 +1289,7 @@ pub mod filters {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a filter"]
         pub fn get(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1269,6 +1297,7 @@ pub mod filters {
                 scan_name: scan_name.into(),
             }
         }
+        #[doc = "Creates or updates a filter"]
         pub fn create_or_update(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -1402,6 +1431,7 @@ pub mod scans {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a scan information"]
         pub fn get(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1409,6 +1439,7 @@ pub mod scans {
                 scan_name: scan_name.into(),
             }
         }
+        #[doc = "Creates an instance of a scan"]
         pub fn create_or_update(
             &self,
             data_source_name: impl Into<String>,
@@ -1422,6 +1453,7 @@ pub mod scans {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes the scan associated with the data source"]
         pub fn delete(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1429,6 +1461,7 @@ pub mod scans {
                 scan_name: scan_name.into(),
             }
         }
+        #[doc = "List scans in data source"]
         pub fn list_by_data_source(&self, data_source_name: impl Into<String>) -> list_by_data_source::Builder {
             list_by_data_source::Builder {
                 client: self.0.clone(),
@@ -1678,6 +1711,7 @@ pub mod scan_result {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Runs the scan"]
         pub fn run_scan(
             &self,
             data_source_name: impl Into<String>,
@@ -1692,6 +1726,7 @@ pub mod scan_result {
                 scan_level: None,
             }
         }
+        #[doc = "Cancels a scan"]
         pub fn cancel_scan(
             &self,
             data_source_name: impl Into<String>,
@@ -1705,6 +1740,7 @@ pub mod scan_result {
                 run_id: run_id.into(),
             }
         }
+        #[doc = "Lists the scan history of a scan"]
         pub fn list_scan_history(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> list_scan_history::Builder {
             list_scan_history::Builder {
                 client: self.0.clone(),
@@ -1907,12 +1943,14 @@ pub mod scan_rulesets {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a scan ruleset"]
         pub fn get(&self, scan_ruleset_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 scan_ruleset_name: scan_ruleset_name.into(),
             }
         }
+        #[doc = "Creates or Updates a scan ruleset"]
         pub fn create_or_update(&self, scan_ruleset_name: impl Into<String>) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -1920,12 +1958,14 @@ pub mod scan_rulesets {
                 body: None,
             }
         }
+        #[doc = "Deletes a scan ruleset"]
         pub fn delete(&self, scan_ruleset_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 scan_ruleset_name: scan_ruleset_name.into(),
             }
         }
+        #[doc = "List scan rulesets in Data catalog"]
         pub fn list_all(&self) -> list_all::Builder {
             list_all::Builder { client: self.0.clone() }
         }
@@ -2160,15 +2200,18 @@ pub mod system_scan_rulesets {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all system scan rulesets for an account"]
         pub fn list_all(&self) -> list_all::Builder {
             list_all::Builder { client: self.0.clone() }
         }
+        #[doc = "Get a system scan ruleset for a data source"]
         pub fn get(&self, data_source_type: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 data_source_type: data_source_type.into(),
             }
         }
+        #[doc = "Get a scan ruleset by version"]
         pub fn get_by_version(&self, version: i32) -> get_by_version::Builder {
             get_by_version::Builder {
                 client: self.0.clone(),
@@ -2176,12 +2219,14 @@ pub mod system_scan_rulesets {
                 data_source_type: None,
             }
         }
+        #[doc = "Get the latest version of a system scan ruleset"]
         pub fn get_latest(&self) -> get_latest::Builder {
             get_latest::Builder {
                 client: self.0.clone(),
                 data_source_type: None,
             }
         }
+        #[doc = "List system scan ruleset versions in Data catalog"]
         pub fn list_versions_by_data_source(&self) -> list_versions_by_data_source::Builder {
             list_versions_by_data_source::Builder {
                 client: self.0.clone(),
@@ -2492,6 +2537,7 @@ pub mod triggers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets trigger information"]
         pub fn get_trigger(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> get_trigger::Builder {
             get_trigger::Builder {
                 client: self.0.clone(),
@@ -2499,6 +2545,7 @@ pub mod triggers {
                 scan_name: scan_name.into(),
             }
         }
+        #[doc = "Creates an instance of a trigger"]
         pub fn create_trigger(
             &self,
             data_source_name: impl Into<String>,
@@ -2512,6 +2559,7 @@ pub mod triggers {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes the trigger associated with the scan"]
         pub fn delete_trigger(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> delete_trigger::Builder {
             delete_trigger::Builder {
                 client: self.0.clone(),

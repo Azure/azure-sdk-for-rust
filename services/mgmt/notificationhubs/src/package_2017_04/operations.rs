@@ -88,6 +88,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available NotificationHubs REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -169,6 +170,11 @@ pub mod namespaces {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Checks the availability of the given service namespace across all Azure subscriptions. This is useful because the domain name is created based on the service namespace name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: The namespace name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check_availability(
             &self,
             parameters: impl Into<models::CheckAvailabilityParameters>,
@@ -180,6 +186,12 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns the description for the specified namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -193,6 +205,13 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates/Updates a service namespace. Once created, this namespace's resource manifest is immutable. This operation is idempotent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name."]
+        #[doc = "* `parameters`: Parameters supplied to create a Namespace Resource."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -208,6 +227,13 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Patches the existing namespace"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name."]
+        #[doc = "* `parameters`: Parameters supplied to patch a Namespace Resource."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn patch(
             &self,
             resource_group_name: impl Into<String>,
@@ -223,6 +249,12 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing namespace. This operation also removes all associated notificationHubs under the namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -236,6 +268,13 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets an authorization rule for a namespace by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `authorization_rule_name`: Authorization rule name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -251,6 +290,14 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates an authorization rule for a namespace"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name."]
+        #[doc = "* `authorization_rule_name`: Authorization Rule Name."]
+        #[doc = "* `parameters`: The shared access authorization rule."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -268,6 +315,13 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a namespace authorization rule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name."]
+        #[doc = "* `authorization_rule_name`: Authorization Rule Name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -283,6 +337,11 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the available namespaces within a resourceGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. If resourceGroupName value is null the method lists all the namespaces within subscription"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -290,12 +349,22 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the available namespaces within the subscription irrespective of the resourceGroups."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the authorization rules for a namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_authorization_rules(
             &self,
             resource_group_name: impl Into<String>,
@@ -309,6 +378,13 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the Primary and Secondary ConnectionStrings to the namespace "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name."]
+        #[doc = "* `authorization_rule_name`: The connection string of the namespace for the specified authorizationRule."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -324,6 +400,14 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Regenerates the Primary/Secondary Keys to the Namespace Authorization Rule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name."]
+        #[doc = "* `authorization_rule_name`: The connection string of the namespace for the specified authorizationRule."]
+        #[doc = "* `parameters`: Parameters supplied to regenerate the Namespace Authorization Rule Key."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn regenerate_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -1091,6 +1175,13 @@ pub mod notification_hubs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Checks the availability of the given notificationHub in a namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name."]
+        #[doc = "* `parameters`: The notificationHub name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check_notification_hub_availability(
             &self,
             resource_group_name: impl Into<String>,
@@ -1106,6 +1197,13 @@ pub mod notification_hubs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the notification hubs associated with a namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name."]
+        #[doc = "* `notification_hub_name`: The notification hub name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1121,6 +1219,14 @@ pub mod notification_hubs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates/Update a NotificationHub in a namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name."]
+        #[doc = "* `notification_hub_name`: The notification hub name."]
+        #[doc = "* `parameters`: Parameters supplied to the create/update a NotificationHub Resource."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1138,6 +1244,13 @@ pub mod notification_hubs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Patch a NotificationHub in a namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name."]
+        #[doc = "* `notification_hub_name`: The notification hub name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn patch(
             &self,
             resource_group_name: impl Into<String>,
@@ -1154,6 +1267,13 @@ pub mod notification_hubs {
                 parameters: None,
             }
         }
+        #[doc = "Deletes a notification hub associated with a namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name."]
+        #[doc = "* `notification_hub_name`: The notification hub name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1169,6 +1289,13 @@ pub mod notification_hubs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "test send a push notification"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name."]
+        #[doc = "* `notification_hub_name`: The notification hub name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn debug_send(
             &self,
             resource_group_name: impl Into<String>,
@@ -1185,6 +1312,14 @@ pub mod notification_hubs {
                 parameters: None,
             }
         }
+        #[doc = "Gets an authorization rule for a NotificationHub by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `notification_hub_name`: The notification hub name."]
+        #[doc = "* `authorization_rule_name`: authorization rule name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -1202,6 +1337,15 @@ pub mod notification_hubs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates/Updates an authorization rule for a NotificationHub"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name."]
+        #[doc = "* `notification_hub_name`: The notification hub name."]
+        #[doc = "* `authorization_rule_name`: Authorization Rule Name."]
+        #[doc = "* `parameters`: The shared access authorization rule."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -1221,6 +1365,14 @@ pub mod notification_hubs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a notificationHub authorization rule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name."]
+        #[doc = "* `notification_hub_name`: The notification hub name."]
+        #[doc = "* `authorization_rule_name`: Authorization Rule Name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -1238,6 +1390,12 @@ pub mod notification_hubs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the notification hubs associated with a namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -1251,6 +1409,13 @@ pub mod notification_hubs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the authorization rules for a NotificationHub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `notification_hub_name`: The notification hub name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_authorization_rules(
             &self,
             resource_group_name: impl Into<String>,
@@ -1266,6 +1431,14 @@ pub mod notification_hubs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the Primary and Secondary ConnectionStrings to the NotificationHub "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name."]
+        #[doc = "* `notification_hub_name`: The notification hub name."]
+        #[doc = "* `authorization_rule_name`: The connection string of the NotificationHub for the specified authorizationRule."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -1283,6 +1456,15 @@ pub mod notification_hubs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Regenerates the Primary/Secondary Keys to the NotificationHub Authorization Rule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name."]
+        #[doc = "* `notification_hub_name`: The notification hub name."]
+        #[doc = "* `authorization_rule_name`: The connection string of the NotificationHub for the specified authorizationRule."]
+        #[doc = "* `parameters`: Parameters supplied to regenerate the NotificationHub Authorization Rule Key."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn regenerate_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -1302,6 +1484,13 @@ pub mod notification_hubs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the PNS Credentials associated with a notification hub ."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `namespace_name`: The namespace name."]
+        #[doc = "* `notification_hub_name`: The notification hub name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_pns_credentials(
             &self,
             resource_group_name: impl Into<String>,

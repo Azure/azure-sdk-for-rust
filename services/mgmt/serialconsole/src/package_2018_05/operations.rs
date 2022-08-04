@@ -79,10 +79,16 @@ impl Client {
     }
 }
 impl Client {
+    #[doc = "Gets a list of Serial Console API operations."]
     pub fn list_operations(&self) -> list_operations::Builder {
         list_operations::Builder { client: self.clone() }
     }
     #[doc = "Get the disabled status for a subscription"]
+    #[doc = "Gets whether or not Serial Console is disabled for a given subscription"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: Subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call requiring it."]
+    #[doc = "* `default`: Default parameter. Leave the value as \"default\"."]
     pub fn get_console_status(&self, subscription_id: impl Into<String>, default: impl Into<String>) -> get_console_status::Builder {
         get_console_status::Builder {
             client: self.clone(),
@@ -91,6 +97,11 @@ impl Client {
         }
     }
     #[doc = "Disable Serial Console for a subscription"]
+    #[doc = "Disables the Serial Console service for all VMs and VM scale sets in the provided subscription"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: Subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call requiring it."]
+    #[doc = "* `default`: Default parameter. Leave the value as \"default\"."]
     pub fn disable_console(&self, subscription_id: impl Into<String>, default: impl Into<String>) -> disable_console::Builder {
         disable_console::Builder {
             client: self.clone(),
@@ -99,6 +110,11 @@ impl Client {
         }
     }
     #[doc = "Enable Serial Console for a subscription"]
+    #[doc = "Enables the Serial Console service for all VMs and VM scale sets in the provided subscription"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: Subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call requiring it."]
+    #[doc = "* `default`: Default parameter. Leave the value as \"default\"."]
     pub fn enable_console(&self, subscription_id: impl Into<String>, default: impl Into<String>) -> enable_console::Builder {
         enable_console::Builder {
             client: self.clone(),
@@ -306,6 +322,14 @@ pub mod serial_ports {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the configured serial ports for a parent resource "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `parent_resource_type`: The resource type of the parent resource.  For example: 'virtualMachines' or 'virtualMachineScaleSets'"]
+        #[doc = "* `parent_resource`: The resource name, or subordinate path, for the parent of the serial port. For example: the name of the virtual machine."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call requiring it."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -323,6 +347,15 @@ pub mod serial_ports {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the configured settings for a serial port"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `parent_resource_type`: The resource type of the parent resource.  For example: 'virtualMachines' or 'virtualMachineScaleSets'"]
+        #[doc = "* `parent_resource`: The resource name, or subordinate path, for the parent of the serial port. For example: the name of the virtual machine."]
+        #[doc = "* `serial_port`: The name of the serial port to connect to."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call requiring it."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -342,6 +375,16 @@ pub mod serial_ports {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a serial port"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `parent_resource_type`: The resource type of the parent resource.  For example: 'virtualMachines' or 'virtualMachineScaleSets'"]
+        #[doc = "* `parent_resource`: The resource name, or subordinate path, for the parent of the serial port. For example: the name of the virtual machine."]
+        #[doc = "* `serial_port`: The name of the serial port to create."]
+        #[doc = "* `parameters`: Parameters supplied to create the serial port."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call requiring it."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -363,6 +406,15 @@ pub mod serial_ports {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a serial port"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `parent_resource_type`: The resource type of the parent resource.  For example: 'virtualMachines' or 'virtualMachineScaleSets'"]
+        #[doc = "* `parent_resource`: The resource name, or subordinate path, for the parent of the serial port. For example: the name of the virtual machine."]
+        #[doc = "* `serial_port`: The name of the serial port to delete."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call requiring it."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -382,12 +434,25 @@ pub mod serial_ports {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Handles requests to list all SerialPort resources in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call requiring it."]
         pub fn list_by_subscriptions(&self, subscription_id: impl Into<String>) -> list_by_subscriptions::Builder {
             list_by_subscriptions::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Connect to serial port of the target resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `parent_resource_type`: The resource type of the parent resource.  For example: 'virtualMachines' or 'virtualMachineScaleSets'"]
+        #[doc = "* `parent_resource`: The resource name, or subordinate path, for the parent of the serial port. For example: the name of the virtual machine."]
+        #[doc = "* `serial_port`: The name of the serial port to connect to."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call requiring it."]
         pub fn connect(
             &self,
             resource_group_name: impl Into<String>,

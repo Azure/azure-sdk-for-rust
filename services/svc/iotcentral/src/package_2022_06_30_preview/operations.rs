@@ -129,6 +129,9 @@ pub mod api_tokens {
             list::Builder { client: self.0.clone() }
         }
         #[doc = "Get an API token by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `token_id`: Unique ID for the API token."]
         pub fn get(&self, token_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -136,6 +139,10 @@ pub mod api_tokens {
             }
         }
         #[doc = "Create a new API token in the application to use in the IoT Central public API. The token value will be returned in the response, and won't be returned again in subsequent requests."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `token_id`: Unique ID for the API token."]
+        #[doc = "* `body`: API token body."]
         pub fn create(&self, token_id: impl Into<String>, body: impl Into<models::ApiToken>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -144,6 +151,9 @@ pub mod api_tokens {
             }
         }
         #[doc = "Delete an API token."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `token_id`: Unique ID for the API token."]
         pub fn remove(&self, token_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),
@@ -360,6 +370,9 @@ pub mod dashboards {
             list::Builder { client: self.0.clone() }
         }
         #[doc = "Get a dashboard by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `dashboard_id`: Unique ID for the dashboard."]
         pub fn get(&self, dashboard_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -367,6 +380,10 @@ pub mod dashboards {
             }
         }
         #[doc = "Create a dashboard"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `dashboard_id`: Unique ID for the dashboard."]
+        #[doc = "* `body`: Dashboard definition."]
         pub fn create(&self, dashboard_id: impl Into<String>, body: impl Into<models::Dashboard>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -375,6 +392,10 @@ pub mod dashboards {
             }
         }
         #[doc = "Update a dashboard"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `dashboard_id`: Unique ID for the dashboard."]
+        #[doc = "* `body`: Dashboard definition."]
         pub fn update(&self, dashboard_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -383,6 +404,9 @@ pub mod dashboards {
             }
         }
         #[doc = "Delete a dashboard"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `dashboard_id`: Unique ID for the dashboard."]
         pub fn remove(&self, dashboard_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),
@@ -645,6 +669,9 @@ pub mod destinations {
             list::Builder { client: self.0.clone() }
         }
         #[doc = "Get a destination by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `destination_id`: Unique ID for the destination."]
         pub fn get(&self, destination_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -652,6 +679,11 @@ pub mod destinations {
             }
         }
         #[doc = "Create or update a destination"]
+        #[doc = "Create or update a definition for where to send data."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `destination_id`: Unique ID for the destination."]
+        #[doc = "* `body`: Destination body."]
         pub fn create(&self, destination_id: impl Into<String>, body: impl Into<models::Destination>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -660,6 +692,11 @@ pub mod destinations {
             }
         }
         #[doc = "Patch a destination."]
+        #[doc = "Perform an incremental update to a destination."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `destination_id`: Unique ID for the destination."]
+        #[doc = "* `body`: Destination patch body."]
         pub fn update(&self, destination_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -668,6 +705,9 @@ pub mod destinations {
             }
         }
         #[doc = "Delete a destination."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `destination_id`: Unique ID for the destination."]
         pub fn remove(&self, destination_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),
@@ -675,6 +715,9 @@ pub mod destinations {
             }
         }
         #[doc = "List all exports connected to the given destination."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `destination_id`: Unique ID for the destination."]
         pub fn list_exports(&self, destination_id: impl Into<String>) -> list_exports::Builder {
             list_exports::Builder {
                 client: self.0.clone(),
@@ -1027,6 +1070,9 @@ pub mod exports {
             list::Builder { client: self.0.clone() }
         }
         #[doc = "Get an export by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `export_id`: Unique ID for the export."]
         pub fn get(&self, export_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1034,6 +1080,11 @@ pub mod exports {
             }
         }
         #[doc = "Create or update an export"]
+        #[doc = "Create or update a definition for exporting data. Also used to connect or disconnect an export from destinations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `export_id`: Unique ID for the export."]
+        #[doc = "* `body`: Export body."]
         pub fn create(&self, export_id: impl Into<String>, body: impl Into<models::Export>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -1042,6 +1093,11 @@ pub mod exports {
             }
         }
         #[doc = "Patch an export."]
+        #[doc = "Perform an incremental update to an export."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `export_id`: Unique ID for the export."]
+        #[doc = "* `body`: Export patch body."]
         pub fn update(&self, export_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -1050,6 +1106,9 @@ pub mod exports {
             }
         }
         #[doc = "Delete an export."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `export_id`: Unique ID for the export."]
         pub fn remove(&self, export_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),
@@ -1057,6 +1116,9 @@ pub mod exports {
             }
         }
         #[doc = "List all destinations connected to the given export."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `export_id`: Unique ID for the export."]
         pub fn list_destinations(&self, export_id: impl Into<String>) -> list_destinations::Builder {
             list_destinations::Builder {
                 client: self.0.clone(),
@@ -1398,6 +1460,9 @@ pub mod device_groups {
             }
         }
         #[doc = "Get the device group by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_group_id`: Unique ID for the device group."]
         pub fn get(&self, device_group_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1405,6 +1470,11 @@ pub mod device_groups {
             }
         }
         #[doc = "Create or update a device group"]
+        #[doc = "Create or update a device group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_group_id`: Unique ID for the device group."]
+        #[doc = "* `body`: Device group body."]
         pub fn create(&self, device_group_id: impl Into<String>, body: impl Into<models::DeviceGroup>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -1413,6 +1483,11 @@ pub mod device_groups {
             }
         }
         #[doc = "Update a device group via patch"]
+        #[doc = "Update an existing device group by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_group_id`: Unique ID for the device group."]
+        #[doc = "* `body`: Device group patch body."]
         pub fn update(&self, device_group_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -1421,6 +1496,9 @@ pub mod device_groups {
             }
         }
         #[doc = "Delete a device group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_group_id`: Unique ID for the device group."]
         pub fn remove(&self, device_group_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),
@@ -1428,6 +1506,10 @@ pub mod device_groups {
             }
         }
         #[doc = "Get the devices of a device group"]
+        #[doc = "Get the list of devices by device group ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_group_id`: Unique ID for the device group."]
         pub fn get_devices(&self, device_group_id: impl Into<String>) -> get_devices::Builder {
             get_devices::Builder {
                 client: self.0.clone(),
@@ -1802,6 +1884,9 @@ pub mod device_templates {
             }
         }
         #[doc = "Get a device template by ID"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_template_id`: Unique [Digital Twin Model Identifier](https://github.com/Azure/opendigitaltwins-dtdl/blob/master/DTDL/v2/dtdlv2.md#digital-twin-model-identifier) of the device template."]
         pub fn get(&self, device_template_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1809,6 +1894,10 @@ pub mod device_templates {
             }
         }
         #[doc = "Publish a new device template. Default views will be automatically generated for new device templates created this way."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_template_id`: Unique [Digital Twin Model Identifier](https://github.com/Azure/opendigitaltwins-dtdl/blob/master/DTDL/v2/dtdlv2.md#digital-twin-model-identifier) of the device template."]
+        #[doc = "* `body`: Device template body."]
         pub fn create(&self, device_template_id: impl Into<String>, body: impl Into<models::DeviceTemplate>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -1817,6 +1906,10 @@ pub mod device_templates {
             }
         }
         #[doc = "Update the cloud properties and overrides of an existing device template via patch."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_template_id`: Unique [Digital Twin Model Identifier](https://github.com/Azure/opendigitaltwins-dtdl/blob/master/DTDL/v2/dtdlv2.md#digital-twin-model-identifier) of the device template."]
+        #[doc = "* `body`: Device template patch body."]
         pub fn update(&self, device_template_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -1825,6 +1918,10 @@ pub mod device_templates {
             }
         }
         #[doc = "Delete a device template"]
+        #[doc = "Delete an existing device template by device ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_template_id`: Unique [Digital Twin Model Identifier](https://github.com/Azure/opendigitaltwins-dtdl/blob/master/DTDL/v2/dtdlv2.md#digital-twin-model-identifier) of the device template."]
         pub fn remove(&self, device_template_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),
@@ -2120,6 +2217,10 @@ pub mod devices {
             }
         }
         #[doc = "Get a device by ID"]
+        #[doc = "Get details about an existing device by device ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
         pub fn get(&self, device_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -2127,6 +2228,11 @@ pub mod devices {
             }
         }
         #[doc = "Create or update a device"]
+        #[doc = "Create a new device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `body`: Device body."]
         pub fn create(&self, device_id: impl Into<String>, body: impl Into<models::Device>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -2135,6 +2241,11 @@ pub mod devices {
             }
         }
         #[doc = "Update a device via patch"]
+        #[doc = "Update an existing device by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `body`: Device patch body."]
         pub fn update(&self, device_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -2143,6 +2254,10 @@ pub mod devices {
             }
         }
         #[doc = "Delete a device"]
+        #[doc = "Delete an existing device by device ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
         pub fn remove(&self, device_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),
@@ -2150,6 +2265,9 @@ pub mod devices {
             }
         }
         #[doc = "Get device attestation"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
         pub fn get_attestation(&self, device_id: impl Into<String>) -> get_attestation::Builder {
             get_attestation::Builder {
                 client: self.0.clone(),
@@ -2157,6 +2275,10 @@ pub mod devices {
             }
         }
         #[doc = "Create an individual device attestation"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `body`: Individual device attestation body."]
         pub fn create_attestation(
             &self,
             device_id: impl Into<String>,
@@ -2169,6 +2291,10 @@ pub mod devices {
             }
         }
         #[doc = "Update an individual device attestation via patch"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `body`: Individual device attestation patch body."]
         pub fn update_attestation(&self, device_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update_attestation::Builder {
             update_attestation::Builder {
                 client: self.0.clone(),
@@ -2177,6 +2303,9 @@ pub mod devices {
             }
         }
         #[doc = "Remove an individual device attestation"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
         pub fn remove_attestation(&self, device_id: impl Into<String>) -> remove_attestation::Builder {
             remove_attestation::Builder {
                 client: self.0.clone(),
@@ -2184,6 +2313,10 @@ pub mod devices {
             }
         }
         #[doc = "Get device command history"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `command_name`: Name of this device command."]
         pub fn get_command_history(&self, device_id: impl Into<String>, command_name: impl Into<String>) -> get_command_history::Builder {
             get_command_history::Builder {
                 client: self.0.clone(),
@@ -2192,6 +2325,12 @@ pub mod devices {
             }
         }
         #[doc = "Run a device command"]
+        #[doc = "Run a command on a device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `command_name`: Name of this device command."]
+        #[doc = "* `body`: Device command body."]
         pub fn run_command(
             &self,
             device_id: impl Into<String>,
@@ -2206,6 +2345,9 @@ pub mod devices {
             }
         }
         #[doc = "List the components present in a device"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
         pub fn list_components(&self, device_id: impl Into<String>) -> list_components::Builder {
             list_components::Builder {
                 client: self.0.clone(),
@@ -2213,6 +2355,11 @@ pub mod devices {
             }
         }
         #[doc = "Get component command history"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `component_name`: Name of the device component."]
+        #[doc = "* `command_name`: Name of this device command."]
         pub fn get_component_command_history(
             &self,
             device_id: impl Into<String>,
@@ -2227,6 +2374,13 @@ pub mod devices {
             }
         }
         #[doc = "Run a component command"]
+        #[doc = "Run a command on a component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `component_name`: Name of the device component."]
+        #[doc = "* `command_name`: Name of this device command."]
+        #[doc = "* `body`: Device command body."]
         pub fn run_component_command(
             &self,
             device_id: impl Into<String>,
@@ -2243,6 +2397,10 @@ pub mod devices {
             }
         }
         #[doc = "Get device properties for a specific component"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `component_name`: Name of the device component."]
         pub fn get_component_properties(
             &self,
             device_id: impl Into<String>,
@@ -2256,6 +2414,11 @@ pub mod devices {
             }
         }
         #[doc = "Replace device properties for a specific component"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `component_name`: Name of the device component."]
+        #[doc = "* `body`: Device properties."]
         pub fn replace_component_properties(
             &self,
             device_id: impl Into<String>,
@@ -2271,6 +2434,11 @@ pub mod devices {
             }
         }
         #[doc = "Update device properties for a specific component via patch"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `component_name`: Name of the device component."]
+        #[doc = "* `body`: Device properties patch."]
         pub fn update_component_properties(
             &self,
             device_id: impl Into<String>,
@@ -2286,6 +2454,12 @@ pub mod devices {
             }
         }
         #[doc = "Get component telemetry value"]
+        #[doc = "Get the last telemetry value from a component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `component_name`: Name of the device component."]
+        #[doc = "* `telemetry_name`: Name of this device telemetry."]
         pub fn get_component_telemetry_value(
             &self,
             device_id: impl Into<String>,
@@ -2300,6 +2474,9 @@ pub mod devices {
             }
         }
         #[doc = "Get device credentials"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
         pub fn get_credentials(&self, device_id: impl Into<String>) -> get_credentials::Builder {
             get_credentials::Builder {
                 client: self.0.clone(),
@@ -2307,6 +2484,9 @@ pub mod devices {
             }
         }
         #[doc = "List the modules present in a device"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
         pub fn list_modules(&self, device_id: impl Into<String>) -> list_modules::Builder {
             list_modules::Builder {
                 client: self.0.clone(),
@@ -2314,6 +2494,11 @@ pub mod devices {
             }
         }
         #[doc = "Get module command history"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `module_name`: Name of the device module."]
+        #[doc = "* `command_name`: Name of this device command."]
         pub fn get_module_command_history(
             &self,
             device_id: impl Into<String>,
@@ -2328,6 +2513,13 @@ pub mod devices {
             }
         }
         #[doc = "Run a module command"]
+        #[doc = "Run a command on a module."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `module_name`: Name of the device module."]
+        #[doc = "* `command_name`: Name of this device command."]
+        #[doc = "* `body`: Device command body."]
         pub fn run_module_command(
             &self,
             device_id: impl Into<String>,
@@ -2344,6 +2536,10 @@ pub mod devices {
             }
         }
         #[doc = "List the components present in a module"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `module_name`: Name of the device module."]
         pub fn list_module_components(
             &self,
             device_id: impl Into<String>,
@@ -2356,6 +2552,12 @@ pub mod devices {
             }
         }
         #[doc = "Get module component command history"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `module_name`: Name of the device module."]
+        #[doc = "* `component_name`: Name of the device component."]
+        #[doc = "* `command_name`: Name of this device command."]
         pub fn get_module_component_command_history(
             &self,
             device_id: impl Into<String>,
@@ -2372,6 +2574,14 @@ pub mod devices {
             }
         }
         #[doc = "Run a module component command"]
+        #[doc = "Run a command on a module."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `module_name`: Name of the device module."]
+        #[doc = "* `component_name`: Name of the device component."]
+        #[doc = "* `command_name`: Name of this device command."]
+        #[doc = "* `body`: Device command body."]
         pub fn run_module_component_command(
             &self,
             device_id: impl Into<String>,
@@ -2390,6 +2600,11 @@ pub mod devices {
             }
         }
         #[doc = "Get module properties for a specific component"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `module_name`: Name of the device module."]
+        #[doc = "* `component_name`: Name of the device component."]
         pub fn get_module_component_properties(
             &self,
             device_id: impl Into<String>,
@@ -2404,6 +2619,12 @@ pub mod devices {
             }
         }
         #[doc = "Replace module properties for a specific component"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `module_name`: Name of the device module."]
+        #[doc = "* `component_name`: Name of the device component."]
+        #[doc = "* `body`: Module properties."]
         pub fn replace_module_component_properties(
             &self,
             device_id: impl Into<String>,
@@ -2420,6 +2641,12 @@ pub mod devices {
             }
         }
         #[doc = "Update module properties for a specific component via patch"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `module_name`: Name of the device module."]
+        #[doc = "* `component_name`: Name of the device component."]
+        #[doc = "* `body`: Module properties patch."]
         pub fn update_module_component_properties(
             &self,
             device_id: impl Into<String>,
@@ -2436,6 +2663,13 @@ pub mod devices {
             }
         }
         #[doc = "Get module component telemetry value"]
+        #[doc = "Get the last telemetry value from a module component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `module_name`: Name of the device module."]
+        #[doc = "* `component_name`: Name of the device component."]
+        #[doc = "* `telemetry_name`: Name of this device telemetry."]
         pub fn get_module_component_telemetry_value(
             &self,
             device_id: impl Into<String>,
@@ -2452,6 +2686,11 @@ pub mod devices {
             }
         }
         #[doc = "Get module properties"]
+        #[doc = "Get all property values of a module."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `module_name`: Name of the device module."]
         pub fn get_module_properties(
             &self,
             device_id: impl Into<String>,
@@ -2464,6 +2703,12 @@ pub mod devices {
             }
         }
         #[doc = "Replace module properties"]
+        #[doc = "Replace all property values of a module."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `module_name`: Name of the device module."]
+        #[doc = "* `body`: Module properties."]
         pub fn replace_module_properties(
             &self,
             device_id: impl Into<String>,
@@ -2478,6 +2723,12 @@ pub mod devices {
             }
         }
         #[doc = "Update module properties via patch"]
+        #[doc = "Update property values of a module."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `module_name`: Name of the device module."]
+        #[doc = "* `body`: Module properties patch."]
         pub fn update_module_properties(
             &self,
             device_id: impl Into<String>,
@@ -2492,6 +2743,12 @@ pub mod devices {
             }
         }
         #[doc = "Get module telemetry value"]
+        #[doc = "Get the last telemetry value from a module."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `module_name`: Name of the device module."]
+        #[doc = "* `telemetry_name`: Name of this device telemetry."]
         pub fn get_module_telemetry_value(
             &self,
             device_id: impl Into<String>,
@@ -2506,6 +2763,10 @@ pub mod devices {
             }
         }
         #[doc = "Get device properties"]
+        #[doc = "Get all property values of a device by device ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
         pub fn get_properties(&self, device_id: impl Into<String>) -> get_properties::Builder {
             get_properties::Builder {
                 client: self.0.clone(),
@@ -2514,6 +2775,11 @@ pub mod devices {
             }
         }
         #[doc = "Replace device properties"]
+        #[doc = "Replace all property values of a device by device ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `body`: Device properties."]
         pub fn replace_properties(
             &self,
             device_id: impl Into<String>,
@@ -2527,6 +2793,11 @@ pub mod devices {
             }
         }
         #[doc = "Update device properties via patch"]
+        #[doc = "Update property values of a device by device ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `body`: Device properties patch."]
         pub fn update_properties(&self, device_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update_properties::Builder {
             update_properties::Builder {
                 client: self.0.clone(),
@@ -2536,6 +2807,10 @@ pub mod devices {
             }
         }
         #[doc = "Given the ID for an upstream device, will return the upstream and the downstream relationships associated with that gateway. These downstream relationships are only those associated with the direct downstream level (they don’t work recursively)."]
+        #[doc = "List all relationships based on device ID"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
         pub fn list_relationships(&self, device_id: impl Into<String>) -> list_relationships::Builder {
             list_relationships::Builder {
                 client: self.0.clone(),
@@ -2543,6 +2818,11 @@ pub mod devices {
             }
         }
         #[doc = "Given the ID for a device and a relationship ID associated with this device, get the details of the relationship."]
+        #[doc = "Get device relationship by ID"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `relationship_id`: Unique ID of a relationship between devices."]
         pub fn get_relationship(&self, device_id: impl Into<String>, relationship_id: impl Into<String>) -> get_relationship::Builder {
             get_relationship::Builder {
                 client: self.0.clone(),
@@ -2551,6 +2831,12 @@ pub mod devices {
             }
         }
         #[doc = "Given the ID for a device and a relationship ID associated with this device, create a new relationship for between the given device and a second device specified in the body."]
+        #[doc = "Create a device relationship"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `relationship_id`: Unique ID of a relationship between devices."]
+        #[doc = "* `body`: Device relationship body."]
         pub fn create_relationship(
             &self,
             device_id: impl Into<String>,
@@ -2565,6 +2851,12 @@ pub mod devices {
             }
         }
         #[doc = "Patch a given relationship given the relationship ID and a given device ID."]
+        #[doc = "Update device relationship"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `relationship_id`: Unique ID of a relationship between devices."]
+        #[doc = "* `body`: Device relationship patch body."]
         pub fn update_relationship(
             &self,
             device_id: impl Into<String>,
@@ -2579,6 +2871,11 @@ pub mod devices {
             }
         }
         #[doc = "Given the ID for a device and an associated relationship ID, delete the relationship. The given device ID can be that of the upstream or downstream device."]
+        #[doc = "Delete a device relationship"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `relationship_id`: Unique ID of a relationship between devices."]
         pub fn remove_relationship(
             &self,
             device_id: impl Into<String>,
@@ -2591,6 +2888,11 @@ pub mod devices {
             }
         }
         #[doc = "Get device telemetry value"]
+        #[doc = "Get the last telemetry value from a device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_id`: Unique ID of the device."]
+        #[doc = "* `telemetry_name`: Name of this device telemetry."]
         pub fn get_telemetry_value(&self, device_id: impl Into<String>, telemetry_name: impl Into<String>) -> get_telemetry_value::Builder {
             get_telemetry_value::Builder {
                 client: self.0.clone(),
@@ -4868,6 +5170,10 @@ pub mod enrollment_groups {
             list::Builder { client: self.0.clone() }
         }
         #[doc = "Get an enrollment group by ID"]
+        #[doc = "Get details about an enrollment group by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `enrollment_group_id`: Unique ID of the enrollment group."]
         pub fn get(&self, enrollment_group_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -4875,6 +5181,11 @@ pub mod enrollment_groups {
             }
         }
         #[doc = "Create an enrollment group"]
+        #[doc = "Create an enrollment group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `enrollment_group_id`: Unique ID of the enrollment group."]
+        #[doc = "* `body`: Enrollment group body."]
         pub fn create(&self, enrollment_group_id: impl Into<String>, body: impl Into<models::EnrollmentGroup>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -4883,6 +5194,11 @@ pub mod enrollment_groups {
             }
         }
         #[doc = "Update an enrollment group"]
+        #[doc = "Update an enrollment group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `enrollment_group_id`: Unique ID of the enrollment group."]
+        #[doc = "* `body`: Enrollment group patch body."]
         pub fn update(&self, enrollment_group_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -4891,6 +5207,10 @@ pub mod enrollment_groups {
             }
         }
         #[doc = "Delete an enrollment group"]
+        #[doc = "Delete an enrollment group by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `enrollment_group_id`: Unique ID of the enrollment group."]
         pub fn remove(&self, enrollment_group_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),
@@ -4898,6 +5218,11 @@ pub mod enrollment_groups {
             }
         }
         #[doc = "Get the primary or secondary x509 certificate of an enrollment group"]
+        #[doc = "Get details about the primary or secondary x509 certificate of an enrollment group, if it exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `enrollment_group_id`: Unique ID of the enrollment group."]
+        #[doc = "* `entry`: Entry of certificate only support primary and secondary."]
         pub fn get_x509(&self, enrollment_group_id: impl Into<String>, entry: impl Into<String>) -> get_x509::Builder {
             get_x509::Builder {
                 client: self.0.clone(),
@@ -4906,6 +5231,12 @@ pub mod enrollment_groups {
             }
         }
         #[doc = "Sets the primary or secondary x509 certificate of an enrollment group"]
+        #[doc = "Sets the primary or secondary x509 certificate of an enrollment group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `enrollment_group_id`: Unique ID of the enrollment group."]
+        #[doc = "* `entry`: Entry of certificate only support primary and secondary."]
+        #[doc = "* `body`: Certificate definition."]
         pub fn create_x509(
             &self,
             enrollment_group_id: impl Into<String>,
@@ -4920,6 +5251,11 @@ pub mod enrollment_groups {
             }
         }
         #[doc = "Removes the primary or secondary x509 certificate of an enrollment group"]
+        #[doc = "Removes the primary or secondary x509 certificate of an enrollment group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `enrollment_group_id`: Unique ID of the enrollment group."]
+        #[doc = "* `entry`: Entry of certificate only support primary and secondary."]
         pub fn remove_x509(&self, enrollment_group_id: impl Into<String>, entry: impl Into<String>) -> remove_x509::Builder {
             remove_x509::Builder {
                 client: self.0.clone(),
@@ -4928,6 +5264,11 @@ pub mod enrollment_groups {
             }
         }
         #[doc = "Generate a verification code for the primary or secondary x509 certificate of an enrollment group"]
+        #[doc = "Generate a verification code for the primary or secondary x509 certificate of an enrollment group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `enrollment_group_id`: Unique ID of the enrollment group."]
+        #[doc = "* `entry`: Entry of certificate only support primary and secondary."]
         pub fn generate_verification_code_x509(
             &self,
             enrollment_group_id: impl Into<String>,
@@ -4940,6 +5281,12 @@ pub mod enrollment_groups {
             }
         }
         #[doc = "Verify the primary or secondary x509 certificate of an enrollment group"]
+        #[doc = "Verify the primary or secondary x509 certificate of an enrollment group by providing a certificate with the signed verification code."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `enrollment_group_id`: Unique ID of the enrollment group."]
+        #[doc = "* `entry`: Entry of certificate only support primary and secondary."]
+        #[doc = "* `body`: Certificate for the signed verification code."]
         pub fn verify_x509(
             &self,
             enrollment_group_id: impl Into<String>,
@@ -5472,6 +5819,9 @@ pub mod file_uploads {
             get::Builder { client: self.0.clone() }
         }
         #[doc = "Create the file upload storage account configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `body`: File upload storage account configuration body."]
         pub fn create(&self, body: impl Into<models::FileUpload>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -5479,6 +5829,9 @@ pub mod file_uploads {
             }
         }
         #[doc = "Update the file upload storage account configuration"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `body`: File upload storage account configuration body."]
         pub fn update(&self, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -5672,6 +6025,10 @@ pub mod jobs {
             list::Builder { client: self.0.clone() }
         }
         #[doc = "Get a job by ID"]
+        #[doc = "Get details about a running or completed job by job ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_id`: Unique ID of the job."]
         pub fn get(&self, job_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -5679,6 +6036,11 @@ pub mod jobs {
             }
         }
         #[doc = "Execute a new job"]
+        #[doc = "Create and execute a new job via its job definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_id`: Unique ID of the job."]
+        #[doc = "* `body`: Job definition."]
         pub fn create(&self, job_id: impl Into<String>, body: impl Into<models::Job>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -5687,6 +6049,10 @@ pub mod jobs {
             }
         }
         #[doc = "Get device statuses"]
+        #[doc = "Get the list of individual device statuses by job ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_id`: Unique ID of the job."]
         pub fn get_devices(&self, job_id: impl Into<String>) -> get_devices::Builder {
             get_devices::Builder {
                 client: self.0.clone(),
@@ -5694,6 +6060,11 @@ pub mod jobs {
             }
         }
         #[doc = "Rerun a job on failed devices"]
+        #[doc = "Execute a rerun of an existing job on all failed devices."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_id`: Unique ID of the job."]
+        #[doc = "* `rerun_id`: Unique ID of the job rerun."]
         pub fn rerun(&self, job_id: impl Into<String>, rerun_id: impl Into<String>) -> rerun::Builder {
             rerun::Builder {
                 client: self.0.clone(),
@@ -5702,6 +6073,10 @@ pub mod jobs {
             }
         }
         #[doc = "Resume a stopped job"]
+        #[doc = "Resume execution of an existing stopped job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_id`: Unique ID of the job."]
         pub fn resume(&self, job_id: impl Into<String>) -> resume::Builder {
             resume::Builder {
                 client: self.0.clone(),
@@ -5709,6 +6084,10 @@ pub mod jobs {
             }
         }
         #[doc = "Stop a running job"]
+        #[doc = "Stop execution of a job that is currently running."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_id`: Unique ID of the job."]
         pub fn stop(&self, job_id: impl Into<String>) -> stop::Builder {
             stop::Builder {
                 client: self.0.clone(),
@@ -6087,6 +6466,9 @@ pub mod organizations {
             list::Builder { client: self.0.clone() }
         }
         #[doc = "Get an organization by ID"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `organization_id`: Unique ID of the organization."]
         pub fn get(&self, organization_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -6094,6 +6476,10 @@ pub mod organizations {
             }
         }
         #[doc = "Create an organization in the application"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `organization_id`: Unique ID of the organization."]
+        #[doc = "* `body`: Organization body."]
         pub fn create(&self, organization_id: impl Into<String>, body: impl Into<models::Organization>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -6102,6 +6488,10 @@ pub mod organizations {
             }
         }
         #[doc = "Update an organization in the application via patch"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `organization_id`: Unique ID of the organization."]
+        #[doc = "* `body`: Organization patch body."]
         pub fn update(&self, organization_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -6110,6 +6500,9 @@ pub mod organizations {
             }
         }
         #[doc = "Delete an organization"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `organization_id`: Unique ID of the organization."]
         pub fn remove(&self, organization_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),
@@ -6368,6 +6761,9 @@ pub mod query {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Run a query and obtain the result"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `body`: query, more details on [IoT central query language](https://aka.ms/iotcql)."]
         pub fn run(&self, body: impl Into<models::QueryRequest>) -> run::Builder {
             run::Builder {
                 client: self.0.clone(),
@@ -6430,6 +6826,9 @@ pub mod roles {
             list::Builder { client: self.0.clone() }
         }
         #[doc = "Get a role by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `role_id`: Unique ID for the role."]
         pub fn get(&self, role_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -6560,6 +6959,10 @@ pub mod scheduled_jobs {
             list::Builder { client: self.0.clone() }
         }
         #[doc = "Get a scheduled job by ID"]
+        #[doc = "Get details about a scheduled job by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scheduled_job_id`: Unique ID of the scheduled job."]
         pub fn get(&self, scheduled_job_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -6567,6 +6970,11 @@ pub mod scheduled_jobs {
             }
         }
         #[doc = "Create or update a scheduled job"]
+        #[doc = "Create or update a scheduled job by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scheduled_job_id`: Unique ID of the scheduled job."]
+        #[doc = "* `body`: Scheduled job definition."]
         pub fn create(&self, scheduled_job_id: impl Into<String>, body: impl Into<models::ScheduledJob>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -6575,6 +6983,11 @@ pub mod scheduled_jobs {
             }
         }
         #[doc = "Update a scheduled job via patch"]
+        #[doc = "Update an existing scheduled job by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scheduled_job_id`: Unique ID of the scheduled job."]
+        #[doc = "* `body`: Scheduled job patch."]
         pub fn update(&self, scheduled_job_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -6583,6 +6996,10 @@ pub mod scheduled_jobs {
             }
         }
         #[doc = "Delete a scheduled job"]
+        #[doc = "Delete an existing scheduled job by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scheduled_job_id`: Unique ID of the scheduled job."]
         pub fn remove(&self, scheduled_job_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),
@@ -6590,6 +7007,9 @@ pub mod scheduled_jobs {
             }
         }
         #[doc = "Get the list of jobs for a scheduled job definition"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scheduled_job_id`: Unique ID of the scheduled job."]
         pub fn list_jobs(&self, scheduled_job_id: impl Into<String>) -> list_jobs::Builder {
             list_jobs::Builder {
                 client: self.0.clone(),
@@ -6923,6 +7343,9 @@ pub mod users {
             list::Builder { client: self.0.clone() }
         }
         #[doc = "Get a user by ID"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `user_id`: Unique ID of the user."]
         pub fn get(&self, user_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -6930,6 +7353,10 @@ pub mod users {
             }
         }
         #[doc = "Create a user in the application"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `user_id`: Unique ID of the user."]
+        #[doc = "* `body`: User body."]
         pub fn create(&self, user_id: impl Into<String>, body: impl Into<models::User>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -6938,6 +7365,10 @@ pub mod users {
             }
         }
         #[doc = "Update a user in the application via patch"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `user_id`: Unique ID of the user."]
+        #[doc = "* `body`: User patch body."]
         pub fn update(&self, user_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -6946,6 +7377,9 @@ pub mod users {
             }
         }
         #[doc = "Delete a user"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `user_id`: Unique ID of the user."]
         pub fn remove(&self, user_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),

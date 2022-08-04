@@ -88,6 +88,12 @@ pub mod private_zones {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a Private DNS zone. Retrieves the zone properties, but not the virtual networks links or the record sets within the zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -101,6 +107,13 @@ pub mod private_zones {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a Private DNS zone. Does not modify Links to virtual networks or DNS records within the zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `parameters`: Parameters supplied to the CreateOrUpdate operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -118,6 +131,13 @@ pub mod private_zones {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates a Private DNS zone. Does not modify virtual network links or DNS records within the zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `parameters`: Parameters supplied to the Update operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -134,6 +154,12 @@ pub mod private_zones {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a Private DNS zone. WARNING: All DNS records in the zone will also be deleted. This operation cannot be undone. Private DNS zone cannot be deleted unless all virtual network links to it are removed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -148,6 +174,10 @@ pub mod private_zones {
                 if_match: None,
             }
         }
+        #[doc = "Lists the Private DNS zones in all resource groups in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -155,6 +185,11 @@ pub mod private_zones {
                 top: None,
             }
         }
+        #[doc = "Lists the Private DNS zones within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -605,6 +640,13 @@ pub mod virtual_network_links {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a virtual network link to the specified Private DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `virtual_network_link_name`: The name of the virtual network link."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -620,6 +662,14 @@ pub mod virtual_network_links {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a virtual network link to the specified Private DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `virtual_network_link_name`: The name of the virtual network link."]
+        #[doc = "* `parameters`: Parameters supplied to the CreateOrUpdate operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -639,6 +689,14 @@ pub mod virtual_network_links {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates a virtual network link to the specified Private DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `virtual_network_link_name`: The name of the virtual network link."]
+        #[doc = "* `parameters`: Parameters supplied to the Update operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -657,6 +715,13 @@ pub mod virtual_network_links {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a virtual network link to the specified Private DNS zone. WARNING: In case of a registration virtual network, all auto-registered DNS records in the zone for the virtual network will also be deleted. This operation cannot be undone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `virtual_network_link_name`: The name of the virtual network link."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -673,6 +738,12 @@ pub mod virtual_network_links {
                 if_match: None,
             }
         }
+        #[doc = "Lists the virtual network links to the specified Private DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -1053,6 +1124,14 @@ pub mod record_sets {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a record set."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `record_type`: The type of DNS record in this record set."]
+        #[doc = "* `relative_record_set_name`: The name of the record set, relative to the name of the zone."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1070,6 +1149,15 @@ pub mod record_sets {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a record set within a Private DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `record_type`: The type of DNS record in this record set. Record sets of type SOA can be updated but not created (they are created when the Private DNS zone is created)."]
+        #[doc = "* `relative_record_set_name`: The name of the record set, relative to the name of the zone."]
+        #[doc = "* `parameters`: Parameters supplied to the CreateOrUpdate operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1091,6 +1179,15 @@ pub mod record_sets {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates a record set within a Private DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `record_type`: The type of DNS record in this record set."]
+        #[doc = "* `relative_record_set_name`: The name of the record set, relative to the name of the zone."]
+        #[doc = "* `parameters`: Parameters supplied to the Update operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1111,6 +1208,14 @@ pub mod record_sets {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a record set from a Private DNS zone. This operation cannot be undone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `record_type`: The type of DNS record in this record set. Record sets of type SOA cannot be deleted (they are deleted when the Private DNS zone is deleted)."]
+        #[doc = "* `relative_record_set_name`: The name of the record set, relative to the name of the zone."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1129,6 +1234,13 @@ pub mod record_sets {
                 if_match: None,
             }
         }
+        #[doc = "Lists the record sets of a specified type in a Private DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `record_type`: The type of record sets to enumerate."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_type(
             &self,
             resource_group_name: impl Into<String>,
@@ -1146,6 +1258,12 @@ pub mod record_sets {
                 recordsetnamesuffix: None,
             }
         }
+        #[doc = "Lists all record sets in a Private DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,

@@ -162,6 +162,10 @@ pub mod workflows {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of workflows by subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -170,6 +174,11 @@ pub mod workflows {
                 filter: None,
             }
         }
+        #[doc = "Gets a list of workflows by resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -183,6 +192,12 @@ pub mod workflows {
                 filter: None,
             }
         }
+        #[doc = "Gets a workflow."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -196,6 +211,13 @@ pub mod workflows {
                 workflow_name: workflow_name.into(),
             }
         }
+        #[doc = "Creates or updates a workflow."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `workflow`: The workflow."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -211,6 +233,12 @@ pub mod workflows {
                 workflow: workflow.into(),
             }
         }
+        #[doc = "Updates a workflow."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -224,6 +252,12 @@ pub mod workflows {
                 workflow_name: workflow_name.into(),
             }
         }
+        #[doc = "Deletes a workflow."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -237,6 +271,12 @@ pub mod workflows {
                 workflow_name: workflow_name.into(),
             }
         }
+        #[doc = "Disables a workflow."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
         pub fn disable(
             &self,
             subscription_id: impl Into<String>,
@@ -250,6 +290,12 @@ pub mod workflows {
                 workflow_name: workflow_name.into(),
             }
         }
+        #[doc = "Enables a workflow."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
         pub fn enable(
             &self,
             subscription_id: impl Into<String>,
@@ -263,6 +309,13 @@ pub mod workflows {
                 workflow_name: workflow_name.into(),
             }
         }
+        #[doc = "Generates the upgraded definition for a workflow."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `parameters`: Parameters for generating an upgraded definition."]
         pub fn generate_upgraded_definition(
             &self,
             subscription_id: impl Into<String>,
@@ -278,6 +331,13 @@ pub mod workflows {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Get the workflow callback Url."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `list_callback_url`: Which callback url to list."]
         pub fn list_callback_url(
             &self,
             subscription_id: impl Into<String>,
@@ -293,6 +353,12 @@ pub mod workflows {
                 list_callback_url: list_callback_url.into(),
             }
         }
+        #[doc = "Gets an OpenAPI definition for the workflow."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
         pub fn list_swagger(
             &self,
             subscription_id: impl Into<String>,
@@ -306,6 +372,13 @@ pub mod workflows {
                 workflow_name: workflow_name.into(),
             }
         }
+        #[doc = "Moves an existing workflow."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `move_`: The workflow to move."]
         pub fn move_(
             &self,
             subscription_id: impl Into<String>,
@@ -321,6 +394,13 @@ pub mod workflows {
                 move_: move_.into(),
             }
         }
+        #[doc = "Regenerates the callback URL access key for request triggers."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `key_type`: The access key type."]
         pub fn regenerate_access_key(
             &self,
             subscription_id: impl Into<String>,
@@ -336,6 +416,13 @@ pub mod workflows {
                 key_type: key_type.into(),
             }
         }
+        #[doc = "Validates the workflow."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `validate`: The workflow."]
         pub fn validate_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -351,6 +438,14 @@ pub mod workflows {
                 validate: validate.into(),
             }
         }
+        #[doc = "Validates the workflow definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `location`: The workflow location."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `validate`: The workflow."]
         pub fn validate_by_location(
             &self,
             subscription_id: impl Into<String>,
@@ -1243,6 +1338,12 @@ pub mod workflow_versions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of workflow versions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1257,6 +1358,13 @@ pub mod workflow_versions {
                 top: None,
             }
         }
+        #[doc = "Gets a workflow version."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `version_id`: The workflow versionId."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1418,6 +1526,12 @@ pub mod workflow_triggers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of workflow triggers."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1433,6 +1547,13 @@ pub mod workflow_triggers {
                 filter: None,
             }
         }
+        #[doc = "Gets a workflow trigger."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `trigger_name`: The workflow trigger name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1448,6 +1569,13 @@ pub mod workflow_triggers {
                 trigger_name: trigger_name.into(),
             }
         }
+        #[doc = "Resets a workflow trigger."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `trigger_name`: The workflow trigger name."]
         pub fn reset(
             &self,
             subscription_id: impl Into<String>,
@@ -1463,6 +1591,13 @@ pub mod workflow_triggers {
                 trigger_name: trigger_name.into(),
             }
         }
+        #[doc = "Runs a workflow trigger."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `trigger_name`: The workflow trigger name."]
         pub fn run(
             &self,
             subscription_id: impl Into<String>,
@@ -1478,6 +1613,13 @@ pub mod workflow_triggers {
                 trigger_name: trigger_name.into(),
             }
         }
+        #[doc = "Get the trigger schema as JSON."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `trigger_name`: The workflow trigger name."]
         pub fn get_schema_json(
             &self,
             subscription_id: impl Into<String>,
@@ -1493,6 +1635,14 @@ pub mod workflow_triggers {
                 trigger_name: trigger_name.into(),
             }
         }
+        #[doc = "Sets the state of a workflow trigger."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `trigger_name`: The workflow trigger name."]
+        #[doc = "* `set_state`: The workflow trigger state."]
         pub fn set_state(
             &self,
             subscription_id: impl Into<String>,
@@ -1510,6 +1660,13 @@ pub mod workflow_triggers {
                 set_state: set_state.into(),
             }
         }
+        #[doc = "Get the callback URL for a workflow trigger."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `trigger_name`: The workflow trigger name."]
         pub fn list_callback_url(
             &self,
             subscription_id: impl Into<String>,
@@ -1947,6 +2104,14 @@ pub mod workflow_version_triggers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the callback url for a trigger of a workflow version."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `version_id`: The workflow versionId."]
+        #[doc = "* `trigger_name`: The workflow trigger name."]
         pub fn list_callback_url(
             &self,
             subscription_id: impl Into<String>,
@@ -2029,6 +2194,13 @@ pub mod workflow_trigger_histories {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of workflow trigger histories."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `trigger_name`: The workflow trigger name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2046,6 +2218,14 @@ pub mod workflow_trigger_histories {
                 filter: None,
             }
         }
+        #[doc = "Gets a workflow trigger history."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `trigger_name`: The workflow trigger name."]
+        #[doc = "* `history_name`: The workflow trigger history name. Corresponds to the run name for triggers that resulted in a run."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2063,6 +2243,14 @@ pub mod workflow_trigger_histories {
                 history_name: history_name.into(),
             }
         }
+        #[doc = "Resubmits a workflow run based on the trigger history."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `trigger_name`: The workflow trigger name."]
+        #[doc = "* `history_name`: The workflow trigger history name. Corresponds to the run name for triggers that resulted in a run."]
         pub fn resubmit(
             &self,
             subscription_id: impl Into<String>,
@@ -2283,6 +2471,12 @@ pub mod workflow_runs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of workflow runs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2298,6 +2492,13 @@ pub mod workflow_runs {
                 filter: None,
             }
         }
+        #[doc = "Gets a workflow run."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `run_name`: The workflow run name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2313,6 +2514,13 @@ pub mod workflow_runs {
                 run_name: run_name.into(),
             }
         }
+        #[doc = "Cancels a workflow run."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `run_name`: The workflow run name."]
         pub fn cancel(
             &self,
             subscription_id: impl Into<String>,
@@ -2533,6 +2741,13 @@ pub mod workflow_run_actions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of workflow run actions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `run_name`: The workflow run name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2550,6 +2765,14 @@ pub mod workflow_run_actions {
                 filter: None,
             }
         }
+        #[doc = "Gets a workflow run action."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `run_name`: The workflow run name."]
+        #[doc = "* `action_name`: The workflow action name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2567,6 +2790,14 @@ pub mod workflow_run_actions {
                 action_name: action_name.into(),
             }
         }
+        #[doc = "Lists a workflow run expression trace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `run_name`: The workflow run name."]
+        #[doc = "* `action_name`: The workflow action name."]
         pub fn list_expression_traces(
             &self,
             subscription_id: impl Into<String>,
@@ -2792,6 +3023,14 @@ pub mod workflow_run_action_repetitions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all of a workflow run action repetitions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `run_name`: The workflow run name."]
+        #[doc = "* `action_name`: The workflow action name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2809,6 +3048,15 @@ pub mod workflow_run_action_repetitions {
                 action_name: action_name.into(),
             }
         }
+        #[doc = "Get a workflow run action repetition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `run_name`: The workflow run name."]
+        #[doc = "* `action_name`: The workflow action name."]
+        #[doc = "* `repetition_name`: The workflow repetition."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2828,6 +3076,15 @@ pub mod workflow_run_action_repetitions {
                 repetition_name: repetition_name.into(),
             }
         }
+        #[doc = "Lists a workflow run expression trace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `run_name`: The workflow run name."]
+        #[doc = "* `action_name`: The workflow action name."]
+        #[doc = "* `repetition_name`: The workflow repetition."]
         pub fn list_expression_traces(
             &self,
             subscription_id: impl Into<String>,
@@ -3010,6 +3267,15 @@ pub mod workflow_run_action_repetitions_request_histories {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List a workflow run repetition request history."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `run_name`: The workflow run name."]
+        #[doc = "* `action_name`: The workflow action name."]
+        #[doc = "* `repetition_name`: The workflow repetition."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3029,6 +3295,16 @@ pub mod workflow_run_action_repetitions_request_histories {
                 repetition_name: repetition_name.into(),
             }
         }
+        #[doc = "Gets a workflow run repetition request history."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `run_name`: The workflow run name."]
+        #[doc = "* `action_name`: The workflow action name."]
+        #[doc = "* `repetition_name`: The workflow repetition."]
+        #[doc = "* `request_history_name`: The request history name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3181,6 +3457,14 @@ pub mod workflow_run_action_request_histories {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List a workflow run request history."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `run_name`: The workflow run name."]
+        #[doc = "* `action_name`: The workflow action name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3198,6 +3482,15 @@ pub mod workflow_run_action_request_histories {
                 action_name: action_name.into(),
             }
         }
+        #[doc = "Gets a workflow run request history."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `run_name`: The workflow run name."]
+        #[doc = "* `action_name`: The workflow action name."]
+        #[doc = "* `request_history_name`: The request history name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3346,6 +3639,14 @@ pub mod workflow_run_action_scope_repetitions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the workflow run action scoped repetitions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `run_name`: The workflow run name."]
+        #[doc = "* `action_name`: The workflow action name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3363,6 +3664,15 @@ pub mod workflow_run_action_scope_repetitions {
                 action_name: action_name.into(),
             }
         }
+        #[doc = "Get a workflow run action scoped repetition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `run_name`: The workflow run name."]
+        #[doc = "* `action_name`: The workflow action name."]
+        #[doc = "* `repetition_name`: The workflow repetition."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3486,6 +3796,14 @@ pub mod workflow_run_operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets an operation for a run."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `workflow_name`: The workflow name."]
+        #[doc = "* `run_name`: The workflow run name."]
+        #[doc = "* `operation_id`: The workflow operation id."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3565,6 +3883,10 @@ pub mod integration_accounts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of integration accounts by subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -3572,6 +3894,11 @@ pub mod integration_accounts {
                 top: None,
             }
         }
+        #[doc = "Gets a list of integration accounts by resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3584,6 +3911,12 @@ pub mod integration_accounts {
                 top: None,
             }
         }
+        #[doc = "Gets an integration account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3597,6 +3930,13 @@ pub mod integration_accounts {
                 integration_account_name: integration_account_name.into(),
             }
         }
+        #[doc = "Creates or updates an integration account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `integration_account`: The integration account."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3612,6 +3952,13 @@ pub mod integration_accounts {
                 integration_account: integration_account.into(),
             }
         }
+        #[doc = "Updates an integration account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `integration_account`: The integration account."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3627,6 +3974,12 @@ pub mod integration_accounts {
                 integration_account: integration_account.into(),
             }
         }
+        #[doc = "Deletes an integration account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3640,6 +3993,13 @@ pub mod integration_accounts {
                 integration_account_name: integration_account_name.into(),
             }
         }
+        #[doc = "Gets the integration account callback URL."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `parameters`: The callback URL parameters."]
         pub fn list_callback_url(
             &self,
             subscription_id: impl Into<String>,
@@ -3655,6 +4015,13 @@ pub mod integration_accounts {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Gets the integration account's Key Vault keys."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `list_key_vault_keys`: The key vault parameters."]
         pub fn list_key_vault_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -3670,6 +4037,13 @@ pub mod integration_accounts {
                 list_key_vault_keys: list_key_vault_keys.into(),
             }
         }
+        #[doc = "Logs the integration account's tracking events."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `log_tracking_events`: The callback URL parameters."]
         pub fn log_tracking_events(
             &self,
             subscription_id: impl Into<String>,
@@ -3685,6 +4059,13 @@ pub mod integration_accounts {
                 log_tracking_events: log_tracking_events.into(),
             }
         }
+        #[doc = "Regenerates the integration account access key."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `regenerate_access_key`: The access key type."]
         pub fn regenerate_access_key(
             &self,
             subscription_id: impl Into<String>,
@@ -4307,6 +4688,12 @@ pub mod integration_account_assemblies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the assemblies for an integration account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4320,6 +4707,13 @@ pub mod integration_account_assemblies {
                 integration_account_name: integration_account_name.into(),
             }
         }
+        #[doc = "Get an assembly for an integration account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `assembly_artifact_name`: The assembly artifact name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4335,6 +4729,14 @@ pub mod integration_account_assemblies {
                 assembly_artifact_name: assembly_artifact_name.into(),
             }
         }
+        #[doc = "Create or update an assembly for an integration account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `assembly_artifact_name`: The assembly artifact name."]
+        #[doc = "* `assembly_artifact`: The assembly artifact."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4352,6 +4754,13 @@ pub mod integration_account_assemblies {
                 assembly_artifact: assembly_artifact.into(),
             }
         }
+        #[doc = "Delete an assembly for an integration account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `assembly_artifact_name`: The assembly artifact name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4367,6 +4776,13 @@ pub mod integration_account_assemblies {
                 assembly_artifact_name: assembly_artifact_name.into(),
             }
         }
+        #[doc = "Get the content callback url for an integration account assembly."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `assembly_artifact_name`: The assembly artifact name."]
         pub fn list_content_callback_url(
             &self,
             subscription_id: impl Into<String>,
@@ -4663,6 +5079,12 @@ pub mod integration_account_batch_configurations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the batch configurations for an integration account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4676,6 +5098,13 @@ pub mod integration_account_batch_configurations {
                 integration_account_name: integration_account_name.into(),
             }
         }
+        #[doc = "Get a batch configuration for an integration account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `batch_configuration_name`: The batch configuration name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4691,6 +5120,14 @@ pub mod integration_account_batch_configurations {
                 batch_configuration_name: batch_configuration_name.into(),
             }
         }
+        #[doc = "Create or update a batch configuration for an integration account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `batch_configuration_name`: The batch configuration name."]
+        #[doc = "* `batch_configuration`: The batch configuration."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4708,6 +5145,13 @@ pub mod integration_account_batch_configurations {
                 batch_configuration: batch_configuration.into(),
             }
         }
+        #[doc = "Delete a batch configuration for an integration account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `batch_configuration_name`: The batch configuration name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4956,6 +5400,12 @@ pub mod integration_account_schemas {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of integration account schemas."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4971,6 +5421,13 @@ pub mod integration_account_schemas {
                 filter: None,
             }
         }
+        #[doc = "Gets an integration account schema."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `schema_name`: The integration account schema name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4986,6 +5443,14 @@ pub mod integration_account_schemas {
                 schema_name: schema_name.into(),
             }
         }
+        #[doc = "Creates or updates an integration account schema."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `schema_name`: The integration account schema name."]
+        #[doc = "* `schema`: The integration account schema."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -5003,6 +5468,13 @@ pub mod integration_account_schemas {
                 schema: schema.into(),
             }
         }
+        #[doc = "Deletes an integration account schema."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `schema_name`: The integration account schema name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5018,6 +5490,13 @@ pub mod integration_account_schemas {
                 schema_name: schema_name.into(),
             }
         }
+        #[doc = "Get the content callback url."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `schema_name`: The integration account schema name."]
         pub fn list_content_callback_url(
             &self,
             subscription_id: impl Into<String>,
@@ -5358,6 +5837,12 @@ pub mod integration_account_maps {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of integration account maps."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -5373,6 +5858,13 @@ pub mod integration_account_maps {
                 filter: None,
             }
         }
+        #[doc = "Gets an integration account map."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `map_name`: The integration account map name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5388,6 +5880,14 @@ pub mod integration_account_maps {
                 map_name: map_name.into(),
             }
         }
+        #[doc = "Creates or updates an integration account map. If the map is larger than 4 MB, you need to store the map in an Azure blob and use the blob's Shared Access Signature (SAS) URL as the 'contentLink' property value."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `map_name`: The integration account map name."]
+        #[doc = "* `map`: The integration account map."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -5405,6 +5905,13 @@ pub mod integration_account_maps {
                 map: map.into(),
             }
         }
+        #[doc = "Deletes an integration account map."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `map_name`: The integration account map name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5420,6 +5927,13 @@ pub mod integration_account_maps {
                 map_name: map_name.into(),
             }
         }
+        #[doc = "Get the content callback url."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `map_name`: The integration account map name."]
         pub fn list_content_callback_url(
             &self,
             subscription_id: impl Into<String>,
@@ -5760,6 +6274,12 @@ pub mod integration_account_partners {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of integration account partners."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -5775,6 +6295,13 @@ pub mod integration_account_partners {
                 filter: None,
             }
         }
+        #[doc = "Gets an integration account partner."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `partner_name`: The integration account partner name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5790,6 +6317,14 @@ pub mod integration_account_partners {
                 partner_name: partner_name.into(),
             }
         }
+        #[doc = "Creates or updates an integration account partner."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `partner_name`: The integration account partner name."]
+        #[doc = "* `partner`: The integration account partner."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -5807,6 +6342,13 @@ pub mod integration_account_partners {
                 partner: partner.into(),
             }
         }
+        #[doc = "Deletes an integration account partner."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `partner_name`: The integration account partner name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5822,6 +6364,13 @@ pub mod integration_account_partners {
                 partner_name: partner_name.into(),
             }
         }
+        #[doc = "Get the content callback url."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `partner_name`: The integration account partner name."]
         pub fn list_content_callback_url(
             &self,
             subscription_id: impl Into<String>,
@@ -6162,6 +6711,12 @@ pub mod integration_account_agreements {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of integration account agreements."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -6177,6 +6732,13 @@ pub mod integration_account_agreements {
                 filter: None,
             }
         }
+        #[doc = "Gets an integration account agreement."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `agreement_name`: The integration account agreement name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -6192,6 +6754,14 @@ pub mod integration_account_agreements {
                 agreement_name: agreement_name.into(),
             }
         }
+        #[doc = "Creates or updates an integration account agreement."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `agreement_name`: The integration account agreement name."]
+        #[doc = "* `agreement`: The integration account agreement."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -6209,6 +6779,13 @@ pub mod integration_account_agreements {
                 agreement: agreement.into(),
             }
         }
+        #[doc = "Deletes an integration account agreement."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `agreement_name`: The integration account agreement name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -6224,6 +6801,13 @@ pub mod integration_account_agreements {
                 agreement_name: agreement_name.into(),
             }
         }
+        #[doc = "Get the content callback url."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `agreement_name`: The integration account agreement name."]
         pub fn list_content_callback_url(
             &self,
             subscription_id: impl Into<String>,
@@ -6564,6 +7148,12 @@ pub mod integration_account_certificates {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of integration account certificates."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -6578,6 +7168,13 @@ pub mod integration_account_certificates {
                 top: None,
             }
         }
+        #[doc = "Gets an integration account certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `certificate_name`: The integration account certificate name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -6593,6 +7190,14 @@ pub mod integration_account_certificates {
                 certificate_name: certificate_name.into(),
             }
         }
+        #[doc = "Creates or updates an integration account certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `certificate_name`: The integration account certificate name."]
+        #[doc = "* `certificate`: The integration account certificate."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -6610,6 +7215,13 @@ pub mod integration_account_certificates {
                 certificate: certificate.into(),
             }
         }
+        #[doc = "Deletes an integration account certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `certificate_name`: The integration account certificate name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -6891,6 +7503,12 @@ pub mod integration_account_sessions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of integration account sessions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -6906,6 +7524,13 @@ pub mod integration_account_sessions {
                 filter: None,
             }
         }
+        #[doc = "Gets an integration account session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `session_name`: The integration account session name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -6921,6 +7546,14 @@ pub mod integration_account_sessions {
                 session_name: session_name.into(),
             }
         }
+        #[doc = "Creates or updates an integration account session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `session_name`: The integration account session name."]
+        #[doc = "* `session`: The integration account session."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -6938,6 +7571,13 @@ pub mod integration_account_sessions {
                 session: session.into(),
             }
         }
+        #[doc = "Deletes an integration account session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `integration_account_name`: The integration account name."]
+        #[doc = "* `session_name`: The integration account session name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -7227,6 +7867,10 @@ pub mod integration_service_environments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of integration service environments by subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -7234,6 +7878,11 @@ pub mod integration_service_environments {
                 top: None,
             }
         }
+        #[doc = "Gets a list of integration service environments by resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group`: The resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -7246,6 +7895,12 @@ pub mod integration_service_environments {
                 top: None,
             }
         }
+        #[doc = "Gets an integration service environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group`: The resource group."]
+        #[doc = "* `integration_service_environment_name`: The integration service environment name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -7259,6 +7914,13 @@ pub mod integration_service_environments {
                 integration_service_environment_name: integration_service_environment_name.into(),
             }
         }
+        #[doc = "Creates or updates an integration service environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group`: The resource group."]
+        #[doc = "* `integration_service_environment_name`: The integration service environment name."]
+        #[doc = "* `integration_service_environment`: The integration service environment."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -7274,6 +7936,13 @@ pub mod integration_service_environments {
                 integration_service_environment: integration_service_environment.into(),
             }
         }
+        #[doc = "Updates an integration service environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group`: The resource group."]
+        #[doc = "* `integration_service_environment_name`: The integration service environment name."]
+        #[doc = "* `integration_service_environment`: The integration service environment."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -7289,6 +7958,12 @@ pub mod integration_service_environments {
                 integration_service_environment: integration_service_environment.into(),
             }
         }
+        #[doc = "Deletes an integration service environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group`: The resource group."]
+        #[doc = "* `integration_service_environment_name`: The integration service environment name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -7302,6 +7977,12 @@ pub mod integration_service_environments {
                 integration_service_environment_name: integration_service_environment_name.into(),
             }
         }
+        #[doc = "Restarts an integration service environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group`: The resource group."]
+        #[doc = "* `integration_service_environment_name`: The integration service environment name."]
         pub fn restart(
             &self,
             subscription_id: impl Into<String>,
@@ -7760,6 +8441,12 @@ pub mod integration_service_environment_skus {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of integration service environment Skus."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group`: The resource group."]
+        #[doc = "* `integration_service_environment_name`: The integration service environment name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -7857,6 +8544,12 @@ pub mod integration_service_environment_network_health {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the integration service environment network health."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group`: The resource group."]
+        #[doc = "* `integration_service_environment_name`: The integration service environment name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -7922,6 +8615,12 @@ pub mod integration_service_environment_managed_apis {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the integration service environment managed Apis."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group`: The resource group."]
+        #[doc = "* `integration_service_environment_name`: The integration service environment name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -7935,6 +8634,13 @@ pub mod integration_service_environment_managed_apis {
                 integration_service_environment_name: integration_service_environment_name.into(),
             }
         }
+        #[doc = "Gets the integration service environment managed Api."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group`: The resource group name."]
+        #[doc = "* `integration_service_environment_name`: The integration service environment name."]
+        #[doc = "* `api_name`: The api name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -7950,6 +8656,14 @@ pub mod integration_service_environment_managed_apis {
                 api_name: api_name.into(),
             }
         }
+        #[doc = "Puts the integration service environment managed Api."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group`: The resource group name."]
+        #[doc = "* `integration_service_environment_name`: The integration service environment name."]
+        #[doc = "* `api_name`: The api name."]
+        #[doc = "* `integration_service_environment_managed_api`: The integration service environment managed api."]
         pub fn put(
             &self,
             subscription_id: impl Into<String>,
@@ -7967,6 +8681,13 @@ pub mod integration_service_environment_managed_apis {
                 integration_service_environment_managed_api: integration_service_environment_managed_api.into(),
             }
         }
+        #[doc = "Deletes the integration service environment managed Api."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group`: The resource group."]
+        #[doc = "* `integration_service_environment_name`: The integration service environment name."]
+        #[doc = "* `api_name`: The api name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -8222,6 +8943,13 @@ pub mod integration_service_environment_managed_api_operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the managed Api operations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group`: The resource group."]
+        #[doc = "* `integration_service_environment_name`: The integration service environment name."]
+        #[doc = "* `api_name`: The api name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -8316,6 +9044,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Logic REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

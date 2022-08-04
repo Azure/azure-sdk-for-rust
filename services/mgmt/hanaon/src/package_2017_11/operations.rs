@@ -85,6 +85,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of SAP HANA management operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -140,6 +141,10 @@ pub mod hana_instances {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of SAP HANA instances in the specified subscription."]
+        #[doc = "Gets a list of SAP HANA instances in the specified subscription. The operations returns various properties of each SAP HANA on Azure instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -147,6 +152,11 @@ pub mod hana_instances {
             }
         }
         #[doc = "Gets a list of SAP HANA instances in the specified subscription and the resource group."]
+        #[doc = "Gets a list of SAP HANA instances in the specified subscription and the resource group. The operations returns various properties of each SAP HANA on Azure instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -159,6 +169,12 @@ pub mod hana_instances {
             }
         }
         #[doc = "Gets properties of a SAP HANA instance."]
+        #[doc = "Gets properties of a SAP HANA instance for the specified subscription, resource group, and instance name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group."]
+        #[doc = "* `hana_instance_name`: Name of the SAP HANA on Azure instance."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -173,6 +189,13 @@ pub mod hana_instances {
             }
         }
         #[doc = "Creates a SAP HANA instance."]
+        #[doc = "Creates a SAP HANA instance for the specified subscription, resource group, and instance name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group."]
+        #[doc = "* `hana_instance_name`: Name of the SAP HANA on Azure instance."]
+        #[doc = "* `hana_instance_parameter`: Request body representing a HanaInstance"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -189,6 +212,13 @@ pub mod hana_instances {
             }
         }
         #[doc = "Patches the Tags field of a SAP HANA instance."]
+        #[doc = "Patches the Tags field of a SAP HANA instance for the specified subscription, resource group, and instance name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group."]
+        #[doc = "* `hana_instance_name`: Name of the SAP HANA on Azure instance."]
+        #[doc = "* `tags_parameter`: Request body that only contains the new Tags field"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -205,6 +235,12 @@ pub mod hana_instances {
             }
         }
         #[doc = "Deletes a SAP HANA instance."]
+        #[doc = "Deletes a SAP HANA instance with the specified subscription, resource group, and instance name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group."]
+        #[doc = "* `hana_instance_name`: Name of the SAP HANA on Azure instance."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -218,6 +254,12 @@ pub mod hana_instances {
                 hana_instance_name: hana_instance_name.into(),
             }
         }
+        #[doc = "The operation to restart a SAP HANA instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group."]
+        #[doc = "* `hana_instance_name`: Name of the SAP HANA on Azure instance."]
         pub fn restart(
             &self,
             subscription_id: impl Into<String>,
@@ -231,6 +273,12 @@ pub mod hana_instances {
                 hana_instance_name: hana_instance_name.into(),
             }
         }
+        #[doc = "The operation to start a SAP HANA instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group."]
+        #[doc = "* `hana_instance_name`: Name of the SAP HANA on Azure instance."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -244,6 +292,12 @@ pub mod hana_instances {
                 hana_instance_name: hana_instance_name.into(),
             }
         }
+        #[doc = "The operation to shutdown a SAP HANA instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group."]
+        #[doc = "* `hana_instance_name`: Name of the SAP HANA on Azure instance."]
         pub fn shutdown(
             &self,
             subscription_id: impl Into<String>,

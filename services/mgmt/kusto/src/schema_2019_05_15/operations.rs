@@ -91,6 +91,12 @@ pub mod clusters {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a Kusto cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -104,6 +110,13 @@ pub mod clusters {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a Kusto cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `parameters`: The Kusto cluster parameters supplied to the CreateOrUpdate operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -119,6 +132,13 @@ pub mod clusters {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update a Kusto cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `parameters`: The Kusto cluster parameters supplied to the Update operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -134,6 +154,12 @@ pub mod clusters {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a Kusto cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -147,6 +173,12 @@ pub mod clusters {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Stops a Kusto cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn stop(
             &self,
             resource_group_name: impl Into<String>,
@@ -160,6 +192,12 @@ pub mod clusters {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Starts a Kusto cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn start(
             &self,
             resource_group_name: impl Into<String>,
@@ -173,6 +211,11 @@ pub mod clusters {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all Kusto clusters within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -184,18 +227,32 @@ pub mod clusters {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all Kusto clusters within a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists eligible SKUs for Kusto resource provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_skus(&self, subscription_id: impl Into<String>) -> list_skus::Builder {
             list_skus::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Checks that the cluster name is valid and is not already in use."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: Azure location."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -209,6 +266,12 @@ pub mod clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Returns the SKUs available for the provided resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_skus_by_resource(
             &self,
             resource_group_name: impl Into<String>,
@@ -828,6 +891,13 @@ pub mod databases {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Checks that the database name is valid and is not already in use."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `database_name`: The name of the database."]
         pub fn check_name_availability(
             &self,
             resource_group_name: impl Into<String>,
@@ -843,6 +913,12 @@ pub mod databases {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Returns the list of databases of the given Kusto cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_cluster(
             &self,
             resource_group_name: impl Into<String>,
@@ -856,6 +932,13 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `database_name`: The name of the database in the Kusto cluster."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -871,6 +954,14 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `database_name`: The name of the database in the Kusto cluster."]
+        #[doc = "* `parameters`: The database parameters supplied to the CreateOrUpdate operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -888,6 +979,14 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `database_name`: The name of the database in the Kusto cluster."]
+        #[doc = "* `parameters`: The database parameters supplied to the Update operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -905,6 +1004,13 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the database with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `database_name`: The name of the database in the Kusto cluster."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -920,6 +1026,13 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns a list of database principals of the given Kusto cluster and database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `database_name`: The name of the database in the Kusto cluster."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_principals(
             &self,
             resource_group_name: impl Into<String>,
@@ -935,6 +1048,14 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Add Database principals permissions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `database_name`: The name of the database in the Kusto cluster."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `database_principals_to_add`: List of database principals to add."]
         pub fn add_principals(
             &self,
             resource_group_name: impl Into<String>,
@@ -952,6 +1073,14 @@ pub mod databases {
                 database_principals_to_add: database_principals_to_add.into(),
             }
         }
+        #[doc = "Remove Database principals permissions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `database_name`: The name of the database in the Kusto cluster."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `database_principals_to_remove`: List of database principals to remove."]
         pub fn remove_principals(
             &self,
             resource_group_name: impl Into<String>,
@@ -1498,6 +1627,13 @@ pub mod data_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the list of data connections of the given Kusto database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `database_name`: The name of the database in the Kusto cluster."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -1513,6 +1649,14 @@ pub mod data_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Checks that the data connection parameters are valid."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `database_name`: The name of the database in the Kusto cluster."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `parameters`: The data connection parameters supplied to the CreateOrUpdate operation."]
         pub fn data_connection_validation(
             &self,
             resource_group_name: impl Into<String>,
@@ -1530,6 +1674,14 @@ pub mod data_connections {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Checks that the data connection name is valid and is not already in use."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `database_name`: The name of the database in the Kusto cluster."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `data_connection_name`: The name of the data connection."]
         pub fn check_name_availability(
             &self,
             resource_group_name: impl Into<String>,
@@ -1547,6 +1699,14 @@ pub mod data_connections {
                 data_connection_name: data_connection_name.into(),
             }
         }
+        #[doc = "Returns a data connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `database_name`: The name of the database in the Kusto cluster."]
+        #[doc = "* `data_connection_name`: The name of the data connection."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1564,6 +1724,15 @@ pub mod data_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a data connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `database_name`: The name of the database in the Kusto cluster."]
+        #[doc = "* `data_connection_name`: The name of the data connection."]
+        #[doc = "* `parameters`: The data connection parameters supplied to the CreateOrUpdate operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1583,6 +1752,15 @@ pub mod data_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a data connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `database_name`: The name of the database in the Kusto cluster."]
+        #[doc = "* `data_connection_name`: The name of the data connection."]
+        #[doc = "* `parameters`: The data connection parameters supplied to the Update operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1602,6 +1780,14 @@ pub mod data_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the data connection with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Kusto cluster."]
+        #[doc = "* `cluster_name`: The name of the Kusto cluster."]
+        #[doc = "* `database_name`: The name of the database in the Kusto cluster."]
+        #[doc = "* `data_connection_name`: The name of the data connection."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2034,6 +2220,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists available operations for the Microsoft.Kusto provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

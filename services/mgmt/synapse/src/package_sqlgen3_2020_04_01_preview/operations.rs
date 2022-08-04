@@ -89,10 +89,18 @@ pub mod sql_v3_operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "All operations"]
+        #[doc = "Get all available operations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
         #[doc = "Get operation result"]
+        #[doc = "Get the result of an operation"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `operation_id`: Operation ID"]
         pub fn get_location_header_result(
             &self,
             subscription_id: impl Into<String>,
@@ -109,6 +117,13 @@ pub mod sql_v3_operations {
             }
         }
         #[doc = "Get operation status"]
+        #[doc = "Get the status of an operation"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `operation_id`: Operation ID"]
         pub fn get_azure_async_header_result(
             &self,
             subscription_id: impl Into<String>,
@@ -279,6 +294,13 @@ pub mod sql_pools_v3 {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a SqlPool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `sql_pool_name`: The name of the sql pool."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -294,6 +316,14 @@ pub mod sql_pools_v3 {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new SqlPool or updates an existing SqlPool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `sql_pool_name`: The name of the sql pool."]
+        #[doc = "* `parameters`: The requested SqlPool resource state."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -311,6 +341,14 @@ pub mod sql_pools_v3 {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing sqlpool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `sql_pool_name`: The name of the sql pool."]
+        #[doc = "* `parameters`: The requested SqlPool resource state."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -328,6 +366,13 @@ pub mod sql_pools_v3 {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the SqlPool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `sql_pool_name`: The name of the sql pool."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -343,6 +388,13 @@ pub mod sql_pools_v3 {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deactivates the SqlPool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `sql_pool_name`: The name of the sql pool."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn deactivate(
             &self,
             resource_group_name: impl Into<String>,
@@ -358,6 +410,13 @@ pub mod sql_pools_v3 {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Activates the SqlPool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `sql_pool_name`: The name of the sql pool."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn activate(
             &self,
             resource_group_name: impl Into<String>,
@@ -373,6 +432,12 @@ pub mod sql_pools_v3 {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of sql pools."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
         pub fn list_by_workspace(
             &self,
             subscription_id: impl Into<String>,
@@ -826,6 +891,13 @@ pub mod sql_databases {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a SqlDatabase."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `sql_database_name`: The name of the sql database."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -841,6 +913,14 @@ pub mod sql_databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new SqlDatabase or updates an existing SqlDatabase."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `sql_database_name`: The name of the sql database."]
+        #[doc = "* `parameters`: The requested SqlDatabase resource state."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -858,6 +938,14 @@ pub mod sql_databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `sql_database_name`: The name of the sql database."]
+        #[doc = "* `parameters`: The requested SqlDatabase resource state."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -875,6 +963,13 @@ pub mod sql_databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the SqlDatabase."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `sql_database_name`: The name of the sql database."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -890,6 +985,12 @@ pub mod sql_databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of sql databases."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_workspace(
             &self,
             resource_group_name: impl Into<String>,

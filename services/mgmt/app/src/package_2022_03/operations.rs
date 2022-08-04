@@ -113,6 +113,11 @@ pub mod container_apps_auth_configs {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the Container App AuthConfigs in a given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App."]
         pub fn list_by_container_app(
             &self,
             subscription_id: impl Into<String>,
@@ -127,6 +132,12 @@ pub mod container_apps_auth_configs {
             }
         }
         #[doc = "Get a AuthConfig of a Container App."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App."]
+        #[doc = "* `auth_config_name`: Name of the Container App AuthConfig."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -143,6 +154,14 @@ pub mod container_apps_auth_configs {
             }
         }
         #[doc = "Create or update the AuthConfig for a Container App."]
+        #[doc = "Create or update the AuthConfig for a Container App."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App."]
+        #[doc = "* `auth_config_name`: Name of the Container App AuthConfig."]
+        #[doc = "* `auth_config_envelope`: Properties used to create a Container App AuthConfig"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -161,6 +180,13 @@ pub mod container_apps_auth_configs {
             }
         }
         #[doc = "Delete a Container App AuthConfig."]
+        #[doc = "Delete a Container App AuthConfig."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App."]
+        #[doc = "* `auth_config_name`: Name of the Container App AuthConfig."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -426,6 +452,9 @@ pub mod container_apps {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the Container Apps in a given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -433,6 +462,10 @@ pub mod container_apps {
             }
         }
         #[doc = "Get the Container Apps in a given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -445,6 +478,11 @@ pub mod container_apps {
             }
         }
         #[doc = "Get the properties of a Container App."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -459,6 +497,13 @@ pub mod container_apps {
             }
         }
         #[doc = "Create or update a Container App."]
+        #[doc = "Create or update a Container App."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App."]
+        #[doc = "* `container_app_envelope`: Properties used to create a container app"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -475,6 +520,13 @@ pub mod container_apps {
             }
         }
         #[doc = "Update properties of a Container App"]
+        #[doc = "Patches a Container App using JSON Merge Patch"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App."]
+        #[doc = "* `container_app_envelope`: Properties of a Container App that need to be updated"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -491,6 +543,12 @@ pub mod container_apps {
             }
         }
         #[doc = "Delete a Container App."]
+        #[doc = "Delete a Container App."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -505,6 +563,11 @@ pub mod container_apps {
             }
         }
         #[doc = "Analyzes a custom hostname for a Container App"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App."]
         pub fn list_custom_host_name_analysis(
             &self,
             subscription_id: impl Into<String>,
@@ -520,6 +583,11 @@ pub mod container_apps {
             }
         }
         #[doc = "List secrets for a container app"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App."]
         pub fn list_secrets(
             &self,
             subscription_id: impl Into<String>,
@@ -1027,6 +1095,11 @@ pub mod container_apps_revisions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the Revisions for a given Container App."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App for which Revisions are needed."]
         pub fn list_revisions(
             &self,
             subscription_id: impl Into<String>,
@@ -1042,6 +1115,12 @@ pub mod container_apps_revisions {
             }
         }
         #[doc = "Get a revision of a Container App."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App."]
+        #[doc = "* `revision_name`: Name of the Container App Revision."]
         pub fn get_revision(
             &self,
             subscription_id: impl Into<String>,
@@ -1058,6 +1137,12 @@ pub mod container_apps_revisions {
             }
         }
         #[doc = "Activates a revision for a Container App"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App."]
+        #[doc = "* `revision_name`: Name of the Container App Revision."]
         pub fn activate_revision(
             &self,
             subscription_id: impl Into<String>,
@@ -1074,6 +1159,12 @@ pub mod container_apps_revisions {
             }
         }
         #[doc = "Deactivates a revision for a Container App"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App."]
+        #[doc = "* `revision_name`: Name of the Container App Revision."]
         pub fn deactivate_revision(
             &self,
             subscription_id: impl Into<String>,
@@ -1090,6 +1181,12 @@ pub mod container_apps_revisions {
             }
         }
         #[doc = "Restarts a revision for a Container App"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App."]
+        #[doc = "* `revision_name`: Name of the Container App Revision."]
         pub fn restart_revision(
             &self,
             subscription_id: impl Into<String>,
@@ -1405,6 +1502,13 @@ pub mod container_apps_revision_replicas {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a replica for a Container App Revision."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App."]
+        #[doc = "* `revision_name`: Name of the Container App Revision."]
+        #[doc = "* `replica_name`: Name of the Container App Revision Replica."]
         pub fn get_replica(
             &self,
             subscription_id: impl Into<String>,
@@ -1423,6 +1527,12 @@ pub mod container_apps_revision_replicas {
             }
         }
         #[doc = "List replicas for a Container App Revision."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App."]
+        #[doc = "* `revision_name`: Name of the Container App Revision."]
         pub fn list_replicas(
             &self,
             subscription_id: impl Into<String>,
@@ -1555,6 +1665,11 @@ pub mod dapr_components {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the Dapr Components for a managed environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `environment_name`: Name of the Managed Environment."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1569,6 +1684,12 @@ pub mod dapr_components {
             }
         }
         #[doc = "Get a dapr component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `environment_name`: Name of the Managed Environment."]
+        #[doc = "* `component_name`: Name of the Dapr Component."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1585,6 +1706,14 @@ pub mod dapr_components {
             }
         }
         #[doc = "Creates or updates a Dapr Component."]
+        #[doc = "Creates or updates a Dapr Component in a Managed Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `environment_name`: Name of the Managed Environment."]
+        #[doc = "* `component_name`: Name of the Dapr Component."]
+        #[doc = "* `dapr_component_envelope`: Configuration details of the Dapr Component."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1603,6 +1732,13 @@ pub mod dapr_components {
             }
         }
         #[doc = "Delete a Dapr Component."]
+        #[doc = "Delete a Dapr Component from a Managed Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `environment_name`: Name of the Managed Environment."]
+        #[doc = "* `component_name`: Name of the Dapr Component."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1619,6 +1755,12 @@ pub mod dapr_components {
             }
         }
         #[doc = "List secrets for a dapr component"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `environment_name`: Name of the Managed Environment."]
+        #[doc = "* `component_name`: Name of the Dapr Component."]
         pub fn list_secrets(
             &self,
             subscription_id: impl Into<String>,
@@ -1931,6 +2073,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available RP operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -2010,6 +2153,10 @@ pub mod managed_environments {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all Environments for a subscription."]
+        #[doc = "Get all Managed Environments for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -2017,6 +2164,11 @@ pub mod managed_environments {
             }
         }
         #[doc = "Get all the Environments in a resource group."]
+        #[doc = "Get all the Managed Environments in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -2029,6 +2181,12 @@ pub mod managed_environments {
             }
         }
         #[doc = "Get the properties of a Managed Environment."]
+        #[doc = "Get the properties of a Managed Environment used to host container apps."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `environment_name`: Name of the Environment."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2043,6 +2201,13 @@ pub mod managed_environments {
             }
         }
         #[doc = "Creates or updates a Managed Environment."]
+        #[doc = "Creates or updates a Managed Environment used to host container apps."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `environment_name`: Name of the Environment."]
+        #[doc = "* `environment_envelope`: Configuration details of the Environment."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2059,6 +2224,13 @@ pub mod managed_environments {
             }
         }
         #[doc = "Update Managed Environment's properties."]
+        #[doc = "Patches a Managed Environment using JSON Merge Patch"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `environment_name`: Name of the Environment."]
+        #[doc = "* `environment_envelope`: Configuration details of the Environment."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2075,6 +2247,12 @@ pub mod managed_environments {
             }
         }
         #[doc = "Delete a Managed Environment."]
+        #[doc = "Delete a Managed Environment if it does not have any container apps."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `environment_name`: Name of the Environment."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2468,6 +2646,11 @@ pub mod certificates {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the Certificates in a given managed environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `environment_name`: Name of the Managed Environment."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2482,6 +2665,12 @@ pub mod certificates {
             }
         }
         #[doc = "Get the specified Certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `environment_name`: Name of the Managed Environment."]
+        #[doc = "* `certificate_name`: Name of the Certificate."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2498,6 +2687,12 @@ pub mod certificates {
             }
         }
         #[doc = "Create or Update a Certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `environment_name`: Name of the Managed Environment."]
+        #[doc = "* `certificate_name`: Name of the Certificate."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2515,6 +2710,14 @@ pub mod certificates {
             }
         }
         #[doc = "Update properties of a certificate"]
+        #[doc = "Patches a certificate. Currently only patching of tags is supported"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `environment_name`: Name of the Managed Environment."]
+        #[doc = "* `certificate_name`: Name of the Certificate."]
+        #[doc = "* `certificate_envelope`: Properties of a certificate that need to be updated"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2533,6 +2736,12 @@ pub mod certificates {
             }
         }
         #[doc = "Deletes the specified Certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `environment_name`: Name of the Managed Environment."]
+        #[doc = "* `certificate_name`: Name of the Certificate."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2862,6 +3071,13 @@ pub mod namespaces {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Checks the resource name availability."]
+        #[doc = "Checks if resource name is available."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `environment_name`: Name of the Managed Environment."]
+        #[doc = "* `check_name_availability_request`: The check name availability request."]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -2938,6 +3154,12 @@ pub mod managed_environments_storages {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all storages for a managedEnvironment."]
+        #[doc = "Get all storages for a managedEnvironment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `environment_name`: Name of the Environment."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2952,6 +3174,13 @@ pub mod managed_environments_storages {
             }
         }
         #[doc = "Get storage for a managedEnvironment."]
+        #[doc = "Get storage for a managedEnvironment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `environment_name`: Name of the Environment."]
+        #[doc = "* `storage_name`: Name of the storage."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2968,6 +3197,14 @@ pub mod managed_environments_storages {
             }
         }
         #[doc = "Create or update storage for a managedEnvironment."]
+        #[doc = "Create or update storage for a managedEnvironment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `environment_name`: Name of the Environment."]
+        #[doc = "* `storage_name`: Name of the storage."]
+        #[doc = "* `storage_envelope`: Configuration details of storage."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2986,6 +3223,13 @@ pub mod managed_environments_storages {
             }
         }
         #[doc = "Delete storage for a managedEnvironment."]
+        #[doc = "Delete storage for a managedEnvironment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `environment_name`: Name of the Environment."]
+        #[doc = "* `storage_name`: Name of the storage."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3225,6 +3469,11 @@ pub mod container_apps_source_controls {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the Container App SourceControls in a given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App."]
         pub fn list_by_container_app(
             &self,
             subscription_id: impl Into<String>,
@@ -3239,6 +3488,12 @@ pub mod container_apps_source_controls {
             }
         }
         #[doc = "Get a SourceControl of a Container App."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App."]
+        #[doc = "* `source_control_name`: Name of the Container App SourceControl."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3255,6 +3510,14 @@ pub mod container_apps_source_controls {
             }
         }
         #[doc = "Create or update the SourceControl for a Container App."]
+        #[doc = "Create or update the SourceControl for a Container App."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App."]
+        #[doc = "* `source_control_name`: Name of the Container App SourceControl."]
+        #[doc = "* `source_control_envelope`: Properties used to create a Container App SourceControl"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3273,6 +3536,13 @@ pub mod container_apps_source_controls {
             }
         }
         #[doc = "Delete a Container App SourceControl."]
+        #[doc = "Delete a Container App SourceControl."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `container_app_name`: Name of the Container App."]
+        #[doc = "* `source_control_name`: Name of the Container App SourceControl."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

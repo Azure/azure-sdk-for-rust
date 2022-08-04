@@ -82,6 +82,13 @@ pub mod account {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified Data Lake Store firewall rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group that contains the Data Lake Store account."]
+        #[doc = "* `account_name`: The name of the Data Lake Store account from which to get the firewall rule."]
+        #[doc = "* `firewall_rule_name`: The name of the firewall rule to retrieve."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_firewall_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -97,6 +104,13 @@ pub mod account {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified firewall rule from the specified Data Lake Store account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group that contains the Data Lake Store account."]
+        #[doc = "* `account_name`: The name of the Data Lake Store account from which to delete the firewall rule."]
+        #[doc = "* `firewall_rule_name`: The name of the firewall rule to delete."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete_firewall_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -112,6 +126,12 @@ pub mod account {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the Data Lake Store firewall rules within the specified Data Lake Store account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group that contains the Data Lake Store account."]
+        #[doc = "* `account_name`: The name of the Data Lake Store account from which to get the firewall rules."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_firewall_rules(
             &self,
             resource_group_name: impl Into<String>,
@@ -125,6 +145,14 @@ pub mod account {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the specified firewall rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group that contains the Data Lake Store account."]
+        #[doc = "* `account_name`: The name of the Data Lake Store account to which to add the firewall rule."]
+        #[doc = "* `name`: The name of the firewall rule to create or update."]
+        #[doc = "* `parameters`: Parameters supplied to create the create firewall rule."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update_firewall_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -142,6 +170,13 @@ pub mod account {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates the specified Data Lake Store account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group that contains the Data Lake Store account."]
+        #[doc = "* `name`: The name of the Data Lake Store account to create."]
+        #[doc = "* `parameters`: Parameters supplied to create the Data Lake Store account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -157,6 +192,13 @@ pub mod account {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the specified Data Lake Store account information."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group that contains the Data Lake Store account."]
+        #[doc = "* `name`: The name of the Data Lake Store account to update."]
+        #[doc = "* `parameters`: Parameters supplied to update the Data Lake Store account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -172,6 +214,12 @@ pub mod account {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the specified Data Lake Store account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group that contains the Data Lake Store account."]
+        #[doc = "* `account_name`: The name of the Data Lake Store account to retrieve."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -185,6 +233,12 @@ pub mod account {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified Data Lake Store account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group that contains the Data Lake Store account."]
+        #[doc = "* `account_name`: The name of the Data Lake Store account to delete."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -198,6 +252,12 @@ pub mod account {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Attempts to enable a user managed key vault for encryption of the specified Data Lake Store account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group that contains the Data Lake Store account."]
+        #[doc = "* `account_name`: The name of the Data Lake Store account to attempt to enable the Key Vault for."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn enable_key_vault(
             &self,
             resource_group_name: impl Into<String>,
@@ -211,6 +271,11 @@ pub mod account {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the Data Lake Store accounts within a specific resource group. The response includes a link to the next page of results, if any."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group that contains the Data Lake Store account(s)."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -231,6 +296,10 @@ pub mod account {
                 format: None,
             }
         }
+        #[doc = "Lists the Data Lake Store accounts within the subscription. The response includes a link to the next page of results, if any."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

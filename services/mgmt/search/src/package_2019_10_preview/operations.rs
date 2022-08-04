@@ -97,6 +97,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available REST API operations of the Microsoft.Search provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -150,6 +151,12 @@ pub mod admin_keys {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the primary and secondary admin API keys for the specified Azure Cognitive Search service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the current subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `search_service_name`: The name of the Azure Cognitive Search service associated with the specified resource group."]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -164,6 +171,13 @@ pub mod admin_keys {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Regenerates either the primary or secondary admin API key. You can only regenerate one key at a time."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the current subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `search_service_name`: The name of the Azure Cognitive Search service associated with the specified resource group."]
+        #[doc = "* `key_kind`: Specifies which key to regenerate. Valid values include 'primary' and 'secondary'."]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn regenerate(
             &self,
             resource_group_name: impl Into<String>,
@@ -310,6 +324,13 @@ pub mod query_keys {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Generates a new query key for the specified Search service. You can create up to 50 query keys per service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the current subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `search_service_name`: The name of the Azure Cognitive Search service associated with the specified resource group."]
+        #[doc = "* `name`: The name of the new query API key."]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -326,6 +347,12 @@ pub mod query_keys {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Returns the list of query API keys for the given Azure Cognitive Search service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the current subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `search_service_name`: The name of the Azure Cognitive Search service associated with the specified resource group."]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn list_by_search_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -340,6 +367,13 @@ pub mod query_keys {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Deletes the specified query key. Unlike admin keys, query keys are not regenerated. The process for regenerating a query key is to delete and then recreate it."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the current subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `search_service_name`: The name of the Azure Cognitive Search service associated with the specified resource group."]
+        #[doc = "* `key`: The query key to be deleted. Query keys are identified by value, not by name."]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -575,6 +609,12 @@ pub mod services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the Search service with the given name in the given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the current subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `search_service_name`: The name of the Azure Cognitive Search service associated with the specified resource group."]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -589,6 +629,13 @@ pub mod services {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Creates or updates a Search service in the given resource group. If the Search service already exists, all properties will be updated with the given values."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the current subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `search_service_name`: The name of the Azure Cognitive Search service to create or update. Search service names must only contain lowercase letters, digits or dashes, cannot use dash as the first two or last one characters, cannot contain consecutive dashes, and must be between 2 and 60 characters in length. Search service names must be globally unique since they are part of the service URI (https://<name>.search.windows.net). You cannot change the service name after the service is created."]
+        #[doc = "* `service`: The definition of the Search service to create or update."]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -605,6 +652,13 @@ pub mod services {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Updates an existing Search service in the given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the current subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `search_service_name`: The name of the Azure Cognitive Search service to update."]
+        #[doc = "* `service`: The definition of the Search service to update."]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -621,6 +675,12 @@ pub mod services {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Deletes a Search service in the given resource group, along with its associated resources."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the current subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `search_service_name`: The name of the Azure Cognitive Search service associated with the specified resource group."]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -635,6 +695,11 @@ pub mod services {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Gets a list of all Search services in the given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the current subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -647,6 +712,10 @@ pub mod services {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Gets a list of all Search services in the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -654,6 +723,11 @@ pub mod services {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Checks whether or not the given Search service name is available for use. Search service names must be globally unique since they are part of the service URI (https://<name>.search.windows.net)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `check_name_availability_input`: The resource name and type to check."]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn check_name_availability(
             &self,
             check_name_availability_input: impl Into<models::CheckNameAvailabilityInput>,
@@ -1151,6 +1225,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of all supported private link resource types for the given service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the current subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `search_service_name`: The name of the Azure Cognitive Search service associated with the specified resource group."]
         pub fn list_supported(
             &self,
             subscription_id: impl Into<String>,
@@ -1232,6 +1312,13 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the details of the private endpoint connection to the Search service in the given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the current subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `search_service_name`: The name of the Azure Cognitive Search service associated with the specified resource group."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection to the Azure Cognitive Search service with the specified resource group."]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1248,6 +1335,14 @@ pub mod private_endpoint_connections {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Updates a Private Endpoint connection to the Search service in the given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the current subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `search_service_name`: The name of the Azure Cognitive Search service associated with the specified resource group."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection to the Azure Cognitive Search service with the specified resource group."]
+        #[doc = "* `private_endpoint_connection`: The definition of the private endpoint connection to update."]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1266,6 +1361,13 @@ pub mod private_endpoint_connections {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Disconnects the private endpoint connection and deletes it from the Search service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the current subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `search_service_name`: The name of the Azure Cognitive Search service associated with the specified resource group."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection to the Azure Cognitive Search service with the specified resource group."]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1282,6 +1384,12 @@ pub mod private_endpoint_connections {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Gets a list of all private endpoint connections in the given service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the current subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `search_service_name`: The name of the Azure Cognitive Search service associated with the specified resource group."]
         pub fn list_by_service(
             &self,
             subscription_id: impl Into<String>,

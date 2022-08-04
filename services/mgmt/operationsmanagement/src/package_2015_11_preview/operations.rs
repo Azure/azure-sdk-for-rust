@@ -92,6 +92,12 @@ pub mod solutions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieve solution."]
+        #[doc = "Retrieves the user solution."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group to get. The name is case insensitive."]
+        #[doc = "* `solution_name`: User Solution Name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -106,6 +112,13 @@ pub mod solutions {
             }
         }
         #[doc = "Create/Update Solution."]
+        #[doc = "Creates or updates the Solution."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group to get. The name is case insensitive."]
+        #[doc = "* `solution_name`: User Solution Name."]
+        #[doc = "* `parameters`: The parameters required to create OMS Solution."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -122,6 +135,13 @@ pub mod solutions {
             }
         }
         #[doc = "Patch a Solution."]
+        #[doc = "Patch a Solution. Only updating tags supported."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group to get. The name is case insensitive."]
+        #[doc = "* `solution_name`: User Solution Name."]
+        #[doc = "* `parameters`: The parameters required to patch a Solution."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -138,6 +158,12 @@ pub mod solutions {
             }
         }
         #[doc = "Deletes the solution"]
+        #[doc = "Deletes the solution in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group to get. The name is case insensitive."]
+        #[doc = "* `solution_name`: User Solution Name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -152,6 +178,11 @@ pub mod solutions {
             }
         }
         #[doc = "Retrieves the solution list for the subscription"]
+        #[doc = "Retrieves the solution list. It will retrieve both first party and third party solutions"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group to get. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -164,6 +195,10 @@ pub mod solutions {
             }
         }
         #[doc = "Retrieves the solution list for the subscription"]
+        #[doc = "Retrieves the solution list. It will retrieve both first party and third party solutions"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -486,6 +521,10 @@ pub mod management_associations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves the ManagementAssociations list for the subscription"]
+        #[doc = "Retrieves the ManagementAssociations list."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -493,6 +532,15 @@ pub mod management_associations {
             }
         }
         #[doc = "Retrieve ManagementAssociation."]
+        #[doc = "Retrieves the user ManagementAssociation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group to get. The name is case insensitive."]
+        #[doc = "* `provider_name`: Provider name for the parent resource."]
+        #[doc = "* `resource_type`: Resource type for the parent resource"]
+        #[doc = "* `resource_name`: Parent resource name."]
+        #[doc = "* `management_association_name`: User ManagementAssociation Name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -513,6 +561,16 @@ pub mod management_associations {
             }
         }
         #[doc = "Create/Update ManagementAssociation."]
+        #[doc = "Creates or updates the ManagementAssociation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group to get. The name is case insensitive."]
+        #[doc = "* `provider_name`: Provider name for the parent resource."]
+        #[doc = "* `resource_type`: Resource type for the parent resource"]
+        #[doc = "* `resource_name`: Parent resource name."]
+        #[doc = "* `management_association_name`: User ManagementAssociation Name."]
+        #[doc = "* `parameters`: The parameters required to create ManagementAssociation extension."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -535,6 +593,15 @@ pub mod management_associations {
             }
         }
         #[doc = "Deletes the ManagementAssociation"]
+        #[doc = "Deletes the ManagementAssociation in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group to get. The name is case insensitive."]
+        #[doc = "* `provider_name`: Provider name for the parent resource."]
+        #[doc = "* `resource_type`: Resource type for the parent resource"]
+        #[doc = "* `resource_name`: Parent resource name."]
+        #[doc = "* `management_association_name`: User ManagementAssociation Name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -754,6 +821,10 @@ pub mod management_configurations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves the ManagementConfigurations list for the subscription"]
+        #[doc = "Retrieves the ManagementConfigurations list."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -761,6 +832,12 @@ pub mod management_configurations {
             }
         }
         #[doc = "Retrieve ManagementConfiguration."]
+        #[doc = "Retrieves the user ManagementConfiguration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group to get. The name is case insensitive."]
+        #[doc = "* `management_configuration_name`: User Management Configuration Name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -775,6 +852,13 @@ pub mod management_configurations {
             }
         }
         #[doc = "Create/Update ManagementConfiguration."]
+        #[doc = "Creates or updates the ManagementConfiguration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group to get. The name is case insensitive."]
+        #[doc = "* `management_configuration_name`: User Management Configuration Name."]
+        #[doc = "* `parameters`: The parameters required to create OMS Solution."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -791,6 +875,12 @@ pub mod management_configurations {
             }
         }
         #[doc = "Deletes the ManagementConfiguration"]
+        #[doc = "Deletes the ManagementConfiguration in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group to get. The name is case insensitive."]
+        #[doc = "* `management_configuration_name`: User Management Configuration Name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1012,6 +1102,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available OperationsManagement Rest API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

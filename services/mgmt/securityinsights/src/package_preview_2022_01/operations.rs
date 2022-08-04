@@ -175,6 +175,12 @@ pub mod alert_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all alert rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -188,6 +194,13 @@ pub mod alert_rules {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Gets the alert rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `rule_id`: Alert rule ID"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -203,6 +216,14 @@ pub mod alert_rules {
                 rule_id: rule_id.into(),
             }
         }
+        #[doc = "Creates or updates the alert rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `rule_id`: Alert rule ID"]
+        #[doc = "* `alert_rule`: The alert rule"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -220,6 +241,13 @@ pub mod alert_rules {
                 alert_rule: alert_rule.into(),
             }
         }
+        #[doc = "Delete the alert rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `rule_id`: Alert rule ID"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -466,6 +494,13 @@ pub mod actions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all actions of alert rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `rule_id`: Alert rule ID"]
         pub fn list_by_alert_rule(
             &self,
             subscription_id: impl Into<String>,
@@ -481,6 +516,14 @@ pub mod actions {
                 rule_id: rule_id.into(),
             }
         }
+        #[doc = "Gets the action of alert rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `rule_id`: Alert rule ID"]
+        #[doc = "* `action_id`: Action ID"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -498,6 +541,15 @@ pub mod actions {
                 action_id: action_id.into(),
             }
         }
+        #[doc = "Creates or updates the action of alert rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `rule_id`: Alert rule ID"]
+        #[doc = "* `action_id`: Action ID"]
+        #[doc = "* `action`: The action"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -517,6 +569,14 @@ pub mod actions {
                 action: action.into(),
             }
         }
+        #[doc = "Delete the action of alert rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `rule_id`: Alert rule ID"]
+        #[doc = "* `action_id`: Action ID"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -769,6 +829,12 @@ pub mod alert_rule_templates {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all alert rule templates."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -782,6 +848,13 @@ pub mod alert_rule_templates {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Gets the alert rule template."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `alert_rule_template_id`: Alert rule template ID"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -922,6 +995,13 @@ pub mod automation_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the automation rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `automation_rule_id`: Automation rule ID"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -937,6 +1017,13 @@ pub mod automation_rules {
                 automation_rule_id: automation_rule_id.into(),
             }
         }
+        #[doc = "Creates or updates the automation rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `automation_rule_id`: Automation rule ID"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -953,6 +1040,13 @@ pub mod automation_rules {
                 automation_rule_to_upsert: None,
             }
         }
+        #[doc = "Delete the automation rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `automation_rule_id`: Automation rule ID"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -968,6 +1062,12 @@ pub mod automation_rules {
                 automation_rule_id: automation_rule_id.into(),
             }
         }
+        #[doc = "Gets all automation rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1228,6 +1328,12 @@ pub mod incidents {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Triggers playbook on a specific incident"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
         pub fn run_playbook(
             &self,
             subscription_id: impl Into<String>,
@@ -1244,6 +1350,12 @@ pub mod incidents {
                 request_body: None,
             }
         }
+        #[doc = "Gets all incidents."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1261,6 +1373,13 @@ pub mod incidents {
                 skip_token: None,
             }
         }
+        #[doc = "Gets an incident."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `incident_id`: Incident ID"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1276,6 +1395,14 @@ pub mod incidents {
                 incident_id: incident_id.into(),
             }
         }
+        #[doc = "Creates or updates the incident."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `incident_id`: Incident ID"]
+        #[doc = "* `incident`: The incident"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1293,6 +1420,13 @@ pub mod incidents {
                 incident: incident.into(),
             }
         }
+        #[doc = "Delete the incident."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `incident_id`: Incident ID"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1308,6 +1442,14 @@ pub mod incidents {
                 incident_id: incident_id.into(),
             }
         }
+        #[doc = "Creates a Microsoft team to investigate the incident by sharing information and insights between participants."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `incident_id`: Incident ID"]
+        #[doc = "* `team_properties`: Team properties"]
         pub fn create_team(
             &self,
             subscription_id: impl Into<String>,
@@ -1325,6 +1467,13 @@ pub mod incidents {
                 team_properties: team_properties.into(),
             }
         }
+        #[doc = "Gets all incident alerts."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `incident_id`: Incident ID"]
         pub fn list_alerts(
             &self,
             subscription_id: impl Into<String>,
@@ -1340,6 +1489,13 @@ pub mod incidents {
                 incident_id: incident_id.into(),
             }
         }
+        #[doc = "Gets all incident bookmarks."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `incident_id`: Incident ID"]
         pub fn list_bookmarks(
             &self,
             subscription_id: impl Into<String>,
@@ -1355,6 +1511,13 @@ pub mod incidents {
                 incident_id: incident_id.into(),
             }
         }
+        #[doc = "Gets all incident related entities."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `incident_id`: Incident ID"]
         pub fn list_entities(
             &self,
             subscription_id: impl Into<String>,
@@ -1883,6 +2046,12 @@ pub mod bookmarks {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all bookmarks."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1896,6 +2065,13 @@ pub mod bookmarks {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Gets a bookmark."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `bookmark_id`: Bookmark ID"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1911,6 +2087,14 @@ pub mod bookmarks {
                 bookmark_id: bookmark_id.into(),
             }
         }
+        #[doc = "Creates or updates the bookmark."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `bookmark_id`: Bookmark ID"]
+        #[doc = "* `bookmark`: The bookmark"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1928,6 +2112,13 @@ pub mod bookmarks {
                 bookmark: bookmark.into(),
             }
         }
+        #[doc = "Delete the bookmark."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `bookmark_id`: Bookmark ID"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2174,6 +2365,13 @@ pub mod bookmark_relations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all bookmark relations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `bookmark_id`: Bookmark ID"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2193,6 +2391,14 @@ pub mod bookmark_relations {
                 skip_token: None,
             }
         }
+        #[doc = "Gets a bookmark relation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `bookmark_id`: Bookmark ID"]
+        #[doc = "* `relation_name`: Relation Name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2210,6 +2416,15 @@ pub mod bookmark_relations {
                 relation_name: relation_name.into(),
             }
         }
+        #[doc = "Creates the bookmark relation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `bookmark_id`: Bookmark ID"]
+        #[doc = "* `relation_name`: Relation Name"]
+        #[doc = "* `relation`: The relation model"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2229,6 +2444,14 @@ pub mod bookmark_relations {
                 relation: relation.into(),
             }
         }
+        #[doc = "Delete the bookmark relation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `bookmark_id`: Bookmark ID"]
+        #[doc = "* `relation_name`: Relation Name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2513,6 +2736,14 @@ pub mod bookmark {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Expand an bookmark"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `bookmark_id`: Bookmark ID"]
+        #[doc = "* `parameters`: The parameters required to execute an expand operation on the given bookmark."]
         pub fn expand(
             &self,
             subscription_id: impl Into<String>,
@@ -2585,6 +2816,12 @@ pub mod ip_geodata {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get geodata for a single IP address"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `ip_address`: IP address (v4 or v6) to be enriched"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2657,6 +2894,12 @@ pub mod domain_whois {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get whois information for a single domain name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `domain`: Domain name to be enriched"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2729,6 +2972,12 @@ pub mod entities {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all entities."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2742,6 +2991,13 @@ pub mod entities {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Gets an entity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `entity_id`: entity ID"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2757,6 +3013,14 @@ pub mod entities {
                 entity_id: entity_id.into(),
             }
         }
+        #[doc = "Expands an entity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `entity_id`: entity ID"]
+        #[doc = "* `parameters`: The parameters required to execute an expand operation on the given entity."]
         pub fn expand(
             &self,
             subscription_id: impl Into<String>,
@@ -2774,6 +3038,14 @@ pub mod entities {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Get Insights and Activities for an entity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `entity_id`: entity ID"]
+        #[doc = "* `kind`: The Kind parameter for queries"]
         pub fn queries(
             &self,
             subscription_id: impl Into<String>,
@@ -2791,6 +3063,14 @@ pub mod entities {
                 kind: kind.into(),
             }
         }
+        #[doc = "Execute Insights for an entity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `entity_id`: entity ID"]
+        #[doc = "* `parameters`: The parameters required to execute insights on the given entity."]
         pub fn get_insights(
             &self,
             subscription_id: impl Into<String>,
@@ -3081,6 +3361,14 @@ pub mod entities_get_timeline {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Timeline for an entity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `entity_id`: entity ID"]
+        #[doc = "* `parameters`: The parameters required to execute an timeline operation on the given entity."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3153,6 +3441,13 @@ pub mod entities_relations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all relations of an entity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `entity_id`: entity ID"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3283,6 +3578,14 @@ pub mod entity_relations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets an entity relation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `entity_id`: entity ID"]
+        #[doc = "* `relation_name`: Relation Name"]
         pub fn get_relation(
             &self,
             subscription_id: impl Into<String>,
@@ -3354,6 +3657,12 @@ pub mod entity_queries {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all entity queries."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3368,6 +3677,13 @@ pub mod entity_queries {
                 kind: None,
             }
         }
+        #[doc = "Gets an entity query."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `entity_query_id`: entity query ID"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3383,6 +3699,14 @@ pub mod entity_queries {
                 entity_query_id: entity_query_id.into(),
             }
         }
+        #[doc = "Creates or updates the entity query."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `entity_query_id`: entity query ID"]
+        #[doc = "* `entity_query`: The entity query we want to create or update"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3400,6 +3724,13 @@ pub mod entity_queries {
                 entity_query: entity_query.into(),
             }
         }
+        #[doc = "Delete the entity query."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `entity_query_id`: entity query ID"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3654,6 +3985,12 @@ pub mod entity_query_templates {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all entity query templates."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3668,6 +4005,13 @@ pub mod entity_query_templates {
                 kind: None,
             }
         }
+        #[doc = "Gets an entity query."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `entity_query_template_id`: entity query template ID"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3816,6 +4160,13 @@ pub mod incident_comments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all incident comments."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `incident_id`: Incident ID"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3835,6 +4186,14 @@ pub mod incident_comments {
                 skip_token: None,
             }
         }
+        #[doc = "Gets an incident comment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `incident_id`: Incident ID"]
+        #[doc = "* `incident_comment_id`: Incident comment ID"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3852,6 +4211,15 @@ pub mod incident_comments {
                 incident_comment_id: incident_comment_id.into(),
             }
         }
+        #[doc = "Creates or updates the incident comment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `incident_id`: Incident ID"]
+        #[doc = "* `incident_comment_id`: Incident comment ID"]
+        #[doc = "* `incident_comment`: The incident comment"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3871,6 +4239,14 @@ pub mod incident_comments {
                 incident_comment: incident_comment.into(),
             }
         }
+        #[doc = "Delete the incident comment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `incident_id`: Incident ID"]
+        #[doc = "* `incident_comment_id`: Incident comment ID"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4155,6 +4531,13 @@ pub mod incident_relations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all incident relations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `incident_id`: Incident ID"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4174,6 +4557,14 @@ pub mod incident_relations {
                 skip_token: None,
             }
         }
+        #[doc = "Gets an incident relation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `incident_id`: Incident ID"]
+        #[doc = "* `relation_name`: Relation Name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4191,6 +4582,15 @@ pub mod incident_relations {
                 relation_name: relation_name.into(),
             }
         }
+        #[doc = "Creates or updates the incident relation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `incident_id`: Incident ID"]
+        #[doc = "* `relation_name`: Relation Name"]
+        #[doc = "* `relation`: The relation model"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4210,6 +4610,14 @@ pub mod incident_relations {
                 relation: relation.into(),
             }
         }
+        #[doc = "Delete the incident relation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `incident_id`: Incident ID"]
+        #[doc = "* `relation_name`: Relation Name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4494,6 +4902,12 @@ pub mod metadata {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List of all metadata"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4511,6 +4925,13 @@ pub mod metadata {
                 skip: None,
             }
         }
+        #[doc = "Get a Metadata."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `metadata_name`: The Metadata name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4526,6 +4947,14 @@ pub mod metadata {
                 metadata_name: metadata_name.into(),
             }
         }
+        #[doc = "Create a Metadata."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `metadata_name`: The Metadata name."]
+        #[doc = "* `metadata`: Metadata resource."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -4543,6 +4972,14 @@ pub mod metadata {
                 metadata: metadata.into(),
             }
         }
+        #[doc = "Update an existing Metadata."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `metadata_name`: The Metadata name."]
+        #[doc = "* `metadata_patch`: Partial metadata request."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4560,6 +4997,13 @@ pub mod metadata {
                 metadata_patch: metadata_patch.into(),
             }
         }
+        #[doc = "Delete a Metadata."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `metadata_name`: The Metadata name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4887,6 +5331,12 @@ pub mod office_consents {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all office365 consents."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4900,6 +5350,13 @@ pub mod office_consents {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Gets an office365 consent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `consent_id`: consent ID"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4915,6 +5372,13 @@ pub mod office_consents {
                 consent_id: consent_id.into(),
             }
         }
+        #[doc = "Delete the office365 consent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `consent_id`: consent ID"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5103,6 +5567,13 @@ pub mod sentinel_onboarding_states {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Sentinel onboarding state"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `sentinel_onboarding_state_name`: The Sentinel onboarding state name. Supports - default"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5118,6 +5589,13 @@ pub mod sentinel_onboarding_states {
                 sentinel_onboarding_state_name: sentinel_onboarding_state_name.into(),
             }
         }
+        #[doc = "Create Sentinel onboarding state"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `sentinel_onboarding_state_name`: The Sentinel onboarding state name. Supports - default"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -5134,6 +5612,13 @@ pub mod sentinel_onboarding_states {
                 sentinel_onboarding_state_parameter: None,
             }
         }
+        #[doc = "Delete Sentinel onboarding state"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `sentinel_onboarding_state_name`: The Sentinel onboarding state name. Supports - default"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5149,6 +5634,12 @@ pub mod sentinel_onboarding_states {
                 sentinel_onboarding_state_name: sentinel_onboarding_state_name.into(),
             }
         }
+        #[doc = "Gets all Sentinel onboarding states"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -5378,6 +5869,12 @@ pub mod product_settings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List of all the settings"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -5391,6 +5888,13 @@ pub mod product_settings {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Gets a setting."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `settings_name`: The setting name. Supports - Anomalies, EyesOn, EntityAnalytics, Ueba"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5406,6 +5910,14 @@ pub mod product_settings {
                 settings_name: settings_name.into(),
             }
         }
+        #[doc = "Updates setting."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `settings_name`: The setting name. Supports - Anomalies, EyesOn, EntityAnalytics, Ueba"]
+        #[doc = "* `settings`: The setting"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -5423,6 +5935,13 @@ pub mod product_settings {
                 settings: settings.into(),
             }
         }
+        #[doc = "Delete setting of the product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `settings_name`: The setting name. Supports - Anomalies, EyesOn, EntityAnalytics, Ueba"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5634,6 +6153,13 @@ pub mod source_control {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of repositories metadata."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `repo_type`: The repo type."]
         pub fn list_repositories(
             &self,
             subscription_id: impl Into<String>,
@@ -5729,6 +6255,12 @@ pub mod source_controls {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all source controls, without source control items."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -5742,6 +6274,13 @@ pub mod source_controls {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Gets a source control byt its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `source_control_id`: Source control Id"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5757,6 +6296,14 @@ pub mod source_controls {
                 source_control_id: source_control_id.into(),
             }
         }
+        #[doc = "Creates a source control."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `source_control_id`: Source control Id"]
+        #[doc = "* `source_control`: The SourceControl"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -5774,6 +6321,13 @@ pub mod source_controls {
                 source_control: source_control.into(),
             }
         }
+        #[doc = "Delete a source control."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `source_control_id`: Source control Id"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -6020,6 +6574,13 @@ pub mod threat_intelligence_indicator {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Create a new threat intelligence indicator."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `threat_intelligence_properties`: Properties of threat intelligence indicators to create and update."]
         pub fn create_indicator(
             &self,
             subscription_id: impl Into<String>,
@@ -6035,6 +6596,13 @@ pub mod threat_intelligence_indicator {
                 threat_intelligence_properties: threat_intelligence_properties.into(),
             }
         }
+        #[doc = "View a threat intelligence indicator by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `name`: Threat intelligence indicator name field."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -6050,6 +6618,14 @@ pub mod threat_intelligence_indicator {
                 name: name.into(),
             }
         }
+        #[doc = "Update a threat Intelligence indicator."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `name`: Threat intelligence indicator name field."]
+        #[doc = "* `threat_intelligence_properties`: Properties of threat intelligence indicators to create and update."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -6067,6 +6643,13 @@ pub mod threat_intelligence_indicator {
                 threat_intelligence_properties: threat_intelligence_properties.into(),
             }
         }
+        #[doc = "Delete a threat intelligence indicator."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `name`: Threat intelligence indicator name field."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -6082,6 +6665,13 @@ pub mod threat_intelligence_indicator {
                 name: name.into(),
             }
         }
+        #[doc = "Query threat intelligence indicators as per filtering criteria."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `threat_intelligence_filtering_criteria`: Filtering criteria for querying threat intelligence indicators."]
         pub fn query_indicators(
             &self,
             subscription_id: impl Into<String>,
@@ -6097,6 +6687,14 @@ pub mod threat_intelligence_indicator {
                 threat_intelligence_filtering_criteria: threat_intelligence_filtering_criteria.into(),
             }
         }
+        #[doc = "Append tags to a threat intelligence indicator."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `name`: Threat intelligence indicator name field."]
+        #[doc = "* `threat_intelligence_append_tags`: The threat intelligence append tags request body"]
         pub fn append_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -6114,6 +6712,14 @@ pub mod threat_intelligence_indicator {
                 threat_intelligence_append_tags: threat_intelligence_append_tags.into(),
             }
         }
+        #[doc = "Replace tags added to a threat intelligence indicator."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `name`: Threat intelligence indicator name field."]
+        #[doc = "* `threat_intelligence_replace_tags`: Tags in the threat intelligence indicator to be replaced."]
         pub fn replace_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -6515,6 +7121,12 @@ pub mod threat_intelligence_indicators {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all threat intelligence indicators."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -6642,6 +7254,12 @@ pub mod threat_intelligence_indicator_metrics {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get threat intelligence indicators metrics (Indicators counts by Type, Threat Type, Source)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -6707,6 +7325,12 @@ pub mod watchlists {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all watchlists, without watchlist items."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -6721,6 +7345,13 @@ pub mod watchlists {
                 skip_token: None,
             }
         }
+        #[doc = "Gets a watchlist, without its watchlist items."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `watchlist_alias`: Watchlist Alias"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -6736,6 +7367,14 @@ pub mod watchlists {
                 watchlist_alias: watchlist_alias.into(),
             }
         }
+        #[doc = "Create or update a Watchlist and its Watchlist Items (bulk creation, e.g. through text/csv content type). To create a Watchlist and its Items, we should call this endpoint with either rawContent or a valid SAR URI and contentType properties. The rawContent is mainly used for small watchlist (content size below 3.8 MB). The SAS URI enables the creation of large watchlist, where the content size can go up to 500 MB. The status of processing such large file can be polled through the URL returned in Azure-AsyncOperation header."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `watchlist_alias`: Watchlist Alias"]
+        #[doc = "* `watchlist`: The watchlist"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -6753,6 +7392,13 @@ pub mod watchlists {
                 watchlist: watchlist.into(),
             }
         }
+        #[doc = "Delete a watchlist."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `watchlist_alias`: Watchlist Alias"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -7007,6 +7653,13 @@ pub mod watchlist_items {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all watchlist Items."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `watchlist_alias`: Watchlist Alias"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -7023,6 +7676,14 @@ pub mod watchlist_items {
                 skip_token: None,
             }
         }
+        #[doc = "Gets a watchlist, without its watchlist items."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `watchlist_alias`: Watchlist Alias"]
+        #[doc = "* `watchlist_item_id`: Watchlist Item Id (GUID)"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -7040,6 +7701,15 @@ pub mod watchlist_items {
                 watchlist_item_id: watchlist_item_id.into(),
             }
         }
+        #[doc = "Creates or updates a watchlist item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `watchlist_alias`: Watchlist Alias"]
+        #[doc = "* `watchlist_item_id`: Watchlist Item Id (GUID)"]
+        #[doc = "* `watchlist_item`: The watchlist item"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -7059,6 +7729,14 @@ pub mod watchlist_items {
                 watchlist_item: watchlist_item.into(),
             }
         }
+        #[doc = "Delete a watchlist item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `watchlist_alias`: Watchlist Alias"]
+        #[doc = "* `watchlist_item_id`: Watchlist Item Id (GUID)"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -7319,6 +7997,12 @@ pub mod data_connectors {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all data connectors."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -7332,6 +8016,13 @@ pub mod data_connectors {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Gets a data connector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `data_connector_id`: Connector ID"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -7347,6 +8038,14 @@ pub mod data_connectors {
                 data_connector_id: data_connector_id.into(),
             }
         }
+        #[doc = "Creates or updates the data connector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `data_connector_id`: Connector ID"]
+        #[doc = "* `data_connector`: The data connector"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -7364,6 +8063,13 @@ pub mod data_connectors {
                 data_connector: data_connector.into(),
             }
         }
+        #[doc = "Delete the data connector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `data_connector_id`: Connector ID"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -7379,6 +8085,14 @@ pub mod data_connectors {
                 data_connector_id: data_connector_id.into(),
             }
         }
+        #[doc = "Connects a data connector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `data_connector_id`: Connector ID"]
+        #[doc = "* `connect_body`: The data connector"]
         pub fn connect(
             &self,
             subscription_id: impl Into<String>,
@@ -7396,6 +8110,13 @@ pub mod data_connectors {
                 connect_body: connect_body.into(),
             }
         }
+        #[doc = "Disconnect a data connector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `data_connector_id`: Connector ID"]
         pub fn disconnect(
             &self,
             subscription_id: impl Into<String>,
@@ -7731,6 +8452,13 @@ pub mod data_connectors_check_requirements {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get requirements state for a data connector type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `data_connectors_check_requirements`: The parameters for requirements check message"]
         pub fn post(
             &self,
             subscription_id: impl Into<String>,
@@ -7800,6 +8528,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all operations available Azure Security Insights Resource Provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

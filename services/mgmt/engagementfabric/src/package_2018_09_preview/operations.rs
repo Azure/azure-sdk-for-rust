@@ -92,6 +92,11 @@ pub mod accounts {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the EngagementFabric account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID"]
+        #[doc = "* `resource_group_name`: Resource Group Name"]
+        #[doc = "* `account_name`: Account Name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -106,6 +111,12 @@ pub mod accounts {
             }
         }
         #[doc = "Create or Update the EngagementFabric account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID"]
+        #[doc = "* `resource_group_name`: Resource Group Name"]
+        #[doc = "* `account_name`: Account Name"]
+        #[doc = "* `account`: The EngagementFabric account description"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -122,6 +133,12 @@ pub mod accounts {
             }
         }
         #[doc = "Update EngagementFabric account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID"]
+        #[doc = "* `resource_group_name`: Resource Group Name"]
+        #[doc = "* `account_name`: Account Name"]
+        #[doc = "* `account_patch`: The account patch"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -138,6 +155,11 @@ pub mod accounts {
             }
         }
         #[doc = "Delete the EngagementFabric account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID"]
+        #[doc = "* `resource_group_name`: Resource Group Name"]
+        #[doc = "* `account_name`: Account Name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -152,6 +174,9 @@ pub mod accounts {
             }
         }
         #[doc = "List the EngagementFabric accounts in given subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -159,6 +184,10 @@ pub mod accounts {
             }
         }
         #[doc = "List EngagementFabric accounts in given resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID"]
+        #[doc = "* `resource_group_name`: Resource Group Name"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -171,6 +200,11 @@ pub mod accounts {
             }
         }
         #[doc = "List keys of the EngagementFabric account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID"]
+        #[doc = "* `resource_group_name`: Resource Group Name"]
+        #[doc = "* `account_name`: Account Name"]
         pub fn list_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -185,6 +219,12 @@ pub mod accounts {
             }
         }
         #[doc = "Regenerate key of the EngagementFabric account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID"]
+        #[doc = "* `resource_group_name`: Resource Group Name"]
+        #[doc = "* `account_name`: Account Name"]
+        #[doc = "* `parameter`: Parameters specifying the key to be regenerated"]
         pub fn regenerate_key(
             &self,
             subscription_id: impl Into<String>,
@@ -201,6 +241,11 @@ pub mod accounts {
             }
         }
         #[doc = "List available EngagementFabric channel types and functions"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID"]
+        #[doc = "* `resource_group_name`: Resource Group Name"]
+        #[doc = "* `account_name`: Account Name"]
         pub fn list_channel_types(
             &self,
             subscription_id: impl Into<String>,
@@ -695,6 +740,12 @@ pub mod channels {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the EngagementFabric channel"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID"]
+        #[doc = "* `resource_group_name`: Resource Group Name"]
+        #[doc = "* `account_name`: Account Name"]
+        #[doc = "* `channel_name`: Channel Name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -711,6 +762,13 @@ pub mod channels {
             }
         }
         #[doc = "Create or Update the EngagementFabric channel"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID"]
+        #[doc = "* `resource_group_name`: Resource Group Name"]
+        #[doc = "* `account_name`: Account Name"]
+        #[doc = "* `channel_name`: Channel Name"]
+        #[doc = "* `channel`: The EngagementFabric channel description"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -729,6 +787,12 @@ pub mod channels {
             }
         }
         #[doc = "Delete the EngagementFabric channel"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID"]
+        #[doc = "* `resource_group_name`: Resource Group Name"]
+        #[doc = "* `account_name`: Account Name"]
+        #[doc = "* `channel_name`: The EngagementFabric channel name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -745,6 +809,11 @@ pub mod channels {
             }
         }
         #[doc = "List the EngagementFabric channels"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID"]
+        #[doc = "* `resource_group_name`: Resource Group Name"]
+        #[doc = "* `account_name`: Account Name"]
         pub fn list_by_account(
             &self,
             subscription_id: impl Into<String>,
@@ -980,6 +1049,11 @@ pub mod channels {
 }
 impl Client {
     #[doc = "Check availability of EngagementFabric resource"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: Subscription ID"]
+    #[doc = "* `resource_group_name`: Resource Group Name"]
+    #[doc = "* `parameters`: Parameter describing the name to be checked"]
     pub fn check_name_availability(
         &self,
         subscription_id: impl Into<String>,
@@ -1108,6 +1182,9 @@ pub mod sk_us {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List available SKUs of EngagementFabric resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

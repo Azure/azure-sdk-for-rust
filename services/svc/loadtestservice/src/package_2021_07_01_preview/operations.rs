@@ -95,6 +95,9 @@ pub mod app_component {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get App components for a given appComponentName in query param."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Unique identifier for app component name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_app_component_by_name(&self, name: impl Into<String>) -> get_app_component_by_name::Builder {
             get_app_component_by_name::Builder {
                 client: self.0.clone(),
@@ -102,6 +105,10 @@ pub mod app_component {
             }
         }
         #[doc = "Associate app component (a azure resource model) to a test model or test run"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Unique identifier for app component name, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `body`: App component model"]
         pub fn create_or_update_app_components(
             &self,
             name: impl Into<String>,
@@ -114,6 +121,9 @@ pub mod app_component {
             }
         }
         #[doc = "Delete app component"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Unique identifier for app component name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn delete_app_component(&self, name: impl Into<String>) -> delete_app_component::Builder {
             delete_app_component::Builder {
                 client: self.0.clone(),
@@ -333,6 +343,10 @@ pub mod file {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Validate input file. File name must be a valid URL character ^[a-z0-9_-]*$. File size can't be more than 50 MB."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `file_id`: Unique identifier for test file, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `file`: Input test file"]
         pub fn file_validate(&self, file_id: impl Into<String>, file: impl Into<bytes::Bytes>) -> file_validate::Builder {
             file_validate::Builder {
                 client: self.0.clone(),
@@ -394,6 +408,9 @@ pub mod server_metrics {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get server metrics config for a given name in query param."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Unique identifier for server metric name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_server_metrics_by_name(&self, name: impl Into<String>) -> get_server_metrics_by_name::Builder {
             get_server_metrics_by_name::Builder {
                 client: self.0.clone(),
@@ -401,6 +418,10 @@ pub mod server_metrics {
             }
         }
         #[doc = "Associate server metrics config to a test model or test run"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Unique identifier for server metric name, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `body`: Server metrics config model"]
         pub fn create_or_update_server_metrics_config(
             &self,
             name: impl Into<String>,
@@ -413,6 +434,9 @@ pub mod server_metrics {
             }
         }
         #[doc = "Delete server metrics config by given name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Unique identifier for server metric name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn delete_server_metrics(&self, name: impl Into<String>) -> delete_server_metrics::Builder {
             delete_server_metrics::Builder {
                 client: self.0.clone(),
@@ -727,6 +751,9 @@ pub mod test {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get load test model of given test name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_load_test(&self, test_id: impl Into<String>) -> get_load_test::Builder {
             get_load_test::Builder {
                 client: self.0.clone(),
@@ -734,6 +761,10 @@ pub mod test {
             }
         }
         #[doc = "Creates/Updates a new load test. Test name must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `body`: Load test model"]
         pub fn create_or_update_test(
             &self,
             test_id: impl Into<String>,
@@ -746,6 +777,9 @@ pub mod test {
             }
         }
         #[doc = "Delete a test with given name. Test name must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn delete_load_test(&self, test_id: impl Into<String>) -> delete_load_test::Builder {
             delete_load_test::Builder {
                 client: self.0.clone(),
@@ -765,6 +799,10 @@ pub mod test {
             }
         }
         #[doc = "Get test file with given file name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `file_id`: Unique identifier for test file, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_test_file(&self, test_id: impl Into<String>, file_id: impl Into<String>) -> get_test_file::Builder {
             get_test_file::Builder {
                 client: self.0.clone(),
@@ -773,6 +811,11 @@ pub mod test {
             }
         }
         #[doc = "Upload input file for a given test name. File name must be a valid URL character ^[a-z0-9_-]*$. File size can't be more than 50 MB. Existing file with same name for the given test will be overwritten."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `file_id`: Unique identifier for test file, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `file`: Artifact to upload as input for test"]
         pub fn upload_test_file(
             &self,
             test_id: impl Into<String>,
@@ -787,6 +830,10 @@ pub mod test {
             }
         }
         #[doc = "Delete file of given file name for a test. File name must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `file_id`: Unique identifier for test file, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn delete_test_file(&self, test_id: impl Into<String>, file_id: impl Into<String>) -> delete_test_file::Builder {
             delete_test_file::Builder {
                 client: self.0.clone(),
@@ -795,6 +842,9 @@ pub mod test {
             }
         }
         #[doc = "Get all test files."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_all_test_files(&self, test_id: impl Into<String>) -> get_all_test_files::Builder {
             get_all_test_files::Builder {
                 client: self.0.clone(),
@@ -1236,6 +1286,9 @@ pub mod test_run {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get test run of given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique identifier for load test run name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_test_run(&self, test_run_id: impl Into<String>) -> get_test_run::Builder {
             get_test_run::Builder {
                 client: self.0.clone(),
@@ -1243,6 +1296,10 @@ pub mod test_run {
             }
         }
         #[doc = "Create and start new test run of the given name, test run name must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique identifier for load test run name, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `body`: Load test run model"]
         pub fn create_and_update_test(
             &self,
             test_run_id: impl Into<String>,
@@ -1256,6 +1313,9 @@ pub mod test_run {
             }
         }
         #[doc = "Delete a test run with given name. Test run name must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique identifier for load test run name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn delete_test_run(&self, test_run_id: impl Into<String>) -> delete_test_run::Builder {
             delete_test_run::Builder {
                 client: self.0.clone(),
@@ -1263,6 +1323,10 @@ pub mod test_run {
             }
         }
         #[doc = "Get testrun file with given file name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique identifier for load test run name, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `file_id`: Unique identifier for test run file, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_test_run_file(&self, test_run_id: impl Into<String>, file_id: impl Into<String>) -> get_test_run_file::Builder {
             get_test_run_file::Builder {
                 client: self.0.clone(),
@@ -1285,6 +1349,9 @@ pub mod test_run {
             }
         }
         #[doc = "Stop test run of given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique identifier for load test run name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn stop_test_run(&self, test_run_id: impl Into<String>) -> stop_test_run::Builder {
             stop_test_run::Builder {
                 client: self.0.clone(),
@@ -1292,6 +1359,9 @@ pub mod test_run {
             }
         }
         #[doc = "Get all client metrics for a given load test run"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique identifier for load test run name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_test_run_client_metrics(&self, test_run_id: impl Into<String>) -> get_test_run_client_metrics::Builder {
             get_test_run_client_metrics::Builder {
                 client: self.0.clone(),
@@ -1301,6 +1371,9 @@ pub mod test_run {
             }
         }
         #[doc = "Get all client metrics supported filters list for a given load test run"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique identifier for load test run name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_test_run_client_metrics_filters(&self, test_run_id: impl Into<String>) -> get_test_run_client_metrics_filters::Builder {
             get_test_run_client_metrics_filters::Builder {
                 client: self.0.clone(),

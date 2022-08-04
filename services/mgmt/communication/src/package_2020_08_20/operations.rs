@@ -86,6 +86,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Operations"]
+        #[doc = "Lists all of the available REST API operations of the Microsoft.Communication provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -166,6 +167,10 @@ pub mod communication_service {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Check Name Availability"]
+        #[doc = "Checks that the CommunicationService name is valid and is not already in use."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn check_name_availability(&self, subscription_id: impl Into<String>) -> check_name_availability::Builder {
             check_name_availability::Builder {
                 client: self.0.clone(),
@@ -174,6 +179,12 @@ pub mod communication_service {
             }
         }
         #[doc = "Link Notification Hub"]
+        #[doc = "Links an Azure Notification Hub to this communication service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `communication_service_name`: The name of the CommunicationService resource."]
         pub fn link_notification_hub(
             &self,
             subscription_id: impl Into<String>,
@@ -189,6 +200,10 @@ pub mod communication_service {
             }
         }
         #[doc = "List By Subscription"]
+        #[doc = "Handles requests to list all resources in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -196,6 +211,11 @@ pub mod communication_service {
             }
         }
         #[doc = "List By Resource Group"]
+        #[doc = "Handles requests to list all resources in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -208,6 +228,12 @@ pub mod communication_service {
             }
         }
         #[doc = "Get"]
+        #[doc = "Get the CommunicationService and its properties."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `communication_service_name`: The name of the CommunicationService resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -222,6 +248,12 @@ pub mod communication_service {
             }
         }
         #[doc = "Create Or Update"]
+        #[doc = "Create a new CommunicationService or update an existing CommunicationService."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `communication_service_name`: The name of the CommunicationService resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -237,6 +269,12 @@ pub mod communication_service {
             }
         }
         #[doc = "Update"]
+        #[doc = "Operation to update an existing CommunicationService."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `communication_service_name`: The name of the CommunicationService resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -252,6 +290,12 @@ pub mod communication_service {
             }
         }
         #[doc = "Delete"]
+        #[doc = "Operation to delete a CommunicationService."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `communication_service_name`: The name of the CommunicationService resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -266,6 +310,12 @@ pub mod communication_service {
             }
         }
         #[doc = "List Keys"]
+        #[doc = "Get the access keys of the CommunicationService resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `communication_service_name`: The name of the CommunicationService resource."]
         pub fn list_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -280,6 +330,13 @@ pub mod communication_service {
             }
         }
         #[doc = "Regenerate Key"]
+        #[doc = "Regenerate CommunicationService access key. PrimaryKey and SecondaryKey cannot be regenerated at the same time."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameter that describes the Regenerate Key Operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `communication_service_name`: The name of the CommunicationService resource."]
         pub fn regenerate_key(
             &self,
             parameters: impl Into<models::RegenerateKeyParameters>,

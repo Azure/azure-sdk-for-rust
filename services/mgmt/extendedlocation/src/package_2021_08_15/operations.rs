@@ -82,10 +82,15 @@ pub mod custom_locations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all available Custom Locations operations."]
         pub fn list_operations(&self) -> list_operations::Builder {
             list_operations::Builder { client: self.0.clone() }
         }
         #[doc = "Gets a list of Custom Locations in a subscription."]
+        #[doc = "Gets a list of Custom Locations in the specified subscription. The operation returns properties of each Custom Location"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -93,6 +98,11 @@ pub mod custom_locations {
             }
         }
         #[doc = "Gets a list of Custom Locations in the specified subscription and resource group."]
+        #[doc = "Gets a list of Custom Locations in the specified subscription and resource group. The operation returns properties of each Custom Location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -105,6 +115,12 @@ pub mod custom_locations {
             }
         }
         #[doc = "Gets a Custom Location."]
+        #[doc = "Gets the details of the customLocation with a specified resource group and name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: Custom Locations name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -119,6 +135,13 @@ pub mod custom_locations {
             }
         }
         #[doc = "Creates or updates a Custom Location."]
+        #[doc = "Creates or updates a Custom Location in the specified Subscription and Resource Group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: Custom Locations name."]
+        #[doc = "* `parameters`: Parameters supplied to create or update a Custom Location."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -135,6 +158,13 @@ pub mod custom_locations {
             }
         }
         #[doc = "Updates a Custom Location."]
+        #[doc = "Updates a Custom Location with the specified Resource Name in the specified Resource Group and Subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: Custom Locations name."]
+        #[doc = "* `parameters`: The updatable fields of an existing Custom Location."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -151,6 +181,12 @@ pub mod custom_locations {
             }
         }
         #[doc = "Deletes a Custom Location."]
+        #[doc = "Deletes the Custom Location with the specified Resource Name, Resource Group, and Subscription Id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: Custom Locations name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -165,6 +201,12 @@ pub mod custom_locations {
             }
         }
         #[doc = "Gets the list of Enabled Resource Types."]
+        #[doc = "Gets the list of the Enabled Resource Types."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: Custom Locations name."]
         pub fn list_enabled_resource_types(
             &self,
             subscription_id: impl Into<String>,

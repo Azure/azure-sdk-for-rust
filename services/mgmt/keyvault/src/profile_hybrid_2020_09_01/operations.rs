@@ -94,6 +94,12 @@ pub mod vaults {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified Azure key vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the vault belongs."]
+        #[doc = "* `vault_name`: The name of the vault."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -107,6 +113,13 @@ pub mod vaults {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a key vault in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the server belongs."]
+        #[doc = "* `vault_name`: Name of the vault"]
+        #[doc = "* `parameters`: Parameters to create or update the vault"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -122,6 +135,13 @@ pub mod vaults {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update a key vault in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the server belongs."]
+        #[doc = "* `vault_name`: Name of the vault"]
+        #[doc = "* `parameters`: Parameters to patch the vault"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -137,6 +157,12 @@ pub mod vaults {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified Azure key vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the vault belongs."]
+        #[doc = "* `vault_name`: The name of the vault to delete"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -150,6 +176,14 @@ pub mod vaults {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update access policies in a key vault in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the vault belongs."]
+        #[doc = "* `vault_name`: Name of the vault"]
+        #[doc = "* `operation_kind`: Name of the operation"]
+        #[doc = "* `parameters`: Access policy to merge into the vault"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_access_policy(
             &self,
             resource_group_name: impl Into<String>,
@@ -167,6 +201,11 @@ pub mod vaults {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The List operation gets information about the vaults associated with the subscription and within the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the vault belongs."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -179,6 +218,10 @@ pub mod vaults {
                 top: None,
             }
         }
+        #[doc = "The List operation gets information about the vaults associated with the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -186,12 +229,22 @@ pub mod vaults {
                 top: None,
             }
         }
+        #[doc = "Gets information about the deleted vaults in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_deleted(&self, subscription_id: impl Into<String>) -> list_deleted::Builder {
             list_deleted::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the deleted Azure key vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the vault."]
+        #[doc = "* `location`: The location of the deleted vault."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_deleted(
             &self,
             vault_name: impl Into<String>,
@@ -205,6 +258,12 @@ pub mod vaults {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Permanently deletes the specified vault. aka Purges the deleted Azure key vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the soft-deleted vault."]
+        #[doc = "* `location`: The location of the soft-deleted vault."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn purge_deleted(
             &self,
             vault_name: impl Into<String>,
@@ -218,6 +277,11 @@ pub mod vaults {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The List operation gets information about the vaults associated with the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filter`: The filter to apply on the operation."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, filter: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -226,6 +290,11 @@ pub mod vaults {
                 top: None,
             }
         }
+        #[doc = "Checks that the vault name is valid and is not already in use."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the vault."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check_name_availability(
             &self,
             vault_name: impl Into<models::VaultCheckNameAvailabilityParameters>,
@@ -1022,6 +1091,13 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified private endpoint connection associated with the key vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the key vault."]
+        #[doc = "* `vault_name`: The name of the key vault."]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection associated with the key vault."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1037,6 +1113,14 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Updates the specified private endpoint connection associated with the key vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the key vault."]
+        #[doc = "* `vault_name`: The name of the key vault."]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection associated with the key vault."]
+        #[doc = "* `properties`: The intended state of private endpoint connection."]
         pub fn put(
             &self,
             subscription_id: impl Into<String>,
@@ -1054,6 +1138,13 @@ pub mod private_endpoint_connections {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes the specified private endpoint connection associated with the key vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the key vault."]
+        #[doc = "* `vault_name`: The name of the key vault."]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection associated with the key vault."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1252,6 +1343,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources supported for the key vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the key vault."]
+        #[doc = "* `vault_name`: The name of the key vault."]
         pub fn list_by_vault(
             &self,
             subscription_id: impl Into<String>,
@@ -1323,6 +1420,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Key Vault Rest API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1402,6 +1500,13 @@ pub mod secrets {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified secret.  NOTE: This API is intended for internal use in ARM deployments. Users should use the data-plane REST service for interaction with vault secrets."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the vault belongs."]
+        #[doc = "* `vault_name`: The name of the vault."]
+        #[doc = "* `secret_name`: The name of the secret."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1417,6 +1522,14 @@ pub mod secrets {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a secret in a key vault in the specified subscription.  NOTE: This API is intended for internal use in ARM deployments. Users should use the data-plane REST service for interaction with vault secrets."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the vault belongs."]
+        #[doc = "* `vault_name`: Name of the vault"]
+        #[doc = "* `secret_name`: Name of the secret"]
+        #[doc = "* `parameters`: Parameters to create or update the secret"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1434,6 +1547,14 @@ pub mod secrets {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update a secret in the specified subscription.  NOTE: This API is intended for internal use in ARM deployments.  Users should use the data-plane REST service for interaction with vault secrets."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the vault belongs."]
+        #[doc = "* `vault_name`: Name of the vault"]
+        #[doc = "* `secret_name`: Name of the secret"]
+        #[doc = "* `parameters`: Parameters to patch the secret"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1451,6 +1572,12 @@ pub mod secrets {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The List operation gets information about the secrets in a vault.  NOTE: This API is intended for internal use in ARM deployments. Users should use the data-plane REST service for interaction with vault secrets."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the vault belongs."]
+        #[doc = "* `vault_name`: The name of the vault."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,

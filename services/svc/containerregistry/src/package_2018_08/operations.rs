@@ -76,15 +76,25 @@ impl Client {
     }
 }
 impl Client {
+    #[doc = "Tells whether this Docker Registry instance supports Docker Registry HTTP API v2"]
     pub fn get_docker_registry_v2_support(&self) -> get_docker_registry_v2_support::Builder {
         get_docker_registry_v2_support::Builder { client: self.clone() }
     }
+    #[doc = "Fetch the tags under the repository identified by 'name'"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
     pub fn get_tag_list(&self, name: impl Into<String>) -> get_tag_list::Builder {
         get_tag_list::Builder {
             client: self.clone(),
             name: name.into(),
         }
     }
+    #[doc = "Pulls the image manifest file associated with the specified name and reference. Reference may be a tag or a digest"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
+    #[doc = "* `reference`: A tag or a digest, pointing to a specific image"]
     pub fn get_manifest(&self, name: impl Into<String>, reference: impl Into<String>) -> get_manifest::Builder {
         get_manifest::Builder {
             client: self.clone(),
@@ -92,6 +102,7 @@ impl Client {
             reference: reference.into(),
         }
     }
+    #[doc = "List repositories"]
     pub fn get_repositories(&self) -> get_repositories::Builder {
         get_repositories::Builder {
             client: self.clone(),
@@ -99,6 +110,7 @@ impl Client {
             n: None,
         }
     }
+    #[doc = "List repositories"]
     pub fn get_acr_repositories(&self) -> get_acr_repositories::Builder {
         get_acr_repositories::Builder {
             client: self.clone(),
@@ -106,12 +118,20 @@ impl Client {
             n: None,
         }
     }
+    #[doc = "Get repository attributes"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
     pub fn get_acr_repository_attributes(&self, name: impl Into<String>) -> get_acr_repository_attributes::Builder {
         get_acr_repository_attributes::Builder {
             client: self.clone(),
             name: name.into(),
         }
     }
+    #[doc = "Update attributes of a repository"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
     pub fn update_acr_repository_attributes(&self, name: impl Into<String>) -> update_acr_repository_attributes::Builder {
         update_acr_repository_attributes::Builder {
             client: self.clone(),
@@ -119,12 +139,20 @@ impl Client {
             value: None,
         }
     }
+    #[doc = "Delete a repository"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
     pub fn delete_acr_repository(&self, name: impl Into<String>) -> delete_acr_repository::Builder {
         delete_acr_repository::Builder {
             client: self.clone(),
             name: name.into(),
         }
     }
+    #[doc = "List tags of a repository"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
     pub fn get_acr_tags(&self, name: impl Into<String>) -> get_acr_tags::Builder {
         get_acr_tags::Builder {
             client: self.clone(),
@@ -135,6 +163,11 @@ impl Client {
             digest: None,
         }
     }
+    #[doc = "Get manifest attributes by tag"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
+    #[doc = "* `reference`: A tag name of the image"]
     pub fn get_acr_tag_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> get_acr_tag_attributes::Builder {
         get_acr_tag_attributes::Builder {
             client: self.clone(),
@@ -142,6 +175,11 @@ impl Client {
             reference: reference.into(),
         }
     }
+    #[doc = "Update tag attributes"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
+    #[doc = "* `reference`: A tag name of the image"]
     pub fn update_acr_tag_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> update_acr_tag_attributes::Builder {
         update_acr_tag_attributes::Builder {
             client: self.clone(),
@@ -150,6 +188,11 @@ impl Client {
             value: None,
         }
     }
+    #[doc = "Delete tag"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
+    #[doc = "* `reference`: A tag name of the image"]
     pub fn delete_acr_tag(&self, name: impl Into<String>, reference: impl Into<String>) -> delete_acr_tag::Builder {
         delete_acr_tag::Builder {
             client: self.clone(),
@@ -157,6 +200,10 @@ impl Client {
             reference: reference.into(),
         }
     }
+    #[doc = "List manifests of a repository"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
     pub fn get_acr_manifests(&self, name: impl Into<String>) -> get_acr_manifests::Builder {
         get_acr_manifests::Builder {
             client: self.clone(),
@@ -166,6 +213,11 @@ impl Client {
             orderby: None,
         }
     }
+    #[doc = "Get manifest attributes"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
+    #[doc = "* `reference`: A digest pointing to a specific image"]
     pub fn get_acr_manifest_attributes(
         &self,
         name: impl Into<String>,
@@ -177,6 +229,11 @@ impl Client {
             reference: reference.into(),
         }
     }
+    #[doc = "Update attributes of a manifest"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
+    #[doc = "* `reference`: A tag or a digest, pointing to a specific image"]
     pub fn update_acr_manifest_attributes(
         &self,
         name: impl Into<String>,

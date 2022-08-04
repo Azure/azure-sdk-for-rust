@@ -88,6 +88,12 @@ pub mod application_definitions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the managed application definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_definition_name`: The name of the managed application definition."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_by_id(
             &self,
             resource_group_name: impl Into<String>,
@@ -101,6 +107,13 @@ pub mod application_definitions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates managed application definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_definition_name`: The name of the managed application definition."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update a managed application definition."]
         pub fn create_or_update_by_id(
             &self,
             resource_group_name: impl Into<String>,
@@ -116,6 +129,13 @@ pub mod application_definitions {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates the managed application definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_definition_name`: The name of the managed application definition."]
+        #[doc = "* `parameters`: Parameters supplied to the update a managed application definition."]
         pub fn update_by_id(
             &self,
             subscription_id: impl Into<String>,
@@ -131,6 +151,12 @@ pub mod application_definitions {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the managed application definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_definition_name`: The name of the managed application definition."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete_by_id(
             &self,
             resource_group_name: impl Into<String>,
@@ -144,6 +170,12 @@ pub mod application_definitions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the managed application definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_definition_name`: The name of the managed application definition."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -157,6 +189,13 @@ pub mod application_definitions {
                 application_definition_name: application_definition_name.into(),
             }
         }
+        #[doc = "Creates or updates a managed application definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_definition_name`: The name of the managed application definition."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update an managed application definition."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -172,6 +211,13 @@ pub mod application_definitions {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates the managed application definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_definition_name`: The name of the managed application definition."]
+        #[doc = "* `parameters`: Parameters supplied to the update a managed application definition."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -187,6 +233,12 @@ pub mod application_definitions {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the managed application definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_definition_name`: The name of the managed application definition."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -200,6 +252,11 @@ pub mod application_definitions {
                 application_definition_name: application_definition_name.into(),
             }
         }
+        #[doc = "Lists the managed application definitions in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -211,6 +268,10 @@ pub mod application_definitions {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets all the application definitions within a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -790,6 +851,7 @@ pub mod application_definitions {
     }
 }
 impl Client {
+    #[doc = "Lists all of the available Microsoft.Solutions REST API operations."]
     pub fn list_operations(&self) -> list_operations::Builder {
         list_operations::Builder { client: self.clone() }
     }
@@ -867,6 +929,12 @@ pub mod applications {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the managed application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_name`: The name of the managed application."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -880,6 +948,13 @@ pub mod applications {
                 application_name: application_name.into(),
             }
         }
+        #[doc = "Creates or update managed application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_name`: The name of the managed application."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update a managed application."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -895,6 +970,12 @@ pub mod applications {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates an existing managed application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_name`: The name of the managed application."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -909,6 +990,12 @@ pub mod applications {
                 parameters: None,
             }
         }
+        #[doc = "Deletes the managed application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_name`: The name of the managed application."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -922,6 +1009,11 @@ pub mod applications {
                 application_name: application_name.into(),
             }
         }
+        #[doc = "Gets all the applications within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -933,18 +1025,31 @@ pub mod applications {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets all the applications within a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the managed application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_id`: The fully qualified ID of the managed application, including the managed application name and the managed application resource type. Use the format, /subscriptions/{guid}/resourceGroups/{resource-group-name}/Microsoft.Solutions/applications/{application-name}"]
         pub fn get_by_id(&self, application_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
                 application_id: application_id.into(),
             }
         }
+        #[doc = "Creates or updates a managed application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_id`: The fully qualified ID of the managed application, including the managed application name and the managed application resource type. Use the format, /subscriptions/{guid}/resourceGroups/{resource-group-name}/Microsoft.Solutions/applications/{application-name}"]
+        #[doc = "* `parameters`: Parameters supplied to the create or update a managed application."]
         pub fn create_or_update_by_id(
             &self,
             application_id: impl Into<String>,
@@ -956,6 +1061,10 @@ pub mod applications {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates an existing managed application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_id`: The fully qualified ID of the managed application, including the managed application name and the managed application resource type. Use the format, /subscriptions/{guid}/resourceGroups/{resource-group-name}/Microsoft.Solutions/applications/{application-name}"]
         pub fn update_by_id(&self, application_id: impl Into<String>) -> update_by_id::Builder {
             update_by_id::Builder {
                 client: self.0.clone(),
@@ -963,12 +1072,22 @@ pub mod applications {
                 parameters: None,
             }
         }
+        #[doc = "Deletes the managed application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_id`: The fully qualified ID of the managed application, including the managed application name and the managed application resource type. Use the format, /subscriptions/{guid}/resourceGroups/{resource-group-name}/Microsoft.Solutions/applications/{application-name}"]
         pub fn delete_by_id(&self, application_id: impl Into<String>) -> delete_by_id::Builder {
             delete_by_id::Builder {
                 client: self.0.clone(),
                 application_id: application_id.into(),
             }
         }
+        #[doc = "Refresh Permissions for application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_name`: The name of the managed application."]
         pub fn refresh_permissions(
             &self,
             subscription_id: impl Into<String>,
@@ -982,6 +1101,12 @@ pub mod applications {
                 application_name: application_name.into(),
             }
         }
+        #[doc = "List allowed upgrade plans for application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_name`: The name of the managed application."]
         pub fn list_allowed_upgrade_plans(
             &self,
             subscription_id: impl Into<String>,
@@ -995,6 +1120,13 @@ pub mod applications {
                 application_name: application_name.into(),
             }
         }
+        #[doc = "Update access for application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_name`: The name of the managed application."]
+        #[doc = "* `parameters`: Request body parameters to update access."]
         pub fn update_access(
             &self,
             subscription_id: impl Into<String>,
@@ -1010,6 +1142,13 @@ pub mod applications {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "List tokens for application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_name`: The name of the managed application."]
+        #[doc = "* `parameters`: Request body parameters to list tokens."]
         pub fn list_tokens(
             &self,
             subscription_id: impl Into<String>,
@@ -1859,6 +1998,12 @@ pub mod jit_requests {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the JIT request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `jit_request_name`: The name of the JIT request."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1872,6 +2017,13 @@ pub mod jit_requests {
                 jit_request_name: jit_request_name.into(),
             }
         }
+        #[doc = "Creates or updates the JIT request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `jit_request_name`: The name of the JIT request."]
+        #[doc = "* `parameters`: Parameters supplied to the update JIT request."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1887,6 +2039,13 @@ pub mod jit_requests {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates the JIT request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `jit_request_name`: The name of the JIT request."]
+        #[doc = "* `parameters`: Parameters supplied to the update JIT request."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1902,6 +2061,12 @@ pub mod jit_requests {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the JIT request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `jit_request_name`: The name of the JIT request."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1915,12 +2080,21 @@ pub mod jit_requests {
                 jit_request_name: jit_request_name.into(),
             }
         }
+        #[doc = "Lists all JIT requests within the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all JIT requests within the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,

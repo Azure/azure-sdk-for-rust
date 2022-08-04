@@ -97,6 +97,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all SaaS app operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -175,6 +176,11 @@ pub mod applications {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all SaaS resources by subscription id and resource group name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -264,12 +270,21 @@ pub mod saa_s {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified SaaS."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: The Saas resource ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
         pub fn get_resource(&self, resource_id: impl Into<String>) -> get_resource::Builder {
             get_resource::Builder {
                 client: self.0.clone(),
                 resource_id: resource_id.into(),
             }
         }
+        #[doc = "Updates a SaaS resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: The Saas resource ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `parameters`: Parameters supplied to the update saas operation."]
         pub fn update_resource(
             &self,
             resource_id: impl Into<String>,
@@ -281,6 +296,11 @@ pub mod saa_s {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the specified SaaS."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: The Saas resource ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `parameters`: Parameters supplied to delete saas operation."]
         pub fn delete(&self, resource_id: impl Into<String>, parameters: impl Into<models::DeleteOptions>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -288,6 +308,10 @@ pub mod saa_s {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Creates a SaaS resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters supplied to the create saas operation."]
         pub fn create_resource(&self, parameters: impl Into<models::SaasResourceCreation>) -> create_resource::Builder {
             create_resource::Builder {
                 client: self.0.clone(),
@@ -509,6 +533,7 @@ pub mod saas_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get All Resources"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -585,6 +610,10 @@ pub mod saas_resources {
     }
 }
 impl Client {
+    #[doc = "Gets the ISV access token for a SaaS resource."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `resource_id`: The Saas resource ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
     pub fn saas_resource_list_access_token(&self, resource_id: impl Into<String>) -> saas_resource_list_access_token::Builder {
         saas_resource_list_access_token::Builder {
             client: self.clone(),
@@ -645,12 +674,21 @@ pub mod saas_subscription_level {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about all the Subscription Level SaaS in a certain Azure subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
         pub fn list_by_azure_subscription(&self, subscription_id: impl Into<String>) -> list_by_azure_subscription::Builder {
             list_by_azure_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets information about all the Subscription Level SaaS in a certain resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -662,6 +700,12 @@ pub mod saas_subscription_level {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets information about the specified Subscription Level SaaS."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -675,6 +719,13 @@ pub mod saas_subscription_level {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Creates or updates a SaaS resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_name`: The name of the resource."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update subscription level saas operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -690,6 +741,13 @@ pub mod saas_subscription_level {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates a SaaS Subscription Level resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_name`: The name of the resource."]
+        #[doc = "* `parameters`: Parameters supplied to the update saas operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -705,6 +763,12 @@ pub mod saas_subscription_level {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the specified SaaS."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -718,6 +782,13 @@ pub mod saas_subscription_level {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Unsubscribe from a specified Subscription Level SaaS."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_name`: The name of the resource."]
+        #[doc = "* `parameters`: Parameters supplied to unsubscribe saas operation."]
         pub fn update_to_unsubscribed(
             &self,
             subscription_id: impl Into<String>,
@@ -733,6 +804,12 @@ pub mod saas_subscription_level {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Gets the ISV access token for a specified Subscription Level SaaS."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn list_access_token(
             &self,
             subscription_id: impl Into<String>,
@@ -746,6 +823,12 @@ pub mod saas_subscription_level {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Validate whether a specified Subscription Level SaaS can be moved."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `move_resource_parameter`: Object that represents the resources to move."]
         pub fn validate_move_resources(
             &self,
             subscription_id: impl Into<String>,
@@ -759,6 +842,12 @@ pub mod saas_subscription_level {
                 move_resource_parameter: move_resource_parameter.into(),
             }
         }
+        #[doc = "Move a specified Subscription Level SaaS."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `move_resource_parameter`: Object that represents the resources to move."]
         pub fn move_resources(
             &self,
             subscription_id: impl Into<String>,
@@ -1373,6 +1462,10 @@ pub mod saa_s_operation {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified operation progress."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `operation_id`: the operation Id parameter."]
         pub fn get(&self, operation_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),

@@ -92,6 +92,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Operations_List"]
+        #[doc = "Gets the details of all operations possible on the Microsoft.VisualStudio resource provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -143,6 +144,11 @@ pub mod accounts {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Accounts_CheckNameAvailability"]
+        #[doc = "Checks if the specified Visual Studio Team Services account name is available. Resource name can be either an account name or an account name and PUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription identifier."]
+        #[doc = "* `body`: Parameters describing the name to check availability for."]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -155,6 +161,11 @@ pub mod accounts {
             }
         }
         #[doc = "Accounts_ListByResourceGroup"]
+        #[doc = "Gets all Visual Studio Team Services account resources under the resource group linked to the specified Azure subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `subscription_id`: The Azure subscription identifier."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -167,6 +178,12 @@ pub mod accounts {
             }
         }
         #[doc = "Accounts_Get"]
+        #[doc = "Gets the Visual Studio Team Services account resource details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `subscription_id`: The Azure subscription identifier."]
+        #[doc = "* `resource_name`: Name of the resource."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -181,6 +198,13 @@ pub mod accounts {
             }
         }
         #[doc = "Accounts_CreateOrUpdate"]
+        #[doc = "Creates or updates a Visual Studio Team Services account resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `subscription_id`: The Azure subscription identifier."]
+        #[doc = "* `body`: The request data."]
+        #[doc = "* `resource_name`: Name of the resource."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -197,6 +221,13 @@ pub mod accounts {
             }
         }
         #[doc = "Accounts_Update"]
+        #[doc = "Updates tags for Visual Studio Team Services account resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `subscription_id`: The Azure subscription identifier."]
+        #[doc = "* `body`: The request data."]
+        #[doc = "* `resource_name`: Name of the resource."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -213,6 +244,12 @@ pub mod accounts {
             }
         }
         #[doc = "Accounts_Delete"]
+        #[doc = "Deletes a Visual Studio Team Services account resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `subscription_id`: The Azure subscription identifier."]
+        #[doc = "* `resource_name`: Name of the resource."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -541,6 +578,12 @@ pub mod extensions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Extensions_ListByAccount"]
+        #[doc = "Gets the details of the extension resources created within the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `subscription_id`: The Azure subscription identifier."]
+        #[doc = "* `account_resource_name`: The name of the Visual Studio Team Services account resource."]
         pub fn list_by_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -555,6 +598,13 @@ pub mod extensions {
             }
         }
         #[doc = "Extensions_Get"]
+        #[doc = "Gets the details of an extension associated with a Visual Studio Team Services account resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `subscription_id`: The Azure subscription identifier."]
+        #[doc = "* `account_resource_name`: The name of the Visual Studio Team Services account resource."]
+        #[doc = "* `extension_resource_name`: The name of the extension."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -571,6 +621,14 @@ pub mod extensions {
             }
         }
         #[doc = "Extensions_Create"]
+        #[doc = "Registers the extension with a Visual Studio Team Services account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `subscription_id`: The Azure subscription identifier."]
+        #[doc = "* `body`: An object containing additional information related to the extension request."]
+        #[doc = "* `account_resource_name`: The name of the Visual Studio Team Services account resource."]
+        #[doc = "* `extension_resource_name`: The name of the extension."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -589,6 +647,14 @@ pub mod extensions {
             }
         }
         #[doc = "Extensions_Update"]
+        #[doc = "Updates an existing extension registration for the Visual Studio Team Services account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `subscription_id`: The Azure subscription identifier."]
+        #[doc = "* `body`: An object containing additional information related to the extension request."]
+        #[doc = "* `account_resource_name`: The name of the Visual Studio Team Services account resource."]
+        #[doc = "* `extension_resource_name`: The name of the extension."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -607,6 +673,13 @@ pub mod extensions {
             }
         }
         #[doc = "Extensions_Delete"]
+        #[doc = "Removes an extension resource registration for a Visual Studio Team Services account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `subscription_id`: The Azure subscription identifier."]
+        #[doc = "* `account_resource_name`: The name of the Visual Studio Team Services account resource."]
+        #[doc = "* `extension_resource_name`: The name of the extension."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -897,6 +970,12 @@ pub mod projects {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Projects_ListByResourceGroup"]
+        #[doc = "Gets all Visual Studio Team Services project resources created in the specified Team Services account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `subscription_id`: The Azure subscription identifier."]
+        #[doc = "* `root_resource_name`: Name of the Team Services account."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -911,6 +990,13 @@ pub mod projects {
             }
         }
         #[doc = "Projects_Get"]
+        #[doc = "Gets the details of a Team Services project resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `subscription_id`: The Azure subscription identifier."]
+        #[doc = "* `root_resource_name`: Name of the Team Services account."]
+        #[doc = "* `resource_name`: Name of the Team Services project."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -927,6 +1013,14 @@ pub mod projects {
             }
         }
         #[doc = "Projects_Create"]
+        #[doc = "Creates a Team Services project in the collection with the specified name. 'VersionControlOption' and 'ProcessTemplateId' must be specified in the resource properties. Valid values for VersionControlOption: Git, Tfvc. Valid values for ProcessTemplateId: 6B724908-EF14-45CF-84F8-768B5384DA45, ADCC42AB-9882-485E-A3ED-7678F01F66BC, 27450541-8E31-4150-9947-DC59F998FC01 (these IDs correspond to Scrum, Agile, and CMMI process templates)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `body`: The request data."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `subscription_id`: The Azure subscription identifier."]
+        #[doc = "* `root_resource_name`: Name of the Team Services account."]
+        #[doc = "* `resource_name`: Name of the Team Services project."]
         pub fn create(
             &self,
             body: impl Into<models::ProjectResource>,
@@ -946,6 +1040,14 @@ pub mod projects {
             }
         }
         #[doc = "Projects_Update"]
+        #[doc = "Updates the tags of the specified Team Services project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `subscription_id`: The Azure subscription identifier."]
+        #[doc = "* `body`: The request data."]
+        #[doc = "* `root_resource_name`: Name of the Team Services account."]
+        #[doc = "* `resource_name`: Name of the Team Services project."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -964,6 +1066,15 @@ pub mod projects {
             }
         }
         #[doc = "Projects_GetJobStatus"]
+        #[doc = "Gets the status of the project resource creation job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `subscription_id`: The Azure subscription identifier."]
+        #[doc = "* `root_resource_name`: Name of the Team Services account."]
+        #[doc = "* `resource_name`: Name of the Team Services project."]
+        #[doc = "* `sub_container_name`: This parameter should be set to the resourceName."]
+        #[doc = "* `operation`: The operation type. The only supported value is 'put'."]
         pub fn get_job_status(
             &self,
             resource_group_name: impl Into<String>,

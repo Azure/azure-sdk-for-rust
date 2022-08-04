@@ -115,6 +115,11 @@ pub mod policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the protection policies within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -122,6 +127,12 @@ pub mod policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve protection policy with specified name within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `policy_name`: The name of the Web Application Firewall Policy."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -135,6 +146,13 @@ pub mod policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update policy with specified rule set name within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `policy_name`: The name of the Web Application Firewall Policy."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `parameters`: Policy to be created."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -150,6 +168,13 @@ pub mod policies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Patch a specific frontdoor webApplicationFirewall policy for tags update under the specified subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `policy_name`: The name of the Web Application Firewall Policy."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `parameters`: FrontdoorWebApplicationFirewallPolicy parameters to be patched."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -165,6 +190,12 @@ pub mod policies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes Policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `policy_name`: The name of the Web Application Firewall Policy."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -493,6 +524,10 @@ pub mod managed_rule_sets {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all available managed rule sets."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -579,6 +614,10 @@ pub mod front_door_name_availability {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Check the availability of a Front Door resource name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `check_front_door_name_availability_input`: Input to check."]
         pub fn check(&self, check_front_door_name_availability_input: impl Into<models::CheckNameAvailabilityInput>) -> check::Builder {
             check::Builder {
                 client: self.0.clone(),
@@ -639,6 +678,11 @@ pub mod front_door_name_availability_with_subscription {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Check the availability of a Front Door subdomain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `check_front_door_name_availability_input`: Input to check."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check(
             &self,
             check_front_door_name_availability_input: impl Into<models::CheckNameAvailabilityInput>,
@@ -706,12 +750,21 @@ pub mod front_doors {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the Front Doors within an Azure subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all of the Front Doors within a resource group under a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -723,6 +776,12 @@ pub mod front_doors {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets a Front Door with the specified Front Door name under the specified subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `front_door_name`: Name of the Front Door which is globally unique."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -736,6 +795,13 @@ pub mod front_doors {
                 front_door_name: front_door_name.into(),
             }
         }
+        #[doc = "Creates a new Front Door with a Front Door name under the specified subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `front_door_name`: Name of the Front Door which is globally unique."]
+        #[doc = "* `front_door_parameters`: Front Door properties needed to create a new Front Door."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -751,6 +817,12 @@ pub mod front_doors {
                 front_door_parameters: front_door_parameters.into(),
             }
         }
+        #[doc = "Deletes an existing Front Door with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `front_door_name`: Name of the Front Door which is globally unique."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -764,6 +836,13 @@ pub mod front_doors {
                 front_door_name: front_door_name.into(),
             }
         }
+        #[doc = "Validates the custom domain mapping to ensure it maps to the correct Front Door endpoint in DNS."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `front_door_name`: Name of the Front Door which is globally unique."]
+        #[doc = "* `custom_domain_properties`: Custom domain to be validated."]
         pub fn validate_custom_domain(
             &self,
             subscription_id: impl Into<String>,
@@ -1165,6 +1244,12 @@ pub mod frontend_endpoints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the frontend endpoints within a Front Door."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `front_door_name`: Name of the Front Door which is globally unique."]
         pub fn list_by_front_door(
             &self,
             subscription_id: impl Into<String>,
@@ -1178,6 +1263,13 @@ pub mod frontend_endpoints {
                 front_door_name: front_door_name.into(),
             }
         }
+        #[doc = "Gets a Frontend endpoint with the specified name within the specified Front Door."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `front_door_name`: Name of the Front Door which is globally unique."]
+        #[doc = "* `frontend_endpoint_name`: Name of the Frontend endpoint which is unique within the Front Door."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1193,6 +1285,14 @@ pub mod frontend_endpoints {
                 frontend_endpoint_name: frontend_endpoint_name.into(),
             }
         }
+        #[doc = "Enables a frontendEndpoint for HTTPS traffic"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `front_door_name`: Name of the Front Door which is globally unique."]
+        #[doc = "* `frontend_endpoint_name`: Name of the Frontend endpoint which is unique within the Front Door."]
+        #[doc = "* `custom_https_configuration`: The configuration specifying how to enable HTTPS"]
         pub fn enable_https(
             &self,
             subscription_id: impl Into<String>,
@@ -1210,6 +1310,13 @@ pub mod frontend_endpoints {
                 custom_https_configuration: custom_https_configuration.into(),
             }
         }
+        #[doc = "Disables a frontendEndpoint for HTTPS traffic"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `front_door_name`: Name of the Front Door which is globally unique."]
+        #[doc = "* `frontend_endpoint_name`: Name of the Frontend endpoint which is unique within the Front Door."]
         pub fn disable_https(
             &self,
             subscription_id: impl Into<String>,
@@ -1464,6 +1571,13 @@ pub mod endpoints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Removes a content from Front Door."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `front_door_name`: Name of the Front Door which is globally unique."]
+        #[doc = "* `content_file_paths`: The path to the content to be purged. Path can be a full URL, e.g. '/pictures/city.png' which removes a single file, or a directory with a wildcard, e.g. '/pictures/*' which removes all folders and files in the directory."]
         pub fn purge_content(
             &self,
             subscription_id: impl Into<String>,
@@ -1541,6 +1655,12 @@ pub mod rules_engines {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the Rules Engine Configurations within a Front Door."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `front_door_name`: Name of the Front Door which is globally unique."]
         pub fn list_by_front_door(
             &self,
             subscription_id: impl Into<String>,
@@ -1554,6 +1674,13 @@ pub mod rules_engines {
                 front_door_name: front_door_name.into(),
             }
         }
+        #[doc = "Gets a Rules Engine Configuration with the specified name within the specified Front Door."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `front_door_name`: Name of the Front Door which is globally unique."]
+        #[doc = "* `rules_engine_name`: Name of the Rules Engine which is unique within the Front Door."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1569,6 +1696,14 @@ pub mod rules_engines {
                 rules_engine_name: rules_engine_name.into(),
             }
         }
+        #[doc = "Creates a new Rules Engine Configuration with the specified name within the specified Front Door."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `front_door_name`: Name of the Front Door which is globally unique."]
+        #[doc = "* `rules_engine_name`: Name of the Rules Engine which is unique within the Front Door."]
+        #[doc = "* `rules_engine_parameters`: Rules Engine Configuration properties needed to create a new Rules Engine Configuration."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1586,6 +1721,13 @@ pub mod rules_engines {
                 rules_engine_parameters: rules_engine_parameters.into(),
             }
         }
+        #[doc = "Deletes an existing Rules Engine Configuration with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `front_door_name`: Name of the Front Door which is globally unique."]
+        #[doc = "* `rules_engine_name`: Name of the Rules Engine which is unique within the Front Door."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1868,6 +2010,9 @@ pub mod network_experiment_profiles {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of Network Experiment Profiles under a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1875,6 +2020,10 @@ pub mod network_experiment_profiles {
             }
         }
         #[doc = "Gets a list of Network Experiment Profiles within a resource group under a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1887,6 +2036,11 @@ pub mod network_experiment_profiles {
             }
         }
         #[doc = "Gets an NetworkExperiment Profile by ProfileName"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: The Profile identifier associated with the Tenant and Partner"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1901,6 +2055,12 @@ pub mod network_experiment_profiles {
             }
         }
         #[doc = "Creates an NetworkExperiment Profile"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `profile_name`: The Profile identifier associated with the Tenant and Partner"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `parameters`: An Network Experiment Profile"]
         pub fn create_or_update(
             &self,
             profile_name: impl Into<String>,
@@ -1917,6 +2077,13 @@ pub mod network_experiment_profiles {
             }
         }
         #[doc = "Updates an NetworkExperimentProfiles by NetworkExperimentProfile name"]
+        #[doc = "Updates an NetworkExperimentProfiles"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: The Profile identifier associated with the Tenant and Partner"]
+        #[doc = "* `parameters`: The Profile Update Model"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1933,6 +2100,11 @@ pub mod network_experiment_profiles {
             }
         }
         #[doc = "Deletes an NetworkExperiment Profile by ProfileName"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: The Profile identifier associated with the Tenant and Partner"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2345,6 +2517,11 @@ pub mod preconfigured_endpoints {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of Preconfigured Endpoints"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: The Profile identifier associated with the Tenant and Partner"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2437,6 +2614,11 @@ pub mod experiments {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of Experiments"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: The Profile identifier associated with the Tenant and Partner"]
         pub fn list_by_profile(
             &self,
             subscription_id: impl Into<String>,
@@ -2451,6 +2633,12 @@ pub mod experiments {
             }
         }
         #[doc = "Gets an Experiment by ExperimentName"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: The Profile identifier associated with the Tenant and Partner"]
+        #[doc = "* `experiment_name`: The Experiment identifier associated with the Experiment"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2467,6 +2655,13 @@ pub mod experiments {
             }
         }
         #[doc = "Creates or updates an Experiment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: The Profile identifier associated with the Tenant and Partner"]
+        #[doc = "* `experiment_name`: The Experiment identifier associated with the Experiment"]
+        #[doc = "* `parameters`: The Experiment resource"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2485,6 +2680,14 @@ pub mod experiments {
             }
         }
         #[doc = "Updates an Experiment by Experiment id"]
+        #[doc = "Updates an Experiment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: The Profile identifier associated with the Tenant and Partner"]
+        #[doc = "* `experiment_name`: The Experiment identifier associated with the Experiment"]
+        #[doc = "* `parameters`: The Experiment Update Model"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2503,6 +2706,12 @@ pub mod experiments {
             }
         }
         #[doc = "Deletes an Experiment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: The Profile identifier associated with the Tenant and Partner"]
+        #[doc = "* `experiment_name`: The Experiment identifier associated with the Experiment"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2853,6 +3062,13 @@ pub mod reports {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a Latency Scorecard for a given Experiment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: The Profile identifier associated with the Tenant and Partner"]
+        #[doc = "* `experiment_name`: The Experiment identifier associated with the Experiment"]
+        #[doc = "* `aggregation_interval`: The aggregation interval of the Latency Scorecard"]
         pub fn get_latency_scorecards(
             &self,
             subscription_id: impl Into<String>,
@@ -2873,6 +3089,16 @@ pub mod reports {
             }
         }
         #[doc = "Gets a Timeseries for a given Experiment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: The Profile identifier associated with the Tenant and Partner"]
+        #[doc = "* `experiment_name`: The Experiment identifier associated with the Experiment"]
+        #[doc = "* `start_date_time_utc`: The start DateTime of the Timeseries in UTC"]
+        #[doc = "* `end_date_time_utc`: The end DateTime of the Timeseries in UTC"]
+        #[doc = "* `aggregation_interval`: The aggregation interval of the Timeseries"]
+        #[doc = "* `timeseries_type`: The type of Timeseries"]
         pub fn get_timeseries(
             &self,
             subscription_id: impl Into<String>,

@@ -97,6 +97,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Microsoft.Education API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -149,12 +150,18 @@ pub mod grants {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of grants that Microsoft has provided."]
         pub fn list_all(&self) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
                 include_allocated_budget: None,
             }
         }
+        #[doc = "Get details for a specific grant linked to the provided billing account and billing profile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: Billing account name."]
+        #[doc = "* `billing_profile_name`: Billing profile name."]
         pub fn list(&self, billing_account_name: impl Into<String>, billing_profile_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -163,6 +170,11 @@ pub mod grants {
                 include_allocated_budget: None,
             }
         }
+        #[doc = "Get details for a specific grant linked to the provided billing account and billing profile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: Billing account name."]
+        #[doc = "* `billing_profile_name`: Billing profile name."]
         pub fn get(&self, billing_account_name: impl Into<String>, billing_profile_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -397,6 +409,11 @@ pub mod labs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of labs associated with the provided billing account name and billing profile name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: Billing account name."]
+        #[doc = "* `billing_profile_name`: Billing profile name."]
         pub fn list_all(&self, billing_account_name: impl Into<String>, billing_profile_name: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
@@ -406,6 +423,12 @@ pub mod labs {
                 include_deleted: None,
             }
         }
+        #[doc = "Get the details for a specific lab associated with the provided billing account name, billing profile name, and invoice section name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: Billing account name."]
+        #[doc = "* `billing_profile_name`: Billing profile name."]
+        #[doc = "* `invoice_section_name`: Invoice section name."]
         pub fn list(
             &self,
             billing_account_name: impl Into<String>,
@@ -420,6 +443,12 @@ pub mod labs {
                 include_budget: None,
             }
         }
+        #[doc = "Get the details for a specific lab associated with the provided billing account name, billing profile name, and invoice section name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: Billing account name."]
+        #[doc = "* `billing_profile_name`: Billing profile name."]
+        #[doc = "* `invoice_section_name`: Invoice section name."]
         pub fn get(
             &self,
             billing_account_name: impl Into<String>,
@@ -434,6 +463,13 @@ pub mod labs {
                 include_budget: None,
             }
         }
+        #[doc = "Create a new lab or update a previously created lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: Billing account name."]
+        #[doc = "* `billing_profile_name`: Billing profile name."]
+        #[doc = "* `invoice_section_name`: Invoice section name."]
+        #[doc = "* `parameters`: Request parameters that are provided to create lab resource."]
         pub fn create_or_update(
             &self,
             billing_account_name: impl Into<String>,
@@ -449,6 +485,12 @@ pub mod labs {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a specific lab associated with the provided billing account name, billing profile name, and invoice section name. Note all students must be removed from the lab in order to delete the lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: Billing account name."]
+        #[doc = "* `billing_profile_name`: Billing profile name."]
+        #[doc = "* `invoice_section_name`: Invoice section name."]
         pub fn delete(
             &self,
             billing_account_name: impl Into<String>,
@@ -462,6 +504,13 @@ pub mod labs {
                 invoice_section_name: invoice_section_name.into(),
             }
         }
+        #[doc = "Generate invite code for a lab"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: Billing account name."]
+        #[doc = "* `billing_profile_name`: Billing profile name."]
+        #[doc = "* `invoice_section_name`: Invoice section name."]
+        #[doc = "* `parameters`: Request parameters that are provided to generate invite code."]
         pub fn generate_invite_code(
             &self,
             billing_account_name: impl Into<String>,
@@ -880,6 +929,12 @@ pub mod join_requests {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "get student join requests"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: Billing account name."]
+        #[doc = "* `billing_profile_name`: Billing profile name."]
+        #[doc = "* `invoice_section_name`: Invoice section name."]
         pub fn list(
             &self,
             billing_account_name: impl Into<String>,
@@ -894,6 +949,13 @@ pub mod join_requests {
                 include_denied: None,
             }
         }
+        #[doc = "get student join requests"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: Billing account name."]
+        #[doc = "* `billing_profile_name`: Billing profile name."]
+        #[doc = "* `invoice_section_name`: Invoice section name."]
+        #[doc = "* `join_request_name`: Join name"]
         pub fn get(
             &self,
             billing_account_name: impl Into<String>,
@@ -909,6 +971,13 @@ pub mod join_requests {
                 join_request_name: join_request_name.into(),
             }
         }
+        #[doc = "Approve student joining the redeemable lab"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: Billing account name."]
+        #[doc = "* `billing_profile_name`: Billing profile name."]
+        #[doc = "* `invoice_section_name`: Invoice section name."]
+        #[doc = "* `join_request_name`: Join name"]
         pub fn approve(
             &self,
             billing_account_name: impl Into<String>,
@@ -924,6 +993,13 @@ pub mod join_requests {
                 join_request_name: join_request_name.into(),
             }
         }
+        #[doc = "Deny student joining the redeemable lab"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: Billing account name."]
+        #[doc = "* `billing_profile_name`: Billing profile name."]
+        #[doc = "* `invoice_section_name`: Invoice section name."]
+        #[doc = "* `join_request_name`: Join name"]
         pub fn deny(
             &self,
             billing_account_name: impl Into<String>,
@@ -1159,6 +1235,10 @@ pub mod join_requests {
     }
 }
 impl Client {
+    #[doc = "Redeem invite code to join a redeemable lab"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `parameters`: Request parameters to provide redeem code."]
     pub fn redeem_invitation_code(&self, parameters: impl Into<models::RedeemRequest>) -> redeem_invitation_code::Builder {
         redeem_invitation_code::Builder {
             client: self.clone(),
@@ -1214,6 +1294,12 @@ pub mod students {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of details about students that are associated with the specified lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: Billing account name."]
+        #[doc = "* `billing_profile_name`: Billing profile name."]
+        #[doc = "* `invoice_section_name`: Invoice section name."]
         pub fn list(
             &self,
             billing_account_name: impl Into<String>,
@@ -1228,6 +1314,13 @@ pub mod students {
                 include_deleted: None,
             }
         }
+        #[doc = "Get the details for a specific student in the specified lab by student alias"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: Billing account name."]
+        #[doc = "* `billing_profile_name`: Billing profile name."]
+        #[doc = "* `invoice_section_name`: Invoice section name."]
+        #[doc = "* `student_alias`: Student alias."]
         pub fn get(
             &self,
             billing_account_name: impl Into<String>,
@@ -1243,6 +1336,14 @@ pub mod students {
                 student_alias: student_alias.into(),
             }
         }
+        #[doc = "Create and add a new student to the specified lab or update the details of an existing student in a lab. Note the student must have a valid tenant to accept the lab after they have been added to lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: Billing account name."]
+        #[doc = "* `billing_profile_name`: Billing profile name."]
+        #[doc = "* `invoice_section_name`: Invoice section name."]
+        #[doc = "* `student_alias`: Student alias."]
+        #[doc = "* `parameters`: Request parameters that are provided to update student properties."]
         pub fn create_or_update(
             &self,
             billing_account_name: impl Into<String>,
@@ -1260,6 +1361,13 @@ pub mod students {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete the specified student based on the student alias."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: Billing account name."]
+        #[doc = "* `billing_profile_name`: Billing profile name."]
+        #[doc = "* `invoice_section_name`: Invoice section name."]
+        #[doc = "* `student_alias`: Student alias."]
         pub fn delete(
             &self,
             billing_account_name: impl Into<String>,
@@ -1516,9 +1624,14 @@ pub mod student_labs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of all labs associated with the caller of the API."]
         pub fn list_all(&self) -> list_all::Builder {
             list_all::Builder { client: self.0.clone() }
         }
+        #[doc = "Get the details for a specified lab associated with the student lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `student_lab_name`: Student lab name."]
         pub fn get(&self, student_lab_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),

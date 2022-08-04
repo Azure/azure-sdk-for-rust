@@ -82,36 +82,61 @@ pub mod job {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets statistics of the specified job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_identity`: JobInfo ID."]
         pub fn get_statistics(&self, job_identity: impl Into<String>) -> get_statistics::Builder {
             get_statistics::Builder {
                 client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
         }
+        #[doc = "Gets the U-SQL job debug data information specified by the job ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_identity`: JobInfo ID."]
         pub fn get_debug_data_path(&self, job_identity: impl Into<String>) -> get_debug_data_path::Builder {
             get_debug_data_path::Builder {
                 client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
         }
+        #[doc = "Builds (compiles) the specified job in the specified Data Lake Analytics account for job correctness and validation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: The parameters to build a job."]
         pub fn build(&self, parameters: impl Into<models::JobInformation>) -> build::Builder {
             build::Builder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Cancels the running job specified by the job ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_identity`: JobInfo ID to cancel."]
         pub fn cancel(&self, job_identity: impl Into<String>) -> cancel::Builder {
             cancel::Builder {
                 client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
         }
+        #[doc = "Gets the job information for the specified job ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_identity`: JobInfo ID."]
         pub fn get(&self, job_identity: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
         }
+        #[doc = "Submits a job to the specified Data Lake Analytics account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_identity`: The job ID (a GUID) for the job being submitted."]
+        #[doc = "* `parameters`: The parameters to submit a job."]
         pub fn create(&self, job_identity: impl Into<String>, parameters: impl Into<models::JobInformation>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -119,6 +144,7 @@ pub mod job {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Lists the jobs, if any, associated with the specified Data Lake Analytics account. The response includes a link to the next page of results, if any."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

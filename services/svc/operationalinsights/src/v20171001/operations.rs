@@ -86,6 +86,14 @@ pub mod query {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Execute an Analytics query"]
+        #[doc = "Executes an Analytics query for data"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group to get. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of the Log Analytics workspace."]
+        #[doc = "* `query`: The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)"]
+        #[doc = "* `api_version`: Client API version."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -105,6 +113,14 @@ pub mod query {
             }
         }
         #[doc = "Execute an Analytics query"]
+        #[doc = "Executes an Analytics query for data. [Here](https://dev.loganalytics.io/documentation/Using-the-API) is an example for using POST with an Analytics query."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group to get. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of the Log Analytics workspace."]
+        #[doc = "* `body`: The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)"]
+        #[doc = "* `api_version`: Client API version."]
         pub fn execute(
             &self,
             subscription_id: impl Into<String>,
@@ -246,6 +262,13 @@ pub mod metadata {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets metadata information"]
+        #[doc = "Retrieve the metadata information for the workspace, including its schema, functions, workspace info, categories etc."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group to get. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of the Log Analytics workspace."]
+        #[doc = "* `api_version`: Client API version."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -262,6 +285,13 @@ pub mod metadata {
             }
         }
         #[doc = "Gets metadata information"]
+        #[doc = "Retrieve the metadata information for the workspace, including its schema, functions, workspace info, categories etc."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group to get. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of the Log Analytics workspace."]
+        #[doc = "* `api_version`: Client API version."]
         pub fn post(
             &self,
             subscription_id: impl Into<String>,

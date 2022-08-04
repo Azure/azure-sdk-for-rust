@@ -121,6 +121,9 @@ impl Client {
         }
     }
     #[doc = "Gets a single key-value."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key`: The key of the key-value to retrieve."]
     pub fn get_key_value(&self, key: impl Into<String>) -> get_key_value::Builder {
         get_key_value::Builder {
             client: self.clone(),
@@ -134,6 +137,9 @@ impl Client {
         }
     }
     #[doc = "Creates a key-value."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key`: The key of the key-value to create."]
     pub fn put_key_value(&self, key: impl Into<String>) -> put_key_value::Builder {
         put_key_value::Builder {
             client: self.clone(),
@@ -146,6 +152,9 @@ impl Client {
         }
     }
     #[doc = "Deletes a key-value."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key`: The key of the key-value to delete."]
     pub fn delete_key_value(&self, key: impl Into<String>) -> delete_key_value::Builder {
         delete_key_value::Builder {
             client: self.clone(),
@@ -156,6 +165,9 @@ impl Client {
         }
     }
     #[doc = "Requests the headers and status of the given resource."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key`: The key of the key-value to retrieve."]
     pub fn check_key_value(&self, key: impl Into<String>) -> check_key_value::Builder {
         check_key_value::Builder {
             client: self.clone(),
@@ -191,6 +203,9 @@ impl Client {
         }
     }
     #[doc = "Locks a key-value."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key`: The key of the key-value to lock."]
     pub fn put_lock(&self, key: impl Into<String>) -> put_lock::Builder {
         put_lock::Builder {
             client: self.clone(),
@@ -202,6 +217,9 @@ impl Client {
         }
     }
     #[doc = "Unlocks a key-value."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key`: The key of the key-value to unlock."]
     pub fn delete_lock(&self, key: impl Into<String>) -> delete_lock::Builder {
         delete_lock::Builder {
             client: self.clone(),

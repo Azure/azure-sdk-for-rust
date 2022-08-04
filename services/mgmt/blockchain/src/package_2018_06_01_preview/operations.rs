@@ -97,6 +97,12 @@ pub mod blockchain_members {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get details about a blockchain member."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `blockchain_member_name`: Blockchain member name."]
+        #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn get(
             &self,
             blockchain_member_name: impl Into<String>,
@@ -110,6 +116,12 @@ pub mod blockchain_members {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Create a blockchain member."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `blockchain_member_name`: Blockchain member name."]
+        #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn create(
             &self,
             blockchain_member_name: impl Into<String>,
@@ -124,6 +136,12 @@ pub mod blockchain_members {
                 blockchain_member: None,
             }
         }
+        #[doc = "Update a blockchain member."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `blockchain_member_name`: Blockchain member name."]
+        #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn update(
             &self,
             blockchain_member_name: impl Into<String>,
@@ -138,6 +156,12 @@ pub mod blockchain_members {
                 blockchain_member: None,
             }
         }
+        #[doc = "Delete a blockchain member."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `blockchain_member_name`: Blockchain member name"]
+        #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn delete(
             &self,
             blockchain_member_name: impl Into<String>,
@@ -151,6 +175,11 @@ pub mod blockchain_members {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists the blockchain members for a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -158,12 +187,22 @@ pub mod blockchain_members {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists the blockchain members for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the consortium members for a blockchain member."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `blockchain_member_name`: Blockchain member name."]
+        #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn list_consortium_members(
             &self,
             blockchain_member_name: impl Into<String>,
@@ -177,6 +216,12 @@ pub mod blockchain_members {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists the API keys for a blockchain member."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `blockchain_member_name`: Blockchain member name."]
+        #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn list_api_keys(
             &self,
             blockchain_member_name: impl Into<String>,
@@ -190,6 +235,12 @@ pub mod blockchain_members {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Regenerate the API keys for a blockchain member."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `blockchain_member_name`: Blockchain member name."]
+        #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn list_regenerate_api_keys(
             &self,
             blockchain_member_name: impl Into<String>,
@@ -793,6 +844,12 @@ pub mod blockchain_member_operation_results {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Async operation result."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: Location name."]
+        #[doc = "* `operation_id`: Operation Id."]
+        #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
         pub fn get(
             &self,
             location_name: impl Into<String>,
@@ -869,6 +926,11 @@ pub mod locations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "To check whether a resource name is available."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: Location Name."]
+        #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
         pub fn check_name_availability(
             &self,
             location_name: impl Into<String>,
@@ -881,6 +943,11 @@ pub mod locations {
                 name_availability_request: None,
             }
         }
+        #[doc = "Lists the available consortiums for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: Location Name."]
+        #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
         pub fn list_consortiums(&self, location_name: impl Into<String>, subscription_id: impl Into<String>) -> list_consortiums::Builder {
             list_consortiums::Builder {
                 client: self.0.clone(),
@@ -1005,6 +1072,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the available operations of Microsoft.Blockchain resource provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1084,6 +1152,10 @@ pub mod skus {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the Skus of the resource type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1144,6 +1216,13 @@ pub mod transaction_nodes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the details of the transaction node."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `blockchain_member_name`: Blockchain member name."]
+        #[doc = "* `transaction_node_name`: Transaction node name."]
+        #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn get(
             &self,
             blockchain_member_name: impl Into<String>,
@@ -1159,6 +1238,13 @@ pub mod transaction_nodes {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Create or update the transaction node."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `blockchain_member_name`: Blockchain member name."]
+        #[doc = "* `transaction_node_name`: Transaction node name."]
+        #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn create(
             &self,
             blockchain_member_name: impl Into<String>,
@@ -1175,6 +1261,13 @@ pub mod transaction_nodes {
                 transaction_node: None,
             }
         }
+        #[doc = "Update the transaction node."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `blockchain_member_name`: Blockchain member name."]
+        #[doc = "* `transaction_node_name`: Transaction node name."]
+        #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn update(
             &self,
             blockchain_member_name: impl Into<String>,
@@ -1191,6 +1284,13 @@ pub mod transaction_nodes {
                 transaction_node: None,
             }
         }
+        #[doc = "Delete the transaction node."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `blockchain_member_name`: Blockchain member name."]
+        #[doc = "* `transaction_node_name`: Transaction node name."]
+        #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn delete(
             &self,
             blockchain_member_name: impl Into<String>,
@@ -1206,6 +1306,12 @@ pub mod transaction_nodes {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists the transaction nodes for a blockchain member."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `blockchain_member_name`: Blockchain member name."]
+        #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn list(
             &self,
             blockchain_member_name: impl Into<String>,
@@ -1219,6 +1325,13 @@ pub mod transaction_nodes {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "List the API keys for the transaction node."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `blockchain_member_name`: Blockchain member name."]
+        #[doc = "* `transaction_node_name`: Transaction node name."]
+        #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn list_api_keys(
             &self,
             blockchain_member_name: impl Into<String>,
@@ -1234,6 +1347,13 @@ pub mod transaction_nodes {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Regenerate the API keys for the blockchain member."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `blockchain_member_name`: Blockchain member name."]
+        #[doc = "* `transaction_node_name`: Transaction node name."]
+        #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn list_regenerate_api_keys(
             &self,
             blockchain_member_name: impl Into<String>,

@@ -100,6 +100,12 @@ pub mod custom_rollouts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the custom rollout details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `rollout_name`: The rollout name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -113,6 +119,13 @@ pub mod custom_rollouts {
                 rollout_name: rollout_name.into(),
             }
         }
+        #[doc = "Creates or updates the rollout details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `rollout_name`: The rollout name."]
+        #[doc = "* `properties`: The custom rollout properties supplied to the CreateOrUpdate operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -128,6 +141,11 @@ pub mod custom_rollouts {
                 properties: properties.into(),
             }
         }
+        #[doc = "Gets the list of the custom rollouts for the given provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
         pub fn list_by_provider_registration(
             &self,
             subscription_id: impl Into<String>,
@@ -327,6 +345,12 @@ pub mod default_rollouts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the default rollout details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `rollout_name`: The rollout name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -340,6 +364,13 @@ pub mod default_rollouts {
                 rollout_name: rollout_name.into(),
             }
         }
+        #[doc = "Creates or updates the rollout details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `rollout_name`: The rollout name."]
+        #[doc = "* `properties`: The Default rollout properties supplied to the CreateOrUpdate operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -355,6 +386,12 @@ pub mod default_rollouts {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes the rollout resource. Rollout must be in terminal state."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `rollout_name`: The rollout name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -368,6 +405,11 @@ pub mod default_rollouts {
                 rollout_name: rollout_name.into(),
             }
         }
+        #[doc = "Gets the list of the rollouts for the given provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
         pub fn list_by_provider_registration(
             &self,
             subscription_id: impl Into<String>,
@@ -379,6 +421,12 @@ pub mod default_rollouts {
                 provider_namespace: provider_namespace.into(),
             }
         }
+        #[doc = "Stops or cancels the rollout, if in progress."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `rollout_name`: The rollout name."]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -689,6 +737,11 @@ pub mod default_rollouts {
     }
 }
 impl Client {
+    #[doc = "Generates the manifest for the given provider."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
     pub fn generate_manifest(
         &self,
         subscription_id: impl Into<String>,
@@ -700,6 +753,12 @@ impl Client {
             provider_namespace: provider_namespace.into(),
         }
     }
+    #[doc = "Checkin the manifest."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+    #[doc = "* `checkin_manifest_params`: The required body parameters supplied to the checkin manifest operation."]
     pub fn checkin_manifest(
         &self,
         subscription_id: impl Into<String>,
@@ -821,6 +880,12 @@ pub mod notification_registrations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the notification registration details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `notification_registration_name`: The notification registration."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -834,6 +899,13 @@ pub mod notification_registrations {
                 notification_registration_name: notification_registration_name.into(),
             }
         }
+        #[doc = "Creates or updates a notification registration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `notification_registration_name`: The notification registration."]
+        #[doc = "* `properties`: The required body parameters supplied to the notification registration operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -849,6 +921,12 @@ pub mod notification_registrations {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes a notification registration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `notification_registration_name`: The notification registration."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -862,6 +940,11 @@ pub mod notification_registrations {
                 notification_registration_name: notification_registration_name.into(),
             }
         }
+        #[doc = "Gets the list of the notification registrations for the given provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
         pub fn list_by_provider_registration(
             &self,
             subscription_id: impl Into<String>,
@@ -1115,9 +1198,15 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the operations supported by Microsoft.ProviderHub."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
+        #[doc = "Gets the operations supported by the given provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
         pub fn list_by_provider_registration(
             &self,
             subscription_id: impl Into<String>,
@@ -1129,6 +1218,12 @@ pub mod operations {
                 provider_namespace: provider_namespace.into(),
             }
         }
+        #[doc = "Creates or updates the operation supported by the given provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `operations_put_content`: The operations content properties supplied to the CreateOrUpdate operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1142,6 +1237,11 @@ pub mod operations {
                 operations_put_content: operations_put_content.into(),
             }
         }
+        #[doc = "Deletes an operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
         pub fn delete(&self, subscription_id: impl Into<String>, provider_namespace: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1369,6 +1469,11 @@ pub mod provider_registrations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the provider registration details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
         pub fn get(&self, subscription_id: impl Into<String>, provider_namespace: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1376,6 +1481,12 @@ pub mod provider_registrations {
                 provider_namespace: provider_namespace.into(),
             }
         }
+        #[doc = "Creates or updates the provider registration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `properties`: The provider registration properties supplied to the CreateOrUpdate operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1389,6 +1500,11 @@ pub mod provider_registrations {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes a provider registration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
         pub fn delete(&self, subscription_id: impl Into<String>, provider_namespace: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1396,12 +1512,21 @@ pub mod provider_registrations {
                 provider_namespace: provider_namespace.into(),
             }
         }
+        #[doc = "Gets the list of the provider registrations in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Generates the operations api for the given provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
         pub fn generate_operations(
             &self,
             subscription_id: impl Into<String>,
@@ -1704,6 +1829,12 @@ pub mod resource_type_registrations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a resource type details in the given subscription and provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `resource_type`: The resource type."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1717,6 +1848,13 @@ pub mod resource_type_registrations {
                 resource_type: resource_type.into(),
             }
         }
+        #[doc = "Creates or updates a resource type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `resource_type`: The resource type."]
+        #[doc = "* `properties`: The required request body parameters supplied to the resource type registration CreateOrUpdate operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1732,6 +1870,12 @@ pub mod resource_type_registrations {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes a resource type"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `resource_type`: The resource type."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1745,6 +1889,11 @@ pub mod resource_type_registrations {
                 resource_type: resource_type.into(),
             }
         }
+        #[doc = "Gets the list of the resource types for the given provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
         pub fn list_by_provider_registration(
             &self,
             subscription_id: impl Into<String>,
@@ -2008,6 +2157,13 @@ pub mod skus {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the sku details for the given resource type and sku name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `resource_type`: The resource type."]
+        #[doc = "* `sku`: The SKU."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2023,6 +2179,14 @@ pub mod skus {
                 sku: sku.into(),
             }
         }
+        #[doc = "Creates or updates the resource type skus in the given resource type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `resource_type`: The resource type."]
+        #[doc = "* `sku`: The SKU."]
+        #[doc = "* `properties`: The required body parameters supplied to the resource sku operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2040,6 +2204,13 @@ pub mod skus {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes a resource type sku."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `resource_type`: The resource type."]
+        #[doc = "* `sku`: The SKU."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2055,6 +2226,14 @@ pub mod skus {
                 sku: sku.into(),
             }
         }
+        #[doc = "Gets the sku details for the given resource type and sku name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `resource_type`: The resource type."]
+        #[doc = "* `nested_resource_type_first`: The first child resource type."]
+        #[doc = "* `sku`: The SKU."]
         pub fn get_nested_resource_type_first(
             &self,
             subscription_id: impl Into<String>,
@@ -2072,6 +2251,15 @@ pub mod skus {
                 sku: sku.into(),
             }
         }
+        #[doc = "Creates or updates the resource type skus in the given resource type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `resource_type`: The resource type."]
+        #[doc = "* `nested_resource_type_first`: The first child resource type."]
+        #[doc = "* `sku`: The SKU."]
+        #[doc = "* `properties`: The required body parameters supplied to the resource sku operation."]
         pub fn create_or_update_nested_resource_type_first(
             &self,
             subscription_id: impl Into<String>,
@@ -2091,6 +2279,14 @@ pub mod skus {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes a resource type sku."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `resource_type`: The resource type."]
+        #[doc = "* `nested_resource_type_first`: The first child resource type."]
+        #[doc = "* `sku`: The SKU."]
         pub fn delete_nested_resource_type_first(
             &self,
             subscription_id: impl Into<String>,
@@ -2108,6 +2304,15 @@ pub mod skus {
                 sku: sku.into(),
             }
         }
+        #[doc = "Gets the sku details for the given resource type and sku name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `resource_type`: The resource type."]
+        #[doc = "* `nested_resource_type_first`: The first child resource type."]
+        #[doc = "* `nested_resource_type_second`: The second child resource type."]
+        #[doc = "* `sku`: The SKU."]
         pub fn get_nested_resource_type_second(
             &self,
             subscription_id: impl Into<String>,
@@ -2127,6 +2332,16 @@ pub mod skus {
                 sku: sku.into(),
             }
         }
+        #[doc = "Creates or updates the resource type skus in the given resource type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `resource_type`: The resource type."]
+        #[doc = "* `nested_resource_type_first`: The first child resource type."]
+        #[doc = "* `nested_resource_type_second`: The second child resource type."]
+        #[doc = "* `sku`: The SKU."]
+        #[doc = "* `properties`: The required body parameters supplied to the resource sku operation."]
         pub fn create_or_update_nested_resource_type_second(
             &self,
             subscription_id: impl Into<String>,
@@ -2148,6 +2363,15 @@ pub mod skus {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes a resource type sku."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `resource_type`: The resource type."]
+        #[doc = "* `nested_resource_type_first`: The first child resource type."]
+        #[doc = "* `nested_resource_type_second`: The second child resource type."]
+        #[doc = "* `sku`: The SKU."]
         pub fn delete_nested_resource_type_second(
             &self,
             subscription_id: impl Into<String>,
@@ -2167,6 +2391,16 @@ pub mod skus {
                 sku: sku.into(),
             }
         }
+        #[doc = "Gets the sku details for the given resource type and sku name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `resource_type`: The resource type."]
+        #[doc = "* `nested_resource_type_first`: The first child resource type."]
+        #[doc = "* `nested_resource_type_second`: The second child resource type."]
+        #[doc = "* `nested_resource_type_third`: The third child resource type."]
+        #[doc = "* `sku`: The SKU."]
         pub fn get_nested_resource_type_third(
             &self,
             subscription_id: impl Into<String>,
@@ -2188,6 +2422,17 @@ pub mod skus {
                 sku: sku.into(),
             }
         }
+        #[doc = "Creates or updates the resource type skus in the given resource type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `resource_type`: The resource type."]
+        #[doc = "* `nested_resource_type_first`: The first child resource type."]
+        #[doc = "* `nested_resource_type_second`: The second child resource type."]
+        #[doc = "* `nested_resource_type_third`: The third child resource type."]
+        #[doc = "* `sku`: The SKU."]
+        #[doc = "* `properties`: The required body parameters supplied to the resource sku operation."]
         pub fn create_or_update_nested_resource_type_third(
             &self,
             subscription_id: impl Into<String>,
@@ -2211,6 +2456,16 @@ pub mod skus {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes a resource type sku."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `resource_type`: The resource type."]
+        #[doc = "* `nested_resource_type_first`: The first child resource type."]
+        #[doc = "* `nested_resource_type_second`: The second child resource type."]
+        #[doc = "* `nested_resource_type_third`: The third child resource type."]
+        #[doc = "* `sku`: The SKU."]
         pub fn delete_nested_resource_type_third(
             &self,
             subscription_id: impl Into<String>,
@@ -2232,6 +2487,12 @@ pub mod skus {
                 sku: sku.into(),
             }
         }
+        #[doc = "Gets the list of skus for the given resource type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `resource_type`: The resource type."]
         pub fn list_by_resource_type_registrations(
             &self,
             subscription_id: impl Into<String>,
@@ -2245,6 +2506,13 @@ pub mod skus {
                 resource_type: resource_type.into(),
             }
         }
+        #[doc = "Gets the list of skus for the given resource type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `resource_type`: The resource type."]
+        #[doc = "* `nested_resource_type_first`: The first child resource type."]
         pub fn list_by_resource_type_registrations_nested_resource_type_first(
             &self,
             subscription_id: impl Into<String>,
@@ -2260,6 +2528,14 @@ pub mod skus {
                 nested_resource_type_first: nested_resource_type_first.into(),
             }
         }
+        #[doc = "Gets the list of skus for the given resource type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `resource_type`: The resource type."]
+        #[doc = "* `nested_resource_type_first`: The first child resource type."]
+        #[doc = "* `nested_resource_type_second`: The second child resource type."]
         pub fn list_by_resource_type_registrations_nested_resource_type_second(
             &self,
             subscription_id: impl Into<String>,
@@ -2277,6 +2553,15 @@ pub mod skus {
                 nested_resource_type_second: nested_resource_type_second.into(),
             }
         }
+        #[doc = "Gets the list of skus for the given resource type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `provider_namespace`: The name of the resource provider hosted within ProviderHub."]
+        #[doc = "* `resource_type`: The resource type."]
+        #[doc = "* `nested_resource_type_first`: The first child resource type."]
+        #[doc = "* `nested_resource_type_second`: The second child resource type."]
+        #[doc = "* `nested_resource_type_third`: The third child resource type."]
         pub fn list_by_resource_type_registrations_nested_resource_type_third(
             &self,
             subscription_id: impl Into<String>,

@@ -110,6 +110,13 @@ pub mod application_types {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a Service Fabric managed application type name resource."]
+        #[doc = "Get a Service Fabric application type name resource created or in the process of being created in the Service Fabric managed cluster resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `application_type_name`: The name of the application type name resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -126,6 +133,14 @@ pub mod application_types {
             }
         }
         #[doc = "Creates or updates a Service Fabric managed application type name resource."]
+        #[doc = "Create or update a Service Fabric managed application type name resource with the specified name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `application_type_name`: The name of the application type name resource."]
+        #[doc = "* `parameters`: The application type name resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -144,6 +159,14 @@ pub mod application_types {
             }
         }
         #[doc = "Updates the tags of an application type resource of a given managed cluster."]
+        #[doc = "Updates the tags of an application type resource of a given managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `application_type_name`: The name of the application type name resource."]
+        #[doc = "* `parameters`: The application type resource updated tags."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -162,6 +185,13 @@ pub mod application_types {
             }
         }
         #[doc = "Deletes a Service Fabric managed application type name resource."]
+        #[doc = "Delete a Service Fabric managed application type name resource with the specified name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `application_type_name`: The name of the application type name resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -178,6 +208,12 @@ pub mod application_types {
             }
         }
         #[doc = "Gets the list of application type name resources created in the specified Service Fabric managed cluster resource."]
+        #[doc = "Gets all application type name resources created or in the process of being created in the Service Fabric managed cluster resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -472,6 +508,14 @@ pub mod application_type_versions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a Service Fabric managed application type version resource."]
+        #[doc = "Get a Service Fabric managed application type version resource created or in the process of being created in the Service Fabric managed application type name resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `application_type_name`: The name of the application type name resource."]
+        #[doc = "* `version`: The application type version."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -490,6 +534,15 @@ pub mod application_type_versions {
             }
         }
         #[doc = "Creates or updates a Service Fabric managed application type version resource."]
+        #[doc = "Create or update a Service Fabric managed application type version resource with the specified name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `application_type_name`: The name of the application type name resource."]
+        #[doc = "* `version`: The application type version."]
+        #[doc = "* `parameters`: The application type version resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -510,6 +563,15 @@ pub mod application_type_versions {
             }
         }
         #[doc = "Updates the tags of an application type version resource of a given managed cluster."]
+        #[doc = "Updates the tags of an application type version resource of a given managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `application_type_name`: The name of the application type name resource."]
+        #[doc = "* `version`: The application type version."]
+        #[doc = "* `parameters`: The application type version resource updated tags."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -530,6 +592,14 @@ pub mod application_type_versions {
             }
         }
         #[doc = "Deletes a Service Fabric managed application type version resource."]
+        #[doc = "Delete a Service Fabric managed application type version resource with the specified name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `application_type_name`: The name of the application type name resource."]
+        #[doc = "* `version`: The application type version."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -548,6 +618,13 @@ pub mod application_type_versions {
             }
         }
         #[doc = "Gets the list of application type version resources created in the specified Service Fabric managed application type name resource."]
+        #[doc = "Gets all application type version resources created or in the process of being created in the Service Fabric managed application type name resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `application_type_name`: The name of the application type name resource."]
         pub fn list_by_application_types(
             &self,
             subscription_id: impl Into<String>,
@@ -853,6 +930,13 @@ pub mod applications {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a Service Fabric managed application resource."]
+        #[doc = "Get a Service Fabric managed application resource created or in the process of being created in the Service Fabric cluster resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `application_name`: The name of the application resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -869,6 +953,14 @@ pub mod applications {
             }
         }
         #[doc = "Creates or updates a Service Fabric managed application resource."]
+        #[doc = "Create or update a Service Fabric managed application resource with the specified name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `application_name`: The name of the application resource."]
+        #[doc = "* `parameters`: The application resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -887,6 +979,14 @@ pub mod applications {
             }
         }
         #[doc = "Updates the tags of an application resource of a given managed cluster."]
+        #[doc = "Updates the tags of an application resource of a given managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `application_name`: The name of the application resource."]
+        #[doc = "* `parameters`: The application resource updated tags."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -905,6 +1005,13 @@ pub mod applications {
             }
         }
         #[doc = "Deletes a Service Fabric managed application resource."]
+        #[doc = "Delete a Service Fabric managed application resource with the specified name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `application_name`: The name of the application resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -921,6 +1028,12 @@ pub mod applications {
             }
         }
         #[doc = "Gets the list of managed application resources created in the specified Service Fabric cluster resource."]
+        #[doc = "Gets all managed application resources created or in the process of being created in the Service Fabric cluster resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1253,6 +1366,14 @@ pub mod services {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a Service Fabric managed service resource."]
+        #[doc = "Get a Service Fabric service resource created or in the process of being created in the Service Fabric managed application resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `application_name`: The name of the application resource."]
+        #[doc = "* `service_name`: The name of the service resource in the format of {applicationName}~{serviceName}."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1271,6 +1392,15 @@ pub mod services {
             }
         }
         #[doc = "Creates or updates a Service Fabric managed service resource."]
+        #[doc = "Create or update a Service Fabric managed service resource with the specified name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `application_name`: The name of the application resource."]
+        #[doc = "* `service_name`: The name of the service resource in the format of {applicationName}~{serviceName}."]
+        #[doc = "* `parameters`: The service resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1291,6 +1421,15 @@ pub mod services {
             }
         }
         #[doc = "Updates the tags of a service resource of a given managed cluster."]
+        #[doc = "Updates the tags of a service resource of a given managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `application_name`: The name of the application resource."]
+        #[doc = "* `service_name`: The name of the service resource in the format of {applicationName}~{serviceName}."]
+        #[doc = "* `parameters`: The service resource updated tags."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1311,6 +1450,14 @@ pub mod services {
             }
         }
         #[doc = "Deletes a Service Fabric managed service resource."]
+        #[doc = "Delete a Service Fabric managed service resource with the specified name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `application_name`: The name of the application resource."]
+        #[doc = "* `service_name`: The name of the service resource in the format of {applicationName}~{serviceName}."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1329,6 +1476,13 @@ pub mod services {
             }
         }
         #[doc = "Gets the list of service resources created in the specified Service Fabric managed application resource."]
+        #[doc = "Gets all service resources created or in the process of being created in the Service Fabric managed application resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `application_name`: The name of the application resource."]
         pub fn list_by_applications(
             &self,
             subscription_id: impl Into<String>,
@@ -1634,6 +1788,11 @@ pub mod managed_clusters {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of Service Fabric cluster resources created in the specified resource group."]
+        #[doc = "Gets all Service Fabric cluster resources created or in the process of being created in the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -1646,6 +1805,10 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Gets the list of Service Fabric cluster resources created in the specified subscription."]
+        #[doc = "Gets all Service Fabric cluster resources created or in the process of being created in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -1653,6 +1816,12 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Gets a Service Fabric managed cluster resource."]
+        #[doc = "Get a Service Fabric managed cluster resource created or in the process of being created in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1667,6 +1836,13 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Creates or updates a Service Fabric managed cluster resource."]
+        #[doc = "Create or update a Service Fabric managed cluster resource with the specified name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `parameters`: The cluster resource."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1683,6 +1859,13 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Updates the tags of of a Service Fabric managed cluster resource."]
+        #[doc = "Update the tags of of a Service Fabric managed cluster resource with the specified name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `parameters`: The managed cluster resource updated tags."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1699,6 +1882,12 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Deletes a Service Fabric managed cluster resource."]
+        #[doc = "Delete a Service Fabric managed cluster resource with the specified name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2095,6 +2284,12 @@ pub mod managed_cluster_version {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets information about a Service Fabric managed cluster code version available in the specified location."]
+        #[doc = "Gets information about an available Service Fabric managed cluster code version."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location for the cluster code versions. This is different from cluster location."]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `cluster_version`: The cluster code version."]
         pub fn get(
             &self,
             location: impl Into<String>,
@@ -2109,6 +2304,13 @@ pub mod managed_cluster_version {
             }
         }
         #[doc = "Gets information about a Service Fabric cluster code version available for the specified environment."]
+        #[doc = "Gets information about an available Service Fabric cluster code version by environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location for the cluster code versions. This is different from cluster location."]
+        #[doc = "* `environment`: The operating system of the cluster. The default means all."]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `cluster_version`: The cluster code version."]
         pub fn get_by_environment(
             &self,
             location: impl Into<String>,
@@ -2125,6 +2327,11 @@ pub mod managed_cluster_version {
             }
         }
         #[doc = "Gets the list of Service Fabric cluster code versions available for the specified location."]
+        #[doc = "Gets all available code versions for Service Fabric cluster resources by location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location for the cluster code versions. This is different from cluster location."]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
         pub fn list(&self, location: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2133,6 +2340,12 @@ pub mod managed_cluster_version {
             }
         }
         #[doc = "Gets the list of Service Fabric cluster code versions available for the specified environment."]
+        #[doc = "Gets all available code versions for Service Fabric cluster resources by environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location for the cluster code versions. This is different from cluster location."]
+        #[doc = "* `environment`: The operating system of the cluster. The default means all."]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
         pub fn list_by_environment(
             &self,
             location: impl Into<String>,
@@ -2361,6 +2574,11 @@ pub mod managed_unsupported_vm_sizes {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the lists of unsupported vm sizes for Service Fabric Managed Clusters."]
+        #[doc = "Get the lists of unsupported vm sizes for Service Fabric Managed Clusters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location for the cluster code versions. This is different from cluster location."]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
         pub fn list(&self, location: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2369,6 +2587,12 @@ pub mod managed_unsupported_vm_sizes {
             }
         }
         #[doc = "Get unsupported vm size for Service Fabric Managed Clusters."]
+        #[doc = "Get unsupported vm size for Service Fabric Managed Clusters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location for the cluster code versions. This is different from cluster location."]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `vm_size`: VM Size name."]
         pub fn get(&self, location: impl Into<String>, subscription_id: impl Into<String>, vm_size: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -2512,6 +2736,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available Service Fabric resource provider API operations."]
+        #[doc = "Get the list of available Service Fabric resource provider API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -2592,6 +2817,12 @@ pub mod node_types {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of Node types of the specified managed cluster."]
+        #[doc = "Gets all Node types of the specified managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
         pub fn list_by_managed_clusters(
             &self,
             resource_group_name: impl Into<String>,
@@ -2606,6 +2837,14 @@ pub mod node_types {
             }
         }
         #[doc = "Restarts one or more nodes on the node type."]
+        #[doc = "Restarts one or more nodes on the node type. It will disable the fabric nodes, trigger a restart on the VMs and activate the nodes back again."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `node_type_name`: The name of the node type."]
+        #[doc = "* `parameters`: parameters for restart action."]
         pub fn restart(
             &self,
             subscription_id: impl Into<String>,
@@ -2624,6 +2863,14 @@ pub mod node_types {
             }
         }
         #[doc = "Reimages one or more nodes on the node type."]
+        #[doc = "Reimages one or more nodes on the node type. It will disable the fabric nodes, trigger a reimage on the VMs and activate the nodes back again."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `node_type_name`: The name of the node type."]
+        #[doc = "* `parameters`: parameters for reimage action."]
         pub fn reimage(
             &self,
             subscription_id: impl Into<String>,
@@ -2642,6 +2889,14 @@ pub mod node_types {
             }
         }
         #[doc = "Deletes one or more nodes on the node type."]
+        #[doc = "Deletes one or more nodes on the node type. It will disable the fabric nodes, trigger a delete on the VMs and removes the state from the cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `node_type_name`: The name of the node type."]
+        #[doc = "* `parameters`: parameters for delete action."]
         pub fn delete_node(
             &self,
             subscription_id: impl Into<String>,
@@ -2660,6 +2915,13 @@ pub mod node_types {
             }
         }
         #[doc = "Gets a Service Fabric node type."]
+        #[doc = "Get a Service Fabric node type of a given managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `node_type_name`: The name of the node type."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2676,6 +2938,14 @@ pub mod node_types {
             }
         }
         #[doc = "Creates or updates a Service Fabric node type."]
+        #[doc = "Create or update a Service Fabric node type of a given managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `node_type_name`: The name of the node type."]
+        #[doc = "* `parameters`: The node type resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2694,6 +2964,14 @@ pub mod node_types {
             }
         }
         #[doc = "Update the tags of a node type resource of a given managed cluster."]
+        #[doc = "Update the configuration of a node type of a given managed cluster, only updating tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `node_type_name`: The name of the node type."]
+        #[doc = "* `parameters`: The parameters to update the node type configuration."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2712,6 +2990,13 @@ pub mod node_types {
             }
         }
         #[doc = "Deletes a Service Fabric node type."]
+        #[doc = "Delete a Service Fabric node type of a given managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `node_type_name`: The name of the node type."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3199,6 +3484,13 @@ pub mod node_type_skus {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a Service Fabric node type SKUs."]
+        #[doc = "Get a Service Fabric node type supported SKUs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The customer subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster resource."]
+        #[doc = "* `node_type_name`: The name of the node type."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,

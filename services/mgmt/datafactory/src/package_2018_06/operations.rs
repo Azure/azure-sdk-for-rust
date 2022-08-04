@@ -142,6 +142,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the available Azure Data Factory API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -221,12 +222,22 @@ pub mod factories {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists factories under the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a factory's repo information."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `location_id`: The location identifier."]
+        #[doc = "* `factory_repo_update`: Update factory repo request definition."]
         pub fn configure_factory_repo(
             &self,
             subscription_id: impl Into<String>,
@@ -240,6 +251,11 @@ pub mod factories {
                 factory_repo_update: factory_repo_update.into(),
             }
         }
+        #[doc = "Lists factories."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -251,6 +267,12 @@ pub mod factories {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets a factory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -265,6 +287,13 @@ pub mod factories {
                 if_none_match: None,
             }
         }
+        #[doc = "Creates or updates a factory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `factory`: Factory resource definition."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -281,6 +310,13 @@ pub mod factories {
                 if_match: None,
             }
         }
+        #[doc = "Updates a factory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `factory_update_parameters`: The parameters for updating a factory."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -296,6 +332,12 @@ pub mod factories {
                 factory_update_parameters: factory_update_parameters.into(),
             }
         }
+        #[doc = "Deletes a factory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -309,6 +351,13 @@ pub mod factories {
                 factory_name: factory_name.into(),
             }
         }
+        #[doc = "Get GitHub Access Token."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `git_hub_access_token_request`: Get GitHub access token request definition."]
         pub fn get_git_hub_access_token(
             &self,
             subscription_id: impl Into<String>,
@@ -324,6 +373,13 @@ pub mod factories {
                 git_hub_access_token_request: git_hub_access_token_request.into(),
             }
         }
+        #[doc = "Get Data Plane access."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `policy`: Data Plane user access policy definition."]
         pub fn get_data_plane_access(
             &self,
             subscription_id: impl Into<String>,
@@ -884,6 +940,12 @@ pub mod exposure_control {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get exposure control feature for specific location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `location_id`: The location identifier."]
+        #[doc = "* `exposure_control_request`: The exposure control request."]
         pub fn get_feature_value(
             &self,
             subscription_id: impl Into<String>,
@@ -897,6 +959,13 @@ pub mod exposure_control {
                 exposure_control_request: exposure_control_request.into(),
             }
         }
+        #[doc = "Get exposure control feature for specific factory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `exposure_control_request`: The exposure control request."]
         pub fn get_feature_value_by_factory(
             &self,
             subscription_id: impl Into<String>,
@@ -912,6 +981,13 @@ pub mod exposure_control {
                 exposure_control_request: exposure_control_request.into(),
             }
         }
+        #[doc = "Get list of exposure control features for specific factory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `exposure_control_batch_request`: The exposure control request for list of features."]
         pub fn query_feature_values_by_factory(
             &self,
             subscription_id: impl Into<String>,
@@ -1093,6 +1169,12 @@ pub mod integration_runtimes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists integration runtimes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
         pub fn list_by_factory(
             &self,
             subscription_id: impl Into<String>,
@@ -1106,6 +1188,13 @@ pub mod integration_runtimes {
                 factory_name: factory_name.into(),
             }
         }
+        #[doc = "Gets an integration runtime."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1122,6 +1211,14 @@ pub mod integration_runtimes {
                 if_none_match: None,
             }
         }
+        #[doc = "Creates or updates an integration runtime."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
+        #[doc = "* `integration_runtime`: Integration runtime resource definition."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1140,6 +1237,14 @@ pub mod integration_runtimes {
                 if_match: None,
             }
         }
+        #[doc = "Updates an integration runtime."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
+        #[doc = "* `update_integration_runtime_request`: The parameters for updating an integration runtime."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1157,6 +1262,13 @@ pub mod integration_runtimes {
                 update_integration_runtime_request: update_integration_runtime_request.into(),
             }
         }
+        #[doc = "Deletes an integration runtime."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1172,6 +1284,13 @@ pub mod integration_runtimes {
                 integration_runtime_name: integration_runtime_name.into(),
             }
         }
+        #[doc = "Gets detailed status information for an integration runtime."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
         pub fn get_status(
             &self,
             subscription_id: impl Into<String>,
@@ -1187,6 +1306,13 @@ pub mod integration_runtimes {
                 integration_runtime_name: integration_runtime_name.into(),
             }
         }
+        #[doc = "Gets the list of outbound network dependencies for a given Azure-SSIS integration runtime."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
         pub fn list_outbound_network_dependencies_endpoints(
             &self,
             subscription_id: impl Into<String>,
@@ -1202,6 +1328,13 @@ pub mod integration_runtimes {
                 integration_runtime_name: integration_runtime_name.into(),
             }
         }
+        #[doc = "Gets the on-premises integration runtime connection information for encrypting the on-premises data source credentials."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
         pub fn get_connection_info(
             &self,
             subscription_id: impl Into<String>,
@@ -1217,6 +1350,14 @@ pub mod integration_runtimes {
                 integration_runtime_name: integration_runtime_name.into(),
             }
         }
+        #[doc = "Regenerates the authentication key for an integration runtime."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
+        #[doc = "* `regenerate_key_parameters`: The parameters for regenerating integration runtime authentication key."]
         pub fn regenerate_auth_key(
             &self,
             subscription_id: impl Into<String>,
@@ -1234,6 +1375,13 @@ pub mod integration_runtimes {
                 regenerate_key_parameters: regenerate_key_parameters.into(),
             }
         }
+        #[doc = "Retrieves the authentication keys for an integration runtime."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
         pub fn list_auth_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -1249,6 +1397,13 @@ pub mod integration_runtimes {
                 integration_runtime_name: integration_runtime_name.into(),
             }
         }
+        #[doc = "Starts a ManagedReserved type integration runtime."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -1264,6 +1419,13 @@ pub mod integration_runtimes {
                 integration_runtime_name: integration_runtime_name.into(),
             }
         }
+        #[doc = "Stops a ManagedReserved type integration runtime."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -1279,6 +1441,13 @@ pub mod integration_runtimes {
                 integration_runtime_name: integration_runtime_name.into(),
             }
         }
+        #[doc = "Force the integration runtime to synchronize credentials across integration runtime nodes, and this will override the credentials across all worker nodes with those available on the dispatcher node. If you already have the latest credential backup file, you should manually import it (preferred) on any self-hosted integration runtime node than using this API directly."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
         pub fn sync_credentials(
             &self,
             subscription_id: impl Into<String>,
@@ -1294,6 +1463,13 @@ pub mod integration_runtimes {
                 integration_runtime_name: integration_runtime_name.into(),
             }
         }
+        #[doc = "Get the integration runtime monitoring data, which includes the monitor data for all the nodes under this integration runtime."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
         pub fn get_monitoring_data(
             &self,
             subscription_id: impl Into<String>,
@@ -1309,6 +1485,13 @@ pub mod integration_runtimes {
                 integration_runtime_name: integration_runtime_name.into(),
             }
         }
+        #[doc = "Upgrade self-hosted integration runtime to latest version if availability."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
         pub fn upgrade(
             &self,
             subscription_id: impl Into<String>,
@@ -1324,6 +1507,14 @@ pub mod integration_runtimes {
                 integration_runtime_name: integration_runtime_name.into(),
             }
         }
+        #[doc = "Remove all linked integration runtimes under specific data factory in a self-hosted integration runtime."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
+        #[doc = "* `linked_integration_runtime_request`: The data factory name for the linked integration runtime."]
         pub fn remove_links(
             &self,
             subscription_id: impl Into<String>,
@@ -1341,6 +1532,14 @@ pub mod integration_runtimes {
                 linked_integration_runtime_request: linked_integration_runtime_request.into(),
             }
         }
+        #[doc = "Create a linked integration runtime entry in a shared integration runtime."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
+        #[doc = "* `create_linked_integration_runtime_request`: The linked integration runtime properties."]
         pub fn create_linked_integration_runtime(
             &self,
             subscription_id: impl Into<String>,
@@ -2254,6 +2453,13 @@ pub mod integration_runtime_object_metadata {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Refresh a SSIS integration runtime object metadata."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
         pub fn refresh(
             &self,
             subscription_id: impl Into<String>,
@@ -2269,6 +2475,13 @@ pub mod integration_runtime_object_metadata {
                 integration_runtime_name: integration_runtime_name.into(),
             }
         }
+        #[doc = "Get a SSIS integration runtime object metadata by specified path. The return is pageable metadata list."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2402,6 +2615,14 @@ pub mod integration_runtime_nodes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a self-hosted integration runtime node."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
+        #[doc = "* `node_name`: The integration runtime node name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2419,6 +2640,15 @@ pub mod integration_runtime_nodes {
                 node_name: node_name.into(),
             }
         }
+        #[doc = "Updates a self-hosted integration runtime node."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
+        #[doc = "* `node_name`: The integration runtime node name."]
+        #[doc = "* `update_integration_runtime_node_request`: The parameters for updating an integration runtime node."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2438,6 +2668,14 @@ pub mod integration_runtime_nodes {
                 update_integration_runtime_node_request: update_integration_runtime_node_request.into(),
             }
         }
+        #[doc = "Deletes a self-hosted integration runtime node."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
+        #[doc = "* `node_name`: The integration runtime node name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2455,6 +2693,14 @@ pub mod integration_runtime_nodes {
                 node_name: node_name.into(),
             }
         }
+        #[doc = "Get the IP address of self-hosted integration runtime node."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `integration_runtime_name`: The integration runtime name."]
+        #[doc = "* `node_name`: The integration runtime node name."]
         pub fn get_ip_address(
             &self,
             subscription_id: impl Into<String>,
@@ -2674,6 +2920,12 @@ pub mod linked_services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists linked services."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
         pub fn list_by_factory(
             &self,
             subscription_id: impl Into<String>,
@@ -2687,6 +2939,13 @@ pub mod linked_services {
                 factory_name: factory_name.into(),
             }
         }
+        #[doc = "Gets a linked service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `linked_service_name`: The linked service name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2703,6 +2962,14 @@ pub mod linked_services {
                 if_none_match: None,
             }
         }
+        #[doc = "Creates or updates a linked service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `linked_service_name`: The linked service name."]
+        #[doc = "* `linked_service`: Linked service resource definition."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2721,6 +2988,13 @@ pub mod linked_services {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a linked service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `linked_service_name`: The linked service name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3001,6 +3275,12 @@ pub mod datasets {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists datasets."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
         pub fn list_by_factory(
             &self,
             subscription_id: impl Into<String>,
@@ -3014,6 +3294,13 @@ pub mod datasets {
                 factory_name: factory_name.into(),
             }
         }
+        #[doc = "Gets a dataset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `dataset_name`: The dataset name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3030,6 +3317,14 @@ pub mod datasets {
                 if_none_match: None,
             }
         }
+        #[doc = "Creates or updates a dataset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `dataset_name`: The dataset name."]
+        #[doc = "* `dataset`: Dataset resource definition."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3048,6 +3343,13 @@ pub mod datasets {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a dataset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `dataset_name`: The dataset name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3328,6 +3630,12 @@ pub mod pipelines {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists pipelines."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
         pub fn list_by_factory(
             &self,
             subscription_id: impl Into<String>,
@@ -3341,6 +3649,13 @@ pub mod pipelines {
                 factory_name: factory_name.into(),
             }
         }
+        #[doc = "Gets a pipeline."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `pipeline_name`: The pipeline name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3357,6 +3672,14 @@ pub mod pipelines {
                 if_none_match: None,
             }
         }
+        #[doc = "Creates or updates a pipeline."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `pipeline_name`: The pipeline name."]
+        #[doc = "* `pipeline`: Pipeline resource definition."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3375,6 +3698,13 @@ pub mod pipelines {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a pipeline."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `pipeline_name`: The pipeline name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3390,6 +3720,13 @@ pub mod pipelines {
                 pipeline_name: pipeline_name.into(),
             }
         }
+        #[doc = "Creates a run of a pipeline."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `pipeline_name`: The pipeline name."]
         pub fn create_run(
             &self,
             subscription_id: impl Into<String>,
@@ -3777,6 +4114,13 @@ pub mod pipeline_runs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Query pipeline runs in the factory based on input filter conditions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `filter_parameters`: Parameters to filter the pipeline run."]
         pub fn query_by_factory(
             &self,
             subscription_id: impl Into<String>,
@@ -3792,6 +4136,13 @@ pub mod pipeline_runs {
                 filter_parameters: filter_parameters.into(),
             }
         }
+        #[doc = "Get a pipeline run by its run ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `run_id`: The pipeline run identifier."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3807,6 +4158,13 @@ pub mod pipeline_runs {
                 run_id: run_id.into(),
             }
         }
+        #[doc = "Cancel a pipeline run by its run ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `run_id`: The pipeline run identifier."]
         pub fn cancel(
             &self,
             subscription_id: impl Into<String>,
@@ -3998,6 +4356,14 @@ pub mod activity_runs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Query activity runs based on input filter conditions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `run_id`: The pipeline run identifier."]
+        #[doc = "* `filter_parameters`: Parameters to filter the activity runs."]
         pub fn query_by_pipeline_run(
             &self,
             subscription_id: impl Into<String>,
@@ -4070,6 +4436,12 @@ pub mod triggers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists triggers."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
         pub fn list_by_factory(
             &self,
             subscription_id: impl Into<String>,
@@ -4083,6 +4455,13 @@ pub mod triggers {
                 factory_name: factory_name.into(),
             }
         }
+        #[doc = "Query triggers."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `filter_parameters`: Parameters to filter the triggers."]
         pub fn query_by_factory(
             &self,
             subscription_id: impl Into<String>,
@@ -4098,6 +4477,13 @@ pub mod triggers {
                 filter_parameters: filter_parameters.into(),
             }
         }
+        #[doc = "Gets a trigger."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `trigger_name`: The trigger name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4114,6 +4500,14 @@ pub mod triggers {
                 if_none_match: None,
             }
         }
+        #[doc = "Creates or updates a trigger."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `trigger_name`: The trigger name."]
+        #[doc = "* `trigger`: Trigger resource definition."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4132,6 +4526,13 @@ pub mod triggers {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a trigger."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `trigger_name`: The trigger name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4147,6 +4548,13 @@ pub mod triggers {
                 trigger_name: trigger_name.into(),
             }
         }
+        #[doc = "Subscribe event trigger to events."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `trigger_name`: The trigger name."]
         pub fn subscribe_to_events(
             &self,
             subscription_id: impl Into<String>,
@@ -4162,6 +4570,13 @@ pub mod triggers {
                 trigger_name: trigger_name.into(),
             }
         }
+        #[doc = "Get a trigger's event subscription status."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `trigger_name`: The trigger name."]
         pub fn get_event_subscription_status(
             &self,
             subscription_id: impl Into<String>,
@@ -4177,6 +4592,13 @@ pub mod triggers {
                 trigger_name: trigger_name.into(),
             }
         }
+        #[doc = "Unsubscribe event trigger from events."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `trigger_name`: The trigger name."]
         pub fn unsubscribe_from_events(
             &self,
             subscription_id: impl Into<String>,
@@ -4192,6 +4614,13 @@ pub mod triggers {
                 trigger_name: trigger_name.into(),
             }
         }
+        #[doc = "Starts a trigger."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `trigger_name`: The trigger name."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -4207,6 +4636,13 @@ pub mod triggers {
                 trigger_name: trigger_name.into(),
             }
         }
+        #[doc = "Stops a trigger."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `trigger_name`: The trigger name."]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -4801,6 +5237,14 @@ pub mod trigger_runs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Rerun single trigger instance by runId."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `trigger_name`: The trigger name."]
+        #[doc = "* `run_id`: The pipeline run identifier."]
         pub fn rerun(
             &self,
             subscription_id: impl Into<String>,
@@ -4818,6 +5262,14 @@ pub mod trigger_runs {
                 run_id: run_id.into(),
             }
         }
+        #[doc = "Cancel a single trigger instance by runId."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `trigger_name`: The trigger name."]
+        #[doc = "* `run_id`: The pipeline run identifier."]
         pub fn cancel(
             &self,
             subscription_id: impl Into<String>,
@@ -4835,6 +5287,13 @@ pub mod trigger_runs {
                 run_id: run_id.into(),
             }
         }
+        #[doc = "Query trigger runs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `filter_parameters`: Parameters to filter the pipeline run."]
         pub fn query_by_factory(
             &self,
             subscription_id: impl Into<String>,
@@ -5000,6 +5459,13 @@ pub mod data_flows {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a data flow."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `data_flow_name`: The data flow name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5016,6 +5482,14 @@ pub mod data_flows {
                 if_none_match: None,
             }
         }
+        #[doc = "Creates or updates a data flow."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `data_flow_name`: The data flow name."]
+        #[doc = "* `data_flow`: Data flow resource definition."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -5034,6 +5508,13 @@ pub mod data_flows {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a data flow."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `data_flow_name`: The data flow name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5049,6 +5530,12 @@ pub mod data_flows {
                 data_flow_name: data_flow_name.into(),
             }
         }
+        #[doc = "Lists data flows."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
         pub fn list_by_factory(
             &self,
             subscription_id: impl Into<String>,
@@ -5327,6 +5814,13 @@ pub mod data_flow_debug_session {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Creates a data flow debug session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `request`: Data flow debug session definition"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -5342,6 +5836,12 @@ pub mod data_flow_debug_session {
                 request: request.into(),
             }
         }
+        #[doc = "Query all active data flow debug sessions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
         pub fn query_by_factory(
             &self,
             subscription_id: impl Into<String>,
@@ -5355,6 +5855,13 @@ pub mod data_flow_debug_session {
                 factory_name: factory_name.into(),
             }
         }
+        #[doc = "Add a data flow into debug session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `request`: Data flow debug session definition with debug content."]
         pub fn add_data_flow(
             &self,
             subscription_id: impl Into<String>,
@@ -5370,6 +5877,13 @@ pub mod data_flow_debug_session {
                 request: request.into(),
             }
         }
+        #[doc = "Deletes a data flow debug session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `request`: Data flow debug session definition for deletion"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5385,6 +5899,13 @@ pub mod data_flow_debug_session {
                 request: request.into(),
             }
         }
+        #[doc = "Execute a data flow debug command."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `request`: Data flow debug command definition."]
         pub fn execute_command(
             &self,
             subscription_id: impl Into<String>,
@@ -5703,6 +6224,12 @@ pub mod managed_virtual_networks {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists managed Virtual Networks."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
         pub fn list_by_factory(
             &self,
             subscription_id: impl Into<String>,
@@ -5716,6 +6243,13 @@ pub mod managed_virtual_networks {
                 factory_name: factory_name.into(),
             }
         }
+        #[doc = "Gets a managed Virtual Network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `managed_virtual_network_name`: Managed virtual network name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5732,6 +6266,14 @@ pub mod managed_virtual_networks {
                 if_none_match: None,
             }
         }
+        #[doc = "Creates or updates a managed Virtual Network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `managed_virtual_network_name`: Managed virtual network name"]
+        #[doc = "* `managed_virtual_network`: Managed Virtual Network resource definition."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -5960,6 +6502,13 @@ pub mod managed_private_endpoints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists managed private endpoints."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `managed_virtual_network_name`: Managed virtual network name"]
         pub fn list_by_factory(
             &self,
             subscription_id: impl Into<String>,
@@ -5975,6 +6524,14 @@ pub mod managed_private_endpoints {
                 managed_virtual_network_name: managed_virtual_network_name.into(),
             }
         }
+        #[doc = "Gets a managed private endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `managed_virtual_network_name`: Managed virtual network name"]
+        #[doc = "* `managed_private_endpoint_name`: Managed private endpoint name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5993,6 +6550,15 @@ pub mod managed_private_endpoints {
                 if_none_match: None,
             }
         }
+        #[doc = "Creates or updates a managed private endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `managed_virtual_network_name`: Managed virtual network name"]
+        #[doc = "* `managed_private_endpoint_name`: Managed private endpoint name"]
+        #[doc = "* `managed_private_endpoint`: Managed private endpoint resource definition."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -6013,6 +6579,14 @@ pub mod managed_private_endpoints {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a managed private endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `managed_virtual_network_name`: Managed virtual network name"]
+        #[doc = "* `managed_private_endpoint_name`: Managed private endpoint name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -6272,6 +6846,12 @@ pub mod private_end_point_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists Private endpoint connections"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
         pub fn list_by_factory(
             &self,
             subscription_id: impl Into<String>,
@@ -6369,6 +6949,13 @@ pub mod private_endpoint_connection {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `private_endpoint_connection_name`: The private endpoint connection name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -6385,6 +6972,13 @@ pub mod private_endpoint_connection {
                 if_none_match: None,
             }
         }
+        #[doc = "Approves or rejects a private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `private_endpoint_connection_name`: The private endpoint connection name."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -6403,6 +6997,13 @@ pub mod private_endpoint_connection {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `private_endpoint_connection_name`: The private endpoint connection name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -6584,6 +7185,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -6655,6 +7262,12 @@ pub mod global_parameters {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists Global parameters"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
         pub fn list_by_factory(
             &self,
             subscription_id: impl Into<String>,
@@ -6668,6 +7281,13 @@ pub mod global_parameters {
                 factory_name: factory_name.into(),
             }
         }
+        #[doc = "Gets a Global parameter"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `global_parameter_name`: The global parameter name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -6683,6 +7303,14 @@ pub mod global_parameters {
                 global_parameter_name: global_parameter_name.into(),
             }
         }
+        #[doc = "Creates or updates a Global parameter"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `global_parameter_name`: The global parameter name."]
+        #[doc = "* `default`: Global parameter resource definition."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -6700,6 +7328,13 @@ pub mod global_parameters {
                 default: default.into(),
             }
         }
+        #[doc = "Deletes a Global parameter"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `global_parameter_name`: The global parameter name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

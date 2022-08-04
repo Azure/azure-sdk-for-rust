@@ -86,6 +86,11 @@ pub mod query {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Execute an Analytics query"]
+        #[doc = "Executes an Analytics query for data"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `workspace_id`: ID of the workspace. This is Workspace ID from the Properties blade in the Azure portal."]
+        #[doc = "* `query`: The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)"]
         pub fn get(&self, workspace_id: impl Into<String>, query: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -95,6 +100,11 @@ pub mod query {
             }
         }
         #[doc = "Execute an Analytics query"]
+        #[doc = "Executes an Analytics query for data. [Here](https://dev.loganalytics.io/documentation/Using-the-API) is an example for using POST with an Analytics query."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `workspace_id`: ID of the workspace. This is Workspace ID from the Properties blade in the Azure portal."]
+        #[doc = "* `body`: The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)"]
         pub fn execute(&self, workspace_id: impl Into<String>, body: impl Into<models::QueryBody>) -> execute::Builder {
             execute::Builder {
                 client: self.0.clone(),
@@ -204,6 +214,10 @@ pub mod metadata {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets metadata information"]
+        #[doc = "Retrieve the metadata information for the workspace, including its schema, functions, workspace info, categories etc."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `workspace_id`: ID of the workspace. This is Workspace ID from the Properties blade in the Azure portal."]
         pub fn get(&self, workspace_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -211,6 +225,10 @@ pub mod metadata {
             }
         }
         #[doc = "Gets metadata information"]
+        #[doc = "Retrieve the metadata information for the workspace, including its schema, functions, workspace info, categories etc."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `workspace_id`: ID of the workspace. This is Workspace ID from the Properties blade in the Azure portal."]
         pub fn post(&self, workspace_id: impl Into<String>) -> post::Builder {
             post::Builder {
                 client: self.0.clone(),

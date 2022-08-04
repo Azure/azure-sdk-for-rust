@@ -112,6 +112,12 @@ pub mod backup_usage_summaries_crr {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Fetches the backup management usage summaries of the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             vault_name: impl Into<String>,
@@ -203,6 +209,10 @@ pub mod aad_properties {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Fetches the AAD properties from target region BCM stamp."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `azure_region`: Azure region to hit Api"]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get(&self, azure_region: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -276,6 +286,11 @@ pub mod cross_region_restore {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Restores the specified backed up data in a different region as compared to where the data is backed up."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `azure_region`: Azure region to hit Api"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: resource cross region restore request"]
         pub fn trigger(
             &self,
             azure_region: impl Into<String>,
@@ -350,6 +365,11 @@ pub mod backup_crr_job_details {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get CRR job details from target region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `azure_region`: Azure region to hit Api"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: CRR Job request"]
         pub fn get(
             &self,
             azure_region: impl Into<String>,
@@ -422,6 +442,11 @@ pub mod backup_crr_jobs {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of CRR jobs from the target region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `azure_region`: Azure region to hit Api"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: Backup CRR Job request"]
         pub fn list(
             &self,
             azure_region: impl Into<String>,
@@ -537,6 +562,9 @@ pub mod crr_operation_results {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Arguments:"]
+        #[doc = "* `azure_region`: Azure region to hit Api"]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get(
             &self,
             azure_region: impl Into<String>,
@@ -609,6 +637,9 @@ pub mod crr_operation_status {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Arguments:"]
+        #[doc = "* `azure_region`: Azure region to hit Api"]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get(
             &self,
             azure_region: impl Into<String>,
@@ -681,6 +712,16 @@ pub mod recovery_points {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Returns the Access token for communication between BMS and Protection service"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with the container."]
+        #[doc = "* `container_name`: Name of the container."]
+        #[doc = "* `protected_item_name`: Name of the Protected Item."]
+        #[doc = "* `recovery_point_id`: Recovery Point Id"]
+        #[doc = "* `parameters`: Get Access Token request"]
         pub fn get_access_token(
             &self,
             vault_name: impl Into<String>,
@@ -762,6 +803,12 @@ pub mod backup_resource_storage_configs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Fetches resource storage config."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -775,6 +822,13 @@ pub mod backup_resource_storage_configs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates vault storage model type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: Vault storage config request"]
         pub fn update(
             &self,
             vault_name: impl Into<String>,
@@ -790,6 +844,13 @@ pub mod backup_resource_storage_configs {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates vault storage model type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: Vault storage config request"]
         pub fn patch(
             &self,
             vault_name: impl Into<String>,
@@ -949,6 +1010,15 @@ pub mod recovery_points_crr {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the backup copies for the backed up item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with the backed up item."]
+        #[doc = "* `container_name`: Container name associated with the backed up item."]
+        #[doc = "* `protected_item_name`: Backed up item whose backup copies are to be fetched."]
         pub fn list(
             &self,
             vault_name: impl Into<String>,
@@ -1058,6 +1128,12 @@ pub mod backup_protected_items_crr {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Provides a pageable list of all items that are backed up within a vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             vault_name: impl Into<String>,

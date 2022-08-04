@@ -88,6 +88,11 @@ pub mod subscription {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Creates an Azure subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `enrollment_account_name`: The name of the enrollment account to which the subscription will be billed."]
+        #[doc = "* `body`: The subscription creation parameters."]
         pub fn create_subscription_in_enrollment_account(
             &self,
             enrollment_account_name: impl Into<String>,
@@ -99,12 +104,21 @@ pub mod subscription {
                 body: body.into(),
             }
         }
+        #[doc = "The operation to cancel a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription Id."]
         pub fn cancel(&self, subscription_id: impl Into<String>) -> cancel::Builder {
             cancel::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The operation to rename a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription Id."]
+        #[doc = "* `body`: Subscription Name"]
         pub fn rename(&self, subscription_id: impl Into<String>, body: impl Into<models::SubscriptionName>) -> rename::Builder {
             rename::Builder {
                 client: self.0.clone(),
@@ -112,12 +126,23 @@ pub mod subscription {
                 body: body.into(),
             }
         }
+        #[doc = "The operation to enable a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription Id."]
         pub fn enable(&self, subscription_id: impl Into<String>) -> enable::Builder {
             enable::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The operation to create a new WebDirect or EA Azure subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: The name of the Microsoft Customer Agreement billing account for which you want to create the subscription."]
+        #[doc = "* `billing_profile_name`: The name of the billing profile in the billing account for which you want to create the subscription."]
+        #[doc = "* `invoice_section_name`: The name of the invoice section in the billing account for which you want to create the subscription."]
+        #[doc = "* `body`: The subscription creation parameters."]
         pub fn create_subscription(
             &self,
             billing_account_name: impl Into<String>,
@@ -133,6 +158,12 @@ pub mod subscription {
                 body: body.into(),
             }
         }
+        #[doc = "The operation to create a new CSP subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: The name of the Microsoft Customer Agreement billing account for which you want to create the subscription."]
+        #[doc = "* `customer_name`: The name of the customer."]
+        #[doc = "* `body`: The subscription creation parameters."]
         pub fn create_csp_subscription(
             &self,
             billing_account_name: impl Into<String>,
@@ -463,6 +494,10 @@ pub mod subscription_operation {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the status of the pending Microsoft.Subscription API operations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `operation_id`: The operation ID, which can be found from the Location field in the generate recommendation response header."]
         pub fn get(&self, operation_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -528,6 +563,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Microsoft.Subscription API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

@@ -85,6 +85,12 @@ pub mod servers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets details about the specified Analysis Services server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given Analysis Services server is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `server_name`: The name of the Analysis Services server. It must be a minimum of 3 characters, and a maximum of 63."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_details(
             &self,
             resource_group_name: impl Into<String>,
@@ -98,6 +104,13 @@ pub mod servers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Provisions the specified Analysis Services server based on the configuration specified in the request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given Analysis Services server is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `server_name`: The name of the Analysis Services server. It must be a minimum of 3 characters, and a maximum of 63."]
+        #[doc = "* `server_parameters`: Contains the information used to provision the Analysis Services server."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -113,6 +126,13 @@ pub mod servers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the current state of the specified Analysis Services server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given Analysis Services server is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `server_name`: The name of the Analysis Services server. It must be at least 3 characters in length, and no more than 63."]
+        #[doc = "* `server_update_parameters`: Request object that contains the updated information for the server."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -128,6 +148,12 @@ pub mod servers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified Analysis Services server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given Analysis Services server is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `server_name`: The name of the Analysis Services server. It must be at least 3 characters in length, and no more than 63."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -141,6 +167,12 @@ pub mod servers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Suspends operation of the specified Analysis Services server instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given Analysis Services server is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `server_name`: The name of the Analysis Services server. It must be at least 3 characters in length, and no more than 63."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn suspend(
             &self,
             resource_group_name: impl Into<String>,
@@ -154,6 +186,12 @@ pub mod servers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Resumes operation of the specified Analysis Services server instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given Analysis Services server is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `server_name`: The name of the Analysis Services server. It must be at least 3 characters in length, and no more than 63."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn resume(
             &self,
             resource_group_name: impl Into<String>,
@@ -167,6 +205,11 @@ pub mod servers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the Analysis Services servers for the given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given Analysis Services server is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -178,18 +221,32 @@ pub mod servers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the Analysis Services servers for the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists eligible SKUs for Analysis Services resource provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_skus_for_new(&self, subscription_id: impl Into<String>) -> list_skus_for_new::Builder {
             list_skus_for_new::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists eligible SKUs for an Analysis Services resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given Analysis Services server is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `server_name`: The name of the Analysis Services server. It must be at least 3 characters in length, and no more than 63."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_skus_for_existing(
             &self,
             resource_group_name: impl Into<String>,
@@ -203,6 +260,12 @@ pub mod servers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Return the gateway status of the specified Analysis Services server instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given Analysis Services server is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `server_name`: The name of the Analysis Services server."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_gateway_status(
             &self,
             resource_group_name: impl Into<String>,
@@ -216,6 +279,12 @@ pub mod servers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Dissociates a Unified Gateway associated with the server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given Analysis Services server is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `server_name`: The name of the Analysis Services server. It must be at least 3 characters in length, and no more than 63."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn dissociate_gateway(
             &self,
             resource_group_name: impl Into<String>,
@@ -229,6 +298,12 @@ pub mod servers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Check the name availability in the target location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The region name which the operation will lookup into."]
+        #[doc = "* `server_parameters`: Contains the information used to provision the Analysis Services server."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check_name_availability(
             &self,
             location: impl Into<String>,
@@ -242,6 +317,12 @@ pub mod servers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List the result of the specified operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The region name which the operation will lookup into."]
+        #[doc = "* `operation_id`: The target operation Id."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_operation_results(
             &self,
             location: impl Into<String>,
@@ -255,6 +336,12 @@ pub mod servers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List the status of operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The region name which the operation will lookup into."]
+        #[doc = "* `operation_id`: The target operation Id."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_operation_statuses(
             &self,
             location: impl Into<String>,
@@ -1088,6 +1175,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available consumption REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

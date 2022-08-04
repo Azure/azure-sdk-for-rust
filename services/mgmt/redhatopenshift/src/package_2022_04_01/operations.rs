@@ -86,6 +86,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available RP operations."]
+        #[doc = "The operation returns the RP operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -168,6 +169,10 @@ pub mod open_shift_clusters {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists OpenShift clusters in the specified subscription."]
+        #[doc = "The operation returns properties of each OpenShift cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -175,6 +180,11 @@ pub mod open_shift_clusters {
             }
         }
         #[doc = "Lists OpenShift clusters in the specified subscription and resource group."]
+        #[doc = "The operation returns properties of each OpenShift cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -187,6 +197,12 @@ pub mod open_shift_clusters {
             }
         }
         #[doc = "Gets a OpenShift cluster with the specified subscription, resource group and resource name."]
+        #[doc = "The operation returns properties of a OpenShift cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the OpenShift cluster resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -201,6 +217,13 @@ pub mod open_shift_clusters {
             }
         }
         #[doc = "Creates or updates a OpenShift cluster with the specified subscription, resource group and resource name."]
+        #[doc = "The operation returns properties of a OpenShift cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the OpenShift cluster resource."]
+        #[doc = "* `parameters`: The OpenShift cluster resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -217,6 +240,13 @@ pub mod open_shift_clusters {
             }
         }
         #[doc = "Creates or updates a OpenShift cluster with the specified subscription, resource group and resource name."]
+        #[doc = "The operation returns properties of a OpenShift cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the OpenShift cluster resource."]
+        #[doc = "* `parameters`: The OpenShift cluster resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -233,6 +263,12 @@ pub mod open_shift_clusters {
             }
         }
         #[doc = "Deletes a OpenShift cluster with the specified subscription, resource group and resource name."]
+        #[doc = "The operation returns nothing."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the OpenShift cluster resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -247,6 +283,12 @@ pub mod open_shift_clusters {
             }
         }
         #[doc = "Lists admin kubeconfig of an OpenShift cluster with the specified subscription, resource group and resource name."]
+        #[doc = "The operation returns the admin kubeconfig."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the OpenShift cluster resource."]
         pub fn list_admin_credentials(
             &self,
             subscription_id: impl Into<String>,
@@ -261,6 +303,12 @@ pub mod open_shift_clusters {
             }
         }
         #[doc = "Lists credentials of an OpenShift cluster with the specified subscription, resource group and resource name."]
+        #[doc = "The operation returns the credentials."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the OpenShift cluster resource."]
         pub fn list_credentials(
             &self,
             subscription_id: impl Into<String>,

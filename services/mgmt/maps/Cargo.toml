@@ -9,6 +9,9 @@ repository = "https://github.com/azure/azure-sdk-for-rust"
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_mgmt_maps"
 
+[lib]
+doctest = false
+
 [dependencies]
 azure_core = { path = "../../../sdk/core", version = "0.3" }
 serde = { version = "1.0", features = ["derive"] }

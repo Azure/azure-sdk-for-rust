@@ -103,6 +103,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Storage Sync Rest API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -182,6 +183,12 @@ pub mod storage_sync_services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Check the give namespace name availability."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The desired region for the name check."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `parameters`: Parameters to check availability of the given namespace name"]
         pub fn check_name_availability(
             &self,
             location_name: impl Into<String>,
@@ -195,6 +202,12 @@ pub mod storage_sync_services {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Get a given StorageSyncService."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -208,6 +221,13 @@ pub mod storage_sync_services {
                 storage_sync_service_name: storage_sync_service_name.into(),
             }
         }
+        #[doc = "Create a new StorageSyncService."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `parameters`: Storage Sync Service resource name."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -223,6 +243,12 @@ pub mod storage_sync_services {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Patch a given StorageSyncService."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -237,6 +263,12 @@ pub mod storage_sync_services {
                 parameters: None,
             }
         }
+        #[doc = "Delete a given StorageSyncService."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -250,6 +282,11 @@ pub mod storage_sync_services {
                 storage_sync_service_name: storage_sync_service_name.into(),
             }
         }
+        #[doc = "Get a StorageSyncService list by Resource group name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -261,6 +298,10 @@ pub mod storage_sync_services {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get a StorageSyncService list by subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -646,6 +687,12 @@ pub mod sync_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a SyncGroup List."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
         pub fn list_by_storage_sync_service(
             &self,
             subscription_id: impl Into<String>,
@@ -659,6 +706,13 @@ pub mod sync_groups {
                 storage_sync_service_name: storage_sync_service_name.into(),
             }
         }
+        #[doc = "Get a given SyncGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `sync_group_name`: Name of Sync Group resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -674,6 +728,14 @@ pub mod sync_groups {
                 sync_group_name: sync_group_name.into(),
             }
         }
+        #[doc = "Create a new SyncGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `sync_group_name`: Name of Sync Group resource."]
+        #[doc = "* `parameters`: Sync Group Body"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -691,6 +753,13 @@ pub mod sync_groups {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a given SyncGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `sync_group_name`: Name of Sync Group resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -930,6 +999,14 @@ pub mod cloud_endpoints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a given CloudEndpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `sync_group_name`: Name of Sync Group resource."]
+        #[doc = "* `cloud_endpoint_name`: Name of Cloud Endpoint object."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -947,6 +1024,15 @@ pub mod cloud_endpoints {
                 cloud_endpoint_name: cloud_endpoint_name.into(),
             }
         }
+        #[doc = "Create a new CloudEndpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `sync_group_name`: Name of Sync Group resource."]
+        #[doc = "* `cloud_endpoint_name`: Name of Cloud Endpoint object."]
+        #[doc = "* `parameters`: Body of Cloud Endpoint resource."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -966,6 +1052,14 @@ pub mod cloud_endpoints {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a given CloudEndpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `sync_group_name`: Name of Sync Group resource."]
+        #[doc = "* `cloud_endpoint_name`: Name of Cloud Endpoint object."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -983,6 +1077,13 @@ pub mod cloud_endpoints {
                 cloud_endpoint_name: cloud_endpoint_name.into(),
             }
         }
+        #[doc = "Get a CloudEndpoint List."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `sync_group_name`: Name of Sync Group resource."]
         pub fn list_by_sync_group(
             &self,
             subscription_id: impl Into<String>,
@@ -998,6 +1099,15 @@ pub mod cloud_endpoints {
                 sync_group_name: sync_group_name.into(),
             }
         }
+        #[doc = "Pre Backup a given CloudEndpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `sync_group_name`: Name of Sync Group resource."]
+        #[doc = "* `cloud_endpoint_name`: Name of Cloud Endpoint object."]
+        #[doc = "* `parameters`: Body of Backup request."]
         pub fn pre_backup(
             &self,
             subscription_id: impl Into<String>,
@@ -1017,6 +1127,15 @@ pub mod cloud_endpoints {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Post Backup a given CloudEndpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `sync_group_name`: Name of Sync Group resource."]
+        #[doc = "* `cloud_endpoint_name`: Name of Cloud Endpoint object."]
+        #[doc = "* `parameters`: Body of Backup request."]
         pub fn post_backup(
             &self,
             subscription_id: impl Into<String>,
@@ -1036,6 +1155,15 @@ pub mod cloud_endpoints {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Pre Restore a given CloudEndpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `sync_group_name`: Name of Sync Group resource."]
+        #[doc = "* `cloud_endpoint_name`: Name of Cloud Endpoint object."]
+        #[doc = "* `parameters`: Body of Cloud Endpoint object."]
         pub fn pre_restore(
             &self,
             subscription_id: impl Into<String>,
@@ -1055,6 +1183,14 @@ pub mod cloud_endpoints {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Restore Heartbeat a given CloudEndpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `sync_group_name`: Name of Sync Group resource."]
+        #[doc = "* `cloud_endpoint_name`: Name of Cloud Endpoint object."]
         pub fn restoreheartbeat(
             &self,
             subscription_id: impl Into<String>,
@@ -1072,6 +1208,15 @@ pub mod cloud_endpoints {
                 cloud_endpoint_name: cloud_endpoint_name.into(),
             }
         }
+        #[doc = "Post Restore a given CloudEndpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `sync_group_name`: Name of Sync Group resource."]
+        #[doc = "* `cloud_endpoint_name`: Name of Cloud Endpoint object."]
+        #[doc = "* `parameters`: Body of Cloud Endpoint object."]
         pub fn post_restore(
             &self,
             subscription_id: impl Into<String>,
@@ -1091,6 +1236,15 @@ pub mod cloud_endpoints {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Triggers detection of changes performed on Azure File share connected to the specified Azure File Sync Cloud Endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `sync_group_name`: Name of Sync Group resource."]
+        #[doc = "* `cloud_endpoint_name`: Name of Cloud Endpoint object."]
+        #[doc = "* `parameters`: Trigger Change Detection Action parameters."]
         pub fn trigger_change_detection(
             &self,
             subscription_id: impl Into<String>,
@@ -1629,6 +1783,14 @@ pub mod server_endpoints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a ServerEndpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `sync_group_name`: Name of Sync Group resource."]
+        #[doc = "* `server_endpoint_name`: Name of Server Endpoint object."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1646,6 +1808,15 @@ pub mod server_endpoints {
                 server_endpoint_name: server_endpoint_name.into(),
             }
         }
+        #[doc = "Create a new ServerEndpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `sync_group_name`: Name of Sync Group resource."]
+        #[doc = "* `server_endpoint_name`: Name of Server Endpoint object."]
+        #[doc = "* `parameters`: Body of Server Endpoint object."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1665,6 +1836,14 @@ pub mod server_endpoints {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Patch a given ServerEndpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `sync_group_name`: Name of Sync Group resource."]
+        #[doc = "* `server_endpoint_name`: Name of Server Endpoint object."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1683,6 +1862,14 @@ pub mod server_endpoints {
                 parameters: None,
             }
         }
+        #[doc = "Delete a given ServerEndpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `sync_group_name`: Name of Sync Group resource."]
+        #[doc = "* `server_endpoint_name`: Name of Server Endpoint object."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1700,6 +1887,13 @@ pub mod server_endpoints {
                 server_endpoint_name: server_endpoint_name.into(),
             }
         }
+        #[doc = "Get a ServerEndpoint list."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `sync_group_name`: Name of Sync Group resource."]
         pub fn list_by_sync_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1715,6 +1909,15 @@ pub mod server_endpoints {
                 sync_group_name: sync_group_name.into(),
             }
         }
+        #[doc = "Recall a server endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `sync_group_name`: Name of Sync Group resource."]
+        #[doc = "* `server_endpoint_name`: Name of Server Endpoint object."]
+        #[doc = "* `parameters`: Body of Recall Action object."]
         pub fn recall_action(
             &self,
             subscription_id: impl Into<String>,
@@ -2058,6 +2261,12 @@ pub mod registered_servers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a given registered server list."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
         pub fn list_by_storage_sync_service(
             &self,
             subscription_id: impl Into<String>,
@@ -2071,6 +2280,13 @@ pub mod registered_servers {
                 storage_sync_service_name: storage_sync_service_name.into(),
             }
         }
+        #[doc = "Get a given registered server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `server_id`: GUID identifying the on-premises server."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2086,6 +2302,14 @@ pub mod registered_servers {
                 server_id: server_id.into(),
             }
         }
+        #[doc = "Add a new registered server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `server_id`: GUID identifying the on-premises server."]
+        #[doc = "* `parameters`: Body of Registered Server object."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -2103,6 +2327,13 @@ pub mod registered_servers {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete the given registered server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `server_id`: GUID identifying the on-premises server."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2118,6 +2349,14 @@ pub mod registered_servers {
                 server_id: server_id.into(),
             }
         }
+        #[doc = "Triggers Server certificate rollover."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `server_id`: Server Id"]
+        #[doc = "* `parameters`: Body of Trigger Rollover request."]
         pub fn trigger_rollover(
             &self,
             subscription_id: impl Into<String>,
@@ -2392,6 +2631,12 @@ pub mod workflows {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a Workflow List"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
         pub fn list_by_storage_sync_service(
             &self,
             subscription_id: impl Into<String>,
@@ -2405,6 +2650,13 @@ pub mod workflows {
                 storage_sync_service_name: storage_sync_service_name.into(),
             }
         }
+        #[doc = "Get Workflows resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `workflow_id`: workflow Id"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2420,6 +2672,13 @@ pub mod workflows {
                 workflow_id: workflow_id.into(),
             }
         }
+        #[doc = "Abort the given workflow."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_sync_service_name`: Name of Storage Sync Service resource."]
+        #[doc = "* `workflow_id`: workflow Id"]
         pub fn abort(
             &self,
             subscription_id: impl Into<String>,
@@ -2592,6 +2851,14 @@ pub mod operation_status {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Operation status"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `location_name`: The desired region to obtain information from."]
+        #[doc = "* `workflow_id`: workflow Id"]
+        #[doc = "* `operation_id`: operation Id"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,

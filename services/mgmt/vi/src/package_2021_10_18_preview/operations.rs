@@ -88,6 +88,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Azure Video Analyzer for Media provider operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -167,6 +168,11 @@ pub mod accounts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Checks that the Video Indexer account name is valid and is not already in use."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `check_name_availability_parameters`: The name of the Video Indexer account. Name must be unique globally"]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -178,12 +184,21 @@ pub mod accounts {
                 check_name_availability_parameters: check_name_availability_parameters.into(),
             }
         }
+        #[doc = "List all Azure Video Analyzer for Media accounts available under the subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List all Azure Video Analyzer for Media accounts available under the resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -195,6 +210,12 @@ pub mod accounts {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets the properties of an Azure Video Analyzer for Media account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the Azure Video Analyzer for Media account."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -208,6 +229,12 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Creates or updates an Azure Video Analyzer for Media account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the Azure Video Analyzer for Media account."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -222,6 +249,12 @@ pub mod accounts {
                 parameters: None,
             }
         }
+        #[doc = "Updates the properties of an existing Azure Video Analyzer for Media account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the Azure Video Analyzer for Media account."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -236,6 +269,12 @@ pub mod accounts {
                 parameters: None,
             }
         }
+        #[doc = "Delete an Azure Video Analyzer for Media account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the Azure Video Analyzer for Media account."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -686,6 +725,12 @@ pub mod generate {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Generate an Azure Video Analyzer for Media access token."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the Azure Video Analyzer for Media account."]
         pub fn access_token(
             &self,
             subscription_id: impl Into<String>,

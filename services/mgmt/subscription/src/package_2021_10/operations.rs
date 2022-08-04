@@ -101,18 +101,27 @@ pub mod subscriptions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets all available geo-locations."]
+        #[doc = "This operation provides all the locations that are available for resource providers; however, each resource provider may support a subset of this list."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_locations(&self, subscription_id: impl Into<String>) -> list_locations::Builder {
             list_locations::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets details about a specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(&self, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all subscriptions for a tenant."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -284,6 +293,7 @@ pub mod tenants {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the tenants for your account."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -362,12 +372,21 @@ pub mod subscription {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "The operation to cancel a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription Id."]
         pub fn cancel(&self, subscription_id: impl Into<String>) -> cancel::Builder {
             cancel::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The operation to rename a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription Id."]
+        #[doc = "* `body`: Subscription Name"]
         pub fn rename(&self, subscription_id: impl Into<String>, body: impl Into<models::SubscriptionName>) -> rename::Builder {
             rename::Builder {
                 client: self.0.clone(),
@@ -375,12 +394,20 @@ pub mod subscription {
                 body: body.into(),
             }
         }
+        #[doc = "The operation to enable a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription Id."]
         pub fn enable(&self, subscription_id: impl Into<String>) -> enable::Builder {
             enable::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Accept subscription ownership."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription Id."]
         pub fn accept_ownership(
             &self,
             subscription_id: impl Into<String>,
@@ -392,6 +419,10 @@ pub mod subscription {
                 body: body.into(),
             }
         }
+        #[doc = "Accept subscription ownership status."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription Id."]
         pub fn accept_ownership_status(&self, subscription_id: impl Into<String>) -> accept_ownership_status::Builder {
             accept_ownership_status::Builder {
                 client: self.0.clone(),
@@ -647,6 +678,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Microsoft.Subscription API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -726,12 +758,20 @@ pub mod alias {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Alias Subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `alias_name`: AliasName is the name for the subscription creation request. Note that this is not the same as subscription name and this doesn’t have any other lifecycle need beyond the request for subscription creation."]
         pub fn get(&self, alias_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 alias_name: alias_name.into(),
             }
         }
+        #[doc = "Create Alias Subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `alias_name`: AliasName is the name for the subscription creation request. Note that this is not the same as subscription name and this doesn’t have any other lifecycle need beyond the request for subscription creation."]
         pub fn create(&self, alias_name: impl Into<String>, body: impl Into<models::PutAliasRequest>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -739,12 +779,17 @@ pub mod alias {
                 body: body.into(),
             }
         }
+        #[doc = "Delete Alias."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `alias_name`: AliasName is the name for the subscription creation request. Note that this is not the same as subscription name and this doesn’t have any other lifecycle need beyond the request for subscription creation."]
         pub fn delete(&self, alias_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 alias_name: alias_name.into(),
             }
         }
+        #[doc = "List Alias Subscription."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -954,9 +999,11 @@ pub mod subscription_policy {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the subscription tenant policy for the user's tenant."]
         pub fn get_policy_for_tenant(&self) -> get_policy_for_tenant::Builder {
             get_policy_for_tenant::Builder { client: self.0.clone() }
         }
+        #[doc = "Create or Update Subscription tenant policy for user's tenant."]
         pub fn add_update_policy_for_tenant(
             &self,
             body: impl Into<models::PutTenantPolicyRequestProperties>,
@@ -966,6 +1013,7 @@ pub mod subscription_policy {
                 body: body.into(),
             }
         }
+        #[doc = "Get the subscription tenant policy for the user's tenant."]
         pub fn list_policy_for_tenant(&self) -> list_policy_for_tenant::Builder {
             list_policy_for_tenant::Builder { client: self.0.clone() }
         }
@@ -1139,6 +1187,10 @@ pub mod billing_account {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Billing Account Policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_id`: Billing Account Id."]
         pub fn get_policy(&self, billing_account_id: impl Into<String>) -> get_policy::Builder {
             get_policy::Builder {
                 client: self.0.clone(),

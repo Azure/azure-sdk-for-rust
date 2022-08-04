@@ -91,6 +91,10 @@ pub mod service {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "gets the properties of a storage account's Queue service, including properties for Storage Analytics and CORS (Cross-Origin Resource Sharing) rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_properties(&self, x_ms_version: impl Into<String>) -> get_properties::Builder {
             get_properties::Builder {
                 client: self.0.clone(),
@@ -99,6 +103,11 @@ pub mod service {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Sets properties for a storage account's Queue service endpoint, including properties for Storage Analytics and CORS (Cross-Origin Resource Sharing) rules"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `storage_service_properties`: The StorageService properties."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_properties(
             &self,
             storage_service_properties: impl Into<models::StorageServiceProperties>,
@@ -112,6 +121,10 @@ pub mod service {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Retrieves statistics related to replication for the Queue service. It is only available on the secondary location endpoint when read-access geo-redundant replication is enabled for the storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_statistics(&self, x_ms_version: impl Into<String>) -> get_statistics::Builder {
             get_statistics::Builder {
                 client: self.0.clone(),
@@ -120,6 +133,10 @@ pub mod service {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "The List Queues Segment operation returns a list of the queues under the specified account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn list_queues_segment(&self, x_ms_version: impl Into<String>) -> list_queues_segment::Builder {
             list_queues_segment::Builder {
                 client: self.0.clone(),
@@ -416,6 +433,11 @@ pub mod queue {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "creates a new queue under the given account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn create(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -426,6 +448,11 @@ pub mod queue {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "operation permanently deletes the specified queue"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn delete(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -435,6 +462,11 @@ pub mod queue {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Retrieves user-defined metadata and queue properties on the specified queue. Metadata is associated with the queue as name-values pairs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_properties(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_properties::Builder {
             get_properties::Builder {
                 client: self.0.clone(),
@@ -444,6 +476,11 @@ pub mod queue {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "sets user-defined metadata on the specified queue. Metadata is associated with the queue as name-value pairs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_metadata(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_metadata::Builder {
             set_metadata::Builder {
                 client: self.0.clone(),
@@ -454,6 +491,11 @@ pub mod queue {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "returns details about any stored access policies specified on the queue that may be used with Shared Access Signatures."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_access_policy(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_access_policy::Builder {
             get_access_policy::Builder {
                 client: self.0.clone(),
@@ -463,6 +505,11 @@ pub mod queue {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "sets stored access policies for the queue that may be used with Shared Access Signatures"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_access_policy(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_access_policy::Builder {
             set_access_policy::Builder {
                 client: self.0.clone(),
@@ -844,6 +891,11 @@ pub mod messages {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "The Dequeue operation retrieves one or more messages from the front of the queue."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn dequeue(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> dequeue::Builder {
             dequeue::Builder {
                 client: self.0.clone(),
@@ -855,6 +907,12 @@ pub mod messages {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "The Enqueue operation adds a new message to the back of the message queue. A visibility timeout can also be specified to make the message invisible until the visibility timeout expires. A message must be in a format that can be included in an XML request with UTF-8 encoding. The encoded message can be up to 64 KB in size for versions 2011-08-18 and newer, or 8 KB in size for previous versions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `queue_message`: A Message object which can be stored in a Queue"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn enqueue(
             &self,
             queue_name: impl Into<String>,
@@ -872,6 +930,11 @@ pub mod messages {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "The Clear operation deletes all messages from the specified queue."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn clear(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> clear::Builder {
             clear::Builder {
                 client: self.0.clone(),
@@ -881,6 +944,11 @@ pub mod messages {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "The Peek operation retrieves one or more messages from the front of the queue, but does not alter the visibility of the message."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn peek(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> peek::Builder {
             peek::Builder {
                 client: self.0.clone(),
@@ -1180,6 +1248,14 @@ pub mod message_id {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "The Update operation was introduced with version 2011-08-18 of the Queue service API. The Update Message operation updates the visibility timeout of a message. You can also use this operation to update the contents of a message. A message must be in a format that can be included in an XML request with UTF-8 encoding, and the encoded message can be up to 64KB in size."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `messageid`: The container name."]
+        #[doc = "* `popreceipt`: Required. Specifies the valid pop receipt value returned from an earlier call to the Get Messages or Update Message operation."]
+        #[doc = "* `visibilitytimeout`: Optional. Specifies the new visibility timeout value, in seconds, relative to server time. The default value is 30 seconds. A specified value must be larger than or equal to 1 second, and cannot be larger than 7 days, or larger than 2 hours on REST protocol versions prior to version 2011-08-18. The visibility timeout of a message can be set to a value later than the expiry time."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn update(
             &self,
             queue_name: impl Into<String>,
@@ -1200,6 +1276,13 @@ pub mod message_id {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "The Delete operation deletes the specified message."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `messageid`: The container name."]
+        #[doc = "* `popreceipt`: Required. Specifies the valid pop receipt value returned from an earlier call to the Get Messages or Update Message operation."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn delete(
             &self,
             queue_name: impl Into<String>,

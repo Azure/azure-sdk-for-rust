@@ -85,6 +85,12 @@ pub mod clusters {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -98,6 +104,13 @@ pub mod clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Creates a Stream Analytics Cluster or replaces an already existing cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `cluster`: The definition of the cluster that will be used to create a new cluster or replace the existing one."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn create_or_update(
             &self,
             cluster: impl Into<models::Cluster>,
@@ -115,6 +128,13 @@ pub mod clusters {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates an existing cluster. This can be used to partially update (ie. update one or two properties) a cluster without affecting the rest of the cluster definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `cluster`: The properties specified here will overwrite the corresponding properties in the existing cluster (ie. Those properties will be updated)."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn update(
             &self,
             cluster: impl Into<models::Cluster>,
@@ -131,6 +151,12 @@ pub mod clusters {
                 if_match: None,
             }
         }
+        #[doc = "Deletes the specified cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -144,12 +170,21 @@ pub mod clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Lists all of the clusters in the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all of the clusters in the given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -161,6 +196,12 @@ pub mod clusters {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists all of the streaming jobs in the given cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn list_streaming_jobs(
             &self,
             subscription_id: impl Into<String>,
@@ -665,6 +706,13 @@ pub mod private_endpoints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified Private Endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `private_endpoint_name`: The name of the private endpoint."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -680,6 +728,14 @@ pub mod private_endpoints {
                 private_endpoint_name: private_endpoint_name.into(),
             }
         }
+        #[doc = "Creates a Stream Analytics Private Endpoint or replaces an already existing Private Endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_endpoint`: The definition of the private endpoint that will be used to create a new cluster or replace the existing one."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `private_endpoint_name`: The name of the private endpoint."]
         pub fn create_or_update(
             &self,
             private_endpoint: impl Into<models::PrivateEndpoint>,
@@ -699,6 +755,13 @@ pub mod private_endpoints {
                 if_none_match: None,
             }
         }
+        #[doc = "Delete the specified private endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `private_endpoint_name`: The name of the private endpoint."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -714,6 +777,12 @@ pub mod private_endpoints {
                 private_endpoint_name: private_endpoint_name.into(),
             }
         }
+        #[doc = "Lists the private endpoints in the cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn list_by_cluster(
             &self,
             subscription_id: impl Into<String>,

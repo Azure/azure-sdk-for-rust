@@ -85,6 +85,12 @@ pub mod device_management {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Stops a deployment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `group_id`: Group identity."]
+        #[doc = "* `deployment_id`: Deployment identifier."]
         pub fn stop_deployment(
             &self,
             instance_id: impl Into<String>,
@@ -98,6 +104,12 @@ pub mod device_management {
                 deployment_id: deployment_id.into(),
             }
         }
+        #[doc = "Retries a deployment with failed devices."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `group_id`: Group identity."]
+        #[doc = "* `deployment_id`: Deployment identifier."]
         pub fn retry_deployment(
             &self,
             instance_id: impl Into<String>,
@@ -111,12 +123,21 @@ pub mod device_management {
                 deployment_id: deployment_id.into(),
             }
         }
+        #[doc = "Gets a list of all device classes (unique combinations of device manufacturer and model) for all devices connected to Device Update for IoT Hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
         pub fn list_device_classes(&self, instance_id: impl Into<String>) -> list_device_classes::Builder {
             list_device_classes::Builder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
             }
         }
+        #[doc = "Gets the properties of a device class."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `device_class_id`: Device class identifier."]
         pub fn get_device_class(&self, instance_id: impl Into<String>, device_class_id: impl Into<String>) -> get_device_class::Builder {
             get_device_class::Builder {
                 client: self.0.clone(),
@@ -124,6 +145,11 @@ pub mod device_management {
                 device_class_id: device_class_id.into(),
             }
         }
+        #[doc = "Gets a list of installable updates for a device class."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `device_class_id`: Device class identifier."]
         pub fn list_installable_updates_for_device_class(
             &self,
             instance_id: impl Into<String>,
@@ -135,6 +161,10 @@ pub mod device_management {
                 device_class_id: device_class_id.into(),
             }
         }
+        #[doc = "Gets a list of devices connected to Device Update for IoT Hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
         pub fn list_devices(&self, instance_id: impl Into<String>) -> list_devices::Builder {
             list_devices::Builder {
                 client: self.0.clone(),
@@ -142,6 +172,12 @@ pub mod device_management {
                 filter: None,
             }
         }
+        #[doc = "Import existing devices from IoT Hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `action`: Devices action."]
+        #[doc = "* `import_type`: The types of devices to import."]
         pub fn import_devices(
             &self,
             instance_id: impl Into<String>,
@@ -155,6 +191,11 @@ pub mod device_management {
                 import_type: import_type.into(),
             }
         }
+        #[doc = "Gets the device properties and latest deployment status for a device connected to Device Update for IoT Hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `device_id`: Device identifier in Azure IoT Hub."]
         pub fn get_device(&self, instance_id: impl Into<String>, device_id: impl Into<String>) -> get_device::Builder {
             get_device::Builder {
                 client: self.0.clone(),
@@ -162,6 +203,12 @@ pub mod device_management {
                 device_id: device_id.into(),
             }
         }
+        #[doc = "Gets the device module properties and latest deployment status for a device module connected to Device Update for IoT Hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `device_id`: Device identifier in Azure IoT Hub."]
+        #[doc = "* `module_id`: Device module identifier in Azure IoT Hub."]
         pub fn get_device_module(
             &self,
             instance_id: impl Into<String>,
@@ -175,18 +222,31 @@ pub mod device_management {
                 module_id: module_id.into(),
             }
         }
+        #[doc = "Gets the breakdown of how many devices are on their latest update, have new updates available, or are in progress receiving new updates."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
         pub fn get_update_compliance(&self, instance_id: impl Into<String>) -> get_update_compliance::Builder {
             get_update_compliance::Builder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
             }
         }
+        #[doc = "Gets a list of available group device tags for all devices connected to Device Update for IoT Hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
         pub fn list_device_tags(&self, instance_id: impl Into<String>) -> list_device_tags::Builder {
             list_device_tags::Builder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
             }
         }
+        #[doc = "Gets a count of how many devices have a device tag."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `tag_name`: Tag name."]
         pub fn get_device_tag(&self, instance_id: impl Into<String>, tag_name: impl Into<String>) -> get_device_tag::Builder {
             get_device_tag::Builder {
                 client: self.0.clone(),
@@ -194,12 +254,21 @@ pub mod device_management {
                 tag_name: tag_name.into(),
             }
         }
+        #[doc = "Gets a list of all device groups."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
         pub fn list_groups(&self, instance_id: impl Into<String>) -> list_groups::Builder {
             list_groups::Builder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
             }
         }
+        #[doc = "Gets the properties of a group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `group_id`: Group identity."]
         pub fn get_group(&self, instance_id: impl Into<String>, group_id: impl Into<String>) -> get_group::Builder {
             get_group::Builder {
                 client: self.0.clone(),
@@ -207,6 +276,12 @@ pub mod device_management {
                 group_id: group_id.into(),
             }
         }
+        #[doc = "Create or update a device group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `group_id`: Group identity."]
+        #[doc = "* `group`: The group properties."]
         pub fn create_or_update_group(
             &self,
             instance_id: impl Into<String>,
@@ -220,6 +295,11 @@ pub mod device_management {
                 group: group.into(),
             }
         }
+        #[doc = "Deletes a device group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `group_id`: Group identity."]
         pub fn delete_group(&self, instance_id: impl Into<String>, group_id: impl Into<String>) -> delete_group::Builder {
             delete_group::Builder {
                 client: self.0.clone(),
@@ -227,6 +307,11 @@ pub mod device_management {
                 group_id: group_id.into(),
             }
         }
+        #[doc = "Get group update compliance information such as how many devices are on their latest update, how many need new updates, and how many are in progress on receiving a new update."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `group_id`: Group identity."]
         pub fn get_group_update_compliance(
             &self,
             instance_id: impl Into<String>,
@@ -238,6 +323,11 @@ pub mod device_management {
                 group_id: group_id.into(),
             }
         }
+        #[doc = "Get the best available updates for a group and a count of how many devices need each update."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `group_id`: Group identity."]
         pub fn list_best_updates_for_group(
             &self,
             instance_id: impl Into<String>,
@@ -250,6 +340,11 @@ pub mod device_management {
                 filter: None,
             }
         }
+        #[doc = "Gets a list of deployments for a group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `group_id`: Group identity."]
         pub fn list_deployments_for_group(
             &self,
             instance_id: impl Into<String>,
@@ -262,6 +357,12 @@ pub mod device_management {
                 filter: None,
             }
         }
+        #[doc = "Gets the properties of a deployment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `group_id`: Group identity."]
+        #[doc = "* `deployment_id`: Deployment identifier."]
         pub fn get_deployment(
             &self,
             instance_id: impl Into<String>,
@@ -275,6 +376,13 @@ pub mod device_management {
                 deployment_id: deployment_id.into(),
             }
         }
+        #[doc = "Creates or updates a deployment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `deployment_id`: Deployment identifier."]
+        #[doc = "* `group_id`: Group identity."]
+        #[doc = "* `deployment`: The deployment properties."]
         pub fn create_or_update_deployment(
             &self,
             instance_id: impl Into<String>,
@@ -290,6 +398,12 @@ pub mod device_management {
                 deployment: deployment.into(),
             }
         }
+        #[doc = "Deletes a deployment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `group_id`: Group identity."]
+        #[doc = "* `deployment_id`: Deployment identifier."]
         pub fn delete_deployment(
             &self,
             instance_id: impl Into<String>,
@@ -303,6 +417,12 @@ pub mod device_management {
                 deployment_id: deployment_id.into(),
             }
         }
+        #[doc = "Gets the status of a deployment including a breakdown of how many devices in the deployment are in progress, completed, or failed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `group_id`: Group identity."]
+        #[doc = "* `deployment_id`: Deployment identifier."]
         pub fn get_deployment_status(
             &self,
             instance_id: impl Into<String>,
@@ -316,6 +436,12 @@ pub mod device_management {
                 deployment_id: deployment_id.into(),
             }
         }
+        #[doc = "Gets a list of devices in a deployment along with their state. Useful for getting a list of failed devices."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `group_id`: Group identity."]
+        #[doc = "* `deployment_id`: Deployment identifier."]
         pub fn list_deployment_devices(
             &self,
             instance_id: impl Into<String>,
@@ -330,6 +456,11 @@ pub mod device_management {
                 filter: None,
             }
         }
+        #[doc = "Retrieve operation status."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `operation_id`: Operation identifier."]
         pub fn get_operation(&self, instance_id: impl Into<String>, operation_id: impl Into<String>) -> get_operation::Builder {
             get_operation::Builder {
                 client: self.0.clone(),
@@ -338,6 +469,10 @@ pub mod device_management {
                 if_none_match: None,
             }
         }
+        #[doc = "Get a list of all device import operations. Completed operations are kept for 7 days before auto-deleted."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
         pub fn list_operations(&self, instance_id: impl Into<String>) -> list_operations::Builder {
             list_operations::Builder {
                 client: self.0.clone(),
@@ -346,6 +481,11 @@ pub mod device_management {
                 top: None,
             }
         }
+        #[doc = "Get the device diagnostics log collection operation"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `operation_id`: Operation identifier."]
         pub fn get_log_collection_operation(
             &self,
             instance_id: impl Into<String>,
@@ -357,6 +497,12 @@ pub mod device_management {
                 operation_id: operation_id.into(),
             }
         }
+        #[doc = "Start the device diagnostics log collection operation on specified devices."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `operation_id`: Operation identifier."]
+        #[doc = "* `log_collection_request`: The deployment properties."]
         pub fn collect_logs(
             &self,
             instance_id: impl Into<String>,
@@ -370,12 +516,21 @@ pub mod device_management {
                 log_collection_request: log_collection_request.into(),
             }
         }
+        #[doc = "Get all device diagnostics log collection operations"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
         pub fn list_log_collection_operations(&self, instance_id: impl Into<String>) -> list_log_collection_operations::Builder {
             list_log_collection_operations::Builder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
             }
         }
+        #[doc = "Get device diagnostics log collection operation with detailed status"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `operation_id`: Operation identifier."]
         pub fn get_log_collection_operation_detailed_status(
             &self,
             instance_id: impl Into<String>,
@@ -2211,6 +2366,10 @@ pub mod device_update {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of all updates that have been imported to Device Update for IoT Hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
         pub fn list_updates(&self, instance_id: impl Into<String>) -> list_updates::Builder {
             list_updates::Builder {
                 client: self.0.clone(),
@@ -2219,6 +2378,12 @@ pub mod device_update {
                 filter: None,
             }
         }
+        #[doc = "Import new update version."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `action`: Import update action."]
+        #[doc = "* `update_to_import`: The update to be imported."]
         pub fn import_update(
             &self,
             instance_id: impl Into<String>,
@@ -2232,6 +2397,13 @@ pub mod device_update {
                 update_to_import: update_to_import.into(),
             }
         }
+        #[doc = "Get a specific update version."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `provider`: Update provider."]
+        #[doc = "* `name`: Update name."]
+        #[doc = "* `version`: Update version."]
         pub fn get_update(
             &self,
             instance_id: impl Into<String>,
@@ -2248,6 +2420,13 @@ pub mod device_update {
                 if_none_match: None,
             }
         }
+        #[doc = "Delete a specific update version."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `provider`: Update provider."]
+        #[doc = "* `name`: Update name."]
+        #[doc = "* `version`: Update version."]
         pub fn delete_update(
             &self,
             instance_id: impl Into<String>,
@@ -2263,12 +2442,21 @@ pub mod device_update {
                 version: version.into(),
             }
         }
+        #[doc = "Get a list of all update providers that have been imported to Device Update for IoT Hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
         pub fn list_providers(&self, instance_id: impl Into<String>) -> list_providers::Builder {
             list_providers::Builder {
                 client: self.0.clone(),
                 instance_id: instance_id.into(),
             }
         }
+        #[doc = "Get a list of all update names that match the specified provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `provider`: Update provider."]
         pub fn list_names(&self, instance_id: impl Into<String>, provider: impl Into<String>) -> list_names::Builder {
             list_names::Builder {
                 client: self.0.clone(),
@@ -2276,6 +2464,12 @@ pub mod device_update {
                 provider: provider.into(),
             }
         }
+        #[doc = "Get a list of all update versions that match the specified provider and name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `provider`: Update provider."]
+        #[doc = "* `name`: Update name."]
         pub fn list_versions(
             &self,
             instance_id: impl Into<String>,
@@ -2290,6 +2484,13 @@ pub mod device_update {
                 filter: None,
             }
         }
+        #[doc = "Get a list of all update file identifiers for the specified version."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `provider`: Update provider."]
+        #[doc = "* `name`: Update name."]
+        #[doc = "* `version`: Update version."]
         pub fn list_files(
             &self,
             instance_id: impl Into<String>,
@@ -2305,6 +2506,14 @@ pub mod device_update {
                 version: version.into(),
             }
         }
+        #[doc = "Get a specific update file from the version."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `provider`: Update provider."]
+        #[doc = "* `name`: Update name."]
+        #[doc = "* `version`: Update version."]
+        #[doc = "* `file_id`: File identifier."]
         pub fn get_file(
             &self,
             instance_id: impl Into<String>,
@@ -2323,6 +2532,10 @@ pub mod device_update {
                 if_none_match: None,
             }
         }
+        #[doc = "Get a list of all import update operations. Completed operations are kept for 7 days before auto-deleted. Delete operations are not returned by this API version."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
         pub fn list_operations(&self, instance_id: impl Into<String>) -> list_operations::Builder {
             list_operations::Builder {
                 client: self.0.clone(),
@@ -2331,6 +2544,11 @@ pub mod device_update {
                 top: None,
             }
         }
+        #[doc = "Retrieve operation status."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `instance_id`: Account instance identifier."]
+        #[doc = "* `operation_id`: Operation identifier."]
         pub fn get_operation(&self, instance_id: impl Into<String>, operation_id: impl Into<String>) -> get_operation::Builder {
             get_operation::Builder {
                 client: self.0.clone(),

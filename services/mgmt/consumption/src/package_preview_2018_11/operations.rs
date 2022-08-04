@@ -106,6 +106,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available consumption REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -185,6 +186,11 @@ pub mod credit_summary_by_billing_profile {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "The credit summary by billingAccountId and billingProfileId for given start and end date."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_id`: BillingAccount ID"]
+        #[doc = "* `billing_profile_id`: Billing Profile Id."]
         pub fn get(&self, billing_account_id: impl Into<String>, billing_profile_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -243,6 +249,13 @@ pub mod events_by_billing_profile {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the events by billingAccountId and billingProfileId for given start and end date."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_id`: BillingAccount ID"]
+        #[doc = "* `billing_profile_id`: Billing Profile Id."]
+        #[doc = "* `start_date`: Start date"]
+        #[doc = "* `end_date`: End date"]
         pub fn list(
             &self,
             billing_account_id: impl Into<String>,
@@ -320,6 +333,11 @@ pub mod lots_by_billing_profile {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the lots by billingAccountId and billingProfileId for given start and end date."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_id`: BillingAccount ID"]
+        #[doc = "* `billing_profile_id`: Billing Profile Id."]
         pub fn list(&self, billing_account_id: impl Into<String>, billing_profile_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -383,6 +401,11 @@ pub mod invoice_pricesheet {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get pricesheet data for invoice id (invoiceName)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_id`: Azure Billing Account Id."]
+        #[doc = "* `invoice_name`: The name of an invoice resource."]
         pub fn download(&self, billing_account_id: impl Into<String>, invoice_name: impl Into<String>) -> download::Builder {
             download::Builder {
                 client: self.0.clone(),
@@ -453,6 +476,11 @@ pub mod billing_profile_pricesheet {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get pricesheet data for invoice id (invoiceName)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_id`: Azure Billing Account Id."]
+        #[doc = "* `billing_profile_id`: Azure Billing Profile Id."]
         pub fn download(&self, billing_account_id: impl Into<String>, billing_profile_id: impl Into<String>) -> download::Builder {
             download::Builder {
                 client: self.0.clone(),
@@ -523,6 +551,12 @@ pub mod charges_by_billing_account {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the charges by billingAccountId for given start and end date. Start and end date are used to determine the billing period. For current month, the data will be provided from month to date. If there are no charges for a month then that month will show all zeroes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_id`: BillingAccount ID"]
+        #[doc = "* `start_date`: Start date"]
+        #[doc = "* `end_date`: End date"]
         pub fn list(
             &self,
             billing_account_id: impl Into<String>,
@@ -605,6 +639,13 @@ pub mod charges_by_billing_profile {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the charges by billing profile id for given start and end date. Start and end date are used to determine the billing period. For current month, the data will be provided from month to date. If there are no charges for a month then that month will show all zeroes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_id`: BillingAccount ID"]
+        #[doc = "* `billing_profile_id`: Billing Profile Id."]
+        #[doc = "* `start_date`: Start date"]
+        #[doc = "* `end_date`: End date"]
         pub fn list(
             &self,
             billing_account_id: impl Into<String>,
@@ -682,6 +723,13 @@ pub mod charges_by_invoice_section {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the charges by invoice section id for given start and end date. Start and end date are used to determine the billing period. For current month, the data will be provided from month to date. If there are no charges for a month then that month will show all zeroes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_id`: BillingAccount ID"]
+        #[doc = "* `invoice_section_id`: Invoice Section Id."]
+        #[doc = "* `start_date`: Start date"]
+        #[doc = "* `end_date`: End date"]
         pub fn list(
             &self,
             billing_account_id: impl Into<String>,

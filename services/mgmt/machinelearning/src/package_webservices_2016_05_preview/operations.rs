@@ -82,6 +82,12 @@ pub mod web_services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the Web Service Definition as specified by a subscription, resource group, and name. Note that the storage credentials and web service keys are not returned by this call. To get the web service access keys, call List Keys."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group in which the web service is located."]
+        #[doc = "* `web_service_name`: The name of the web service."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -95,6 +101,13 @@ pub mod web_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a web service. This call will overwrite an existing web service. Note that there is no warning or confirmation. This is a nonrecoverable operation. If your intent is to create a new web service, call the Get operation first to verify that it does not exist."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group in which the web service is located."]
+        #[doc = "* `web_service_name`: The name of the web service."]
+        #[doc = "* `create_or_update_payload`: The payload that is used to create or update the web service."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -110,6 +123,13 @@ pub mod web_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Modifies an existing web service resource. The PATCH API call is an asynchronous operation. To determine whether it has completed successfully, you must perform a Get operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group in which the web service is located."]
+        #[doc = "* `web_service_name`: The name of the web service."]
+        #[doc = "* `patch_payload`: The payload to use to patch the web service."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn patch(
             &self,
             resource_group_name: impl Into<String>,
@@ -125,6 +145,12 @@ pub mod web_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified web service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group in which the web service is located."]
+        #[doc = "* `web_service_name`: The name of the web service."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn remove(
             &self,
             resource_group_name: impl Into<String>,
@@ -138,6 +164,12 @@ pub mod web_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the access keys for the specified web service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group in which the web service is located."]
+        #[doc = "* `web_service_name`: The name of the web service."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -151,6 +183,11 @@ pub mod web_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the web services in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group in which the web service is located."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -163,6 +200,10 @@ pub mod web_services {
                 skiptoken: None,
             }
         }
+        #[doc = "Gets the web services in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

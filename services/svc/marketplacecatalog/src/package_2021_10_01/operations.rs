@@ -83,6 +83,9 @@ pub mod public_offers {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a public offer by id"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: Offer id"]
         pub fn get(&self, id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),

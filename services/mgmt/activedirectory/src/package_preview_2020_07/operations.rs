@@ -82,6 +82,12 @@ pub mod azure_ad_metrics {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a azureADMetrics instance with a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure resource group."]
+        #[doc = "* `azure_ad_metrics_name`: Name of the azureADMetrics instance."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -95,6 +101,13 @@ pub mod azure_ad_metrics {
                 azure_ad_metrics_name: azure_ad_metrics_name.into(),
             }
         }
+        #[doc = "Creates a azureADMetrics instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure resource group."]
+        #[doc = "* `azure_ad_metrics_name`: Name of the azureADMetrics instance."]
+        #[doc = "* `azure_ad_metrics_config`: AzureADMetrics definition supplied to the operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -110,6 +123,12 @@ pub mod azure_ad_metrics {
                 azure_ad_metrics_config: azure_ad_metrics_config.into(),
             }
         }
+        #[doc = "Updates azureADMetrics tags with specified values."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure resource group."]
+        #[doc = "* `azure_ad_metrics_name`: Name of the azureADMetrics instance."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -124,6 +143,12 @@ pub mod azure_ad_metrics {
                 azure_ad_metrics_config: None,
             }
         }
+        #[doc = "Deletes a AzureADMetrics resource. When operation completes, status code 200 returned without content."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure resource group."]
+        #[doc = "* `azure_ad_metrics_name`: Name of the azureADMetrics instance."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -137,12 +162,21 @@ pub mod azure_ad_metrics {
                 azure_ad_metrics_name: azure_ad_metrics_name.into(),
             }
         }
+        #[doc = "Lists all AzureADMetrics resources in the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Operation to return the list of AzureADMetrics resources scoped to the resourceGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure resource group."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

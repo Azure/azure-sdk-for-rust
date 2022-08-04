@@ -100,12 +100,20 @@ pub mod entity {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Create or update an entity in Atlas.\nExisting entity is matched using its unique guid if supplied or by its unique attributes eg: qualifiedName.\nMap and array of collections are not well supported. E.g., array<array<int>>, array<map<string, int>>."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `entity`: Atlas entity with extended information."]
         pub fn create_or_update(&self, entity: impl Into<models::AtlasEntityWithExtInfo>) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
                 entity: entity.into(),
             }
         }
+        #[doc = "List entities in bulk identified by its GUIDs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: An array of GUIDs of entities to list."]
         pub fn list_by_guids(&self, guid: Vec<String>) -> list_by_guids::Builder {
             list_by_guids::Builder {
                 client: self.0.clone(),
@@ -115,6 +123,10 @@ pub mod entity {
                 exclude_relationship_types: Vec::new(),
             }
         }
+        #[doc = "Create or update entities in Atlas in bulk.\nExisting entity is matched using its unique guid if supplied or by its unique attributes eg: qualifiedName.\nMap and array of collections are not well supported. E.g., array<array<int>>, array<map<string, int>>."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `entities`: An array of entities to create or update."]
         pub fn create_or_update_entities(
             &self,
             entities: impl Into<models::AtlasEntitiesWithExtInfo>,
@@ -124,18 +136,30 @@ pub mod entity {
                 entities: entities.into(),
             }
         }
+        #[doc = "Delete a list of entities in bulk identified by their GUIDs or unique attributes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: An array of GUIDs of entities to delete."]
         pub fn delete_by_guids(&self, guid: Vec<String>) -> delete_by_guids::Builder {
             delete_by_guids::Builder {
                 client: self.0.clone(),
                 guid,
             }
         }
+        #[doc = "Associate a classification to multiple entities in bulk."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `request`: The request to associate a classification to multiple entities."]
         pub fn add_classification(&self, request: impl Into<models::ClassificationAssociateRequest>) -> add_classification::Builder {
             add_classification::Builder {
                 client: self.0.clone(),
                 request: request.into(),
             }
         }
+        #[doc = "Get complete definition of an entity given its GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the entity."]
         pub fn get_by_guid(&self, guid: impl Into<String>) -> get_by_guid::Builder {
             get_by_guid::Builder {
                 client: self.0.clone(),
@@ -144,6 +168,12 @@ pub mod entity {
                 ignore_relationships: None,
             }
         }
+        #[doc = "Update entity partially - create or update entity attribute identified by its GUID.\nSupports only primitive attribute type and entity references.\nIt does not support updating complex types like arrays, and maps.\nNull updates are not possible."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the entity."]
+        #[doc = "* `name`: The name of the attribute."]
+        #[doc = "* `body`: The value of the attribute."]
         pub fn partial_update_entity_attribute_by_guid(
             &self,
             guid: impl Into<String>,
@@ -157,12 +187,21 @@ pub mod entity {
                 body: body.into(),
             }
         }
+        #[doc = "Delete an entity identified by its GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the entity."]
         pub fn delete_by_guid(&self, guid: impl Into<String>) -> delete_by_guid::Builder {
             delete_by_guid::Builder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
         }
+        #[doc = "List classifications for a given entity represented by a GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the entity."]
+        #[doc = "* `classification_name`: The name of the classification."]
         pub fn get_classification(&self, guid: impl Into<String>, classification_name: impl Into<String>) -> get_classification::Builder {
             get_classification::Builder {
                 client: self.0.clone(),
@@ -170,6 +209,11 @@ pub mod entity {
                 classification_name: classification_name.into(),
             }
         }
+        #[doc = "Delete a given classification from an existing entity represented by a GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the entity."]
+        #[doc = "* `classification_name`: The name of the classification."]
         pub fn delete_classification(
             &self,
             guid: impl Into<String>,
@@ -181,12 +225,21 @@ pub mod entity {
                 classification_name: classification_name.into(),
             }
         }
+        #[doc = "List classifications for a given entity represented by a GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the entity."]
         pub fn get_classifications(&self, guid: impl Into<String>) -> get_classifications::Builder {
             get_classifications::Builder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
         }
+        #[doc = "Add classifications to an existing entity represented by a GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the entity."]
+        #[doc = "* `classifications`: An array of classifications to be added."]
         pub fn add_classifications(
             &self,
             guid: impl Into<String>,
@@ -198,6 +251,11 @@ pub mod entity {
                 classifications,
             }
         }
+        #[doc = "Update classifications to an existing entity represented by a guid."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the entity."]
+        #[doc = "* `classifications`: An array of classifications to be updated."]
         pub fn update_classifications(
             &self,
             guid: impl Into<String>,
@@ -209,6 +267,10 @@ pub mod entity {
                 classifications,
             }
         }
+        #[doc = "Get complete definition of an entity given its type and unique attribute.\nIn addition to the typeName path parameter, attribute key-value pair(s) can be provided in the following format:\nattr:\\<attrName>=<attrValue>. \nNOTE: The attrName and attrValue should be unique across entities, eg. qualifiedName.\nThe REST request would look something like this:\nGET /v2/entity/uniqueAttribute/type/aType?attr:aTypeAttribute=someValue."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `type_name`: The name of the type."]
         pub fn get_by_unique_attributes(&self, type_name: impl Into<String>) -> get_by_unique_attributes::Builder {
             get_by_unique_attributes::Builder {
                 client: self.0.clone(),
@@ -218,6 +280,11 @@ pub mod entity {
                 attr_qualified_name: None,
             }
         }
+        #[doc = "Update entity partially - Allow a subset of attributes to be updated on\nan entity which is identified by its type and unique attribute  eg: Referenceable.qualifiedName.\nNull updates are not possible.\nIn addition to the typeName path parameter, attribute key-value pair(s) can be provided in the following format:\nattr:<attrName>=<attrValue>.\nNOTE: The attrName and attrValue should be unique across entities, eg. qualifiedName.\nThe REST request would look something like this:\nPUT /v2/entity/uniqueAttribute/type/aType?attr:aTypeAttribute=someValue."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `type_name`: The name of the type."]
+        #[doc = "* `atlas_entity_with_ext_info`: Atlas entity with extended information."]
         pub fn partial_update_entity_by_unique_attributes(
             &self,
             type_name: impl Into<String>,
@@ -230,6 +297,10 @@ pub mod entity {
                 attr_qualified_name: None,
             }
         }
+        #[doc = "Delete an entity identified by its type and unique attributes.\nIn addition to the typeName path parameter, attribute key-value pair(s) can be provided in the following format:\nattr:\\<attrName>=\\<attrValue>.\nNOTE: The attrName and attrValue should be unique across entities, eg. qualifiedName.\nThe REST request would look something like this:\nDELETE /v2/entity/uniqueAttribute/type/aType?attr:aTypeAttribute=someValue."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `type_name`: The name of the type."]
         pub fn delete_by_unique_attribute(&self, type_name: impl Into<String>) -> delete_by_unique_attribute::Builder {
             delete_by_unique_attribute::Builder {
                 client: self.0.clone(),
@@ -237,6 +308,11 @@ pub mod entity {
                 attr_qualified_name: None,
             }
         }
+        #[doc = "Delete a given classification from an entity identified by its type and unique attributes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `type_name`: The name of the type."]
+        #[doc = "* `classification_name`: The name of the classification."]
         pub fn delete_classification_by_unique_attribute(
             &self,
             type_name: impl Into<String>,
@@ -249,6 +325,11 @@ pub mod entity {
                 attr_qualified_name: None,
             }
         }
+        #[doc = "Add classification to the entity identified by its type and unique attributes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `type_name`: The name of the type."]
+        #[doc = "* `atlas_classification_array`: An array of classification to be added."]
         pub fn add_classifications_by_unique_attribute(
             &self,
             type_name: impl Into<String>,
@@ -261,6 +342,11 @@ pub mod entity {
                 attr_qualified_name: None,
             }
         }
+        #[doc = "Update classification on an entity identified by its type and unique attributes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `type_name`: The name of the type."]
+        #[doc = "* `atlas_classification_array`: An array of classification to be updated."]
         pub fn update_classifications_by_unique_attribute(
             &self,
             type_name: impl Into<String>,
@@ -273,12 +359,20 @@ pub mod entity {
                 attr_qualified_name: None,
             }
         }
+        #[doc = "Set classifications on entities in bulk."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `entity_headers`: Atlas entity headers."]
         pub fn set_classifications(&self, entity_headers: impl Into<models::AtlasEntityHeaders>) -> set_classifications::Builder {
             set_classifications::Builder {
                 client: self.0.clone(),
                 entity_headers: entity_headers.into(),
             }
         }
+        #[doc = "Bulk API to retrieve list of entities identified by its unique attributes.\n\nIn addition to the typeName path parameter, attribute key-value pair(s) can be provided in the following format\n\ntypeName=\\<typeName>&attr_1:\\<attrName>=\\<attrValue>&attr_2:\\<attrName>=\\<attrValue>&attr_3:\\<attrName>=\\<attrValue>\n\nNOTE: The attrName should be an unique attribute for the given entity-type\n\nThe REST request would look something like this\n\nGET /v2/entity/bulk/uniqueAttribute/type/hive_db?attr_0:qualifiedName=db1@cl1&attr_2:qualifiedName=db2@cl1"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `type_name`: The name of the type."]
         pub fn get_entities_by_unique_attributes(&self, type_name: impl Into<String>) -> get_entities_by_unique_attributes::Builder {
             get_entities_by_unique_attributes::Builder {
                 client: self.0.clone(),
@@ -288,12 +382,20 @@ pub mod entity {
                 attr_n_qualified_name: None,
             }
         }
+        #[doc = "Get entity header given its GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the entity."]
         pub fn get_header(&self, guid: impl Into<String>) -> get_header::Builder {
             get_header::Builder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
         }
+        #[doc = "Add business metadata to an entity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the entity."]
         pub fn add_or_update_business_metadata(&self, guid: impl Into<String>) -> add_or_update_business_metadata::Builder {
             add_or_update_business_metadata::Builder {
                 client: self.0.clone(),
@@ -302,6 +404,10 @@ pub mod entity {
                 body: None,
             }
         }
+        #[doc = "Remove business metadata from an entity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the entity."]
         pub fn delete_business_metadata(&self, guid: impl Into<String>) -> delete_business_metadata::Builder {
             delete_business_metadata::Builder {
                 client: self.0.clone(),
@@ -309,6 +415,11 @@ pub mod entity {
                 body: None,
             }
         }
+        #[doc = "Add or update business metadata attributes"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `bm_name`: BusinessMetadata name"]
+        #[doc = "* `guid`: The globally unique identifier of the entity."]
         pub fn add_or_update_business_metadata_attributes(
             &self,
             bm_name: impl Into<String>,
@@ -321,6 +432,11 @@ pub mod entity {
                 body: None,
             }
         }
+        #[doc = "Delete business metadata attributes from an entity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `bm_name`: BusinessMetadata name"]
+        #[doc = "* `guid`: The globally unique identifier of the entity."]
         pub fn delete_business_metadata_attributes(
             &self,
             bm_name: impl Into<String>,
@@ -333,15 +449,21 @@ pub mod entity {
                 body: None,
             }
         }
+        #[doc = "Get the sample Template for uploading/creating bulk BusinessMetaData"]
         pub fn get_sample_business_metadata_template(&self) -> get_sample_business_metadata_template::Builder {
             get_sample_business_metadata_template::Builder { client: self.0.clone() }
         }
+        #[doc = "Upload the file for creating Business Metadata in BULK"]
         pub fn import_business_metadata(&self) -> import_business_metadata::Builder {
             import_business_metadata::Builder {
                 client: self.0.clone(),
                 uploaded_input_stream: None,
             }
         }
+        #[doc = "Set labels to a given entity"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the entity."]
         pub fn set_labels(&self, guid: impl Into<String>) -> set_labels::Builder {
             set_labels::Builder {
                 client: self.0.clone(),
@@ -349,6 +471,10 @@ pub mod entity {
                 body: Vec::new(),
             }
         }
+        #[doc = "add given labels to a given entity"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the entity."]
         pub fn add_label(&self, guid: impl Into<String>) -> add_label::Builder {
             add_label::Builder {
                 client: self.0.clone(),
@@ -356,6 +482,10 @@ pub mod entity {
                 body: Vec::new(),
             }
         }
+        #[doc = "delete given labels to a given entity"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the entity."]
         pub fn delete_labels(&self, guid: impl Into<String>) -> delete_labels::Builder {
             delete_labels::Builder {
                 client: self.0.clone(),
@@ -363,6 +493,10 @@ pub mod entity {
                 body: Vec::new(),
             }
         }
+        #[doc = "Set labels to a given entity identified by its type and unique attributes, if labels is null/empty, existing labels will all be removed. In addition to the typeName path parameter, attribute key-value pair(s) can be provided in the following format: attr:<attrName>=<attrValue>. NOTE: The attrName and attrValue should be unique across entities, eg. qualifiedName. The REST request would look something like this: POST /v2/entity/uniqueAttribute/type/aType?attr:aTypeAttribute=someValue."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `type_name`: The name of the type."]
         pub fn set_labels_by_unique_attribute(&self, type_name: impl Into<String>) -> set_labels_by_unique_attribute::Builder {
             set_labels_by_unique_attribute::Builder {
                 client: self.0.clone(),
@@ -371,6 +505,10 @@ pub mod entity {
                 body: Vec::new(),
             }
         }
+        #[doc = "Add given labels to a given entity identified by its type and unique attributes, if labels is null/empty, no labels will be added. In addition to the typeName path parameter, attribute key-value pair(s) can be provided in the following format: attr:<attrName>=<attrValue>. NOTE: The attrName and attrValue should be unique across entities, eg. qualifiedName. The REST request would look something like this: PUT /v2/entity/uniqueAttribute/type/aType?attr:aTypeAttribute=someValue."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `type_name`: The name of the type."]
         pub fn add_labels_by_unique_attribute(&self, type_name: impl Into<String>) -> add_labels_by_unique_attribute::Builder {
             add_labels_by_unique_attribute::Builder {
                 client: self.0.clone(),
@@ -379,6 +517,10 @@ pub mod entity {
                 body: Vec::new(),
             }
         }
+        #[doc = "Delete given labels to a given entity identified by its type and unique attributes, if labels is null/empty, no labels will be removed. If any labels in labels set are non-existing labels, they will be ignored, only existing labels will be removed. In addition to the typeName path parameter, attribute key-value pair(s) can be provided in the following format: attr:<attrName>=<attrValue>. NOTE: The attrName and attrValue should be unique across entities, eg. qualifiedName. The REST request would look something like this: DELETE /v2/entity/uniqueAttribute/type/aType?attr:aTypeAttribute=someValue. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `type_name`: The name of the type."]
         pub fn delete_labels_by_unique_attribute(&self, type_name: impl Into<String>) -> delete_labels_by_unique_attribute::Builder {
             delete_labels_by_unique_attribute::Builder {
                 client: self.0.clone(),
@@ -2111,6 +2253,7 @@ pub mod glossary {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all glossaries registered with Atlas."]
         pub fn list_glossaries(&self) -> list_glossaries::Builder {
             list_glossaries::Builder {
                 client: self.0.clone(),
@@ -2120,12 +2263,20 @@ pub mod glossary {
                 ignore_terms_and_categories: None,
             }
         }
+        #[doc = "Create a glossary."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `atlas_glossary`: Glossary definition, terms & categories can be anchored to a glossary.\nUsing the anchor attribute when creating the Term/Category."]
         pub fn create_glossary(&self, atlas_glossary: impl Into<models::AtlasGlossary>) -> create_glossary::Builder {
             create_glossary::Builder {
                 client: self.0.clone(),
                 atlas_glossary: atlas_glossary.into(),
             }
         }
+        #[doc = "Create glossary category in bulk."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `glossary_category`: An array of glossary category definitions to be created."]
         pub fn create_glossary_categories(
             &self,
             glossary_category: Vec<models::AtlasGlossaryCategory>,
@@ -2135,6 +2286,10 @@ pub mod glossary {
                 glossary_category,
             }
         }
+        #[doc = "Create a glossary category."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `glossary_category`: The glossary category definition. A category must be anchored to a Glossary when creating.\nOptionally, terms belonging to the category and the hierarchy can also be defined during creation."]
         pub fn create_glossary_category(
             &self,
             glossary_category: impl Into<models::AtlasGlossaryCategory>,
@@ -2144,12 +2299,21 @@ pub mod glossary {
                 glossary_category: glossary_category.into(),
             }
         }
+        #[doc = "Get specific glossary category by its GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `category_guid`: The globally unique identifier of the category."]
         pub fn get_glossary_category(&self, category_guid: impl Into<String>) -> get_glossary_category::Builder {
             get_glossary_category::Builder {
                 client: self.0.clone(),
                 category_guid: category_guid.into(),
             }
         }
+        #[doc = "Update the given glossary category by its GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `category_guid`: The globally unique identifier of the category."]
+        #[doc = "* `glossary_category`: The glossary category to be updated."]
         pub fn update_glossary_category(
             &self,
             category_guid: impl Into<String>,
@@ -2161,12 +2325,21 @@ pub mod glossary {
                 glossary_category: glossary_category.into(),
             }
         }
+        #[doc = "Delete a glossary category."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `category_guid`: The globally unique identifier of the category."]
         pub fn delete_glossary_category(&self, category_guid: impl Into<String>) -> delete_glossary_category::Builder {
             delete_glossary_category::Builder {
                 client: self.0.clone(),
                 category_guid: category_guid.into(),
             }
         }
+        #[doc = "Update the glossary category partially."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `category_guid`: The globally unique identifier of the category."]
+        #[doc = "* `partial_updates`: A map containing keys as attribute names and values as corresponding attribute values for partial update."]
         pub fn partial_update_glossary_category(
             &self,
             category_guid: impl Into<String>,
@@ -2178,6 +2351,10 @@ pub mod glossary {
                 partial_updates: partial_updates.into(),
             }
         }
+        #[doc = "Get all related categories (parent and children). Limit, offset, and sort parameters are currently not being enabled and won't work even they are passed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `category_guid`: The globally unique identifier of the category."]
         pub fn list_related_categories(&self, category_guid: impl Into<String>) -> list_related_categories::Builder {
             list_related_categories::Builder {
                 client: self.0.clone(),
@@ -2187,6 +2364,10 @@ pub mod glossary {
                 sort: None,
             }
         }
+        #[doc = "Get all terms associated with the specific category."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `category_guid`: The globally unique identifier of the category."]
         pub fn list_category_terms(&self, category_guid: impl Into<String>) -> list_category_terms::Builder {
             list_category_terms::Builder {
                 client: self.0.clone(),
@@ -2196,6 +2377,10 @@ pub mod glossary {
                 sort: None,
             }
         }
+        #[doc = "Create a glossary term."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `glossary_term`: The glossary term definition. A term must be anchored to a Glossary at the time of creation.\nOptionally it can be categorized as well."]
         pub fn create_glossary_term(&self, glossary_term: impl Into<models::AtlasGlossaryTerm>) -> create_glossary_term::Builder {
             create_glossary_term::Builder {
                 client: self.0.clone(),
@@ -2203,6 +2388,10 @@ pub mod glossary {
                 include_term_hierarchy: None,
             }
         }
+        #[doc = "Get a specific glossary term by its GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `term_guid`: The globally unique identifier for glossary term."]
         pub fn get_glossary_term(&self, term_guid: impl Into<String>) -> get_glossary_term::Builder {
             get_glossary_term::Builder {
                 client: self.0.clone(),
@@ -2211,6 +2400,11 @@ pub mod glossary {
                 exclude_relationship_types: Vec::new(),
             }
         }
+        #[doc = "Update the given glossary term by its GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `term_guid`: The globally unique identifier for glossary term."]
+        #[doc = "* `glossary_term`: The glossary term to be updated."]
         pub fn update_glossary_term(
             &self,
             term_guid: impl Into<String>,
@@ -2223,12 +2417,21 @@ pub mod glossary {
                 include_term_hierarchy: None,
             }
         }
+        #[doc = "Delete a glossary term."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `term_guid`: The globally unique identifier for glossary term."]
         pub fn delete_glossary_term(&self, term_guid: impl Into<String>) -> delete_glossary_term::Builder {
             delete_glossary_term::Builder {
                 client: self.0.clone(),
                 term_guid: term_guid.into(),
             }
         }
+        #[doc = "Update the glossary term partially."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `term_guid`: The globally unique identifier for glossary term."]
+        #[doc = "* `partial_updates`: A map containing keys as attribute names and values as corresponding attribute values to be updated."]
         pub fn partial_update_glossary_term(
             &self,
             term_guid: impl Into<String>,
@@ -2241,6 +2444,10 @@ pub mod glossary {
                 include_term_hierarchy: None,
             }
         }
+        #[doc = "Create glossary terms in bulk."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `glossary_term`: An array of glossary term definitions to be created in bulk."]
         pub fn create_glossary_terms(&self, glossary_term: Vec<models::AtlasGlossaryTerm>) -> create_glossary_terms::Builder {
             create_glossary_terms::Builder {
                 client: self.0.clone(),
@@ -2248,6 +2455,10 @@ pub mod glossary {
                 include_term_hierarchy: None,
             }
         }
+        #[doc = "Get all related objects assigned with the specified term."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `term_guid`: The globally unique identifier for glossary term."]
         pub fn get_entities_assigned_with_term(&self, term_guid: impl Into<String>) -> get_entities_assigned_with_term::Builder {
             get_entities_assigned_with_term::Builder {
                 client: self.0.clone(),
@@ -2257,6 +2468,11 @@ pub mod glossary {
                 sort: None,
             }
         }
+        #[doc = "Assign the given term to the provided list of related objects."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `term_guid`: The globally unique identifier for glossary term."]
+        #[doc = "* `related_object_ids`: An array of related object IDs to which the term has to be associated."]
         pub fn assign_term_to_entities(
             &self,
             term_guid: impl Into<String>,
@@ -2268,6 +2484,11 @@ pub mod glossary {
                 related_object_ids,
             }
         }
+        #[doc = "Delete the term assignment for the given list of related objects."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `term_guid`: The globally unique identifier for glossary term."]
+        #[doc = "* `related_object_ids`: An array of related object IDs from which the term has to be dissociated."]
         pub fn remove_term_assignment_from_entities(
             &self,
             term_guid: impl Into<String>,
@@ -2279,6 +2500,11 @@ pub mod glossary {
                 related_object_ids,
             }
         }
+        #[doc = "Delete the term assignment for the given list of related objects."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `term_guid`: The globally unique identifier for glossary term."]
+        #[doc = "* `related_object_ids`: An array of related object IDs from which the term has to be dissociated."]
         pub fn delete_term_assignment_from_entities(
             &self,
             term_guid: impl Into<String>,
@@ -2290,6 +2516,10 @@ pub mod glossary {
                 related_object_ids,
             }
         }
+        #[doc = "Get all related terms for a specific term by its GUID. Limit, offset, and sort parameters are currently not being enabled and won't work even they are passed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `term_guid`: The globally unique identifier for glossary term."]
         pub fn list_related_terms(&self, term_guid: impl Into<String>) -> list_related_terms::Builder {
             list_related_terms::Builder {
                 client: self.0.clone(),
@@ -2299,12 +2529,21 @@ pub mod glossary {
                 sort: None,
             }
         }
+        #[doc = "Get a specific Glossary by its GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `glossary_guid`: The globally unique identifier for glossary."]
         pub fn get_glossary(&self, glossary_guid: impl Into<String>) -> get_glossary::Builder {
             get_glossary::Builder {
                 client: self.0.clone(),
                 glossary_guid: glossary_guid.into(),
             }
         }
+        #[doc = "Update the given glossary."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `glossary_guid`: The globally unique identifier for glossary."]
+        #[doc = "* `updated_glossary`: The glossary definition to be updated."]
         pub fn update_glossary(
             &self,
             glossary_guid: impl Into<String>,
@@ -2316,12 +2555,20 @@ pub mod glossary {
                 updated_glossary: updated_glossary.into(),
             }
         }
+        #[doc = "Delete a glossary."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `glossary_guid`: The globally unique identifier for glossary."]
         pub fn delete_glossary(&self, glossary_guid: impl Into<String>) -> delete_glossary::Builder {
             delete_glossary::Builder {
                 client: self.0.clone(),
                 glossary_guid: glossary_guid.into(),
             }
         }
+        #[doc = "Get the categories belonging to a specific glossary."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `glossary_guid`: The globally unique identifier for glossary."]
         pub fn list_glossary_categories(&self, glossary_guid: impl Into<String>) -> list_glossary_categories::Builder {
             list_glossary_categories::Builder {
                 client: self.0.clone(),
@@ -2331,6 +2578,10 @@ pub mod glossary {
                 sort: None,
             }
         }
+        #[doc = "Get the category headers belonging to a specific glossary."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `glossary_guid`: The globally unique identifier for glossary."]
         pub fn list_glossary_categories_headers(&self, glossary_guid: impl Into<String>) -> list_glossary_categories_headers::Builder {
             list_glossary_categories_headers::Builder {
                 client: self.0.clone(),
@@ -2340,6 +2591,10 @@ pub mod glossary {
                 sort: None,
             }
         }
+        #[doc = "Get a specific glossary with detailed information."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `glossary_guid`: The globally unique identifier for glossary."]
         pub fn get_detailed_glossary(&self, glossary_guid: impl Into<String>) -> get_detailed_glossary::Builder {
             get_detailed_glossary::Builder {
                 client: self.0.clone(),
@@ -2347,6 +2602,11 @@ pub mod glossary {
                 include_term_hierarchy: None,
             }
         }
+        #[doc = "Update the glossary partially. Some properties such as qualifiedName are not allowed to be updated."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `glossary_guid`: The globally unique identifier for glossary."]
+        #[doc = "* `partial_updates`: A map containing keys as attribute names and values as corresponding attribute values."]
         pub fn partial_update_glossary(
             &self,
             glossary_guid: impl Into<String>,
@@ -2359,6 +2619,10 @@ pub mod glossary {
                 include_term_hierarchy: None,
             }
         }
+        #[doc = "Get terms belonging to a specific glossary."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `glossary_guid`: The globally unique identifier for glossary."]
         pub fn list_glossary_terms(&self, glossary_guid: impl Into<String>) -> list_glossary_terms::Builder {
             list_glossary_terms::Builder {
                 client: self.0.clone(),
@@ -2369,6 +2633,10 @@ pub mod glossary {
                 sort: None,
             }
         }
+        #[doc = "Get term headers belonging to a specific glossary."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `glossary_guid`: The globally unique identifier for glossary."]
         pub fn list_glossary_term_headers(&self, glossary_guid: impl Into<String>) -> list_glossary_term_headers::Builder {
             list_glossary_term_headers::Builder {
                 client: self.0.clone(),
@@ -2378,6 +2646,11 @@ pub mod glossary {
                 sort: None,
             }
         }
+        #[doc = "Import Glossary Terms from local csv file"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `glossary_guid`: The globally unique identifier for glossary."]
+        #[doc = "* `file`: The csv file to import glossary terms from."]
         pub fn import_glossary_terms_via_csv(
             &self,
             glossary_guid: impl Into<String>,
@@ -2390,6 +2663,11 @@ pub mod glossary {
                 include_term_hierarchy: None,
             }
         }
+        #[doc = "Import Glossary Terms from local csv file by glossaryName"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `glossary_name`: The name of the glossary."]
+        #[doc = "* `file`: The csv file to import glossary terms from."]
         pub fn import_glossary_terms_via_csv_by_glossary_name(
             &self,
             glossary_name: impl Into<String>,
@@ -2402,12 +2680,21 @@ pub mod glossary {
                 include_term_hierarchy: None,
             }
         }
+        #[doc = "Get the status of import csv operation"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `operation_guid`: The globally unique identifier for async operation/job."]
         pub fn get_import_csv_operation_status(&self, operation_guid: impl Into<String>) -> get_import_csv_operation_status::Builder {
             get_import_csv_operation_status::Builder {
                 client: self.0.clone(),
                 operation_guid: operation_guid.into(),
             }
         }
+        #[doc = "Export Glossary Terms as csv file"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `glossary_guid`: The globally unique identifier for glossary."]
+        #[doc = "* `term_guids`: An array of term guids."]
         pub fn export_glossary_terms_as_csv(
             &self,
             glossary_guid: impl Into<String>,
@@ -2420,6 +2707,10 @@ pub mod glossary {
                 include_term_hierarchy: None,
             }
         }
+        #[doc = "Get terms by glossary name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `glossary_name`: The name of the glossary."]
         pub fn list_terms_by_glossary_name(&self, glossary_name: impl Into<String>) -> list_terms_by_glossary_name::Builder {
             list_terms_by_glossary_name::Builder {
                 client: self.0.clone(),
@@ -4350,24 +4641,40 @@ pub mod discovery {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets data using search."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `search_request`: An object specifying the search criteria."]
         pub fn query(&self, search_request: impl Into<models::SearchRequest>) -> query::Builder {
             query::Builder {
                 client: self.0.clone(),
                 search_request: search_request.into(),
             }
         }
+        #[doc = "Get search suggestions by query criteria."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `suggest_request`: An object specifying the suggest criteria."]
         pub fn suggest(&self, suggest_request: impl Into<models::SuggestRequest>) -> suggest::Builder {
             suggest::Builder {
                 client: self.0.clone(),
                 suggest_request: suggest_request.into(),
             }
         }
+        #[doc = "Browse entities by path or entity type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `browse_request`: An object specifying the browse criteria."]
         pub fn browse(&self, browse_request: impl Into<models::BrowseRequest>) -> browse::Builder {
             browse::Builder {
                 client: self.0.clone(),
                 browse_request: browse_request.into(),
             }
         }
+        #[doc = "Get auto complete options."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `auto_complete_request`: An object specifying the autocomplete criteria."]
         pub fn auto_complete(&self, auto_complete_request: impl Into<models::AutoCompleteRequest>) -> auto_complete::Builder {
             auto_complete::Builder {
                 client: self.0.clone(),
@@ -4560,6 +4867,11 @@ pub mod lineage {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get lineage info of the entity specified by GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the entity."]
+        #[doc = "* `direction`: The direction of the lineage, which could be INPUT, OUTPUT or BOTH."]
         pub fn get_lineage_graph(&self, guid: impl Into<String>, direction: impl Into<String>) -> get_lineage_graph::Builder {
             get_lineage_graph::Builder {
                 client: self.0.clone(),
@@ -4571,6 +4883,11 @@ pub mod lineage {
                 get_derived_lineage: None,
             }
         }
+        #[doc = "Return immediate next page lineage info about entity with pagination"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the entity."]
+        #[doc = "* `direction`: The direction of the lineage, which could be INPUT, OUTPUT or BOTH."]
         pub fn next_page_lineage(&self, guid: impl Into<String>, direction: impl Into<String>) -> next_page_lineage::Builder {
             next_page_lineage::Builder {
                 client: self.0.clone(),
@@ -4581,6 +4898,11 @@ pub mod lineage {
                 limit: None,
             }
         }
+        #[doc = "Returns lineage info about entity.\n\nIn addition to the typeName path parameter, attribute key-value pair(s) can be provided in the following format\n\nattr:[attrName]=[attrValue]\n\nNOTE: The attrName and attrValue should be unique across entities, eg. qualifiedName"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `type_name`: The name of the type."]
+        #[doc = "* `direction`: The direction of the lineage, which could be INPUT, OUTPUT or BOTH."]
         pub fn get_lineage_by_unique_attribute(
             &self,
             type_name: impl Into<String>,
@@ -4839,18 +5161,30 @@ pub mod relationship {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Create a new relationship between entities."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `relationship`: The AtlasRelationship object containing the information for the relationship to be created."]
         pub fn create(&self, relationship: impl Into<models::AtlasRelationship>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
                 relationship: relationship.into(),
             }
         }
+        #[doc = "Update an existing relationship between entities."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `relationship`: The AtlasRelationship object containing the information for the relationship to be created."]
         pub fn update(&self, relationship: impl Into<models::AtlasRelationship>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
                 relationship: relationship.into(),
             }
         }
+        #[doc = "Get relationship information between entities by its GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the relationship."]
         pub fn get(&self, guid: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -4858,6 +5192,10 @@ pub mod relationship {
                 extended_info: None,
             }
         }
+        #[doc = "Delete a relationship between entities by its GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the relationship."]
         pub fn delete(&self, guid: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -5042,96 +5380,157 @@ pub mod types {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the businessMetadata definition for the given guid"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: businessMetadata guid"]
         pub fn get_business_metadata_def_by_guid(&self, guid: impl Into<String>) -> get_business_metadata_def_by_guid::Builder {
             get_business_metadata_def_by_guid::Builder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
         }
+        #[doc = "Get the businessMetadata definition by it's name (unique)"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: businessMetadata name"]
         pub fn get_business_metadata_def_by_name(&self, name: impl Into<String>) -> get_business_metadata_def_by_name::Builder {
             get_business_metadata_def_by_name::Builder {
                 client: self.0.clone(),
                 name: name.into(),
             }
         }
+        #[doc = "Get the classification definition for the given GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the classification."]
         pub fn get_classification_def_by_guid(&self, guid: impl Into<String>) -> get_classification_def_by_guid::Builder {
             get_classification_def_by_guid::Builder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
         }
+        #[doc = "Get the classification definition by its name (unique)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: The name of the classification."]
         pub fn get_classification_def_by_name(&self, name: impl Into<String>) -> get_classification_def_by_name::Builder {
             get_classification_def_by_name::Builder {
                 client: self.0.clone(),
                 name: name.into(),
             }
         }
+        #[doc = "Get the Entity definition for the given GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the entity."]
         pub fn get_entity_definition_by_guid(&self, guid: impl Into<String>) -> get_entity_definition_by_guid::Builder {
             get_entity_definition_by_guid::Builder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
         }
+        #[doc = "Get the entity definition by its name (unique)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: The name of the entity."]
         pub fn get_entity_definition_by_name(&self, name: impl Into<String>) -> get_entity_definition_by_name::Builder {
             get_entity_definition_by_name::Builder {
                 client: self.0.clone(),
                 name: name.into(),
             }
         }
+        #[doc = "Get the enum definition for the given GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the enum."]
         pub fn get_enum_def_by_guid(&self, guid: impl Into<String>) -> get_enum_def_by_guid::Builder {
             get_enum_def_by_guid::Builder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
         }
+        #[doc = "Get the enum definition by its name (unique)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: The name of the enum."]
         pub fn get_enum_def_by_name(&self, name: impl Into<String>) -> get_enum_def_by_name::Builder {
             get_enum_def_by_name::Builder {
                 client: self.0.clone(),
                 name: name.into(),
             }
         }
+        #[doc = "Get the relationship definition for the given GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the relationship."]
         pub fn get_relationship_def_by_guid(&self, guid: impl Into<String>) -> get_relationship_def_by_guid::Builder {
             get_relationship_def_by_guid::Builder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
         }
+        #[doc = "Get the relationship definition by its name (unique)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: The name of the relationship."]
         pub fn get_relationship_def_by_name(&self, name: impl Into<String>) -> get_relationship_def_by_name::Builder {
             get_relationship_def_by_name::Builder {
                 client: self.0.clone(),
                 name: name.into(),
             }
         }
+        #[doc = "Get the struct definition for the given GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the struct."]
         pub fn get_struct_def_by_guid(&self, guid: impl Into<String>) -> get_struct_def_by_guid::Builder {
             get_struct_def_by_guid::Builder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
         }
+        #[doc = "Get the struct definition by its name (unique)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: The name of the struct."]
         pub fn get_struct_def_by_name(&self, name: impl Into<String>) -> get_struct_def_by_name::Builder {
             get_struct_def_by_name::Builder {
                 client: self.0.clone(),
                 name: name.into(),
             }
         }
+        #[doc = "Get the type definition for the given GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the type."]
         pub fn get_type_definition_by_guid(&self, guid: impl Into<String>) -> get_type_definition_by_guid::Builder {
             get_type_definition_by_guid::Builder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
         }
+        #[doc = "Get the type definition by its name (unique)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: The name of the type."]
         pub fn get_type_definition_by_name(&self, name: impl Into<String>) -> get_type_definition_by_name::Builder {
             get_type_definition_by_name::Builder {
                 client: self.0.clone(),
                 name: name.into(),
             }
         }
+        #[doc = "Delete API for type identified by its name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: The name of the type."]
         pub fn delete_type_by_name(&self, name: impl Into<String>) -> delete_type_by_name::Builder {
             delete_type_by_name::Builder {
                 client: self.0.clone(),
                 name: name.into(),
             }
         }
+        #[doc = "Get all type definitions in Atlas in bulk."]
         pub fn get_all_type_definitions(&self) -> get_all_type_definitions::Builder {
             get_all_type_definitions::Builder {
                 client: self.0.clone(),
@@ -5139,24 +5538,37 @@ pub mod types {
                 type_: None,
             }
         }
+        #[doc = "Create all atlas type definitions in bulk, only new definitions will be created.\nAny changes to the existing definitions will be discarded."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `types_def`: A composite wrapper object with corresponding lists of the type definition."]
         pub fn create_type_definitions(&self, types_def: impl Into<models::AtlasTypesDef>) -> create_type_definitions::Builder {
             create_type_definitions::Builder {
                 client: self.0.clone(),
                 types_def: types_def.into(),
             }
         }
+        #[doc = "Update all types in bulk, changes detected in the type definitions would be persisted."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `types_def`: A composite object that captures all type definition changes."]
         pub fn update_atlas_type_definitions(&self, types_def: impl Into<models::AtlasTypesDef>) -> update_atlas_type_definitions::Builder {
             update_atlas_type_definitions::Builder {
                 client: self.0.clone(),
                 types_def: types_def.into(),
             }
         }
+        #[doc = "Delete API for all types in bulk."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `types_def`: A composite object that captures all types to be deleted"]
         pub fn delete_type_definitions(&self, types_def: impl Into<models::AtlasTypesDef>) -> delete_type_definitions::Builder {
             delete_type_definitions::Builder {
                 client: self.0.clone(),
                 types_def: types_def.into(),
             }
         }
+        #[doc = "List all type definitions returned as a list of minimal information header."]
         pub fn list_type_definition_headers(&self) -> list_type_definition_headers::Builder {
             list_type_definition_headers::Builder {
                 client: self.0.clone(),
@@ -5164,12 +5576,20 @@ pub mod types {
                 type_: None,
             }
         }
+        #[doc = "Get the term template definition for the given GUID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guid`: The globally unique identifier of the term template."]
         pub fn get_term_template_def_by_guid(&self, guid: impl Into<String>) -> get_term_template_def_by_guid::Builder {
             get_term_template_def_by_guid::Builder {
                 client: self.0.clone(),
                 guid: guid.into(),
             }
         }
+        #[doc = "Get the term template definition by its name (unique)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: The name of the term template."]
         pub fn get_term_template_def_by_name(&self, name: impl Into<String>) -> get_term_template_def_by_name::Builder {
             get_term_template_def_by_name::Builder {
                 client: self.0.clone(),
@@ -6152,6 +6572,11 @@ pub mod collection {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Creates or updates an entity to a collection.\nExisting entity is matched using its unique guid if supplied or by its unique attributes eg: qualifiedName.\nMap and array of collections are not well supported. E.g., array<array<int>>, array<map<string, int>>."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `collection`: the collection unique name"]
+        #[doc = "* `entity`: Atlas entity with extended information."]
         pub fn create_or_update(
             &self,
             collection: impl Into<String>,
@@ -6163,6 +6588,11 @@ pub mod collection {
                 entity: entity.into(),
             }
         }
+        #[doc = "Creates or updates entities in bulk to a collection.\nExisting entity is matched using its unique guid if supplied or by its unique attributes eg: qualifiedName.\nMap and array of collections are not well supported. E.g., array<array<int>>, array<map<string, int>>."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `collection`: the collection unique name"]
+        #[doc = "* `entities`: Atlas entities with extended information."]
         pub fn create_or_update_bulk(
             &self,
             collection: impl Into<String>,
@@ -6174,6 +6604,11 @@ pub mod collection {
                 entities: entities.into(),
             }
         }
+        #[doc = "Move existing entities to the target collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `collection`: the collection unique name"]
+        #[doc = "* `move_entities_request`: Entity guids to be moved to target collection."]
         pub fn move_entities_to_collection(
             &self,
             collection: impl Into<String>,

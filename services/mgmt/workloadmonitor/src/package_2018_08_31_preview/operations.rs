@@ -101,6 +101,13 @@ pub mod monitors {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get list of a monitors of a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_namespace`: The Namespace of the resource."]
+        #[doc = "* `resource_type`: The type of the resource."]
+        #[doc = "* `resource_name`: Name of the resource."]
         pub fn list_by_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -121,6 +128,14 @@ pub mod monitors {
             }
         }
         #[doc = "Get details of a single monitor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_namespace`: The Namespace of the resource."]
+        #[doc = "* `resource_type`: The type of the resource."]
+        #[doc = "* `resource_name`: Name of the resource."]
+        #[doc = "* `monitor_id`: Monitor Id."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -141,6 +156,15 @@ pub mod monitors {
             }
         }
         #[doc = "Update a Monitor's configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_namespace`: The Namespace of the resource."]
+        #[doc = "* `resource_type`: The type of the resource."]
+        #[doc = "* `resource_name`: Name of the resource."]
+        #[doc = "* `monitor_id`: Monitor Id."]
+        #[doc = "* `body`: Body of the Monitor PATCH object."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -385,6 +409,13 @@ pub mod components {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get list of components for a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_namespace`: The Namespace of the resource."]
+        #[doc = "* `resource_type`: The type of the resource."]
+        #[doc = "* `resource_name`: Name of the resource."]
         pub fn list_by_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -410,6 +441,14 @@ pub mod components {
             }
         }
         #[doc = "Get details of a component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_namespace`: The Namespace of the resource."]
+        #[doc = "* `resource_type`: The type of the resource."]
+        #[doc = "* `resource_name`: Name of the resource."]
+        #[doc = "* `component_id`: Component Id."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -650,6 +689,13 @@ pub mod monitor_instances {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get list of monitor instances for a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_namespace`: The Namespace of the resource."]
+        #[doc = "* `resource_type`: The type of the resource."]
+        #[doc = "* `resource_name`: Name of the resource."]
         pub fn list_by_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -675,6 +721,14 @@ pub mod monitor_instances {
             }
         }
         #[doc = "Get details of a monitorInstance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_namespace`: The Namespace of the resource."]
+        #[doc = "* `resource_type`: The type of the resource."]
+        #[doc = "* `resource_name`: Name of the resource."]
+        #[doc = "* `monitor_instance_id`: MonitorInstance Id."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -906,6 +960,13 @@ pub mod notification_settings {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get list of notification settings for a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_namespace`: The Namespace of the resource."]
+        #[doc = "* `resource_type`: The type of the resource."]
+        #[doc = "* `resource_name`: Name of the resource."]
         pub fn list_by_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -925,6 +986,14 @@ pub mod notification_settings {
             }
         }
         #[doc = "Get a of notification setting for a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_namespace`: The Namespace of the resource."]
+        #[doc = "* `resource_type`: The type of the resource."]
+        #[doc = "* `resource_name`: Name of the resource."]
+        #[doc = "* `notification_setting_name`: Default string modeled as parameter for URL to work correctly."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -945,6 +1014,15 @@ pub mod notification_settings {
             }
         }
         #[doc = "Update notification settings for a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_namespace`: The Namespace of the resource."]
+        #[doc = "* `resource_type`: The type of the resource."]
+        #[doc = "* `resource_name`: Name of the resource."]
+        #[doc = "* `notification_setting_name`: Default string modeled as parameter for URL to work correctly."]
+        #[doc = "* `body`: Body of the NotificationSetting PUT object."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1155,6 +1233,9 @@ pub mod components_summary {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get subscription wide details of components."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1305,6 +1386,9 @@ pub mod monitor_instances_summary {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get subscription wide health instances."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

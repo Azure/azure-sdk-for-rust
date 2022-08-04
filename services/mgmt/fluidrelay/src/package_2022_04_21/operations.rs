@@ -169,6 +169,11 @@ pub mod fluid_relay_servers {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a Fluid Relay server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id (GUID) for this resource."]
+        #[doc = "* `resource_group`: The resource group containing the resource."]
+        #[doc = "* `fluid_relay_server_name`: The Fluid Relay server resource name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -183,6 +188,12 @@ pub mod fluid_relay_servers {
             }
         }
         #[doc = "Create or Update a Fluid Relay server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id (GUID) for this resource."]
+        #[doc = "* `resource_group`: The resource group containing the resource."]
+        #[doc = "* `fluid_relay_server_name`: The Fluid Relay server resource name."]
+        #[doc = "* `resource`: The details of the Fluid Relay server resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -199,6 +210,12 @@ pub mod fluid_relay_servers {
             }
         }
         #[doc = "Update a Fluid Relay server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id (GUID) for this resource."]
+        #[doc = "* `resource_group`: The resource group containing the resource."]
+        #[doc = "* `fluid_relay_server_name`: The Fluid Relay server resource name."]
+        #[doc = "* `resource`: The details of the Fluid Relay server resource included in update calls."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -215,6 +232,11 @@ pub mod fluid_relay_servers {
             }
         }
         #[doc = "Delete a Fluid Relay server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id (GUID) for this resource."]
+        #[doc = "* `resource_group`: The resource group containing the resource."]
+        #[doc = "* `fluid_relay_server_name`: The Fluid Relay server resource name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -229,6 +251,12 @@ pub mod fluid_relay_servers {
             }
         }
         #[doc = "Regenerate the primary or secondary key for this server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id (GUID) for this resource."]
+        #[doc = "* `resource_group`: The resource group containing the resource."]
+        #[doc = "* `fluid_relay_server_name`: The Fluid Relay server resource name."]
+        #[doc = "* `parameters`: The details of which keys to generate."]
         pub fn regenerate_key(
             &self,
             subscription_id: impl Into<String>,
@@ -245,6 +273,11 @@ pub mod fluid_relay_servers {
             }
         }
         #[doc = "Get primary and secondary key for this server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id (GUID) for this resource."]
+        #[doc = "* `resource_group`: The resource group containing the resource."]
+        #[doc = "* `fluid_relay_server_name`: The Fluid Relay server resource name."]
         pub fn get_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -259,6 +292,11 @@ pub mod fluid_relay_servers {
             }
         }
         #[doc = "Get primary and secondary key for this server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id (GUID) for this resource."]
+        #[doc = "* `resource_group`: The resource group containing the resource."]
+        #[doc = "* `fluid_relay_server_name`: The Fluid Relay server resource name."]
         pub fn list_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -273,6 +311,9 @@ pub mod fluid_relay_servers {
             }
         }
         #[doc = "List all Fluid Relay servers in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id (GUID) for this resource."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -280,6 +321,10 @@ pub mod fluid_relay_servers {
             }
         }
         #[doc = "List all Fluid Relay servers in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id (GUID) for this resource."]
+        #[doc = "* `resource_group`: The resource group containing the resource."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -821,6 +866,12 @@ pub mod fluid_relay_containers {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a Fluid Relay container."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id (GUID) for this resource."]
+        #[doc = "* `resource_group`: The resource group containing the resource."]
+        #[doc = "* `fluid_relay_server_name`: The Fluid Relay server resource name."]
+        #[doc = "* `fluid_relay_container_name`: The Fluid Relay container resource name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -837,6 +888,12 @@ pub mod fluid_relay_containers {
             }
         }
         #[doc = "Delete a Fluid Relay container."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id (GUID) for this resource."]
+        #[doc = "* `resource_group`: The resource group containing the resource."]
+        #[doc = "* `fluid_relay_server_name`: The Fluid Relay server resource name."]
+        #[doc = "* `fluid_relay_container_name`: The Fluid Relay container resource name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -853,6 +910,11 @@ pub mod fluid_relay_containers {
             }
         }
         #[doc = "List all Fluid Relay containers which are children of a given Fluid Relay server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id (GUID) for this resource."]
+        #[doc = "* `resource_group`: The resource group containing the resource."]
+        #[doc = "* `fluid_relay_server_name`: The Fluid Relay server resource name."]
         pub fn list_by_fluid_relay_servers(
             &self,
             subscription_id: impl Into<String>,

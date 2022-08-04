@@ -94,6 +94,12 @@ pub mod accounts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get information about an account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `account_name`: Name of the account."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn get(
             &self,
             account_name: impl Into<String>,
@@ -107,6 +113,13 @@ pub mod accounts {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Creates an account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `account_name`: Name of the account."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `parameters`: Parameters supplied to create or update an account."]
         pub fn create_or_update(
             &self,
             account_name: impl Into<String>,
@@ -122,6 +135,13 @@ pub mod accounts {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates an account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `account_name`: Name of the account."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `parameters`: Parameters supplied to update an account."]
         pub fn update(
             &self,
             account_name: impl Into<String>,
@@ -137,6 +157,12 @@ pub mod accounts {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete an account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `account_name`: Name of the account."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn delete(
             &self,
             account_name: impl Into<String>,
@@ -150,6 +176,11 @@ pub mod accounts {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Retrieve a list of accounts within a given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -161,6 +192,10 @@ pub mod accounts {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Retrieve a list of accounts within a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -545,6 +580,12 @@ pub mod enterprise_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get information about an EnterprisePolicy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `enterprise_policy_name`: The EnterprisePolicy name."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn get(
             &self,
             enterprise_policy_name: impl Into<String>,
@@ -558,6 +599,13 @@ pub mod enterprise_policies {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Creates an EnterprisePolicy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `enterprise_policy_name`: Name of the EnterprisePolicy."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `parameters`: Parameters supplied to create or update EnterprisePolicy."]
         pub fn create_or_update(
             &self,
             enterprise_policy_name: impl Into<String>,
@@ -573,6 +621,13 @@ pub mod enterprise_policies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates an EnterprisePolicy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `enterprise_policy_name`: Name of the EnterprisePolicy."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `parameters`: Parameters supplied to update EnterprisePolicy."]
         pub fn update(
             &self,
             enterprise_policy_name: impl Into<String>,
@@ -588,6 +643,12 @@ pub mod enterprise_policies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete an EnterprisePolicy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `enterprise_policy_name`: Name of the EnterprisePolicy"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -601,6 +662,11 @@ pub mod enterprise_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of EnterprisePolicies within a given resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -612,6 +678,10 @@ pub mod enterprise_policies {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Retrieve a list of EnterprisePolicies within a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -996,6 +1066,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available PowerPlatform REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1075,6 +1146,12 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all private endpoint connections on an EnterprisePolicy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `enterprise_policy_name`: EnterprisePolicy for the Microsoft Azure subscription."]
         pub fn list_by_enterprise_policy(
             &self,
             subscription_id: impl Into<String>,
@@ -1088,6 +1165,13 @@ pub mod private_endpoint_connections {
                 enterprise_policy_name: enterprise_policy_name.into(),
             }
         }
+        #[doc = "Gets a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `enterprise_policy_name`: EnterprisePolicy for the Microsoft Azure subscription."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1103,6 +1187,14 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Approve or reject a private endpoint connection with a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `enterprise_policy_name`: EnterprisePolicy for the Microsoft Azure subscription."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
+        #[doc = "* `parameters`: Parameters supplied to create or update a private endpoint connection."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1120,6 +1212,13 @@ pub mod private_endpoint_connections {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection with a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `enterprise_policy_name`: EnterprisePolicy for the Microsoft Azure subscription."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1341,6 +1440,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources that need to be created for enterprisePolicy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `enterprise_policy_name`: EnterprisePolicy for the Microsoft Azure subscription."]
         pub fn list_by_enterprise_policy(
             &self,
             subscription_id: impl Into<String>,
@@ -1354,6 +1459,13 @@ pub mod private_link_resources {
                 enterprise_policy_name: enterprise_policy_name.into(),
             }
         }
+        #[doc = "Gets the private link resources that need to be created for an EnterprisePolicy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `enterprise_policy_name`: EnterprisePolicy for the Microsoft Azure subscription."]
+        #[doc = "* `group_name`: The name of the private link resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,

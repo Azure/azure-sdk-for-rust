@@ -97,6 +97,12 @@ pub mod machines {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves information about the model view or the instance view of a hybrid machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `machine_name`: The name of the hybrid machine."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -111,6 +117,13 @@ pub mod machines {
                 expand: None,
             }
         }
+        #[doc = "The operation to create or update a hybrid machine resource identity in Azure."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `machine_name`: The name of the hybrid machine."]
+        #[doc = "* `parameters`: Parameters supplied to the Create hybrid machine operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -126,6 +139,13 @@ pub mod machines {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "The operation to update a hybrid machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `machine_name`: The name of the hybrid machine."]
+        #[doc = "* `parameters`: Parameters supplied to the Update hybrid machine operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -141,6 +161,12 @@ pub mod machines {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "The operation to remove a hybrid machine identity in Azure."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `machine_name`: The name of the hybrid machine."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -154,6 +180,11 @@ pub mod machines {
                 machine_name: machine_name.into(),
             }
         }
+        #[doc = "Lists all the hybrid machines in the specified resource group. Use the nextLink property in the response to get the next page of hybrid machines."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -165,6 +196,10 @@ pub mod machines {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists all the hybrid machines in the specified subscription. Use the nextLink property in the response to get the next page of hybrid machines."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -548,6 +583,13 @@ pub mod machine_extensions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "The operation to get the extension."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `machine_name`: The name of the machine containing the extension."]
+        #[doc = "* `extension_name`: The name of the machine extension."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -563,6 +605,14 @@ pub mod machine_extensions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The operation to create or update the extension."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `machine_name`: The name of the machine where the extension should be created or updated."]
+        #[doc = "* `extension_name`: The name of the machine extension."]
+        #[doc = "* `extension_parameters`: Parameters supplied to the Create Machine Extension operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -580,6 +630,14 @@ pub mod machine_extensions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The operation to create or update the extension."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `machine_name`: The name of the machine where the extension should be created or updated."]
+        #[doc = "* `extension_name`: The name of the machine extension."]
+        #[doc = "* `extension_parameters`: Parameters supplied to the Create Machine Extension operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -597,6 +655,13 @@ pub mod machine_extensions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The operation to delete the extension."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `machine_name`: The name of the machine where the extension should be deleted."]
+        #[doc = "* `extension_name`: The name of the machine extension."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -612,6 +677,12 @@ pub mod machine_extensions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The operation to get all extensions of a non-Azure machine"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `machine_name`: The name of the machine containing the extension."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -951,6 +1022,13 @@ pub mod machine_extensions {
     }
 }
 impl Client {
+    #[doc = "The operation to Upgrade Machine Extensions."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+    #[doc = "* `machine_name`: The name of the hybrid machine."]
+    #[doc = "* `extension_upgrade_parameters`: Parameters supplied to the Upgrade Extensions operation."]
     pub fn upgrade_extensions(
         &self,
         subscription_id: impl Into<String>,
@@ -1027,6 +1105,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of hybrid compute operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1081,12 +1160,21 @@ pub mod private_link_scopes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of all Azure Arc PrivateLinkScopes within a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of Azure Arc PrivateLinkScopes within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -1098,6 +1186,12 @@ pub mod private_link_scopes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns a Azure Arc PrivateLinkScope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `scope_name`: The name of the Azure Arc PrivateLinkScope resource."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1111,6 +1205,13 @@ pub mod private_link_scopes {
                 scope_name: scope_name.into(),
             }
         }
+        #[doc = "Creates (or updates) a Azure Arc PrivateLinkScope. Note: You cannot specify a different value for InstrumentationKey nor AppId in the Put operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `scope_name`: The name of the Azure Arc PrivateLinkScope resource."]
+        #[doc = "* `parameters`: Properties that need to be specified to create or update a Azure Arc for Servers and Clusters PrivateLinkScope."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1126,6 +1227,13 @@ pub mod private_link_scopes {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates an existing PrivateLinkScope's tags. To update other fields use the CreateOrUpdate method."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `scope_name`: The name of the Azure Arc PrivateLinkScope resource."]
+        #[doc = "* `private_link_scope_tags`: Updated tag information to set into the PrivateLinkScope instance."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -1141,6 +1249,12 @@ pub mod private_link_scopes {
                 private_link_scope_tags: private_link_scope_tags.into(),
             }
         }
+        #[doc = "Deletes a Azure Arc PrivateLinkScope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `scope_name`: The name of the Azure Arc PrivateLinkScope resource."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1154,6 +1268,12 @@ pub mod private_link_scopes {
                 scope_name: scope_name.into(),
             }
         }
+        #[doc = "Returns a Azure Arc PrivateLinkScope's validation details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location of the target resource."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `private_link_scope_id`: The id (Guid) of the Azure Arc PrivateLinkScope resource."]
         pub fn get_validation_details(
             &self,
             location: impl Into<String>,
@@ -1167,6 +1287,12 @@ pub mod private_link_scopes {
                 private_link_scope_id: private_link_scope_id.into(),
             }
         }
+        #[doc = "Returns a Azure Arc PrivateLinkScope's validation details for a given machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `machine_name`: The name of the target machine to get the private link scope validation details for."]
         pub fn get_validation_details_for_machine(
             &self,
             subscription_id: impl Into<String>,
@@ -1665,6 +1791,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources that need to be created for a Azure Monitor PrivateLinkScope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scope_name`: The name of the Azure Arc PrivateLinkScope resource."]
         pub fn list_by_private_link_scope(
             &self,
             subscription_id: impl Into<String>,
@@ -1678,6 +1810,13 @@ pub mod private_link_resources {
                 scope_name: scope_name.into(),
             }
         }
+        #[doc = "Gets the private link resources that need to be created for a Azure Monitor PrivateLinkScope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scope_name`: The name of the Azure Arc PrivateLinkScope resource."]
+        #[doc = "* `group_name`: The name of the private link resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1818,6 +1957,13 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scope_name`: The name of the Azure Arc PrivateLinkScope resource."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1833,6 +1979,13 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Approve or reject a private endpoint connection with a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scope_name`: The name of the Azure Arc PrivateLinkScope resource."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1850,6 +2003,13 @@ pub mod private_endpoint_connections {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection with a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scope_name`: The name of the Azure Arc PrivateLinkScope resource."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1865,6 +2025,12 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Gets all private endpoint connections on a private link scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scope_name`: The name of the Azure Arc PrivateLinkScope resource."]
         pub fn list_by_private_link_scope(
             &self,
             subscription_id: impl Into<String>,

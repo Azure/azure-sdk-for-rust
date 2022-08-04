@@ -310,6 +310,14 @@ pub mod api_export {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the details of the API specified by its identifier in the format specified to the Storage Blob with SAS Key valid for 5 minutes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `format`: Format in which to export the Api Details to the Storage Blob with Sas Key valid for 5 minutes."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -390,6 +398,12 @@ pub mod api {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all APIs of the API Management service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -408,6 +422,13 @@ pub mod api {
                 expand_api_version_set: None,
             }
         }
+        #[doc = "Gets the details of the API specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -423,6 +444,14 @@ pub mod api {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates new or updates existing specified API of the API Management service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `parameters`: Create or update parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -441,6 +470,15 @@ pub mod api {
                 if_match: None,
             }
         }
+        #[doc = "Updates the specified API of the API Management service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `parameters`: API Update Contract parameters."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -460,6 +498,14 @@ pub mod api {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified API of the API Management service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -478,6 +524,13 @@ pub mod api {
                 delete_revisions: None,
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the API specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -493,6 +546,12 @@ pub mod api {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists a collection of apis associated with tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -1053,6 +1112,13 @@ pub mod api_revision {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all revisions of an API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -1181,6 +1247,13 @@ pub mod api_release {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all releases of an API. An API release is created when making an API Revision current. Releases are also used to rollback to previous revisions. Results will be paged and can be constrained by the $top and $skip parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -1199,6 +1272,14 @@ pub mod api_release {
                 skip: None,
             }
         }
+        #[doc = "Returns the details of an API release."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `release_id`: Release identifier within an API. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1216,6 +1297,15 @@ pub mod api_release {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new Release for the API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `release_id`: Release identifier within an API. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Create parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1236,6 +1326,16 @@ pub mod api_release {
                 if_match: None,
             }
         }
+        #[doc = "Updates the details of the release of the API specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `release_id`: Release identifier within an API. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: API Release Update parameters."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1257,6 +1357,15 @@ pub mod api_release {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified release in the API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `release_id`: Release identifier within an API. Must be unique in the current API Management service instance."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1276,6 +1385,14 @@ pub mod api_release {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns the etag of an API release."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `release_id`: Release identifier within an API. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -1705,6 +1822,13 @@ pub mod api_operation {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of the operations for the specified API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_api(
             &self,
             resource_group_name: impl Into<String>,
@@ -1724,6 +1848,14 @@ pub mod api_operation {
                 tags: None,
             }
         }
+        #[doc = "Gets the details of the API Operation specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `operation_id`: Operation identifier within an API. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1741,6 +1873,15 @@ pub mod api_operation {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new operation in the API or updates an existing one."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `operation_id`: Operation identifier within an API. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Create parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1761,6 +1902,16 @@ pub mod api_operation {
                 if_match: None,
             }
         }
+        #[doc = "Updates the details of the operation in the API specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `operation_id`: Operation identifier within an API. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: API Operation Update parameters."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1782,6 +1933,15 @@ pub mod api_operation {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified operation in the API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `operation_id`: Operation identifier within an API. Must be unique in the current API Management service instance."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1801,6 +1961,14 @@ pub mod api_operation {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the API operation specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `operation_id`: Operation identifier within an API. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -2238,6 +2406,14 @@ pub mod api_operation_policy {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the list of policy configuration at the API Operation level."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `operation_id`: Operation identifier within an API. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_operation(
             &self,
             resource_group_name: impl Into<String>,
@@ -2255,6 +2431,15 @@ pub mod api_operation_policy {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the policy configuration at the API Operation level."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `operation_id`: Operation identifier within an API. Must be unique in the current API Management service instance."]
+        #[doc = "* `policy_id`: The identifier of the Policy."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2275,6 +2460,16 @@ pub mod api_operation_policy {
                 format: None,
             }
         }
+        #[doc = "Creates or updates policy configuration for the API Operation level."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `operation_id`: Operation identifier within an API. Must be unique in the current API Management service instance."]
+        #[doc = "* `policy_id`: The identifier of the Policy."]
+        #[doc = "* `parameters`: The policy contents to apply."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -2297,6 +2492,16 @@ pub mod api_operation_policy {
                 if_match: None,
             }
         }
+        #[doc = "Deletes the policy configuration at the Api Operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `operation_id`: Operation identifier within an API. Must be unique in the current API Management service instance."]
+        #[doc = "* `policy_id`: The identifier of the Policy."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2318,6 +2523,15 @@ pub mod api_operation_policy {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the API operation policy specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `operation_id`: Operation identifier within an API. Must be unique in the current API Management service instance."]
+        #[doc = "* `policy_id`: The identifier of the Policy."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -2613,6 +2827,14 @@ pub mod tag {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all Tags associated with the Operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `operation_id`: Operation identifier within an API. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_operation(
             &self,
             resource_group_name: impl Into<String>,
@@ -2633,6 +2855,15 @@ pub mod tag {
                 skip: None,
             }
         }
+        #[doc = "Get tag associated with the Operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `operation_id`: Operation identifier within an API. Must be unique in the current API Management service instance."]
+        #[doc = "* `tag_id`: Tag identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_by_operation(
             &self,
             resource_group_name: impl Into<String>,
@@ -2652,6 +2883,15 @@ pub mod tag {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Assign tag to the Operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `operation_id`: Operation identifier within an API. Must be unique in the current API Management service instance."]
+        #[doc = "* `tag_id`: Tag identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn assign_to_operation(
             &self,
             resource_group_name: impl Into<String>,
@@ -2671,6 +2911,15 @@ pub mod tag {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Detach the tag from the Operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `operation_id`: Operation identifier within an API. Must be unique in the current API Management service instance."]
+        #[doc = "* `tag_id`: Tag identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn detach_from_operation(
             &self,
             resource_group_name: impl Into<String>,
@@ -2690,6 +2939,15 @@ pub mod tag {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state version of the tag specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `operation_id`: Operation identifier within an API. Must be unique in the current API Management service instance."]
+        #[doc = "* `tag_id`: Tag identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_state_by_operation(
             &self,
             resource_group_name: impl Into<String>,
@@ -2709,6 +2967,13 @@ pub mod tag {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all Tags associated with the API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_api(
             &self,
             resource_group_name: impl Into<String>,
@@ -2727,6 +2992,14 @@ pub mod tag {
                 skip: None,
             }
         }
+        #[doc = "Get tag associated with the API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `tag_id`: Tag identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_by_api(
             &self,
             resource_group_name: impl Into<String>,
@@ -2744,6 +3017,14 @@ pub mod tag {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Assign tag to the Api."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `tag_id`: Tag identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn assign_to_api(
             &self,
             resource_group_name: impl Into<String>,
@@ -2761,6 +3042,14 @@ pub mod tag {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Detach the tag from the Api."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `tag_id`: Tag identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn detach_from_api(
             &self,
             resource_group_name: impl Into<String>,
@@ -2778,6 +3067,14 @@ pub mod tag {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state version of the tag specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `tag_id`: Tag identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_state_by_api(
             &self,
             resource_group_name: impl Into<String>,
@@ -2795,6 +3092,13 @@ pub mod tag {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all Tags associated with the Product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_product(
             &self,
             resource_group_name: impl Into<String>,
@@ -2813,6 +3117,14 @@ pub mod tag {
                 skip: None,
             }
         }
+        #[doc = "Get tag associated with the Product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `tag_id`: Tag identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_by_product(
             &self,
             resource_group_name: impl Into<String>,
@@ -2830,6 +3142,14 @@ pub mod tag {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Assign tag to the Product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `tag_id`: Tag identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn assign_to_product(
             &self,
             resource_group_name: impl Into<String>,
@@ -2847,6 +3167,14 @@ pub mod tag {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Detach the tag from the Product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `tag_id`: Tag identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn detach_from_product(
             &self,
             resource_group_name: impl Into<String>,
@@ -2864,6 +3192,14 @@ pub mod tag {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state version of the tag specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `tag_id`: Tag identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_state_by_product(
             &self,
             resource_group_name: impl Into<String>,
@@ -2881,6 +3217,12 @@ pub mod tag {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists a collection of tags defined within a service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -2898,6 +3240,13 @@ pub mod tag {
                 scope: None,
             }
         }
+        #[doc = "Gets the details of the tag specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `tag_id`: Tag identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2913,6 +3262,14 @@ pub mod tag {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a tag."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `tag_id`: Tag identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Create parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -2931,6 +3288,15 @@ pub mod tag {
                 if_match: None,
             }
         }
+        #[doc = "Updates the details of the tag specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `tag_id`: Tag identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Update parameters."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -2950,6 +3316,14 @@ pub mod tag {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes specific tag of the API Management service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `tag_id`: Tag identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2967,6 +3341,13 @@ pub mod tag {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state version of the tag specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `tag_id`: Tag identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_state(
             &self,
             resource_group_name: impl Into<String>,
@@ -4366,6 +4747,13 @@ pub mod api_product {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all Products, which the API is part of."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_apis(
             &self,
             resource_group_name: impl Into<String>,
@@ -4494,6 +4882,13 @@ pub mod api_policy {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the policy configuration at the API level."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_api(
             &self,
             resource_group_name: impl Into<String>,
@@ -4509,6 +4904,14 @@ pub mod api_policy {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the policy configuration at the API level."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `policy_id`: The identifier of the Policy."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -4527,6 +4930,15 @@ pub mod api_policy {
                 format: None,
             }
         }
+        #[doc = "Creates or updates policy configuration for the API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `policy_id`: The identifier of the Policy."]
+        #[doc = "* `parameters`: The policy contents to apply."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -4547,6 +4959,15 @@ pub mod api_policy {
                 if_match: None,
             }
         }
+        #[doc = "Deletes the policy configuration at the Api."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `policy_id`: The identifier of the Policy."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -4566,6 +4987,14 @@ pub mod api_policy {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the API policy specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `policy_id`: The identifier of the Policy."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -4893,6 +5322,13 @@ pub mod api_schema {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the schema configuration at the API level."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_api(
             &self,
             resource_group_name: impl Into<String>,
@@ -4911,6 +5347,14 @@ pub mod api_schema {
                 skip: None,
             }
         }
+        #[doc = "Get the schema configuration at the API level."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `schema_id`: Schema id identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -4928,6 +5372,15 @@ pub mod api_schema {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates schema configuration for the API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `schema_id`: Schema id identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: The schema contents to apply."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -4948,6 +5401,15 @@ pub mod api_schema {
                 if_match: None,
             }
         }
+        #[doc = "Deletes the schema configuration at the Api."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `schema_id`: Schema id identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -4968,6 +5430,14 @@ pub mod api_schema {
                 force: None,
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the schema specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `schema_id`: Schema id identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -5348,6 +5818,13 @@ pub mod api_diagnostic {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all diagnostics of an API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -5366,6 +5843,14 @@ pub mod api_diagnostic {
                 skip: None,
             }
         }
+        #[doc = "Gets the details of the Diagnostic for an API specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `diagnostic_id`: Diagnostic identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -5383,6 +5868,15 @@ pub mod api_diagnostic {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new Diagnostic for an API or updates an existing one."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `diagnostic_id`: Diagnostic identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Create parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -5403,6 +5897,16 @@ pub mod api_diagnostic {
                 if_match: None,
             }
         }
+        #[doc = "Updates the details of the Diagnostic for an API specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `diagnostic_id`: Diagnostic identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Diagnostic Update parameters."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -5424,6 +5928,15 @@ pub mod api_diagnostic {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified Diagnostic from an API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `diagnostic_id`: Diagnostic identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -5443,6 +5956,14 @@ pub mod api_diagnostic {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the Diagnostic for an API specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `diagnostic_id`: Diagnostic identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -5872,6 +6393,13 @@ pub mod api_issue {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all issues associated with the specified API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -5891,6 +6419,14 @@ pub mod api_issue {
                 skip: None,
             }
         }
+        #[doc = "Gets the details of the Issue for an API specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `issue_id`: Issue identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -5909,6 +6445,15 @@ pub mod api_issue {
                 expand_comments_attachments: None,
             }
         }
+        #[doc = "Creates a new Issue for an API or updates an existing one."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `issue_id`: Issue identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Create parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -5929,6 +6474,16 @@ pub mod api_issue {
                 if_match: None,
             }
         }
+        #[doc = "Updates an existing issue for an API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `issue_id`: Issue identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Update parameters."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -5950,6 +6505,15 @@ pub mod api_issue {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified Issue from an API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `issue_id`: Issue identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -5969,6 +6533,14 @@ pub mod api_issue {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the Issue for an API specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `issue_id`: Issue identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -6418,6 +6990,14 @@ pub mod api_issue_comment {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all comments for the Issue associated with the specified API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `issue_id`: Issue identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -6438,6 +7018,15 @@ pub mod api_issue_comment {
                 skip: None,
             }
         }
+        #[doc = "Gets the details of the issue Comment for an API specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `issue_id`: Issue identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `comment_id`: Comment identifier within an Issue. Must be unique in the current Issue."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -6457,6 +7046,16 @@ pub mod api_issue_comment {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new Comment for the Issue in an API or updates an existing one."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `issue_id`: Issue identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `comment_id`: Comment identifier within an Issue. Must be unique in the current Issue."]
+        #[doc = "* `parameters`: Create parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -6479,6 +7078,16 @@ pub mod api_issue_comment {
                 if_match: None,
             }
         }
+        #[doc = "Deletes the specified comment from an Issue."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `issue_id`: Issue identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `comment_id`: Comment identifier within an Issue. Must be unique in the current Issue."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -6500,6 +7109,15 @@ pub mod api_issue_comment {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the issue Comment for an API specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `issue_id`: Issue identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `comment_id`: Comment identifier within an Issue. Must be unique in the current Issue."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -6845,6 +7463,14 @@ pub mod api_issue_attachment {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all attachments for the Issue associated with the specified API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `issue_id`: Issue identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -6865,6 +7491,15 @@ pub mod api_issue_attachment {
                 skip: None,
             }
         }
+        #[doc = "Gets the details of the issue Attachment for an API specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `issue_id`: Issue identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `attachment_id`: Attachment identifier within an Issue. Must be unique in the current Issue."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -6884,6 +7519,16 @@ pub mod api_issue_attachment {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new Attachment for the Issue in an API or updates an existing one."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `issue_id`: Issue identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `attachment_id`: Attachment identifier within an Issue. Must be unique in the current Issue."]
+        #[doc = "* `parameters`: Create parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -6906,6 +7551,16 @@ pub mod api_issue_attachment {
                 if_match: None,
             }
         }
+        #[doc = "Deletes the specified comment from an Issue."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `issue_id`: Issue identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `attachment_id`: Attachment identifier within an Issue. Must be unique in the current Issue."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -6927,6 +7582,15 @@ pub mod api_issue_attachment {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the issue Attachment for an API specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `issue_id`: Issue identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `attachment_id`: Attachment identifier within an Issue. Must be unique in the current Issue."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -7264,6 +7928,13 @@ pub mod api_tag_description {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all Tags descriptions in scope of API. Model similar to swagger - tagDescription is defined on API level but tag may be assigned to the Operations"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -7282,6 +7953,14 @@ pub mod api_tag_description {
                 skip: None,
             }
         }
+        #[doc = "Get Tag description in scope of API"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `tag_description_id`: Tag description identifier. Used when creating tagDescription for API/Tag association. Based on API and Tag names."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -7299,6 +7978,15 @@ pub mod api_tag_description {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create/Update tag description in scope of the Api."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `tag_description_id`: Tag description identifier. Used when creating tagDescription for API/Tag association. Based on API and Tag names."]
+        #[doc = "* `parameters`: Create parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -7319,6 +8007,15 @@ pub mod api_tag_description {
                 if_match: None,
             }
         }
+        #[doc = "Delete tag description for the Api."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `tag_description_id`: Tag description identifier. Used when creating tagDescription for API/Tag association. Based on API and Tag names."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -7338,6 +8035,14 @@ pub mod api_tag_description {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state version of the tag specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `tag_description_id`: Tag description identifier. Used when creating tagDescription for API/Tag association. Based on API and Tag names."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -7707,6 +8412,13 @@ pub mod operation {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of operations associated with tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -7846,6 +8558,12 @@ pub mod api_version_set {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of API Version Sets in the specified service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -7862,6 +8580,13 @@ pub mod api_version_set {
                 skip: None,
             }
         }
+        #[doc = "Gets the details of the Api Version Set specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `version_set_id`: Api Version Set identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -7877,6 +8602,14 @@ pub mod api_version_set {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or Updates a Api Version Set."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `version_set_id`: Api Version Set identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Create or update parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -7895,6 +8628,15 @@ pub mod api_version_set {
                 if_match: None,
             }
         }
+        #[doc = "Updates the details of the Api VersionSet specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `version_set_id`: Api Version Set identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Update parameters."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -7914,6 +8656,14 @@ pub mod api_version_set {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes specific Api Version Set."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `version_set_id`: Api Version Set identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -7931,6 +8681,13 @@ pub mod api_version_set {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the Api Version Set specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `version_set_id`: Api Version Set identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -8346,6 +9103,12 @@ pub mod authorization_server {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of authorization servers defined within a service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -8362,6 +9125,13 @@ pub mod authorization_server {
                 skip: None,
             }
         }
+        #[doc = "Gets the details of the authorization server specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `authsid`: Identifier of the authorization server."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -8377,6 +9147,14 @@ pub mod authorization_server {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates new authorization server or updates an existing authorization server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `authsid`: Identifier of the authorization server."]
+        #[doc = "* `parameters`: Create or update parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -8395,6 +9173,15 @@ pub mod authorization_server {
                 if_match: None,
             }
         }
+        #[doc = "Updates the details of the authorization server specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `authsid`: Identifier of the authorization server."]
+        #[doc = "* `parameters`: OAuth2 Server settings Update parameters."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -8414,6 +9201,14 @@ pub mod authorization_server {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes specific authorization server instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `authsid`: Identifier of the authorization server."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -8431,6 +9226,13 @@ pub mod authorization_server {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the authorizationServer specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `authsid`: Identifier of the authorization server."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -8446,6 +9248,13 @@ pub mod authorization_server {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the client secret details of the authorization server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `authsid`: Identifier of the authorization server."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_secrets(
             &self,
             resource_group_name: impl Into<String>,
@@ -8909,6 +9718,12 @@ pub mod backend {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of backends in the specified service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -8925,6 +9740,13 @@ pub mod backend {
                 skip: None,
             }
         }
+        #[doc = "Gets the details of the backend specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `backend_id`: Identifier of the Backend entity. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -8940,6 +9762,14 @@ pub mod backend {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or Updates a backend."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `backend_id`: Identifier of the Backend entity. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Create parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -8958,6 +9788,15 @@ pub mod backend {
                 if_match: None,
             }
         }
+        #[doc = "Updates an existing backend."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `backend_id`: Identifier of the Backend entity. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Update parameters."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -8977,6 +9816,14 @@ pub mod backend {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified backend."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `backend_id`: Identifier of the Backend entity. Must be unique in the current API Management service instance."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -8994,6 +9841,13 @@ pub mod backend {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the backend specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `backend_id`: Identifier of the Backend entity. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -9009,6 +9863,13 @@ pub mod backend {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Notifies the APIM proxy to create a new connection to the backend after the specified timeout. If no timeout was specified, timeout of 2 minutes is used."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `backend_id`: Identifier of the Backend entity. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn reconnect(
             &self,
             resource_group_name: impl Into<String>,
@@ -9485,6 +10346,12 @@ pub mod cache {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of all external Caches in the specified service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -9500,6 +10367,13 @@ pub mod cache {
                 skip: None,
             }
         }
+        #[doc = "Gets the details of the Cache specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `cache_id`: Identifier of the Cache entity. Cache identifier (should be either 'default' or valid Azure region identifier)."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -9515,6 +10389,14 @@ pub mod cache {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an External Cache to be used in Api Management instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `cache_id`: Identifier of the Cache entity. Cache identifier (should be either 'default' or valid Azure region identifier)."]
+        #[doc = "* `parameters`: Create or Update parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -9533,6 +10415,15 @@ pub mod cache {
                 if_match: None,
             }
         }
+        #[doc = "Updates the details of the cache specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `cache_id`: Identifier of the Cache entity. Cache identifier (should be either 'default' or valid Azure region identifier)."]
+        #[doc = "* `parameters`: Update parameters."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -9552,6 +10443,14 @@ pub mod cache {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes specific Cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `cache_id`: Identifier of the Cache entity. Cache identifier (should be either 'default' or valid Azure region identifier)."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -9569,6 +10468,13 @@ pub mod cache {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the Cache specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `cache_id`: Identifier of the Cache entity. Cache identifier (should be either 'default' or valid Azure region identifier)."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -9976,6 +10882,12 @@ pub mod certificate {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of all certificates in the specified service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -9993,6 +10905,13 @@ pub mod certificate {
                 is_key_vault_refresh_failed: None,
             }
         }
+        #[doc = "Gets the details of the certificate specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `certificate_id`: Identifier of the certificate entity. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -10008,6 +10927,14 @@ pub mod certificate {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the certificate being used for authentication with the backend."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `certificate_id`: Identifier of the certificate entity. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Create or Update parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -10026,6 +10953,14 @@ pub mod certificate {
                 if_match: None,
             }
         }
+        #[doc = "Deletes specific certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `certificate_id`: Identifier of the certificate entity. Must be unique in the current API Management service instance."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -10043,6 +10978,13 @@ pub mod certificate {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the certificate specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `certificate_id`: Identifier of the certificate entity. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -10058,6 +11000,13 @@ pub mod certificate {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "From KeyVault, Refresh the certificate being used for authentication with the backend."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `certificate_id`: Identifier of the certificate entity. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn refresh_secret(
             &self,
             resource_group_name: impl Into<String>,
@@ -10470,6 +11419,13 @@ pub mod certificate {
     }
 }
 impl Client {
+    #[doc = "Performs a connectivity check between the API Management service and a given destination, and returns metrics for the connection, as well as errors encountered while trying to establish it."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `resource_group_name`: The name of the resource group."]
+    #[doc = "* `service_name`: The name of the API Management service."]
+    #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+    #[doc = "* `connectivity_check_request_params`: Connectivity Check request parameters."]
     pub fn perform_connectivity_check_async(
         &self,
         resource_group_name: impl Into<String>,
@@ -10550,6 +11506,12 @@ pub mod content_type {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the developer portal's content types. Content types describe content items' properties, validation rules, and constraints."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -10563,6 +11525,13 @@ pub mod content_type {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the details of the developer portal's content type. Content types describe content items' properties, validation rules, and constraints."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `content_type_id`: Content type identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -10578,6 +11547,13 @@ pub mod content_type {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the developer portal's content type. Content types describe content items' properties, validation rules, and constraints. Custom content types' identifiers need to start with the `c-` prefix. Built-in content types can't be modified."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `content_type_id`: Content type identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -10595,6 +11571,14 @@ pub mod content_type {
                 parameters: None,
             }
         }
+        #[doc = "Removes the specified developer portal's content type. Content types describe content items' properties, validation rules, and constraints. Built-in content types (with identifiers starting with the `c-` prefix) can't be removed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `content_type_id`: Content type identifier."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -10888,6 +11872,13 @@ pub mod content_item {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists developer portal's content items specified by the provided content type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `content_type_id`: Content type identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -10903,6 +11894,14 @@ pub mod content_item {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns the developer portal's content item specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `content_type_id`: Content type identifier."]
+        #[doc = "* `content_item_id`: Content item identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -10920,6 +11919,14 @@ pub mod content_item {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new developer portal's content item specified by the provided content type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `content_type_id`: Content type identifier."]
+        #[doc = "* `content_item_id`: Content item identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -10938,6 +11945,15 @@ pub mod content_item {
                 if_match: None,
             }
         }
+        #[doc = "Removes the specified developer portal's content item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `content_type_id`: Content type identifier."]
+        #[doc = "* `content_item_id`: Content item identifier."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -10957,6 +11973,14 @@ pub mod content_item {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns the entity state (ETag) version of the developer portal's content item specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `content_type_id`: Content type identifier."]
+        #[doc = "* `content_item_id`: Content item identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -11261,12 +12285,22 @@ pub mod deleted_services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all soft-deleted services available for undelete for the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get soft-deleted Api Management Service by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: The location of the deleted API Management service."]
         pub fn get_by_name(
             &self,
             service_name: impl Into<String>,
@@ -11280,6 +12314,12 @@ pub mod deleted_services {
                 location: location.into(),
             }
         }
+        #[doc = "Purges Api Management Service (deletes it with no option to undelete)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: The location of the deleted API Management service."]
         pub fn purge(
             &self,
             service_name: impl Into<String>,
@@ -11485,6 +12525,7 @@ pub mod api_management_operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available REST API operations of the Microsoft.ApiManagement provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -11565,6 +12606,12 @@ pub mod api_management_service_skus {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets available SKUs for API Management service"]
+        #[doc = "Gets all available SKU for a given API Management service"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_available_service_skus(
             &self,
             resource_group_name: impl Into<String>,
@@ -11662,6 +12709,13 @@ pub mod api_management_service {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Restores a backup of an API Management service created using the ApiManagementService_Backup operation on the current service. This is a long running operation and could take several minutes to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `parameters`: Parameters supplied to the Restore API Management service from backup operation."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn restore(
             &self,
             resource_group_name: impl Into<String>,
@@ -11677,6 +12731,13 @@ pub mod api_management_service {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a backup of the API Management service to the given Azure Storage Account. This is long running operation and could take several minutes to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `parameters`: Parameters supplied to the ApiManagementService_Backup operation."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn backup(
             &self,
             resource_group_name: impl Into<String>,
@@ -11692,6 +12753,12 @@ pub mod api_management_service {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets an API Management service resource description."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -11705,6 +12772,13 @@ pub mod api_management_service {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an API Management service. This is long running operation and could take several minutes to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `parameters`: Parameters supplied to the CreateOrUpdate API Management service operation."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -11720,6 +12794,13 @@ pub mod api_management_service {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing API Management service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `parameters`: Parameters supplied to the CreateOrUpdate API Management service operation."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -11735,6 +12816,12 @@ pub mod api_management_service {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing API Management service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -11748,6 +12835,11 @@ pub mod api_management_service {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List all API Management services within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -11759,12 +12851,22 @@ pub mod api_management_service {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all API Management services within an Azure subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the Single-Sign-On token for the API Management Service which is valid for 5 Minutes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_sso_token(
             &self,
             resource_group_name: impl Into<String>,
@@ -11778,6 +12880,11 @@ pub mod api_management_service {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Checks availability and correctness of a name for an API Management service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters supplied to the CheckNameAvailability operation."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check_name_availability(
             &self,
             parameters: impl Into<models::ApiManagementServiceCheckNameAvailabilityParameters>,
@@ -11789,12 +12896,22 @@ pub mod api_management_service {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the custom domain ownership identifier for an API Management service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_domain_ownership_identifier(&self, subscription_id: impl Into<String>) -> get_domain_ownership_identifier::Builder {
             get_domain_ownership_identifier::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the Microsoft.ApiManagement resource running in the Virtual network to pick the updated DNS changes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn apply_network_configuration_updates(
             &self,
             resource_group_name: impl Into<String>,
@@ -12538,6 +13655,12 @@ pub mod diagnostic {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all diagnostics of the API Management service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -12554,6 +13677,13 @@ pub mod diagnostic {
                 skip: None,
             }
         }
+        #[doc = "Gets the details of the Diagnostic specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `diagnostic_id`: Diagnostic identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -12569,6 +13699,14 @@ pub mod diagnostic {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new Diagnostic or updates an existing one."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `diagnostic_id`: Diagnostic identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Create parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -12587,6 +13725,15 @@ pub mod diagnostic {
                 if_match: None,
             }
         }
+        #[doc = "Updates the details of the Diagnostic specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `diagnostic_id`: Diagnostic identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Diagnostic Update parameters."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -12606,6 +13753,14 @@ pub mod diagnostic {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified Diagnostic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `diagnostic_id`: Diagnostic identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -12623,6 +13778,13 @@ pub mod diagnostic {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the Diagnostic specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `diagnostic_id`: Diagnostic identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -13038,6 +14200,12 @@ pub mod email_template {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all email templates"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -13054,6 +14222,13 @@ pub mod email_template {
                 skip: None,
             }
         }
+        #[doc = "Gets the details of the email template specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `template_name`: Email Template Name Identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -13069,6 +14244,14 @@ pub mod email_template {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an Email Template."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `template_name`: Email Template Name Identifier."]
+        #[doc = "* `parameters`: Email Template update parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -13087,6 +14270,15 @@ pub mod email_template {
                 if_match: None,
             }
         }
+        #[doc = "Updates API Management email template"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `template_name`: Email Template Name Identifier."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `parameters`: Update parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -13106,6 +14298,14 @@ pub mod email_template {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Reset the Email Template to default template provided by the API Management service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `template_name`: Email Template Name Identifier."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -13123,6 +14323,13 @@ pub mod email_template {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the email template specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `template_name`: Email Template Name Identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -13538,6 +14745,12 @@ pub mod gateway {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of gateways registered with service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -13554,6 +14767,13 @@ pub mod gateway {
                 skip: None,
             }
         }
+        #[doc = "Gets the details of the Gateway specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -13569,6 +14789,13 @@ pub mod gateway {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a Gateway to be used in Api Management instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -13587,6 +14814,14 @@ pub mod gateway {
                 if_match: None,
             }
         }
+        #[doc = "Updates the details of the gateway specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -13606,6 +14841,14 @@ pub mod gateway {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes specific Gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -13623,6 +14866,13 @@ pub mod gateway {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the Gateway specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -13638,6 +14888,13 @@ pub mod gateway {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieves gateway keys."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -13653,6 +14910,13 @@ pub mod gateway {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Regenerates specified gateway key invalidating any tokens created with it."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn regenerate_key(
             &self,
             resource_group_name: impl Into<String>,
@@ -13670,6 +14934,13 @@ pub mod gateway {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the Shared Access Authorization Token for the gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn generate_token(
             &self,
             resource_group_name: impl Into<String>,
@@ -14250,6 +15521,13 @@ pub mod gateway_hostname_configuration {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the collection of hostname configurations for the specified gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -14268,6 +15546,14 @@ pub mod gateway_hostname_configuration {
                 skip: None,
             }
         }
+        #[doc = "Get details of a hostname configuration"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `hc_id`: Gateway hostname configuration identifier. Must be unique in the scope of parent Gateway entity."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -14285,6 +15571,14 @@ pub mod gateway_hostname_configuration {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates of updates hostname configuration for a Gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `hc_id`: Gateway hostname configuration identifier. Must be unique in the scope of parent Gateway entity."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -14305,6 +15599,15 @@ pub mod gateway_hostname_configuration {
                 if_match: None,
             }
         }
+        #[doc = "Deletes the specified hostname configuration from the specified Gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `hc_id`: Gateway hostname configuration identifier. Must be unique in the scope of parent Gateway entity."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -14324,6 +15627,14 @@ pub mod gateway_hostname_configuration {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Checks that hostname configuration entity specified by identifier exists for specified Gateway entity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `hc_id`: Gateway hostname configuration identifier. Must be unique in the scope of parent Gateway entity."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -14654,6 +15965,13 @@ pub mod gateway_api {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of the APIs associated with a gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -14672,6 +15990,14 @@ pub mod gateway_api {
                 skip: None,
             }
         }
+        #[doc = "Adds an API to the specified Gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -14690,6 +16016,14 @@ pub mod gateway_api {
                 parameters: None,
             }
         }
+        #[doc = "Deletes the specified API from the specified Gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -14707,6 +16041,14 @@ pub mod gateway_api {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Checks that API entity specified by identifier is associated with the Gateway entity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `api_id`: API identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -15018,6 +16360,13 @@ pub mod gateway_certificate_authority {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the collection of Certificate Authorities for the specified Gateway entity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -15036,6 +16385,14 @@ pub mod gateway_certificate_authority {
                 skip: None,
             }
         }
+        #[doc = "Get assigned Gateway Certificate Authority details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `certificate_id`: Identifier of the certificate entity. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -15053,6 +16410,14 @@ pub mod gateway_certificate_authority {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Assign Certificate entity to Gateway entity as Certificate Authority."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `certificate_id`: Identifier of the certificate entity. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -15073,6 +16438,15 @@ pub mod gateway_certificate_authority {
                 if_match: None,
             }
         }
+        #[doc = "Remove relationship between Certificate Authority and Gateway entity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `certificate_id`: Identifier of the certificate entity. Must be unique in the current API Management service instance."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -15092,6 +16466,14 @@ pub mod gateway_certificate_authority {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Checks if Certificate entity is assigned to Gateway entity as Certificate Authority."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `gateway_id`: Gateway entity identifier. Must be unique in the current API Management service instance. Must not have value 'managed'"]
+        #[doc = "* `certificate_id`: Identifier of the certificate entity. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -15422,6 +16804,12 @@ pub mod group {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of groups defined within a service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -15438,6 +16826,13 @@ pub mod group {
                 skip: None,
             }
         }
+        #[doc = "Gets the details of the group specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `group_id`: Group identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -15453,6 +16848,14 @@ pub mod group {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or Updates a group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `group_id`: Group identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Create parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -15471,6 +16874,15 @@ pub mod group {
                 if_match: None,
             }
         }
+        #[doc = "Updates the details of the group specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `group_id`: Group identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Update parameters."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -15490,6 +16902,14 @@ pub mod group {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes specific group of the API Management service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `group_id`: Group identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -15507,6 +16927,13 @@ pub mod group {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the group specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `group_id`: Group identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -15922,6 +17349,13 @@ pub mod group_user {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of user entities associated with the group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `group_id`: Group identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -15940,6 +17374,14 @@ pub mod group_user {
                 skip: None,
             }
         }
+        #[doc = "Add existing user to existing group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `group_id`: Group identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `user_id`: User identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -15957,6 +17399,14 @@ pub mod group_user {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Remove existing user from existing group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `group_id`: Group identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `user_id`: User identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -15974,6 +17424,14 @@ pub mod group_user {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Checks that user entity specified by identifier is associated with the group entity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `group_id`: Group identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `user_id`: User identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check_entity_exists(
             &self,
             resource_group_name: impl Into<String>,
@@ -16275,6 +17733,12 @@ pub mod identity_provider {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of Identity Provider configured in the specified service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -16288,6 +17752,13 @@ pub mod identity_provider {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the configuration details of the identity Provider configured in specified service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `identity_provider_name`: Identity Provider Type identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -16303,6 +17774,14 @@ pub mod identity_provider {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or Updates the IdentityProvider configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `identity_provider_name`: Identity Provider Type identifier."]
+        #[doc = "* `parameters`: Create parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -16321,6 +17800,15 @@ pub mod identity_provider {
                 if_match: None,
             }
         }
+        #[doc = "Updates an existing IdentityProvider configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `identity_provider_name`: Identity Provider Type identifier."]
+        #[doc = "* `parameters`: Update parameters."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -16340,6 +17828,14 @@ pub mod identity_provider {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified identity provider configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `identity_provider_name`: Identity Provider Type identifier."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -16357,6 +17853,13 @@ pub mod identity_provider {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the identityProvider specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `identity_provider_name`: Identity Provider Type identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -16372,6 +17875,13 @@ pub mod identity_provider {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the client secret details of the Identity Provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `identity_provider_name`: Identity Provider Type identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_secrets(
             &self,
             resource_group_name: impl Into<String>,
@@ -16811,6 +18321,12 @@ pub mod issue {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of issues in the specified service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -16827,6 +18343,13 @@ pub mod issue {
                 skip: None,
             }
         }
+        #[doc = "Gets API Management issue details"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `issue_id`: Issue identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -17004,6 +18527,12 @@ pub mod logger {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of loggers in the specified service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -17020,6 +18549,13 @@ pub mod logger {
                 skip: None,
             }
         }
+        #[doc = "Gets the details of the logger specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `logger_id`: Logger identifier. Must be unique in the API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -17035,6 +18571,14 @@ pub mod logger {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or Updates a logger."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `logger_id`: Logger identifier. Must be unique in the API Management service instance."]
+        #[doc = "* `parameters`: Create parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -17053,6 +18597,15 @@ pub mod logger {
                 if_match: None,
             }
         }
+        #[doc = "Updates an existing logger."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `logger_id`: Logger identifier. Must be unique in the API Management service instance."]
+        #[doc = "* `parameters`: Update parameters."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -17072,6 +18625,14 @@ pub mod logger {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified logger."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `logger_id`: Logger identifier. Must be unique in the API Management service instance."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -17089,6 +18650,13 @@ pub mod logger {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the logger specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `logger_id`: Logger identifier. Must be unique in the API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -17504,6 +19072,12 @@ pub mod named_value {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of named values defined within a service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -17521,6 +19095,13 @@ pub mod named_value {
                 is_key_vault_refresh_failed: None,
             }
         }
+        #[doc = "Gets the details of the named value specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `named_value_id`: Identifier of the NamedValue."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -17536,6 +19117,14 @@ pub mod named_value {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates named value."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `named_value_id`: Identifier of the NamedValue."]
+        #[doc = "* `parameters`: Create parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -17554,6 +19143,15 @@ pub mod named_value {
                 if_match: None,
             }
         }
+        #[doc = "Updates the specific named value."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `named_value_id`: Identifier of the NamedValue."]
+        #[doc = "* `parameters`: Update parameters."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -17573,6 +19171,14 @@ pub mod named_value {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes specific named value from the API Management service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `named_value_id`: Identifier of the NamedValue."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -17590,6 +19196,13 @@ pub mod named_value {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the named value specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `named_value_id`: Identifier of the NamedValue."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -17605,6 +19218,13 @@ pub mod named_value {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the secret of the named value specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `named_value_id`: Identifier of the NamedValue."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_value(
             &self,
             resource_group_name: impl Into<String>,
@@ -17620,6 +19240,13 @@ pub mod named_value {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Refresh the secret of the named value specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `named_value_id`: Identifier of the NamedValue."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn refresh_secret(
             &self,
             resource_group_name: impl Into<String>,
@@ -18163,6 +19790,12 @@ pub mod network_status {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the Connectivity Status to the external resources on which the Api Management service depends from inside the Cloud Service. This also returns the DNS Servers as visible to the CloudService."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
         pub fn list_by_service(
             &self,
             subscription_id: impl Into<String>,
@@ -18176,6 +19809,13 @@ pub mod network_status {
                 service_name: service_name.into(),
             }
         }
+        #[doc = "Gets the Connectivity Status to the external resources on which the Api Management service depends from inside the Cloud Service. This also returns the DNS Servers as visible to the CloudService."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `location_name`: Location in which the API Management service is deployed. This is one of the Azure Regions like West US, East US, South Central US."]
         pub fn list_by_location(
             &self,
             subscription_id: impl Into<String>,
@@ -18303,6 +19943,12 @@ pub mod notification {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of properties defined within a service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -18318,6 +19964,13 @@ pub mod notification {
                 skip: None,
             }
         }
+        #[doc = "Gets the details of the Notification specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `notification_name`: Notification Name Identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -18333,6 +19986,13 @@ pub mod notification {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or Update API Management publisher notification."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `notification_name`: Notification Name Identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -18565,6 +20225,13 @@ pub mod notification_recipient_user {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of the Notification Recipient User subscribed to the notification."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `notification_name`: Notification Name Identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_notification(
             &self,
             resource_group_name: impl Into<String>,
@@ -18580,6 +20247,14 @@ pub mod notification_recipient_user {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Adds the API Management User to the list of Recipients for the Notification."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `notification_name`: Notification Name Identifier."]
+        #[doc = "* `user_id`: User identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -18597,6 +20272,14 @@ pub mod notification_recipient_user {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Removes the API Management user from the list of Notification."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `notification_name`: Notification Name Identifier."]
+        #[doc = "* `user_id`: User identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -18614,6 +20297,14 @@ pub mod notification_recipient_user {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Determine if the Notification Recipient User is subscribed to the notification."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `notification_name`: Notification Name Identifier."]
+        #[doc = "* `user_id`: User identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check_entity_exists(
             &self,
             resource_group_name: impl Into<String>,
@@ -18834,6 +20525,13 @@ pub mod notification_recipient_email {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of the Notification Recipient Emails subscribed to a notification."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `notification_name`: Notification Name Identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_notification(
             &self,
             resource_group_name: impl Into<String>,
@@ -18849,6 +20547,14 @@ pub mod notification_recipient_email {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Adds the Email address to the list of Recipients for the Notification."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `notification_name`: Notification Name Identifier."]
+        #[doc = "* `email`: Email identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -18866,6 +20572,14 @@ pub mod notification_recipient_email {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Removes the email from the list of Notification."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `notification_name`: Notification Name Identifier."]
+        #[doc = "* `email`: Email identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -18883,6 +20597,14 @@ pub mod notification_recipient_email {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Determine if Notification Recipient Email subscribed to the notification."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `notification_name`: Notification Name Identifier."]
+        #[doc = "* `email`: Email identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check_entity_exists(
             &self,
             resource_group_name: impl Into<String>,
@@ -19103,6 +20825,12 @@ pub mod open_id_connect_provider {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists of all the OpenId Connect Providers."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -19119,6 +20847,13 @@ pub mod open_id_connect_provider {
                 skip: None,
             }
         }
+        #[doc = "Gets specific OpenID Connect Provider without secrets."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `opid`: Identifier of the OpenID Connect Provider."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -19134,6 +20869,14 @@ pub mod open_id_connect_provider {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the OpenID Connect Provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `opid`: Identifier of the OpenID Connect Provider."]
+        #[doc = "* `parameters`: Create parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -19152,6 +20895,15 @@ pub mod open_id_connect_provider {
                 if_match: None,
             }
         }
+        #[doc = "Updates the specific OpenID Connect Provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `opid`: Identifier of the OpenID Connect Provider."]
+        #[doc = "* `parameters`: Update parameters."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -19171,6 +20923,14 @@ pub mod open_id_connect_provider {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes specific OpenID Connect Provider of the API Management service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `opid`: Identifier of the OpenID Connect Provider."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -19188,6 +20948,13 @@ pub mod open_id_connect_provider {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the openIdConnectProvider specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `opid`: Identifier of the OpenID Connect Provider."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -19203,6 +20970,13 @@ pub mod open_id_connect_provider {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the client secret details of the OpenID Connect Provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `opid`: Identifier of the OpenID Connect Provider."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_secrets(
             &self,
             resource_group_name: impl Into<String>,
@@ -19666,6 +21440,12 @@ pub mod outbound_network_dependencies_endpoints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the network endpoints of all outbound dependencies of a ApiManagement service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
         pub fn list_by_service(
             &self,
             subscription_id: impl Into<String>,
@@ -19731,6 +21511,12 @@ pub mod policy {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the Global Policy definitions of the Api Management service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -19744,6 +21530,13 @@ pub mod policy {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the Global policy definition of the Api Management service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `policy_id`: The identifier of the Policy."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -19760,6 +21553,14 @@ pub mod policy {
                 format: None,
             }
         }
+        #[doc = "Creates or updates the global policy configuration of the Api Management service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `policy_id`: The identifier of the Policy."]
+        #[doc = "* `parameters`: The policy contents to apply."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -19778,6 +21579,14 @@ pub mod policy {
                 if_match: None,
             }
         }
+        #[doc = "Deletes the global policy configuration of the Api Management Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `policy_id`: The identifier of the Policy."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -19795,6 +21604,13 @@ pub mod policy {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the Global policy definition in the Api Management service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `policy_id`: The identifier of the Policy."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -20110,6 +21926,12 @@ pub mod policy_description {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all policy descriptions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -20190,6 +22012,12 @@ pub mod policy_fragment {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all policy fragments."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -20207,6 +22035,13 @@ pub mod policy_fragment {
                 skip: None,
             }
         }
+        #[doc = "Gets a policy fragment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `id`: A resource identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -20223,6 +22058,14 @@ pub mod policy_fragment {
                 format: None,
             }
         }
+        #[doc = "Creates or updates a policy fragment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `id`: A resource identifier."]
+        #[doc = "* `parameters`: The policy fragment contents to apply."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -20241,6 +22084,14 @@ pub mod policy_fragment {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a policy fragment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `id`: A resource identifier."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -20258,6 +22109,13 @@ pub mod policy_fragment {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of a policy fragment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `id`: A resource identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -20273,6 +22131,13 @@ pub mod policy_fragment {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists policy resources that reference the policy fragment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `id`: A resource identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_references(
             &self,
             resource_group_name: impl Into<String>,
@@ -20689,6 +22554,12 @@ pub mod portal_revision {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists developer portal's revisions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -20705,6 +22576,13 @@ pub mod portal_revision {
                 skip: None,
             }
         }
+        #[doc = "Gets the developer portal's revision specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `portal_revision_id`: Portal revision identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -20720,6 +22598,13 @@ pub mod portal_revision {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new developer portal's revision by running the portal's publishing. The `isCurrent` property indicates if the revision is publicly accessible."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `portal_revision_id`: Portal revision identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -20737,6 +22622,14 @@ pub mod portal_revision {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the description of specified portal revision or makes it current."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `portal_revision_id`: Portal revision identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -20756,6 +22649,13 @@ pub mod portal_revision {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the developer portal revision specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `portal_revision_id`: Portal revision identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -21109,6 +23009,12 @@ pub mod portal_settings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of portalsettings defined within a service instance.."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -21180,6 +23086,12 @@ pub mod sign_in_settings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Sign In Settings for the Portal"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -21193,6 +23105,13 @@ pub mod sign_in_settings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or Update Sign-In settings."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `parameters`: Create or update parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -21209,6 +23128,14 @@ pub mod sign_in_settings {
                 if_match: None,
             }
         }
+        #[doc = "Update Sign-In settings."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `parameters`: Update Sign-In settings."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -21226,6 +23153,12 @@ pub mod sign_in_settings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the SignInSettings."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -21459,6 +23392,12 @@ pub mod sign_up_settings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Sign Up Settings for the Portal"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -21472,6 +23411,13 @@ pub mod sign_up_settings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or Update Sign-Up settings."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `parameters`: Create or update parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -21488,6 +23434,14 @@ pub mod sign_up_settings {
                 if_match: None,
             }
         }
+        #[doc = "Update Sign-Up settings."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `parameters`: Update Sign-Up settings."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -21505,6 +23459,12 @@ pub mod sign_up_settings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the SignUpSettings."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -21738,6 +23698,12 @@ pub mod delegation_settings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Delegation Settings for the Portal."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -21751,6 +23717,13 @@ pub mod delegation_settings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or Update Delegation settings."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `parameters`: Create or update parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -21767,6 +23740,14 @@ pub mod delegation_settings {
                 if_match: None,
             }
         }
+        #[doc = "Update Delegation settings."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `parameters`: Update Delegation settings."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -21784,6 +23765,12 @@ pub mod delegation_settings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the DelegationSettings."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -21797,6 +23784,12 @@ pub mod delegation_settings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the secret validation key of the DelegationSettings."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_secrets(
             &self,
             resource_group_name: impl Into<String>,
@@ -22077,6 +24070,12 @@ pub mod portal_config {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the developer portal configurations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -22090,6 +24089,13 @@ pub mod portal_config {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the developer portal configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `portal_config_id`: Portal configuration identifier."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -22105,6 +24111,15 @@ pub mod portal_config {
                 portal_config_id: portal_config_id.into(),
             }
         }
+        #[doc = "Create or update the developer portal configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `portal_config_id`: Portal configuration identifier."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `parameters`: Update the developer portal configuration."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -22124,6 +24139,15 @@ pub mod portal_config {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Update the developer portal configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `portal_config_id`: Portal configuration identifier."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `parameters`: Update the developer portal configuration."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -22143,6 +24167,13 @@ pub mod portal_config {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the developer portal configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `portal_config_id`: Portal configuration identifier."]
         pub fn get_entity_tag(
             &self,
             subscription_id: impl Into<String>,
@@ -22436,6 +24467,12 @@ pub mod private_endpoint_connection {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all private endpoint connections of the API Management service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
         pub fn list_by_service(
             &self,
             subscription_id: impl Into<String>,
@@ -22449,6 +24486,13 @@ pub mod private_endpoint_connection {
                 service_name: service_name.into(),
             }
         }
+        #[doc = "Gets the details of the Private Endpoint Connection specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_by_name(
             &self,
             resource_group_name: impl Into<String>,
@@ -22464,6 +24508,13 @@ pub mod private_endpoint_connection {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new Private Endpoint Connection or updates an existing one."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -22481,6 +24532,13 @@ pub mod private_endpoint_connection {
                 private_endpoint_connection_request: private_endpoint_connection_request.into(),
             }
         }
+        #[doc = "Deletes the specified Private Endpoint Connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -22496,6 +24554,12 @@ pub mod private_endpoint_connection {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the private link resources"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `service_name`: The name of the API Management service."]
         pub fn list_private_link_resources(
             &self,
             resource_group_name: impl Into<String>,
@@ -22509,6 +24573,13 @@ pub mod private_endpoint_connection {
                 service_name: service_name.into(),
             }
         }
+        #[doc = "Gets the private link resources"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `private_link_sub_resource_name`: Name of the private link resource."]
         pub fn get_private_link_resource(
             &self,
             resource_group_name: impl Into<String>,
@@ -22842,6 +24913,12 @@ pub mod product {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of products in the specified service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -22860,6 +24937,13 @@ pub mod product {
                 tags: None,
             }
         }
+        #[doc = "Gets the details of the product specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -22875,6 +24959,14 @@ pub mod product {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or Updates a product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Create or update parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -22893,6 +24985,15 @@ pub mod product {
                 if_match: None,
             }
         }
+        #[doc = "Update existing product details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Update parameters."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -22912,6 +25013,14 @@ pub mod product {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -22930,6 +25039,13 @@ pub mod product {
                 delete_subscriptions: None,
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the product specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -22945,6 +25061,12 @@ pub mod product {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists a collection of products associated with tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -23502,6 +25624,13 @@ pub mod product_api {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of the APIs associated with a product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_product(
             &self,
             resource_group_name: impl Into<String>,
@@ -23520,6 +25649,14 @@ pub mod product_api {
                 skip: None,
             }
         }
+        #[doc = "Adds an API to the specified product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -23537,6 +25674,14 @@ pub mod product_api {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified API from the specified product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -23554,6 +25699,14 @@ pub mod product_api {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Checks that API entity specified by identifier is associated with the Product entity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `api_id`: API revision identifier. Must be unique in the current API Management service instance. Non-current revision has ;rev=n as a suffix where n is the revision number."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check_entity_exists(
             &self,
             resource_group_name: impl Into<String>,
@@ -23855,6 +26008,13 @@ pub mod product_group {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the collection of developer groups associated with the specified product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_product(
             &self,
             resource_group_name: impl Into<String>,
@@ -23873,6 +26033,14 @@ pub mod product_group {
                 skip: None,
             }
         }
+        #[doc = "Adds the association between the specified developer group with the specified product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `group_id`: Group identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -23890,6 +26058,14 @@ pub mod product_group {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the association between the specified group and product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `group_id`: Group identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -23907,6 +26083,14 @@ pub mod product_group {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Checks that Group entity specified by identifier is associated with the Product entity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `group_id`: Group identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check_entity_exists(
             &self,
             resource_group_name: impl Into<String>,
@@ -24208,6 +26392,13 @@ pub mod product_subscriptions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the collection of subscriptions to the specified product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -24336,6 +26527,13 @@ pub mod product_policy {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the policy configuration at the Product level."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_product(
             &self,
             resource_group_name: impl Into<String>,
@@ -24351,6 +26549,14 @@ pub mod product_policy {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the policy configuration at the Product level."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `policy_id`: The identifier of the Policy."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -24369,6 +26575,15 @@ pub mod product_policy {
                 format: None,
             }
         }
+        #[doc = "Creates or updates policy configuration for the Product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `policy_id`: The identifier of the Policy."]
+        #[doc = "* `parameters`: The policy contents to apply."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -24389,6 +26604,15 @@ pub mod product_policy {
                 if_match: None,
             }
         }
+        #[doc = "Deletes the policy configuration at the Product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `policy_id`: The identifier of the Policy."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -24408,6 +26632,14 @@ pub mod product_policy {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the ETag of the policy configuration at the Product level."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `product_id`: Product identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `policy_id`: The identifier of the Policy."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -24735,6 +26967,13 @@ pub mod quota_by_counter_keys {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of current quota counter periods associated with the counter-key configured in the policy on the specified service instance. The api does not support paging yet."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `quota_counter_key`: Quota counter key identifier.This is the result of expression defined in counter-key attribute of the quota-by-key policy.For Example, if you specify counter-key=\"boo\" in the policy, then it’s accessible by \"boo\" counter key. But if it’s defined as counter-key=\"@(\"b\"+\"a\")\" then it will be accessible by \"ba\" key"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -24750,6 +26989,14 @@ pub mod quota_by_counter_keys {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates all the quota counter values specified with the existing quota counter key to a value in the specified service instance. This should be used for reset of the quota counter values."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `quota_counter_key`: Quota counter key identifier.This is the result of expression defined in counter-key attribute of the quota-by-key policy.For Example, if you specify counter-key=\"boo\" in the policy, then it’s accessible by \"boo\" counter key. But if it’s defined as counter-key=\"@(\"b\"+\"a\")\" then it will be accessible by \"ba\" key"]
+        #[doc = "* `parameters`: The value of the quota counter to be applied to all quota counter periods."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -24883,6 +27130,14 @@ pub mod quota_by_period_keys {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the value of the quota counter associated with the counter-key in the policy for the specific period in service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `quota_counter_key`: Quota counter key identifier.This is the result of expression defined in counter-key attribute of the quota-by-key policy.For Example, if you specify counter-key=\"boo\" in the policy, then it’s accessible by \"boo\" counter key. But if it’s defined as counter-key=\"@(\"b\"+\"a\")\" then it will be accessible by \"ba\" key"]
+        #[doc = "* `quota_period_key`: Quota period key identifier."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -24900,6 +27155,15 @@ pub mod quota_by_period_keys {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing quota counter value in the specified service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `quota_counter_key`: Quota counter key identifier.This is the result of expression defined in counter-key attribute of the quota-by-key policy.For Example, if you specify counter-key=\"boo\" in the policy, then it’s accessible by \"boo\" counter key. But if it’s defined as counter-key=\"@(\"b\"+\"a\")\" then it will be accessible by \"ba\" key"]
+        #[doc = "* `quota_period_key`: Quota period key identifier."]
+        #[doc = "* `parameters`: The value of the Quota counter to be applied on the specified period."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -25039,6 +27303,12 @@ pub mod region {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all azure regions in which the service exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -25136,6 +27406,13 @@ pub mod reports {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists report records by API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `filter`: The filter to apply on the operation."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_api(
             &self,
             resource_group_name: impl Into<String>,
@@ -25154,6 +27431,13 @@ pub mod reports {
                 orderby: None,
             }
         }
+        #[doc = "Lists report records by User."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `filter`: |   Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| timestamp | filter | ge, le |     | </br>| displayName | select, orderBy |     |     | </br>| userId | select, filter | eq |     | </br>| apiRegion | filter | eq |     | </br>| productId | filter | eq |     | </br>| subscriptionId | filter | eq |     | </br>| apiId | filter | eq |     | </br>| operationId | filter | eq |     | </br>| callCountSuccess | select, orderBy |     |     | </br>| callCountBlocked | select, orderBy |     |     | </br>| callCountFailed | select, orderBy |     |     | </br>| callCountOther | select, orderBy |     |     | </br>| callCountTotal | select, orderBy |     |     | </br>| bandwidth | select, orderBy |     |     | </br>| cacheHitsCount | select |     |     | </br>| cacheMissCount | select |     |     | </br>| apiTimeAvg | select, orderBy |     |     | </br>| apiTimeMin | select |     |     | </br>| apiTimeMax | select |     |     | </br>| serviceTimeAvg | select |     |     | </br>| serviceTimeMin | select |     |     | </br>| serviceTimeMax | select |     |     | </br>"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_user(
             &self,
             resource_group_name: impl Into<String>,
@@ -25172,6 +27456,13 @@ pub mod reports {
                 orderby: None,
             }
         }
+        #[doc = "Lists report records by API Operations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `filter`: |   Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| timestamp | filter | ge, le |     | </br>| displayName | select, orderBy |     |     | </br>| apiRegion | filter | eq |     | </br>| userId | filter | eq |     | </br>| productId | filter | eq |     | </br>| subscriptionId | filter | eq |     | </br>| apiId | filter | eq |     | </br>| operationId | select, filter | eq |     | </br>| callCountSuccess | select, orderBy |     |     | </br>| callCountBlocked | select, orderBy |     |     | </br>| callCountFailed | select, orderBy |     |     | </br>| callCountOther | select, orderBy |     |     | </br>| callCountTotal | select, orderBy |     |     | </br>| bandwidth | select, orderBy |     |     | </br>| cacheHitsCount | select |     |     | </br>| cacheMissCount | select |     |     | </br>| apiTimeAvg | select, orderBy |     |     | </br>| apiTimeMin | select |     |     | </br>| apiTimeMax | select |     |     | </br>| serviceTimeAvg | select |     |     | </br>| serviceTimeMin | select |     |     | </br>| serviceTimeMax | select |     |     | </br>"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_operation(
             &self,
             resource_group_name: impl Into<String>,
@@ -25190,6 +27481,13 @@ pub mod reports {
                 orderby: None,
             }
         }
+        #[doc = "Lists report records by Product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `filter`: |   Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| timestamp | filter | ge, le |     | </br>| displayName | select, orderBy |     |     | </br>| apiRegion | filter | eq |     | </br>| userId | filter | eq |     | </br>| productId | select, filter | eq |     | </br>| subscriptionId | filter | eq |     | </br>| callCountSuccess | select, orderBy |     |     | </br>| callCountBlocked | select, orderBy |     |     | </br>| callCountFailed | select, orderBy |     |     | </br>| callCountOther | select, orderBy |     |     | </br>| callCountTotal | select, orderBy |     |     | </br>| bandwidth | select, orderBy |     |     | </br>| cacheHitsCount | select |     |     | </br>| cacheMissCount | select |     |     | </br>| apiTimeAvg | select, orderBy |     |     | </br>| apiTimeMin | select |     |     | </br>| apiTimeMax | select |     |     | </br>| serviceTimeAvg | select |     |     | </br>| serviceTimeMin | select |     |     | </br>| serviceTimeMax | select |     |     | </br>"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_product(
             &self,
             resource_group_name: impl Into<String>,
@@ -25208,6 +27506,13 @@ pub mod reports {
                 orderby: None,
             }
         }
+        #[doc = "Lists report records by geography."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `filter`: |   Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| timestamp | filter | ge, le |     | </br>| country | select |     |     | </br>| region | select |     |     | </br>| zip | select |     |     | </br>| apiRegion | filter | eq |     | </br>| userId | filter | eq |     | </br>| productId | filter | eq |     | </br>| subscriptionId | filter | eq |     | </br>| apiId | filter | eq |     | </br>| operationId | filter | eq |     | </br>| callCountSuccess | select |     |     | </br>| callCountBlocked | select |     |     | </br>| callCountFailed | select |     |     | </br>| callCountOther | select |     |     | </br>| bandwidth | select, orderBy |     |     | </br>| cacheHitsCount | select |     |     | </br>| cacheMissCount | select |     |     | </br>| apiTimeAvg | select |     |     | </br>| apiTimeMin | select |     |     | </br>| apiTimeMax | select |     |     | </br>| serviceTimeAvg | select |     |     | </br>| serviceTimeMin | select |     |     | </br>| serviceTimeMax | select |     |     | </br>"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_geo(
             &self,
             resource_group_name: impl Into<String>,
@@ -25225,6 +27530,13 @@ pub mod reports {
                 skip: None,
             }
         }
+        #[doc = "Lists report records by subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `filter`: |   Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| timestamp | filter | ge, le |     | </br>| displayName | select, orderBy |     |     | </br>| apiRegion | filter | eq |     | </br>| userId | select, filter | eq |     | </br>| productId | select, filter | eq |     | </br>| subscriptionId | select, filter | eq |     | </br>| callCountSuccess | select, orderBy |     |     | </br>| callCountBlocked | select, orderBy |     |     | </br>| callCountFailed | select, orderBy |     |     | </br>| callCountOther | select, orderBy |     |     | </br>| callCountTotal | select, orderBy |     |     | </br>| bandwidth | select, orderBy |     |     | </br>| cacheHitsCount | select |     |     | </br>| cacheMissCount | select |     |     | </br>| apiTimeAvg | select, orderBy |     |     | </br>| apiTimeMin | select |     |     | </br>| apiTimeMax | select |     |     | </br>| serviceTimeAvg | select |     |     | </br>| serviceTimeMin | select |     |     | </br>| serviceTimeMax | select |     |     | </br>"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(
             &self,
             resource_group_name: impl Into<String>,
@@ -25243,6 +27555,14 @@ pub mod reports {
                 orderby: None,
             }
         }
+        #[doc = "Lists report records by Time."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `filter`: |   Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| timestamp | filter, select | ge, le |     | </br>| interval | select |     |     | </br>| apiRegion | filter | eq |     | </br>| userId | filter | eq |     | </br>| productId | filter | eq |     | </br>| subscriptionId | filter | eq |     | </br>| apiId | filter | eq |     | </br>| operationId | filter | eq |     | </br>| callCountSuccess | select |     |     | </br>| callCountBlocked | select |     |     | </br>| callCountFailed | select |     |     | </br>| callCountOther | select |     |     | </br>| bandwidth | select, orderBy |     |     | </br>| cacheHitsCount | select |     |     | </br>| cacheMissCount | select |     |     | </br>| apiTimeAvg | select |     |     | </br>| apiTimeMin | select |     |     | </br>| apiTimeMax | select |     |     | </br>| serviceTimeAvg | select |     |     | </br>| serviceTimeMin | select |     |     | </br>| serviceTimeMax | select |     |     | </br>"]
+        #[doc = "* `interval`: By time interval. Interval must be multiple of 15 minutes and may not be zero. The value should be in ISO  8601 format (http://en.wikipedia.org/wiki/ISO_8601#Durations).This code can be used to convert TimeSpan to a valid interval string: XmlConvert.ToString(new TimeSpan(hours, minutes, seconds))."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_time(
             &self,
             resource_group_name: impl Into<String>,
@@ -25263,6 +27583,13 @@ pub mod reports {
                 orderby: None,
             }
         }
+        #[doc = "Lists report records by Request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `filter`: |   Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| timestamp | filter | ge, le |     | </br>| apiId | filter | eq |     | </br>| operationId | filter | eq |     | </br>| productId | filter | eq |     | </br>| userId | filter | eq |     | </br>| apiRegion | filter | eq |     | </br>| subscriptionId | filter | eq |     | </br>"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_request(
             &self,
             resource_group_name: impl Into<String>,
@@ -26088,6 +28415,12 @@ pub mod global_schema {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of schemas registered with service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -26104,6 +28437,13 @@ pub mod global_schema {
                 skip: None,
             }
         }
+        #[doc = "Gets the details of the Schema specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `schema_id`: Schema id identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -26119,6 +28459,14 @@ pub mod global_schema {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates new or updates existing specified Schema of the API Management service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `schema_id`: Schema id identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Create or update parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -26137,6 +28485,14 @@ pub mod global_schema {
                 if_match: None,
             }
         }
+        #[doc = "Deletes specific Schema."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `schema_id`: Schema id identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -26154,6 +28510,13 @@ pub mod global_schema {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the Schema specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `schema_id`: Schema id identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -26514,6 +28877,12 @@ pub mod tenant_settings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Public settings."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -26528,6 +28897,13 @@ pub mod tenant_settings {
                 filter: None,
             }
         }
+        #[doc = "Get tenant settings."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `settings_type`: The identifier of the settings."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -26689,6 +29065,10 @@ pub mod api_management_skus {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of Microsoft.ApiManagement SKUs available for your Subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -26775,6 +29155,12 @@ pub mod subscription {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all subscriptions of the API Management service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -26791,6 +29177,13 @@ pub mod subscription {
                 skip: None,
             }
         }
+        #[doc = "Gets the specified Subscription entity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `sid`: Subscription entity Identifier. The entity represents the association between a user and a product in API Management."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -26806,6 +29199,14 @@ pub mod subscription {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the subscription of specified user to the specified product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `sid`: Subscription entity Identifier. The entity represents the association between a user and a product in API Management."]
+        #[doc = "* `parameters`: Create parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -26826,6 +29227,15 @@ pub mod subscription {
                 app_type: None,
             }
         }
+        #[doc = "Updates the details of a subscription specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `sid`: Subscription entity Identifier. The entity represents the association between a user and a product in API Management."]
+        #[doc = "* `parameters`: Update parameters."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -26847,6 +29257,14 @@ pub mod subscription {
                 app_type: None,
             }
         }
+        #[doc = "Deletes the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `sid`: Subscription entity Identifier. The entity represents the association between a user and a product in API Management."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -26864,6 +29282,13 @@ pub mod subscription {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the apimanagement subscription specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `sid`: Subscription entity Identifier. The entity represents the association between a user and a product in API Management."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -26879,6 +29304,13 @@ pub mod subscription {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Regenerates primary key of existing subscription of the API Management service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `sid`: Subscription entity Identifier. The entity represents the association between a user and a product in API Management."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn regenerate_primary_key(
             &self,
             resource_group_name: impl Into<String>,
@@ -26894,6 +29326,13 @@ pub mod subscription {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Regenerates secondary key of existing subscription of the API Management service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `sid`: Subscription entity Identifier. The entity represents the association between a user and a product in API Management."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn regenerate_secondary_key(
             &self,
             resource_group_name: impl Into<String>,
@@ -26909,6 +29348,13 @@ pub mod subscription {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the specified Subscription keys."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `sid`: Subscription entity Identifier. The entity represents the association between a user and a product in API Management."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_secrets(
             &self,
             resource_group_name: impl Into<String>,
@@ -27492,6 +29938,12 @@ pub mod tag_resource {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of resources associated with tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -27616,6 +30068,12 @@ pub mod tenant_access {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns list of access infos - for Git and Management endpoints."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -27630,6 +30088,13 @@ pub mod tenant_access {
                 filter: None,
             }
         }
+        #[doc = "Get tenant access information details without secrets."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `access_name`: The identifier of the Access configuration."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -27645,6 +30110,15 @@ pub mod tenant_access {
                 access_name: access_name.into(),
             }
         }
+        #[doc = "Update tenant access information details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `parameters`: Parameters supplied to retrieve the Tenant Access Information."]
+        #[doc = "* `access_name`: The identifier of the Access configuration."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -27664,6 +30138,15 @@ pub mod tenant_access {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update tenant access information details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `parameters`: Parameters supplied to retrieve the Tenant Access Information."]
+        #[doc = "* `access_name`: The identifier of the Access configuration."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -27683,6 +30166,13 @@ pub mod tenant_access {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Tenant access metadata"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `access_name`: The identifier of the Access configuration."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -27698,6 +30188,13 @@ pub mod tenant_access {
                 access_name: access_name.into(),
             }
         }
+        #[doc = "Regenerate primary access key"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `access_name`: The identifier of the Access configuration."]
         pub fn regenerate_primary_key(
             &self,
             resource_group_name: impl Into<String>,
@@ -27713,6 +30210,13 @@ pub mod tenant_access {
                 access_name: access_name.into(),
             }
         }
+        #[doc = "Regenerate secondary access key"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `access_name`: The identifier of the Access configuration."]
         pub fn regenerate_secondary_key(
             &self,
             resource_group_name: impl Into<String>,
@@ -27728,6 +30232,13 @@ pub mod tenant_access {
                 access_name: access_name.into(),
             }
         }
+        #[doc = "Get tenant access information details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `access_name`: The identifier of the Access configuration."]
         pub fn list_secrets(
             &self,
             resource_group_name: impl Into<String>,
@@ -28198,6 +30709,13 @@ pub mod tenant_access_git {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Regenerate primary access key for GIT."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `access_name`: The identifier of the Access configuration."]
         pub fn regenerate_primary_key(
             &self,
             resource_group_name: impl Into<String>,
@@ -28213,6 +30731,13 @@ pub mod tenant_access_git {
                 access_name: access_name.into(),
             }
         }
+        #[doc = "Regenerate secondary access key for GIT."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `access_name`: The identifier of the Access configuration."]
         pub fn regenerate_secondary_key(
             &self,
             resource_group_name: impl Into<String>,
@@ -28322,6 +30847,14 @@ pub mod tenant_configuration {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "This operation applies changes from the specified Git branch to the configuration database. This is a long running operation and could take several minutes to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `parameters`: Deploy Configuration parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `configuration_name`: The identifier of the Git Configuration Operation."]
         pub fn deploy(
             &self,
             resource_group_name: impl Into<String>,
@@ -28339,6 +30872,14 @@ pub mod tenant_configuration {
                 configuration_name: configuration_name.into(),
             }
         }
+        #[doc = "This operation creates a commit with the current configuration snapshot to the specified branch in the repository. This is a long running operation and could take several minutes to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `parameters`: Save Configuration parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `configuration_name`: The identifier of the Git Configuration Operation."]
         pub fn save(
             &self,
             resource_group_name: impl Into<String>,
@@ -28356,6 +30897,14 @@ pub mod tenant_configuration {
                 configuration_name: configuration_name.into(),
             }
         }
+        #[doc = "This operation validates the changes in the specified Git branch. This is a long running operation and could take several minutes to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `parameters`: Validate Configuration parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `configuration_name`: The identifier of the Git Configuration Operation."]
         pub fn validate(
             &self,
             resource_group_name: impl Into<String>,
@@ -28373,6 +30922,13 @@ pub mod tenant_configuration {
                 configuration_name: configuration_name.into(),
             }
         }
+        #[doc = "Gets the status of the most recent synchronization between the configuration database and the Git repository."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `configuration_name`: The identifier of the Git Configuration Operation."]
         pub fn get_sync_state(
             &self,
             resource_group_name: impl Into<String>,
@@ -28634,6 +31190,12 @@ pub mod user {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists a collection of registered users in the specified service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -28651,6 +31213,13 @@ pub mod user {
                 expand_groups: None,
             }
         }
+        #[doc = "Gets the details of the user specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `user_id`: User identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -28666,6 +31235,14 @@ pub mod user {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or Updates a user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `user_id`: User identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Create or update parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -28685,6 +31262,15 @@ pub mod user {
                 if_match: None,
             }
         }
+        #[doc = "Updates the details of the user specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `user_id`: User identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Update parameters."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -28704,6 +31290,14 @@ pub mod user {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes specific user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `user_id`: User identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `if_match`: ETag of the Entity. ETag should match the current entity state from the header response of the GET request or it should be * for unconditional update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -28724,6 +31318,13 @@ pub mod user {
                 app_type: None,
             }
         }
+        #[doc = "Gets the entity state (Etag) version of the user specified by its identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `user_id`: User identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_entity_tag(
             &self,
             resource_group_name: impl Into<String>,
@@ -28739,6 +31340,13 @@ pub mod user {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieves a redirection URL containing an authentication token for signing a given user into the developer portal."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `user_id`: User identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn generate_sso_url(
             &self,
             resource_group_name: impl Into<String>,
@@ -28754,6 +31362,14 @@ pub mod user {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the Shared Access Authorization Token for the User."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `user_id`: User identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `parameters`: Create Authorization Token parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_shared_access_token(
             &self,
             resource_group_name: impl Into<String>,
@@ -29326,6 +31942,13 @@ pub mod user_group {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all user groups."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `user_id`: User identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -29454,6 +32077,13 @@ pub mod user_subscription {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the collection of subscriptions of the specified user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `user_id`: User identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -29472,6 +32102,14 @@ pub mod user_subscription {
                 skip: None,
             }
         }
+        #[doc = "Gets the specified Subscription entity associated with a particular user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `user_id`: User identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `sid`: Subscription entity Identifier. The entity represents the association between a user and a product in API Management."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -29655,6 +32293,13 @@ pub mod user_identities {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List of all user identities."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `user_id`: User identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -29756,6 +32401,13 @@ pub mod user_confirmation_password {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Sends confirmation"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the API Management service."]
+        #[doc = "* `user_id`: User identifier. Must be unique in the current API Management service instance."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn send(
             &self,
             resource_group_name: impl Into<String>,

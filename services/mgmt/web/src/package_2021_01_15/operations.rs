@@ -134,6 +134,10 @@ pub mod app_service_certificate_orders {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all certificate orders in a subscription."]
+        #[doc = "List all certificate orders in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -141,6 +145,11 @@ pub mod app_service_certificate_orders {
             }
         }
         #[doc = "Validate information for a certificate order."]
+        #[doc = "Validate information for a certificate order."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_service_certificate_order`: Information for a certificate order."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn validate_purchase_information(
             &self,
             app_service_certificate_order: impl Into<models::AppServiceCertificateOrder>,
@@ -153,6 +162,11 @@ pub mod app_service_certificate_orders {
             }
         }
         #[doc = "Get certificate orders in a resource group."]
+        #[doc = "Get certificate orders in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -165,6 +179,12 @@ pub mod app_service_certificate_orders {
             }
         }
         #[doc = "Get a certificate order."]
+        #[doc = "Get a certificate order."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `certificate_order_name`: Name of the certificate order.."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -179,6 +199,13 @@ pub mod app_service_certificate_orders {
             }
         }
         #[doc = "Create or update a certificate purchase order."]
+        #[doc = "Create or update a certificate purchase order."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `certificate_order_name`: Name of the certificate order."]
+        #[doc = "* `certificate_distinguished_name`: Distinguished name to use for the certificate order."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -195,6 +222,13 @@ pub mod app_service_certificate_orders {
             }
         }
         #[doc = "Create or update a certificate purchase order."]
+        #[doc = "Create or update a certificate purchase order."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `certificate_order_name`: Name of the certificate order."]
+        #[doc = "* `certificate_distinguished_name`: Distinguished name to use for the certificate order."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -211,6 +245,12 @@ pub mod app_service_certificate_orders {
             }
         }
         #[doc = "Delete an existing certificate order."]
+        #[doc = "Delete an existing certificate order."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `certificate_order_name`: Name of the certificate order."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -225,6 +265,12 @@ pub mod app_service_certificate_orders {
             }
         }
         #[doc = "List all certificates associated with a certificate order."]
+        #[doc = "List all certificates associated with a certificate order."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `certificate_order_name`: Name of the certificate order."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_certificates(
             &self,
             resource_group_name: impl Into<String>,
@@ -239,6 +285,13 @@ pub mod app_service_certificate_orders {
             }
         }
         #[doc = "Get the certificate associated with a certificate order."]
+        #[doc = "Get the certificate associated with a certificate order."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `certificate_order_name`: Name of the certificate order."]
+        #[doc = "* `name`: Name of the certificate."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_certificate(
             &self,
             resource_group_name: impl Into<String>,
@@ -255,6 +308,14 @@ pub mod app_service_certificate_orders {
             }
         }
         #[doc = "Creates or updates a certificate and associates with key vault secret."]
+        #[doc = "Creates or updates a certificate and associates with key vault secret."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `certificate_order_name`: Name of the certificate order."]
+        #[doc = "* `name`: Name of the certificate."]
+        #[doc = "* `key_vault_certificate`: Key vault certificate resource Id."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_certificate(
             &self,
             resource_group_name: impl Into<String>,
@@ -273,6 +334,14 @@ pub mod app_service_certificate_orders {
             }
         }
         #[doc = "Creates or updates a certificate and associates with key vault secret."]
+        #[doc = "Creates or updates a certificate and associates with key vault secret."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `certificate_order_name`: Name of the certificate order."]
+        #[doc = "* `name`: Name of the certificate."]
+        #[doc = "* `key_vault_certificate`: Key vault certificate resource Id."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_certificate(
             &self,
             resource_group_name: impl Into<String>,
@@ -291,6 +360,13 @@ pub mod app_service_certificate_orders {
             }
         }
         #[doc = "Delete the certificate associated with a certificate order."]
+        #[doc = "Delete the certificate associated with a certificate order."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `certificate_order_name`: Name of the certificate order."]
+        #[doc = "* `name`: Name of the certificate."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_certificate(
             &self,
             resource_group_name: impl Into<String>,
@@ -307,6 +383,13 @@ pub mod app_service_certificate_orders {
             }
         }
         #[doc = "Reissue an existing certificate order."]
+        #[doc = "Reissue an existing certificate order."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `certificate_order_name`: Name of the certificate order."]
+        #[doc = "* `reissue_certificate_order_request`: Parameters for the reissue."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn reissue(
             &self,
             resource_group_name: impl Into<String>,
@@ -323,6 +406,13 @@ pub mod app_service_certificate_orders {
             }
         }
         #[doc = "Renew an existing certificate order."]
+        #[doc = "Renew an existing certificate order."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `certificate_order_name`: Name of the certificate order."]
+        #[doc = "* `renew_certificate_order_request`: Renew parameters"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn renew(
             &self,
             resource_group_name: impl Into<String>,
@@ -339,6 +429,12 @@ pub mod app_service_certificate_orders {
             }
         }
         #[doc = "Resend certificate email."]
+        #[doc = "Resend certificate email."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `certificate_order_name`: Name of the certificate order."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn resend_email(
             &self,
             resource_group_name: impl Into<String>,
@@ -353,6 +449,13 @@ pub mod app_service_certificate_orders {
             }
         }
         #[doc = "Verify domain ownership for this certificate order."]
+        #[doc = "Verify domain ownership for this certificate order."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `certificate_order_name`: Name of the certificate order."]
+        #[doc = "* `name_identifier`: Email address"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn resend_request_emails(
             &self,
             resource_group_name: impl Into<String>,
@@ -369,6 +472,13 @@ pub mod app_service_certificate_orders {
             }
         }
         #[doc = "Verify domain ownership for this certificate order."]
+        #[doc = "Verify domain ownership for this certificate order."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `certificate_order_name`: Name of the certificate order."]
+        #[doc = "* `site_seal_request`: Site seal request."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn retrieve_site_seal(
             &self,
             resource_group_name: impl Into<String>,
@@ -385,6 +495,12 @@ pub mod app_service_certificate_orders {
             }
         }
         #[doc = "Verify domain ownership for this certificate order."]
+        #[doc = "Verify domain ownership for this certificate order."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `certificate_order_name`: Name of the certificate order."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn verify_domain_ownership(
             &self,
             resource_group_name: impl Into<String>,
@@ -399,6 +515,12 @@ pub mod app_service_certificate_orders {
             }
         }
         #[doc = "Retrieve the list of certificate actions."]
+        #[doc = "Retrieve the list of certificate actions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the certificate order."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn retrieve_certificate_actions(
             &self,
             resource_group_name: impl Into<String>,
@@ -413,6 +535,12 @@ pub mod app_service_certificate_orders {
             }
         }
         #[doc = "Retrieve email history."]
+        #[doc = "Retrieve email history."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the certificate order."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn retrieve_certificate_email_history(
             &self,
             resource_group_name: impl Into<String>,
@@ -1511,6 +1639,12 @@ pub mod certificate_orders_diagnostics {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Microsoft.CertificateRegistration to get the list of detectors for this RP."]
+        #[doc = "Microsoft.CertificateRegistration to get the list of detectors for this RP."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `certificate_order_name`: The certificate order name for which the response is needed."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_app_service_certificate_order_detector_response(
             &self,
             resource_group_name: impl Into<String>,
@@ -1525,6 +1659,13 @@ pub mod certificate_orders_diagnostics {
             }
         }
         #[doc = "Microsoft.CertificateRegistration call to get a detector response from App Lens."]
+        #[doc = "Microsoft.CertificateRegistration call to get a detector response from App Lens."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `certificate_order_name`: The certificate order name for which the response is needed."]
+        #[doc = "* `detector_name`: The detector name which needs to be run."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_app_service_certificate_order_detector_response(
             &self,
             resource_group_name: impl Into<String>,
@@ -1693,6 +1834,7 @@ pub mod certificate_registration_provider {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Implements Csm operations Api to exposes the list of available Csm Apis under the resource provider"]
+        #[doc = "Implements Csm operations Api to exposes the list of available Csm Apis under the resource provider"]
         pub fn list_operations(&self) -> list_operations::Builder {
             list_operations::Builder { client: self.0.clone() }
         }
@@ -1775,6 +1917,11 @@ pub mod domains {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Check if a domain is available for registration."]
+        #[doc = "Check if a domain is available for registration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `identifier`: Name of the domain."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn check_availability(
             &self,
             identifier: impl Into<models::NameIdentifier>,
@@ -1787,6 +1934,10 @@ pub mod domains {
             }
         }
         #[doc = "Get all domains in a subscription."]
+        #[doc = "Get all domains in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1794,6 +1945,10 @@ pub mod domains {
             }
         }
         #[doc = "Generate a single sign-on request for the domain management portal."]
+        #[doc = "Generate a single sign-on request for the domain management portal."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_control_center_sso_request(&self, subscription_id: impl Into<String>) -> get_control_center_sso_request::Builder {
             get_control_center_sso_request::Builder {
                 client: self.0.clone(),
@@ -1801,6 +1956,11 @@ pub mod domains {
             }
         }
         #[doc = "Get domain name recommendations based on keywords."]
+        #[doc = "Get domain name recommendations based on keywords."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Search parameters for domain name recommendations."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_recommendations(
             &self,
             parameters: impl Into<models::DomainRecommendationSearchParameters>,
@@ -1813,6 +1973,11 @@ pub mod domains {
             }
         }
         #[doc = "Get all domains in a resource group."]
+        #[doc = "Get all domains in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -1825,6 +1990,12 @@ pub mod domains {
             }
         }
         #[doc = "Get a domain."]
+        #[doc = "Get a domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `domain_name`: Name of the domain."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1839,6 +2010,13 @@ pub mod domains {
             }
         }
         #[doc = "Creates or updates a domain."]
+        #[doc = "Creates or updates a domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `domain_name`: Name of the domain."]
+        #[doc = "* `domain`: Domain registration information."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1855,6 +2033,13 @@ pub mod domains {
             }
         }
         #[doc = "Creates or updates a domain."]
+        #[doc = "Creates or updates a domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `domain_name`: Name of the domain."]
+        #[doc = "* `domain`: Domain registration information."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1871,6 +2056,12 @@ pub mod domains {
             }
         }
         #[doc = "Delete a domain."]
+        #[doc = "Delete a domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `domain_name`: Name of the domain."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1886,6 +2077,12 @@ pub mod domains {
             }
         }
         #[doc = "Lists domain ownership identifiers."]
+        #[doc = "Lists domain ownership identifiers."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `domain_name`: Name of domain."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_ownership_identifiers(
             &self,
             resource_group_name: impl Into<String>,
@@ -1900,6 +2097,13 @@ pub mod domains {
             }
         }
         #[doc = "Get ownership identifier for domain"]
+        #[doc = "Get ownership identifier for domain"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `domain_name`: Name of domain."]
+        #[doc = "* `name`: Name of identifier."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_ownership_identifier(
             &self,
             resource_group_name: impl Into<String>,
@@ -1916,6 +2120,14 @@ pub mod domains {
             }
         }
         #[doc = "Creates an ownership identifier for a domain or updates identifier details for an existing identifier"]
+        #[doc = "Creates an ownership identifier for a domain or updates identifier details for an existing identifier"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `domain_name`: Name of domain."]
+        #[doc = "* `name`: Name of identifier."]
+        #[doc = "* `domain_ownership_identifier`: A JSON representation of the domain ownership properties."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_ownership_identifier(
             &self,
             resource_group_name: impl Into<String>,
@@ -1934,6 +2146,14 @@ pub mod domains {
             }
         }
         #[doc = "Creates an ownership identifier for a domain or updates identifier details for an existing identifier"]
+        #[doc = "Creates an ownership identifier for a domain or updates identifier details for an existing identifier"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `domain_name`: Name of domain."]
+        #[doc = "* `name`: Name of identifier."]
+        #[doc = "* `domain_ownership_identifier`: A JSON representation of the domain ownership properties."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_ownership_identifier(
             &self,
             resource_group_name: impl Into<String>,
@@ -1952,6 +2172,13 @@ pub mod domains {
             }
         }
         #[doc = "Delete ownership identifier for domain"]
+        #[doc = "Delete ownership identifier for domain"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `domain_name`: Name of domain."]
+        #[doc = "* `name`: Name of identifier."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_ownership_identifier(
             &self,
             resource_group_name: impl Into<String>,
@@ -1968,6 +2195,12 @@ pub mod domains {
             }
         }
         #[doc = "Renew a domain."]
+        #[doc = "Renew a domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `domain_name`: Name of the domain."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn renew(
             &self,
             resource_group_name: impl Into<String>,
@@ -2876,6 +3109,10 @@ pub mod top_level_domains {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all top-level domains supported for registration."]
+        #[doc = "Get all top-level domains supported for registration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2883,6 +3120,11 @@ pub mod top_level_domains {
             }
         }
         #[doc = "Get details of a top-level domain."]
+        #[doc = "Get details of a top-level domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the top-level domain."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get(&self, name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -2891,6 +3133,12 @@ pub mod top_level_domains {
             }
         }
         #[doc = "Gets all legal agreements that user needs to accept before purchasing a domain."]
+        #[doc = "Gets all legal agreements that user needs to accept before purchasing a domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the top-level domain."]
+        #[doc = "* `agreement_option`: Domain agreement options."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_agreements(
             &self,
             name: impl Into<String>,
@@ -3113,6 +3361,7 @@ pub mod domain_registration_provider {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Implements Csm operations Api to exposes the list of available Csm Apis under the resource provider"]
+        #[doc = "Implements Csm operations Api to exposes the list of available Csm Apis under the resource provider"]
         pub fn list_operations(&self) -> list_operations::Builder {
             list_operations::Builder { client: self.0.clone() }
         }
@@ -3195,6 +3444,10 @@ pub mod app_service_environments {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all App Service Environments for a subscription."]
+        #[doc = "Get all App Service Environments for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -3202,6 +3455,11 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get all App Service Environments in a resource group."]
+        #[doc = "Get all App Service Environments in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -3214,6 +3472,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get the properties of an App Service Environment."]
+        #[doc = "Get the properties of an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -3228,6 +3492,13 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Create or update an App Service Environment."]
+        #[doc = "Create or update an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `hosting_environment_envelope`: Configuration details of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3244,6 +3515,13 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Create or update an App Service Environment."]
+        #[doc = "Create or update an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `hosting_environment_envelope`: Configuration details of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3260,6 +3538,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Delete an App Service Environment."]
+        #[doc = "Delete an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -3275,6 +3559,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get the used, available, and total worker capacity an App Service Environment."]
+        #[doc = "Get the used, available, and total worker capacity an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_capacities(
             &self,
             resource_group_name: impl Into<String>,
@@ -3289,6 +3579,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get IP addresses assigned to an App Service Environment."]
+        #[doc = "Get IP addresses assigned to an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_vip_info(
             &self,
             resource_group_name: impl Into<String>,
@@ -3303,6 +3599,13 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Move an App Service Environment to a different VNET."]
+        #[doc = "Move an App Service Environment to a different VNET."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `vnet_info`: Details for the new virtual network."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn change_vnet(
             &self,
             resource_group_name: impl Into<String>,
@@ -3319,6 +3622,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get networking configuration of an App Service Environment"]
+        #[doc = "Get networking configuration of an App Service Environment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_ase_v3_networking_configuration(
             &self,
             resource_group_name: impl Into<String>,
@@ -3333,6 +3642,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Update networking configuration of an App Service Environment"]
+        #[doc = "Update networking configuration of an App Service Environment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_ase_networking_configuration(
             &self,
             resource_group_name: impl Into<String>,
@@ -3349,6 +3664,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get diagnostic information for an App Service Environment."]
+        #[doc = "Get diagnostic information for an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_diagnostics(
             &self,
             resource_group_name: impl Into<String>,
@@ -3363,6 +3684,13 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get a diagnostics item for an App Service Environment."]
+        #[doc = "Get a diagnostics item for an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `diagnostics_name`: Name of the diagnostics item."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_diagnostics_item(
             &self,
             resource_group_name: impl Into<String>,
@@ -3379,6 +3707,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get the network endpoints of all inbound dependencies of an App Service Environment."]
+        #[doc = "Get the network endpoints of all inbound dependencies of an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_inbound_network_dependencies_endpoints(
             &self,
             resource_group_name: impl Into<String>,
@@ -3393,6 +3727,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get all multi-role pools."]
+        #[doc = "Get all multi-role pools."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_multi_role_pools(
             &self,
             resource_group_name: impl Into<String>,
@@ -3407,6 +3747,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get properties of a multi-role pool."]
+        #[doc = "Get properties of a multi-role pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_multi_role_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -3421,6 +3767,13 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Create or update a multi-role pool."]
+        #[doc = "Create or update a multi-role pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `multi_role_pool_envelope`: Properties of the multi-role pool."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_multi_role_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -3437,6 +3790,13 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Create or update a multi-role pool."]
+        #[doc = "Create or update a multi-role pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `multi_role_pool_envelope`: Properties of the multi-role pool."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_multi_role_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -3453,6 +3813,13 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get metric definitions for a specific instance of a multi-role pool of an App Service Environment."]
+        #[doc = "Get metric definitions for a specific instance of a multi-role pool of an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `instance`: Name of the instance in the multi-role pool."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_multi_role_pool_instance_metric_definitions(
             &self,
             resource_group_name: impl Into<String>,
@@ -3469,6 +3836,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get metric definitions for a multi-role pool of an App Service Environment."]
+        #[doc = "Get metric definitions for a multi-role pool of an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_multi_role_metric_definitions(
             &self,
             resource_group_name: impl Into<String>,
@@ -3483,6 +3856,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get available SKUs for scaling a multi-role pool."]
+        #[doc = "Get available SKUs for scaling a multi-role pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_multi_role_pool_skus(
             &self,
             resource_group_name: impl Into<String>,
@@ -3497,6 +3876,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get usage metrics for a multi-role pool of an App Service Environment."]
+        #[doc = "Get usage metrics for a multi-role pool of an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_multi_role_usages(
             &self,
             resource_group_name: impl Into<String>,
@@ -3511,6 +3896,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "List all currently running operations on the App Service Environment."]
+        #[doc = "List all currently running operations on the App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_operations(
             &self,
             resource_group_name: impl Into<String>,
@@ -3525,6 +3916,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get the network endpoints of all outbound dependencies of an App Service Environment."]
+        #[doc = "Get the network endpoints of all outbound dependencies of an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_outbound_network_dependencies_endpoints(
             &self,
             resource_group_name: impl Into<String>,
@@ -3539,6 +3936,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Gets the list of private endpoints associated with a hosting environment"]
+        #[doc = "Gets the list of private endpoints associated with a hosting environment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_private_endpoint_connection_list(
             &self,
             resource_group_name: impl Into<String>,
@@ -3553,6 +3956,13 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Gets a private endpoint connection"]
+        #[doc = "Gets a private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -3569,6 +3979,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Approves or rejects a private endpoint connection"]
+        #[doc = "Approves or rejects a private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn approve_or_reject_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -3587,6 +4003,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Deletes a private endpoint connection"]
+        #[doc = "Deletes a private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -3603,6 +4025,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Gets the private link resources"]
+        #[doc = "Gets the private link resources"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_private_link_resources(
             &self,
             resource_group_name: impl Into<String>,
@@ -3617,6 +4045,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Reboot all machines in an App Service Environment."]
+        #[doc = "Reboot all machines in an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn reboot(
             &self,
             resource_group_name: impl Into<String>,
@@ -3631,6 +4065,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Resume an App Service Environment."]
+        #[doc = "Resume an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn resume(
             &self,
             resource_group_name: impl Into<String>,
@@ -3645,6 +4085,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get all App Service plans in an App Service Environment."]
+        #[doc = "Get all App Service plans in an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_app_service_plans(
             &self,
             resource_group_name: impl Into<String>,
@@ -3659,6 +4105,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get all apps in an App Service Environment."]
+        #[doc = "Get all apps in an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_web_apps(
             &self,
             resource_group_name: impl Into<String>,
@@ -3674,6 +4126,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Suspend an App Service Environment."]
+        #[doc = "Suspend an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn suspend(
             &self,
             resource_group_name: impl Into<String>,
@@ -3688,6 +4146,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get global usage metrics of an App Service Environment."]
+        #[doc = "Get global usage metrics of an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_usages(
             &self,
             resource_group_name: impl Into<String>,
@@ -3703,6 +4167,12 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get all worker pools of an App Service Environment."]
+        #[doc = "Get all worker pools of an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_worker_pools(
             &self,
             resource_group_name: impl Into<String>,
@@ -3717,6 +4187,13 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get properties of a worker pool."]
+        #[doc = "Get properties of a worker pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `worker_pool_name`: Name of the worker pool."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_worker_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -3733,6 +4210,14 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Create or update a worker pool."]
+        #[doc = "Create or update a worker pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `worker_pool_name`: Name of the worker pool."]
+        #[doc = "* `worker_pool_envelope`: Properties of the worker pool."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_worker_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -3751,6 +4236,14 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Create or update a worker pool."]
+        #[doc = "Create or update a worker pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `worker_pool_name`: Name of the worker pool."]
+        #[doc = "* `worker_pool_envelope`: Properties of the worker pool."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_worker_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -3769,6 +4262,14 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get metric definitions for a specific instance of a worker pool of an App Service Environment."]
+        #[doc = "Get metric definitions for a specific instance of a worker pool of an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `worker_pool_name`: Name of the worker pool."]
+        #[doc = "* `instance`: Name of the instance in the worker pool."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_worker_pool_instance_metric_definitions(
             &self,
             resource_group_name: impl Into<String>,
@@ -3787,6 +4288,13 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get metric definitions for a worker pool of an App Service Environment."]
+        #[doc = "Get metric definitions for a worker pool of an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `worker_pool_name`: Name of the worker pool."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_web_worker_metric_definitions(
             &self,
             resource_group_name: impl Into<String>,
@@ -3803,6 +4311,13 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get available SKUs for scaling a worker pool."]
+        #[doc = "Get available SKUs for scaling a worker pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `worker_pool_name`: Name of the worker pool."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_worker_pool_skus(
             &self,
             resource_group_name: impl Into<String>,
@@ -3819,6 +4334,13 @@ pub mod app_service_environments {
             }
         }
         #[doc = "Get usage metrics for a worker pool of an App Service Environment."]
+        #[doc = "Get usage metrics for a worker pool of an App Service Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service Environment."]
+        #[doc = "* `worker_pool_name`: Name of the worker pool."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_web_worker_usages(
             &self,
             resource_group_name: impl Into<String>,
@@ -6774,6 +7296,10 @@ pub mod app_service_plans {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all App Service plans for a subscription."]
+        #[doc = "Get all App Service plans for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -6782,6 +7308,11 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Get all App Service plans in a resource group."]
+        #[doc = "Get all App Service plans in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -6794,6 +7325,12 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Get an App Service plan."]
+        #[doc = "Get an App Service plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -6808,6 +7345,13 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Creates or updates an App Service Plan."]
+        #[doc = "Creates or updates an App Service Plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `app_service_plan`: Details of the App Service plan."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -6824,6 +7368,13 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Creates or updates an App Service Plan."]
+        #[doc = "Creates or updates an App Service Plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `app_service_plan`: Details of the App Service plan."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -6840,6 +7391,12 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Delete an App Service plan."]
+        #[doc = "Delete an App Service plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -6854,6 +7411,12 @@ pub mod app_service_plans {
             }
         }
         #[doc = "List all capabilities of an App Service plan."]
+        #[doc = "List all capabilities of an App Service plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_capabilities(
             &self,
             resource_group_name: impl Into<String>,
@@ -6868,6 +7431,14 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Retrieve a Hybrid Connection in use in an App Service plan."]
+        #[doc = "Retrieve a Hybrid Connection in use in an App Service plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `namespace_name`: Name of the Service Bus namespace."]
+        #[doc = "* `relay_name`: Name of the Service Bus relay."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_hybrid_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -6886,6 +7457,14 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Delete a Hybrid Connection in use in an App Service plan."]
+        #[doc = "Delete a Hybrid Connection in use in an App Service plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `namespace_name`: Name of the Service Bus namespace."]
+        #[doc = "* `relay_name`: Name of the Service Bus relay."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_hybrid_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -6904,6 +7483,14 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Get the send key name and value of a Hybrid Connection."]
+        #[doc = "Get the send key name and value of a Hybrid Connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `namespace_name`: The name of the Service Bus namespace."]
+        #[doc = "* `relay_name`: The name of the Service Bus relay."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_hybrid_connection_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -6922,6 +7509,14 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Get all apps that use a Hybrid Connection in an App Service Plan."]
+        #[doc = "Get all apps that use a Hybrid Connection in an App Service Plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `namespace_name`: Name of the Hybrid Connection namespace."]
+        #[doc = "* `relay_name`: Name of the Hybrid Connection relay."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_web_apps_by_hybrid_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -6940,6 +7535,12 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Get the maximum number of Hybrid Connections allowed in an App Service plan."]
+        #[doc = "Get the maximum number of Hybrid Connections allowed in an App Service plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_hybrid_connection_plan_limit(
             &self,
             resource_group_name: impl Into<String>,
@@ -6954,6 +7555,12 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Retrieve all Hybrid Connections in use in an App Service plan."]
+        #[doc = "Retrieve all Hybrid Connections in use in an App Service plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_hybrid_connections(
             &self,
             resource_group_name: impl Into<String>,
@@ -6968,6 +7575,12 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Restart all apps in an App Service plan."]
+        #[doc = "Restart all apps in an App Service plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn restart_web_apps(
             &self,
             resource_group_name: impl Into<String>,
@@ -6983,6 +7596,12 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Get all apps associated with an App Service plan."]
+        #[doc = "Get all apps associated with an App Service plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_web_apps(
             &self,
             resource_group_name: impl Into<String>,
@@ -7000,6 +7619,12 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Gets all selectable SKUs for a given App Service Plan"]
+        #[doc = "Gets all selectable SKUs for a given App Service Plan"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of App Service Plan"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_server_farm_skus(
             &self,
             resource_group_name: impl Into<String>,
@@ -7014,6 +7639,12 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Gets server farm usage information"]
+        #[doc = "Gets server farm usage information"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of App Service Plan"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_usages(
             &self,
             resource_group_name: impl Into<String>,
@@ -7029,6 +7660,12 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Get all Virtual Networks associated with an App Service plan."]
+        #[doc = "Get all Virtual Networks associated with an App Service plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_vnets(
             &self,
             resource_group_name: impl Into<String>,
@@ -7043,6 +7680,13 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Get a Virtual Network associated with an App Service plan."]
+        #[doc = "Get a Virtual Network associated with an App Service plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `vnet_name`: Name of the Virtual Network."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_vnet_from_server_farm(
             &self,
             resource_group_name: impl Into<String>,
@@ -7059,6 +7703,14 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Get a Virtual Network gateway."]
+        #[doc = "Get a Virtual Network gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `vnet_name`: Name of the Virtual Network."]
+        #[doc = "* `gateway_name`: Name of the gateway. Only the 'primary' gateway is supported."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_vnet_gateway(
             &self,
             resource_group_name: impl Into<String>,
@@ -7077,6 +7729,15 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Update a Virtual Network gateway."]
+        #[doc = "Update a Virtual Network gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `vnet_name`: Name of the Virtual Network."]
+        #[doc = "* `gateway_name`: Name of the gateway. Only the 'primary' gateway is supported."]
+        #[doc = "* `connection_envelope`: Definition of the gateway."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_vnet_gateway(
             &self,
             resource_group_name: impl Into<String>,
@@ -7097,6 +7758,13 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Get all routes that are associated with a Virtual Network in an App Service plan."]
+        #[doc = "Get all routes that are associated with a Virtual Network in an App Service plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `vnet_name`: Name of the Virtual Network."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_routes_for_vnet(
             &self,
             resource_group_name: impl Into<String>,
@@ -7113,6 +7781,14 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Get a Virtual Network route in an App Service plan."]
+        #[doc = "Get a Virtual Network route in an App Service plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `vnet_name`: Name of the Virtual Network."]
+        #[doc = "* `route_name`: Name of the Virtual Network route."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_route_for_vnet(
             &self,
             resource_group_name: impl Into<String>,
@@ -7131,6 +7807,15 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Create or update a Virtual Network route in an App Service plan."]
+        #[doc = "Create or update a Virtual Network route in an App Service plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `vnet_name`: Name of the Virtual Network."]
+        #[doc = "* `route_name`: Name of the Virtual Network route."]
+        #[doc = "* `route`: Definition of the Virtual Network route."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_vnet_route(
             &self,
             resource_group_name: impl Into<String>,
@@ -7151,6 +7836,15 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Create or update a Virtual Network route in an App Service plan."]
+        #[doc = "Create or update a Virtual Network route in an App Service plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `vnet_name`: Name of the Virtual Network."]
+        #[doc = "* `route_name`: Name of the Virtual Network route."]
+        #[doc = "* `route`: Definition of the Virtual Network route."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_vnet_route(
             &self,
             resource_group_name: impl Into<String>,
@@ -7171,6 +7865,14 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Delete a Virtual Network route in an App Service plan."]
+        #[doc = "Delete a Virtual Network route in an App Service plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `vnet_name`: Name of the Virtual Network."]
+        #[doc = "* `route_name`: Name of the Virtual Network route."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_vnet_route(
             &self,
             resource_group_name: impl Into<String>,
@@ -7189,6 +7891,13 @@ pub mod app_service_plans {
             }
         }
         #[doc = "Reboot a worker machine in an App Service plan."]
+        #[doc = "Reboot a worker machine in an App Service plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the App Service plan."]
+        #[doc = "* `worker_name`: Name of worker machine, which typically starts with RD."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn reboot_worker(
             &self,
             resource_group_name: impl Into<String>,
@@ -8796,6 +9505,10 @@ pub mod certificates {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all certificates for a subscription."]
+        #[doc = "Get all certificates for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -8804,6 +9517,11 @@ pub mod certificates {
             }
         }
         #[doc = "Get all certificates in a resource group."]
+        #[doc = "Get all certificates in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -8816,6 +9534,12 @@ pub mod certificates {
             }
         }
         #[doc = "Get a certificate."]
+        #[doc = "Get a certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the certificate."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -8830,6 +9554,13 @@ pub mod certificates {
             }
         }
         #[doc = "Create or update a certificate."]
+        #[doc = "Create or update a certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the certificate."]
+        #[doc = "* `certificate_envelope`: Details of certificate, if it exists already."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -8846,6 +9577,13 @@ pub mod certificates {
             }
         }
         #[doc = "Create or update a certificate."]
+        #[doc = "Create or update a certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the certificate."]
+        #[doc = "* `certificate_envelope`: Details of certificate, if it exists already."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -8862,6 +9600,12 @@ pub mod certificates {
             }
         }
         #[doc = "Delete a certificate."]
+        #[doc = "Delete a certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the certificate."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -9253,6 +9997,10 @@ pub mod deleted_web_apps {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all deleted apps for a subscription."]
+        #[doc = "Get all deleted apps for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -9260,6 +10008,10 @@ pub mod deleted_web_apps {
             }
         }
         #[doc = "Get all deleted apps for a subscription at location"]
+        #[doc = "Get all deleted apps for a subscription at location"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_location(&self, location: impl Into<String>, subscription_id: impl Into<String>) -> list_by_location::Builder {
             list_by_location::Builder {
                 client: self.0.clone(),
@@ -9268,6 +10020,11 @@ pub mod deleted_web_apps {
             }
         }
         #[doc = "Get deleted app for a subscription at location."]
+        #[doc = "Get deleted app for a subscription at location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deleted_site_id`: The numeric ID of the deleted app, e.g. 12345"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_deleted_web_app_by_location(
             &self,
             location: impl Into<String>,
@@ -9490,6 +10247,12 @@ pub mod diagnostics {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Hosting Environment Detector Responses"]
+        #[doc = "List Hosting Environment Detector Responses"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site Name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_hosting_environment_detector_responses(
             &self,
             resource_group_name: impl Into<String>,
@@ -9504,6 +10267,13 @@ pub mod diagnostics {
             }
         }
         #[doc = "Get Hosting Environment Detector Response"]
+        #[doc = "Get Hosting Environment Detector Response"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: App Service Environment Name"]
+        #[doc = "* `detector_name`: Detector Resource Name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_hosting_environment_detector_response(
             &self,
             resource_group_name: impl Into<String>,
@@ -9523,6 +10293,12 @@ pub mod diagnostics {
             }
         }
         #[doc = "List Site Detector Responses"]
+        #[doc = "List Site Detector Responses"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site Name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_site_detector_responses(
             &self,
             resource_group_name: impl Into<String>,
@@ -9537,6 +10313,13 @@ pub mod diagnostics {
             }
         }
         #[doc = "Get site detector response"]
+        #[doc = "Get site detector response"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site Name"]
+        #[doc = "* `detector_name`: Detector Resource Name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_site_detector_response(
             &self,
             resource_group_name: impl Into<String>,
@@ -9556,6 +10339,12 @@ pub mod diagnostics {
             }
         }
         #[doc = "Get Diagnostics Categories"]
+        #[doc = "Get Diagnostics Categories"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site Name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_site_diagnostic_categories(
             &self,
             resource_group_name: impl Into<String>,
@@ -9570,6 +10359,13 @@ pub mod diagnostics {
             }
         }
         #[doc = "Get Diagnostics Category"]
+        #[doc = "Get Diagnostics Category"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site Name"]
+        #[doc = "* `diagnostic_category`: Diagnostic Category"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_site_diagnostic_category(
             &self,
             resource_group_name: impl Into<String>,
@@ -9586,6 +10382,13 @@ pub mod diagnostics {
             }
         }
         #[doc = "Get Site Analyses"]
+        #[doc = "Get Site Analyses"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site Name"]
+        #[doc = "* `diagnostic_category`: Diagnostic Category"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_site_analyses(
             &self,
             resource_group_name: impl Into<String>,
@@ -9602,6 +10405,14 @@ pub mod diagnostics {
             }
         }
         #[doc = "Get Site Analysis"]
+        #[doc = "Get Site Analysis"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site Name"]
+        #[doc = "* `diagnostic_category`: Diagnostic Category"]
+        #[doc = "* `analysis_name`: Analysis Name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_site_analysis(
             &self,
             resource_group_name: impl Into<String>,
@@ -9620,6 +10431,14 @@ pub mod diagnostics {
             }
         }
         #[doc = "Execute Analysis"]
+        #[doc = "Execute Analysis"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site Name"]
+        #[doc = "* `diagnostic_category`: Category Name"]
+        #[doc = "* `analysis_name`: Analysis Resource Name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn execute_site_analysis(
             &self,
             resource_group_name: impl Into<String>,
@@ -9641,6 +10460,13 @@ pub mod diagnostics {
             }
         }
         #[doc = "Get Detectors"]
+        #[doc = "Get Detectors"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site Name"]
+        #[doc = "* `diagnostic_category`: Diagnostic Category"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_site_detectors(
             &self,
             resource_group_name: impl Into<String>,
@@ -9657,6 +10483,14 @@ pub mod diagnostics {
             }
         }
         #[doc = "Get Detector"]
+        #[doc = "Get Detector"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site Name"]
+        #[doc = "* `diagnostic_category`: Diagnostic Category"]
+        #[doc = "* `detector_name`: Detector Name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_site_detector(
             &self,
             resource_group_name: impl Into<String>,
@@ -9675,6 +10509,14 @@ pub mod diagnostics {
             }
         }
         #[doc = "Execute Detector"]
+        #[doc = "Execute Detector"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site Name"]
+        #[doc = "* `detector_name`: Detector Resource Name"]
+        #[doc = "* `diagnostic_category`: Category Name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn execute_site_detector(
             &self,
             resource_group_name: impl Into<String>,
@@ -9696,6 +10538,13 @@ pub mod diagnostics {
             }
         }
         #[doc = "List Site Detector Responses"]
+        #[doc = "List Site Detector Responses"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site Name"]
+        #[doc = "* `slot`: Slot Name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_site_detector_responses_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -9712,6 +10561,14 @@ pub mod diagnostics {
             }
         }
         #[doc = "Get site detector response"]
+        #[doc = "Get site detector response"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site Name"]
+        #[doc = "* `detector_name`: Detector Resource Name"]
+        #[doc = "* `slot`: Slot Name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_site_detector_response_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -9733,6 +10590,13 @@ pub mod diagnostics {
             }
         }
         #[doc = "Get Diagnostics Categories"]
+        #[doc = "Get Diagnostics Categories"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site Name"]
+        #[doc = "* `slot`: Slot Name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_site_diagnostic_categories_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -9749,6 +10613,14 @@ pub mod diagnostics {
             }
         }
         #[doc = "Get Diagnostics Category"]
+        #[doc = "Get Diagnostics Category"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site Name"]
+        #[doc = "* `diagnostic_category`: Diagnostic Category"]
+        #[doc = "* `slot`: Slot Name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_site_diagnostic_category_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -9767,6 +10639,14 @@ pub mod diagnostics {
             }
         }
         #[doc = "Get Site Analyses"]
+        #[doc = "Get Site Analyses"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site Name"]
+        #[doc = "* `diagnostic_category`: Diagnostic Category"]
+        #[doc = "* `slot`: Slot Name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_site_analyses_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -9785,6 +10665,15 @@ pub mod diagnostics {
             }
         }
         #[doc = "Get Site Analysis"]
+        #[doc = "Get Site Analysis"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site Name"]
+        #[doc = "* `diagnostic_category`: Diagnostic Category"]
+        #[doc = "* `analysis_name`: Analysis Name"]
+        #[doc = "* `slot`: Slot - optional"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_site_analysis_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -9805,6 +10694,15 @@ pub mod diagnostics {
             }
         }
         #[doc = "Execute Analysis"]
+        #[doc = "Execute Analysis"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site Name"]
+        #[doc = "* `diagnostic_category`: Category Name"]
+        #[doc = "* `analysis_name`: Analysis Resource Name"]
+        #[doc = "* `slot`: Slot Name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn execute_site_analysis_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -9828,6 +10726,14 @@ pub mod diagnostics {
             }
         }
         #[doc = "Get Detectors"]
+        #[doc = "Get Detectors"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site Name"]
+        #[doc = "* `diagnostic_category`: Diagnostic Category"]
+        #[doc = "* `slot`: Slot Name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_site_detectors_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -9846,6 +10752,15 @@ pub mod diagnostics {
             }
         }
         #[doc = "Get Detector"]
+        #[doc = "Get Detector"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site Name"]
+        #[doc = "* `diagnostic_category`: Diagnostic Category"]
+        #[doc = "* `detector_name`: Detector Name"]
+        #[doc = "* `slot`: Slot Name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_site_detector_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -9866,6 +10781,15 @@ pub mod diagnostics {
             }
         }
         #[doc = "Execute Detector"]
+        #[doc = "Execute Detector"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site Name"]
+        #[doc = "* `detector_name`: Detector Resource Name"]
+        #[doc = "* `diagnostic_category`: Category Name"]
+        #[doc = "* `slot`: Slot Name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn execute_site_detector_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -11497,6 +12421,11 @@ pub mod global {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get deleted app for a subscription."]
+        #[doc = "Get deleted app for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deleted_site_id`: The numeric ID of the deleted app, e.g. 12345"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_deleted_web_app(
             &self,
             deleted_site_id: impl Into<String>,
@@ -11509,6 +12438,11 @@ pub mod global {
             }
         }
         #[doc = "Get all deleted apps for a subscription."]
+        #[doc = "Get all deleted apps for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deleted_site_id`: The numeric ID of the deleted app, e.g. 12345"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_deleted_web_app_snapshots(
             &self,
             deleted_site_id: impl Into<String>,
@@ -11521,6 +12455,12 @@ pub mod global {
             }
         }
         #[doc = "Gets an operation in a subscription and given region"]
+        #[doc = "Gets an operation in a subscription and given region"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: Location name"]
+        #[doc = "* `operation_id`: Operation Id"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_subscription_operation_with_async_response(
             &self,
             location: impl Into<String>,
@@ -11689,6 +12629,10 @@ pub mod kube_environments {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all Kubernetes Environments for a subscription."]
+        #[doc = "Get all Kubernetes Environments for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -11696,6 +12640,11 @@ pub mod kube_environments {
             }
         }
         #[doc = "Get all the Kubernetes Environments in a resource group."]
+        #[doc = "Get all the Kubernetes Environments in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -11708,6 +12657,12 @@ pub mod kube_environments {
             }
         }
         #[doc = "Get the properties of a Kubernetes Environment."]
+        #[doc = "Get the properties of a Kubernetes Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the Kubernetes Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -11722,6 +12677,13 @@ pub mod kube_environments {
             }
         }
         #[doc = "Creates or updates a Kubernetes Environment."]
+        #[doc = "Creates or updates a Kubernetes Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the Kubernetes Environment."]
+        #[doc = "* `kube_environment_envelope`: Configuration details of the Kubernetes Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -11738,6 +12700,13 @@ pub mod kube_environments {
             }
         }
         #[doc = "Creates or updates a Kubernetes Environment."]
+        #[doc = "Creates or updates a Kubernetes Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the Kubernetes Environment."]
+        #[doc = "* `kube_environment_envelope`: Configuration details of the Kubernetes Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -11754,6 +12723,12 @@ pub mod kube_environments {
             }
         }
         #[doc = "Delete a Kubernetes Environment."]
+        #[doc = "Delete a Kubernetes Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the Kubernetes Environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -12159,12 +13134,14 @@ pub mod provider {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get available application frameworks and their versions"]
+        #[doc = "Get available application frameworks and their versions"]
         pub fn get_available_stacks(&self) -> get_available_stacks::Builder {
             get_available_stacks::Builder {
                 client: self.0.clone(),
                 os_type_selected: None,
             }
         }
+        #[doc = "Get available Function app frameworks and their versions"]
         #[doc = "Get available Function app frameworks and their versions"]
         pub fn get_function_app_stacks(&self) -> get_function_app_stacks::Builder {
             get_function_app_stacks::Builder {
@@ -12173,6 +13150,10 @@ pub mod provider {
             }
         }
         #[doc = "Get available Function app frameworks and their versions for location"]
+        #[doc = "Get available Function app frameworks and their versions for location"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: Function App stack location."]
         pub fn get_function_app_stacks_for_location(&self, location: impl Into<String>) -> get_function_app_stacks_for_location::Builder {
             get_function_app_stacks_for_location::Builder {
                 client: self.0.clone(),
@@ -12181,6 +13162,10 @@ pub mod provider {
             }
         }
         #[doc = "Get available Web app frameworks and their versions for location"]
+        #[doc = "Get available Web app frameworks and their versions for location"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: Web App stack location."]
         pub fn get_web_app_stacks_for_location(&self, location: impl Into<String>) -> get_web_app_stacks_for_location::Builder {
             get_web_app_stacks_for_location::Builder {
                 client: self.0.clone(),
@@ -12189,9 +13174,11 @@ pub mod provider {
             }
         }
         #[doc = "Gets all available operations for the Microsoft.Web resource provider. Also exposes resource metric definitions"]
+        #[doc = "Gets all available operations for the Microsoft.Web resource provider. Also exposes resource metric definitions"]
         pub fn list_operations(&self) -> list_operations::Builder {
             list_operations::Builder { client: self.0.clone() }
         }
+        #[doc = "Get available Web app frameworks and their versions"]
         #[doc = "Get available Web app frameworks and their versions"]
         pub fn get_web_app_stacks(&self) -> get_web_app_stacks::Builder {
             get_web_app_stacks::Builder {
@@ -12200,6 +13187,10 @@ pub mod provider {
             }
         }
         #[doc = "Get available application frameworks and their versions"]
+        #[doc = "Get available application frameworks and their versions"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_available_stacks_on_prem(&self, subscription_id: impl Into<String>) -> get_available_stacks_on_prem::Builder {
             get_available_stacks_on_prem::Builder {
                 client: self.0.clone(),
@@ -12762,6 +13753,10 @@ pub mod recommendations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all recommendations for a subscription."]
+        #[doc = "List all recommendations for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -12771,6 +13766,10 @@ pub mod recommendations {
             }
         }
         #[doc = "Reset all recommendation opt-out settings for a subscription."]
+        #[doc = "Reset all recommendation opt-out settings for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn reset_all_filters(&self, subscription_id: impl Into<String>) -> reset_all_filters::Builder {
             reset_all_filters::Builder {
                 client: self.0.clone(),
@@ -12778,6 +13777,11 @@ pub mod recommendations {
             }
         }
         #[doc = "Disables the specified rule so it will not apply to a subscription in the future."]
+        #[doc = "Disables the specified rule so it will not apply to a subscription in the future."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Rule name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn disable_recommendation_for_subscription(
             &self,
             name: impl Into<String>,
@@ -12790,6 +13794,12 @@ pub mod recommendations {
             }
         }
         #[doc = "Get past recommendations for an app, optionally specified by the time range."]
+        #[doc = "Get past recommendations for an app, optionally specified by the time range."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `hosting_environment_name`: Name of the hosting environment."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_history_for_hosting_environment(
             &self,
             resource_group_name: impl Into<String>,
@@ -12806,6 +13816,12 @@ pub mod recommendations {
             }
         }
         #[doc = "Get all recommendations for a hosting environment."]
+        #[doc = "Get all recommendations for a hosting environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `hosting_environment_name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_recommended_rules_for_hosting_environment(
             &self,
             resource_group_name: impl Into<String>,
@@ -12822,6 +13838,12 @@ pub mod recommendations {
             }
         }
         #[doc = "Disable all recommendations for an app."]
+        #[doc = "Disable all recommendations for an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `environment_name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn disable_all_for_hosting_environment(
             &self,
             resource_group_name: impl Into<String>,
@@ -12838,6 +13860,12 @@ pub mod recommendations {
             }
         }
         #[doc = "Reset all recommendation opt-out settings for an app."]
+        #[doc = "Reset all recommendation opt-out settings for an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `environment_name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn reset_all_filters_for_hosting_environment(
             &self,
             resource_group_name: impl Into<String>,
@@ -12854,6 +13882,13 @@ pub mod recommendations {
             }
         }
         #[doc = "Get a recommendation rule for an app."]
+        #[doc = "Get a recommendation rule for an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `hosting_environment_name`: Name of the hosting environment."]
+        #[doc = "* `name`: Name of the recommendation."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_rule_details_by_hosting_environment(
             &self,
             resource_group_name: impl Into<String>,
@@ -12872,6 +13907,13 @@ pub mod recommendations {
             }
         }
         #[doc = "Disables the specific rule for a web site permanently."]
+        #[doc = "Disables the specific rule for a web site permanently."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `environment_name`: Site name"]
+        #[doc = "* `name`: Rule name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn disable_recommendation_for_hosting_environment(
             &self,
             resource_group_name: impl Into<String>,
@@ -12890,6 +13932,12 @@ pub mod recommendations {
             }
         }
         #[doc = "Get past recommendations for an app, optionally specified by the time range."]
+        #[doc = "Get past recommendations for an app, optionally specified by the time range."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_history_for_web_app(
             &self,
             resource_group_name: impl Into<String>,
@@ -12906,6 +13954,12 @@ pub mod recommendations {
             }
         }
         #[doc = "Get all recommendations for an app."]
+        #[doc = "Get all recommendations for an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_recommended_rules_for_web_app(
             &self,
             resource_group_name: impl Into<String>,
@@ -12922,6 +13976,12 @@ pub mod recommendations {
             }
         }
         #[doc = "Disable all recommendations for an app."]
+        #[doc = "Disable all recommendations for an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn disable_all_for_web_app(
             &self,
             resource_group_name: impl Into<String>,
@@ -12936,6 +13996,12 @@ pub mod recommendations {
             }
         }
         #[doc = "Reset all recommendation opt-out settings for an app."]
+        #[doc = "Reset all recommendation opt-out settings for an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn reset_all_filters_for_web_app(
             &self,
             resource_group_name: impl Into<String>,
@@ -12950,6 +14016,13 @@ pub mod recommendations {
             }
         }
         #[doc = "Get a recommendation rule for an app."]
+        #[doc = "Get a recommendation rule for an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Name of the app."]
+        #[doc = "* `name`: Name of the recommendation."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_rule_details_by_web_app(
             &self,
             resource_group_name: impl Into<String>,
@@ -12968,6 +14041,13 @@ pub mod recommendations {
             }
         }
         #[doc = "Disables the specific rule for a web site permanently."]
+        #[doc = "Disables the specific rule for a web site permanently."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `site_name`: Site name"]
+        #[doc = "* `name`: Rule name"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn disable_recommendation_for_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -13992,6 +15072,10 @@ pub mod resource_health_metadata {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all ResourceHealthMetadata for all sites in the subscription."]
+        #[doc = "List all ResourceHealthMetadata for all sites in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -13999,6 +15083,11 @@ pub mod resource_health_metadata {
             }
         }
         #[doc = "List all ResourceHealthMetadata for all sites in the resource group in the subscription."]
+        #[doc = "List all ResourceHealthMetadata for all sites in the resource group in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -14011,6 +15100,12 @@ pub mod resource_health_metadata {
             }
         }
         #[doc = "Gets the category of ResourceHealthMetadata to use for the given site as a collection"]
+        #[doc = "Gets the category of ResourceHealthMetadata to use for the given site as a collection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -14025,6 +15120,12 @@ pub mod resource_health_metadata {
             }
         }
         #[doc = "Gets the category of ResourceHealthMetadata to use for the given site"]
+        #[doc = "Gets the category of ResourceHealthMetadata to use for the given site"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_by_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -14039,6 +15140,13 @@ pub mod resource_health_metadata {
             }
         }
         #[doc = "Gets the category of ResourceHealthMetadata to use for the given site as a collection"]
+        #[doc = "Gets the category of ResourceHealthMetadata to use for the given site as a collection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_site_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14055,6 +15163,13 @@ pub mod resource_health_metadata {
             }
         }
         #[doc = "Gets the category of ResourceHealthMetadata to use for the given site"]
+        #[doc = "Gets the category of ResourceHealthMetadata to use for the given site"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app"]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_by_site_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14481,10 +15596,15 @@ pub mod resource_health_metadata {
 }
 impl Client {
     #[doc = "Gets publishing user"]
+    #[doc = "Gets publishing user"]
     pub fn get_publishing_user(&self) -> get_publishing_user::Builder {
         get_publishing_user::Builder { client: self.clone() }
     }
     #[doc = "Updates publishing user"]
+    #[doc = "Updates publishing user"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `user_details`: Details of publishing user"]
     pub fn update_publishing_user(&self, user_details: impl Into<models::User>) -> update_publishing_user::Builder {
         update_publishing_user::Builder {
             client: self.clone(),
@@ -14492,10 +15612,15 @@ impl Client {
         }
     }
     #[doc = "Gets the source controls available for Azure websites."]
+    #[doc = "Gets the source controls available for Azure websites."]
     pub fn list_source_controls(&self) -> list_source_controls::Builder {
         list_source_controls::Builder { client: self.clone() }
     }
     #[doc = "Gets source control token"]
+    #[doc = "Gets source control token"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `source_control_type`: Type of source control"]
     pub fn get_source_control(&self, source_control_type: impl Into<String>) -> get_source_control::Builder {
         get_source_control::Builder {
             client: self.clone(),
@@ -14503,6 +15628,11 @@ impl Client {
         }
     }
     #[doc = "Updates source control token"]
+    #[doc = "Updates source control token"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `source_control_type`: Type of source control"]
+    #[doc = "* `request_message`: Source control token information"]
     pub fn update_source_control(
         &self,
         source_control_type: impl Into<String>,
@@ -14515,6 +15645,10 @@ impl Client {
         }
     }
     #[doc = "Gets a list of meters for a given location."]
+    #[doc = "Gets a list of meters for a given location."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
     pub fn list_billing_meters(&self, subscription_id: impl Into<String>) -> list_billing_meters::Builder {
         list_billing_meters::Builder {
             client: self.clone(),
@@ -14524,6 +15658,11 @@ impl Client {
         }
     }
     #[doc = "Check if a resource name is available."]
+    #[doc = "Check if a resource name is available."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `request`: Name availability request."]
+    #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
     pub fn check_name_availability(
         &self,
         request: impl Into<models::ResourceNameAvailabilityRequest>,
@@ -14536,6 +15675,10 @@ impl Client {
         }
     }
     #[doc = "Gets list of available geo regions plus ministamps"]
+    #[doc = "Gets list of available geo regions plus ministamps"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
     pub fn get_subscription_deployment_locations(
         &self,
         subscription_id: impl Into<String>,
@@ -14546,6 +15689,10 @@ impl Client {
         }
     }
     #[doc = "Get a list of available geographical regions."]
+    #[doc = "Get a list of available geographical regions."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
     pub fn list_geo_regions(&self, subscription_id: impl Into<String>) -> list_geo_regions::Builder {
         list_geo_regions::Builder {
             client: self.clone(),
@@ -14557,6 +15704,11 @@ impl Client {
         }
     }
     #[doc = "List all apps that are assigned to a hostname."]
+    #[doc = "List all apps that are assigned to a hostname."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name_identifier`: Hostname information."]
+    #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
     pub fn list_site_identifiers_assigned_to_host_name(
         &self,
         name_identifier: impl Into<models::NameIdentifier>,
@@ -14569,6 +15721,10 @@ impl Client {
         }
     }
     #[doc = "List all premier add-on offers."]
+    #[doc = "List all premier add-on offers."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
     pub fn list_premier_add_on_offers(&self, subscription_id: impl Into<String>) -> list_premier_add_on_offers::Builder {
         list_premier_add_on_offers::Builder {
             client: self.clone(),
@@ -14576,6 +15732,10 @@ impl Client {
         }
     }
     #[doc = "List all SKUs."]
+    #[doc = "List all SKUs."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
     pub fn list_skus(&self, subscription_id: impl Into<String>) -> list_skus::Builder {
         list_skus::Builder {
             client: self.clone(),
@@ -14583,6 +15743,11 @@ impl Client {
         }
     }
     #[doc = "Verifies if this VNET is compatible with an App Service Environment by analyzing the Network Security Group rules."]
+    #[doc = "Verifies if this VNET is compatible with an App Service Environment by analyzing the Network Security Group rules."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `parameters`: VNET information"]
+    #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
     pub fn verify_hosting_environment_vnet(
         &self,
         parameters: impl Into<models::VnetParameters>,
@@ -14595,6 +15760,12 @@ impl Client {
         }
     }
     #[doc = "Move resources between resource groups."]
+    #[doc = "Move resources between resource groups."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+    #[doc = "* `move_resource_envelope`: Object that represents the resource to move."]
+    #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
     pub fn move_(
         &self,
         resource_group_name: impl Into<String>,
@@ -14609,6 +15780,12 @@ impl Client {
         }
     }
     #[doc = "Validate if a resource can be created."]
+    #[doc = "Validate if a resource can be created."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+    #[doc = "* `validate_request`: Request with the resources to validate."]
+    #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
     pub fn validate(
         &self,
         resource_group_name: impl Into<String>,
@@ -14623,6 +15800,12 @@ impl Client {
         }
     }
     #[doc = "Validate whether a resource can be moved."]
+    #[doc = "Validate whether a resource can be moved."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+    #[doc = "* `move_resource_envelope`: Object that represents the resource to move."]
+    #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
     pub fn validate_move(
         &self,
         resource_group_name: impl Into<String>,
@@ -15593,6 +16776,12 @@ pub mod static_sites {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Generates a preview workflow file for the static site"]
+        #[doc = "Generates a preview workflow file for the static site"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: Location where you plan to create the static site."]
+        #[doc = "* `static_sites_workflow_preview_request`: A JSON representation of the StaticSitesWorkflowPreviewRequest properties. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn preview_workflow(
             &self,
             location: impl Into<String>,
@@ -15607,6 +16796,10 @@ pub mod static_sites {
             }
         }
         #[doc = "Get all Static Sites for a subscription."]
+        #[doc = "Get all Static Sites for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -15614,6 +16807,11 @@ pub mod static_sites {
             }
         }
         #[doc = "Gets all static sites in the specified resource group."]
+        #[doc = "Gets all static sites in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_static_sites_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -15626,6 +16824,12 @@ pub mod static_sites {
             }
         }
         #[doc = "Gets the details of a static site."]
+        #[doc = "Gets the details of a static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -15640,6 +16844,13 @@ pub mod static_sites {
             }
         }
         #[doc = "Creates a new static site in an existing resource group, or updates an existing static site."]
+        #[doc = "Creates a new static site in an existing resource group, or updates an existing static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site to create or update."]
+        #[doc = "* `static_site_envelope`: A JSON representation of the staticsite properties. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -15656,6 +16867,13 @@ pub mod static_sites {
             }
         }
         #[doc = "Creates a new static site in an existing resource group, or updates an existing static site."]
+        #[doc = "Creates a new static site in an existing resource group, or updates an existing static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site to create or update."]
+        #[doc = "* `static_site_envelope`: A JSON representation of the staticsite properties. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -15672,6 +16890,12 @@ pub mod static_sites {
             }
         }
         #[doc = "Deletes a static site."]
+        #[doc = "Deletes a static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site to delete."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -15686,6 +16910,13 @@ pub mod static_sites {
             }
         }
         #[doc = "Gets the list of users of a static site."]
+        #[doc = "Gets the list of users of a static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `authprovider`: The auth provider for the users."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_static_site_users(
             &self,
             resource_group_name: impl Into<String>,
@@ -15702,6 +16933,15 @@ pub mod static_sites {
             }
         }
         #[doc = "Updates a user entry with the listed roles"]
+        #[doc = "Updates a user entry with the listed roles"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `authprovider`: The auth provider for this user."]
+        #[doc = "* `userid`: The user id of the user."]
+        #[doc = "* `static_site_user_envelope`: A JSON representation of the StaticSiteUser properties. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_static_site_user(
             &self,
             resource_group_name: impl Into<String>,
@@ -15722,6 +16962,14 @@ pub mod static_sites {
             }
         }
         #[doc = "Deletes the user entry from the static site."]
+        #[doc = "Deletes the user entry from the static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the staticsite."]
+        #[doc = "* `authprovider`: The auth provider for this user."]
+        #[doc = "* `userid`: The user id of the user."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_static_site_user(
             &self,
             resource_group_name: impl Into<String>,
@@ -15740,6 +16988,12 @@ pub mod static_sites {
             }
         }
         #[doc = "Gets all static site builds for a particular static site."]
+        #[doc = "Gets all static site builds for a particular static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_static_site_builds(
             &self,
             resource_group_name: impl Into<String>,
@@ -15754,6 +17008,13 @@ pub mod static_sites {
             }
         }
         #[doc = "Gets the details of a static site build."]
+        #[doc = "Gets the details of a static site build."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `environment_name`: The stage site identifier."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_static_site_build(
             &self,
             resource_group_name: impl Into<String>,
@@ -15770,6 +17031,13 @@ pub mod static_sites {
             }
         }
         #[doc = "Deletes a static site build."]
+        #[doc = "Deletes a static site build."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `environment_name`: The stage site identifier."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_static_site_build(
             &self,
             resource_group_name: impl Into<String>,
@@ -15786,6 +17054,14 @@ pub mod static_sites {
             }
         }
         #[doc = "Creates or updates the app settings of a static site build."]
+        #[doc = "Creates or updates the app settings of a static site build."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `environment_name`: The stage site identifier."]
+        #[doc = "* `app_settings`: The dictionary containing the static site app settings to update."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_static_site_build_app_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -15804,6 +17080,14 @@ pub mod static_sites {
             }
         }
         #[doc = "Creates or updates the function app settings of a static site build."]
+        #[doc = "Creates or updates the function app settings of a static site build."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `environment_name`: The stage site identifier."]
+        #[doc = "* `app_settings`: The dictionary containing the static site function app settings to update."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_static_site_build_function_app_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -15822,6 +17106,13 @@ pub mod static_sites {
             }
         }
         #[doc = "Gets the functions of a particular static site build."]
+        #[doc = "Gets the functions of a particular static site build."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `environment_name`: The stage site identifier."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_static_site_build_functions(
             &self,
             resource_group_name: impl Into<String>,
@@ -15838,6 +17129,13 @@ pub mod static_sites {
             }
         }
         #[doc = "Gets the application settings of a static site build."]
+        #[doc = "Gets the application settings of a static site build."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `environment_name`: The stage site identifier."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_static_site_build_app_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -15854,6 +17152,13 @@ pub mod static_sites {
             }
         }
         #[doc = "Gets the application settings of a static site build."]
+        #[doc = "Gets the application settings of a static site build."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `environment_name`: The stage site identifier."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_static_site_build_function_app_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -15870,6 +17175,13 @@ pub mod static_sites {
             }
         }
         #[doc = "Gets the details of the user provided function apps registered with a static site build"]
+        #[doc = "Gets the details of the user provided function apps registered with a static site build"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `environment_name`: The stage site identifier."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_user_provided_function_apps_for_static_site_build(
             &self,
             resource_group_name: impl Into<String>,
@@ -15886,6 +17198,14 @@ pub mod static_sites {
             }
         }
         #[doc = "Gets the details of the user provided function app registered with a static site build"]
+        #[doc = "Gets the details of the user provided function app registered with a static site build"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `environment_name`: The stage site identifier."]
+        #[doc = "* `function_app_name`: Name of the function app registered with the static site build."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_user_provided_function_app_for_static_site_build(
             &self,
             resource_group_name: impl Into<String>,
@@ -15904,6 +17224,15 @@ pub mod static_sites {
             }
         }
         #[doc = "Register a user provided function app with a static site build"]
+        #[doc = "Register a user provided function app with a static site build"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `environment_name`: The stage site identifier."]
+        #[doc = "* `function_app_name`: Name of the function app to register with the static site build."]
+        #[doc = "* `static_site_user_provided_function_envelope`: A JSON representation of the user provided function app properties. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn register_user_provided_function_app_with_static_site_build(
             &self,
             resource_group_name: impl Into<String>,
@@ -15925,6 +17254,14 @@ pub mod static_sites {
             }
         }
         #[doc = "Detach the user provided function app from the static site build"]
+        #[doc = "Detach the user provided function app from the static site build"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `environment_name`: The stage site identifier."]
+        #[doc = "* `function_app_name`: Name of the function app registered with the static site build."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn detach_user_provided_function_app_from_static_site_build(
             &self,
             resource_group_name: impl Into<String>,
@@ -15943,6 +17280,14 @@ pub mod static_sites {
             }
         }
         #[doc = "Deploys zipped content to a specific environment of a static site."]
+        #[doc = "Deploys zipped content to a specific environment of a static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `environment_name`: Name of the environment."]
+        #[doc = "* `static_site_zip_deployment_envelope`: A JSON representation of the StaticSiteZipDeployment properties. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_zip_deployment_for_static_site_build(
             &self,
             resource_group_name: impl Into<String>,
@@ -15961,6 +17306,13 @@ pub mod static_sites {
             }
         }
         #[doc = "Creates or updates the app settings of a static site."]
+        #[doc = "Creates or updates the app settings of a static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `app_settings`: The dictionary containing the static site app settings to update."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_static_site_app_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -15977,6 +17329,13 @@ pub mod static_sites {
             }
         }
         #[doc = "Creates or updates the function app settings of a static site."]
+        #[doc = "Creates or updates the function app settings of a static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `app_settings`: The dictionary containing the static site function app settings to update."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_static_site_function_app_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -15993,6 +17352,12 @@ pub mod static_sites {
             }
         }
         #[doc = "Creates an invitation link for a user with the role"]
+        #[doc = "Creates an invitation link for a user with the role"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_user_roles_invitation_link(
             &self,
             resource_group_name: impl Into<String>,
@@ -16009,6 +17374,12 @@ pub mod static_sites {
             }
         }
         #[doc = "Gets all static site custom domains for a particular static site."]
+        #[doc = "Gets all static site custom domains for a particular static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site resource to search in."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_static_site_custom_domains(
             &self,
             resource_group_name: impl Into<String>,
@@ -16023,6 +17394,13 @@ pub mod static_sites {
             }
         }
         #[doc = "Gets an existing custom domain for a particular static site."]
+        #[doc = "Gets an existing custom domain for a particular static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site resource to search in."]
+        #[doc = "* `domain_name`: The custom domain name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_static_site_custom_domain(
             &self,
             resource_group_name: impl Into<String>,
@@ -16039,6 +17417,14 @@ pub mod static_sites {
             }
         }
         #[doc = "Creates a new static site custom domain in an existing resource group and static site."]
+        #[doc = "Creates a new static site custom domain in an existing resource group and static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `domain_name`: The custom domain to create."]
+        #[doc = "* `static_site_custom_domain_request_properties_envelope`: A JSON representation of the static site custom domain request properties. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_static_site_custom_domain(
             &self,
             resource_group_name: impl Into<String>,
@@ -16057,6 +17443,13 @@ pub mod static_sites {
             }
         }
         #[doc = "Deletes a custom domain."]
+        #[doc = "Deletes a custom domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `domain_name`: The custom domain to delete."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_static_site_custom_domain(
             &self,
             resource_group_name: impl Into<String>,
@@ -16073,6 +17466,14 @@ pub mod static_sites {
             }
         }
         #[doc = "Validates a particular custom domain can be added to a static site."]
+        #[doc = "Validates a particular custom domain can be added to a static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `domain_name`: The custom domain to validate."]
+        #[doc = "* `static_site_custom_domain_request_properties_envelope`: A JSON representation of the static site custom domain request properties. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn validate_custom_domain_can_be_added_to_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -16091,6 +17492,12 @@ pub mod static_sites {
             }
         }
         #[doc = "Detaches a static site."]
+        #[doc = "Detaches a static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site to detach."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn detach_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -16105,6 +17512,12 @@ pub mod static_sites {
             }
         }
         #[doc = "Gets the functions of a static site."]
+        #[doc = "Gets the functions of a static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_static_site_functions(
             &self,
             resource_group_name: impl Into<String>,
@@ -16119,6 +17532,12 @@ pub mod static_sites {
             }
         }
         #[doc = "Gets the application settings of a static site."]
+        #[doc = "Gets the application settings of a static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_static_site_app_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -16133,6 +17552,12 @@ pub mod static_sites {
             }
         }
         #[doc = "Lists the roles configured for the static site."]
+        #[doc = "Lists the roles configured for the static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_static_site_configured_roles(
             &self,
             resource_group_name: impl Into<String>,
@@ -16147,6 +17572,12 @@ pub mod static_sites {
             }
         }
         #[doc = "Gets the application settings of a static site."]
+        #[doc = "Gets the application settings of a static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_static_site_function_app_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -16161,6 +17592,12 @@ pub mod static_sites {
             }
         }
         #[doc = "Lists the secrets for an existing static site."]
+        #[doc = "Lists the secrets for an existing static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_static_site_secrets(
             &self,
             resource_group_name: impl Into<String>,
@@ -16175,6 +17612,12 @@ pub mod static_sites {
             }
         }
         #[doc = "Gets the list of private endpoint connections associated with a static site"]
+        #[doc = "Gets the list of private endpoint connections associated with a static site"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_private_endpoint_connection_list(
             &self,
             resource_group_name: impl Into<String>,
@@ -16189,6 +17632,13 @@ pub mod static_sites {
             }
         }
         #[doc = "Gets a private endpoint connection"]
+        #[doc = "Gets a private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -16205,6 +17655,14 @@ pub mod static_sites {
             }
         }
         #[doc = "Approves or rejects a private endpoint connection"]
+        #[doc = "Approves or rejects a private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection."]
+        #[doc = "* `private_endpoint_wrapper`: Request body."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn approve_or_reject_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -16223,6 +17681,13 @@ pub mod static_sites {
             }
         }
         #[doc = "Deletes a private endpoint connection"]
+        #[doc = "Deletes a private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -16239,6 +17704,12 @@ pub mod static_sites {
             }
         }
         #[doc = "Gets the private link resources"]
+        #[doc = "Gets the private link resources"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_private_link_resources(
             &self,
             resource_group_name: impl Into<String>,
@@ -16253,6 +17724,12 @@ pub mod static_sites {
             }
         }
         #[doc = "Resets the api key for an existing static site."]
+        #[doc = "Resets the api key for an existing static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn reset_static_site_api_key(
             &self,
             resource_group_name: impl Into<String>,
@@ -16269,6 +17746,12 @@ pub mod static_sites {
             }
         }
         #[doc = "Gets the details of the user provided function apps registered with a static site"]
+        #[doc = "Gets the details of the user provided function apps registered with a static site"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_user_provided_function_apps_for_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -16283,6 +17766,13 @@ pub mod static_sites {
             }
         }
         #[doc = "Gets the details of the user provided function app registered with a static site"]
+        #[doc = "Gets the details of the user provided function app registered with a static site"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `function_app_name`: Name of the function app registered with the static site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_user_provided_function_app_for_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -16299,6 +17789,14 @@ pub mod static_sites {
             }
         }
         #[doc = "Register a user provided function app with a static site"]
+        #[doc = "Register a user provided function app with a static site"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `function_app_name`: Name of the function app to register with the static site."]
+        #[doc = "* `static_site_user_provided_function_envelope`: A JSON representation of the user provided function app properties. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn register_user_provided_function_app_with_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -16318,6 +17816,13 @@ pub mod static_sites {
             }
         }
         #[doc = "Detach the user provided function app from the static site"]
+        #[doc = "Detach the user provided function app from the static site"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `function_app_name`: Name of the function app registered with the static site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn detach_user_provided_function_app_from_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -16334,6 +17839,13 @@ pub mod static_sites {
             }
         }
         #[doc = "Deploys zipped content to a static site."]
+        #[doc = "Deploys zipped content to a static site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the static site."]
+        #[doc = "* `static_site_zip_deployment_envelope`: A JSON representation of the StaticSiteZipDeployment properties. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_zip_deployment_for_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -19262,6 +20774,10 @@ pub mod web_apps {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all apps for a subscription."]
+        #[doc = "Get all apps for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -19269,6 +20785,11 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets all web, mobile, and API apps in the specified resource group."]
+        #[doc = "Gets all web, mobile, and API apps in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -19282,6 +20803,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the details of a web, mobile, or API app."]
+        #[doc = "Gets the details of a web, mobile, or API app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -19296,6 +20823,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a new web, mobile, or API app in an existing resource group, or updates an existing app."]
+        #[doc = "Creates a new web, mobile, or API app in an existing resource group, or updates an existing app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Unique name of the app to create or update. To create or update a deployment slot, use the {slot} parameter."]
+        #[doc = "* `site_envelope`: A JSON representation of the app properties. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -19312,6 +20846,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a new web, mobile, or API app in an existing resource group, or updates an existing app."]
+        #[doc = "Creates a new web, mobile, or API app in an existing resource group, or updates an existing app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Unique name of the app to create or update. To create or update a deployment slot, use the {slot} parameter."]
+        #[doc = "* `site_envelope`: A JSON representation of the app properties. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -19328,6 +20869,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes a web, mobile, or API app, or one of the deployment slots."]
+        #[doc = "Deletes a web, mobile, or API app, or one of the deployment slots."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app to delete."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -19344,6 +20891,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Analyze a custom hostname."]
+        #[doc = "Analyze a custom hostname."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn analyze_custom_hostname(
             &self,
             resource_group_name: impl Into<String>,
@@ -19359,6 +20912,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Applies the configuration settings from the target slot onto the current slot."]
+        #[doc = "Applies the configuration settings from the target slot onto the current slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot_swap_entity`: JSON object that contains the target slot name. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn apply_slot_config_to_production(
             &self,
             resource_group_name: impl Into<String>,
@@ -19375,6 +20935,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a backup of an app."]
+        #[doc = "Creates a backup of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `request`: Backup configuration. You can use the JSON response from the POST action as input here."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn backup(
             &self,
             resource_group_name: impl Into<String>,
@@ -19391,6 +20958,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets existing backups of an app."]
+        #[doc = "Gets existing backups of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_backups(
             &self,
             resource_group_name: impl Into<String>,
@@ -19405,6 +20978,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a backup of an app by its ID."]
+        #[doc = "Gets a backup of an app by its ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `backup_id`: ID of the backup."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_backup_status(
             &self,
             resource_group_name: impl Into<String>,
@@ -19421,6 +21001,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes a backup of an app by its ID."]
+        #[doc = "Deletes a backup of an app by its ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `backup_id`: ID of the backup."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_backup(
             &self,
             resource_group_name: impl Into<String>,
@@ -19437,6 +21024,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets status of a web app backup that may be in progress, including secrets associated with the backup, such as the Azure Storage SAS URL. Also can be used to update the SAS URL for the backup if a new URL is passed in the request body."]
+        #[doc = "Gets status of a web app backup that may be in progress, including secrets associated with the backup, such as the Azure Storage SAS URL. Also can be used to update the SAS URL for the backup if a new URL is passed in the request body."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `backup_id`: ID of backup."]
+        #[doc = "* `request`: Information on backup request."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_backup_status_secrets(
             &self,
             resource_group_name: impl Into<String>,
@@ -19455,6 +21050,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Restores a specific backup to another app (or deployment slot, if specified)."]
+        #[doc = "Restores a specific backup to another app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `backup_id`: ID of the backup."]
+        #[doc = "* `request`: Information on restore request ."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn restore(
             &self,
             resource_group_name: impl Into<String>,
@@ -19473,6 +21076,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Returns whether Scm basic auth is allowed and whether Ftp is allowed for a given site."]
+        #[doc = "Returns whether Scm basic auth is allowed and whether Ftp is allowed for a given site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_basic_publishing_credentials_policies(
             &self,
             resource_group_name: impl Into<String>,
@@ -19487,6 +21096,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Returns whether FTP is allowed on the site or not."]
+        #[doc = "Returns whether FTP is allowed on the site or not."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_ftp_allowed(
             &self,
             resource_group_name: impl Into<String>,
@@ -19501,6 +21116,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates whether FTP is allowed on the site or not."]
+        #[doc = "Updates whether FTP is allowed on the site or not."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_ftp_allowed(
             &self,
             resource_group_name: impl Into<String>,
@@ -19517,6 +21138,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Returns whether Scm basic auth is allowed on the site or not."]
+        #[doc = "Returns whether Scm basic auth is allowed on the site or not."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_scm_allowed(
             &self,
             resource_group_name: impl Into<String>,
@@ -19531,6 +21158,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates whether user publishing credentials are allowed on the site or not."]
+        #[doc = "Updates whether user publishing credentials are allowed on the site or not."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_scm_allowed(
             &self,
             resource_group_name: impl Into<String>,
@@ -19547,6 +21180,12 @@ pub mod web_apps {
             }
         }
         #[doc = "List the configurations of an app"]
+        #[doc = "List the configurations of an app"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_configurations(
             &self,
             resource_group_name: impl Into<String>,
@@ -19561,6 +21200,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Replaces the application settings of an app."]
+        #[doc = "Replaces the application settings of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `app_settings`: Application settings of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_application_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -19577,6 +21223,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the application settings of an app."]
+        #[doc = "Gets the application settings of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_application_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -19591,6 +21243,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates the Authentication / Authorization settings associated with web app."]
+        #[doc = "Updates the Authentication / Authorization settings associated with web app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `site_auth_settings`: Auth settings associated with web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_auth_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -19607,6 +21266,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the Authentication/Authorization settings of an app."]
+        #[doc = "Gets the Authentication/Authorization settings of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_auth_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -19621,6 +21286,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates site's Authentication / Authorization settings for apps via the V2 format"]
+        #[doc = "Updates site's Authentication / Authorization settings for apps via the V2 format"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `site_auth_settings_v2`: Auth settings associated with web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_auth_settings_v2(
             &self,
             resource_group_name: impl Into<String>,
@@ -19637,6 +21309,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets site's Authentication / Authorization settings for apps via the V2 format"]
+        #[doc = "Gets site's Authentication / Authorization settings for apps via the V2 format"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_auth_settings_v2(
             &self,
             resource_group_name: impl Into<String>,
@@ -19651,6 +21329,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates the Azure storage account configurations of an app."]
+        #[doc = "Updates the Azure storage account configurations of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `azure_storage_accounts`: Azure storage accounts of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_azure_storage_accounts(
             &self,
             resource_group_name: impl Into<String>,
@@ -19667,6 +21352,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the Azure storage account configurations of an app."]
+        #[doc = "Gets the Azure storage account configurations of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_azure_storage_accounts(
             &self,
             resource_group_name: impl Into<String>,
@@ -19681,6 +21372,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates the backup configuration of an app."]
+        #[doc = "Updates the backup configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `request`: Edited backup configuration."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_backup_configuration(
             &self,
             resource_group_name: impl Into<String>,
@@ -19697,6 +21395,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes the backup configuration of an app."]
+        #[doc = "Deletes the backup configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_backup_configuration(
             &self,
             resource_group_name: impl Into<String>,
@@ -19711,6 +21415,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the backup configuration of an app."]
+        #[doc = "Gets the backup configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_backup_configuration(
             &self,
             resource_group_name: impl Into<String>,
@@ -19725,6 +21435,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the config reference app settings and status of an app"]
+        #[doc = "Gets the config reference app settings and status of an app"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_app_settings_key_vault_references(
             &self,
             resource_group_name: impl Into<String>,
@@ -19739,6 +21455,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the config reference and status of an app"]
+        #[doc = "Gets the config reference and status of an app"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `app_setting_key`: App Setting key name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_app_setting_key_vault_reference(
             &self,
             resource_group_name: impl Into<String>,
@@ -19755,6 +21478,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the config reference app settings and status of an app"]
+        #[doc = "Gets the config reference app settings and status of an app"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_site_connection_string_key_vault_references(
             &self,
             resource_group_name: impl Into<String>,
@@ -19769,6 +21498,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the config reference and status of an app"]
+        #[doc = "Gets the config reference and status of an app"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_site_connection_string_key_vault_reference(
             &self,
             resource_group_name: impl Into<String>,
@@ -19785,6 +21520,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Replaces the connection strings of an app."]
+        #[doc = "Replaces the connection strings of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `connection_strings`: Connection strings of the app or deployment slot. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_connection_strings(
             &self,
             resource_group_name: impl Into<String>,
@@ -19801,6 +21543,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the connection strings of an app."]
+        #[doc = "Gets the connection strings of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_connection_strings(
             &self,
             resource_group_name: impl Into<String>,
@@ -19815,6 +21563,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the logging configuration of an app."]
+        #[doc = "Gets the logging configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_diagnostic_logs_configuration(
             &self,
             resource_group_name: impl Into<String>,
@@ -19829,6 +21583,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates the logging configuration of an app."]
+        #[doc = "Updates the logging configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `site_logs_config`: A SiteLogsConfig JSON object that contains the logging configuration to change in the \"properties\" property."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_diagnostic_logs_config(
             &self,
             resource_group_name: impl Into<String>,
@@ -19845,6 +21606,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Replaces the metadata of an app."]
+        #[doc = "Replaces the metadata of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `metadata`: Edited metadata of the app or deployment slot. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_metadata(
             &self,
             resource_group_name: impl Into<String>,
@@ -19861,6 +21629,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the metadata of an app."]
+        #[doc = "Gets the metadata of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_metadata(
             &self,
             resource_group_name: impl Into<String>,
@@ -19875,6 +21649,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the Git/FTP publishing credentials of an app."]
+        #[doc = "Gets the Git/FTP publishing credentials of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_publishing_credentials(
             &self,
             resource_group_name: impl Into<String>,
@@ -19889,6 +21669,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates the Push settings associated with web app."]
+        #[doc = "Updates the Push settings associated with web app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `push_settings`: Push settings associated with web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_site_push_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -19905,6 +21692,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the Push settings associated with web app."]
+        #[doc = "Gets the Push settings associated with web app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_site_push_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -19919,6 +21712,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the names of app settings and connection strings that stick to the slot (not swapped)."]
+        #[doc = "Gets the names of app settings and connection strings that stick to the slot (not swapped)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_slot_configuration_names(
             &self,
             resource_group_name: impl Into<String>,
@@ -19933,6 +21732,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates the names of application settings and connection string that remain with the slot during swap operation."]
+        #[doc = "Updates the names of application settings and connection string that remain with the slot during swap operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot_config_names`: Names of application settings and connection strings. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_slot_configuration_names(
             &self,
             resource_group_name: impl Into<String>,
@@ -19949,6 +21755,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the configuration of an app, such as platform version and bitness, default documents, virtual applications, Always On, etc."]
+        #[doc = "Gets the configuration of an app, such as platform version and bitness, default documents, virtual applications, Always On, etc."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_configuration(
             &self,
             resource_group_name: impl Into<String>,
@@ -19963,6 +21775,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates the configuration of an app."]
+        #[doc = "Updates the configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `site_config`: JSON representation of a SiteConfig object. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_configuration(
             &self,
             resource_group_name: impl Into<String>,
@@ -19979,6 +21798,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates the configuration of an app."]
+        #[doc = "Updates the configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `site_config`: JSON representation of a SiteConfig object. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_configuration(
             &self,
             resource_group_name: impl Into<String>,
@@ -19995,6 +21821,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a list of web app configuration snapshots identifiers. Each element of the list contains a timestamp and the ID of the snapshot."]
+        #[doc = "Gets a list of web app configuration snapshots identifiers. Each element of the list contains a timestamp and the ID of the snapshot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_configuration_snapshot_info(
             &self,
             resource_group_name: impl Into<String>,
@@ -20009,6 +21841,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a snapshot of the configuration of an app at a previous point in time."]
+        #[doc = "Gets a snapshot of the configuration of an app at a previous point in time."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `snapshot_id`: The ID of the snapshot to read."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_configuration_snapshot(
             &self,
             resource_group_name: impl Into<String>,
@@ -20025,6 +21864,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Reverts the configuration of an app to a previous snapshot."]
+        #[doc = "Reverts the configuration of an app to a previous snapshot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `snapshot_id`: The ID of the snapshot to read."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn recover_site_configuration_snapshot(
             &self,
             resource_group_name: impl Into<String>,
@@ -20041,6 +21887,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the last lines of docker logs for the given site"]
+        #[doc = "Gets the last lines of docker logs for the given site"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_web_site_container_logs(
             &self,
             resource_group_name: impl Into<String>,
@@ -20055,6 +21907,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the ZIP archived docker log files for the given site"]
+        #[doc = "Gets the ZIP archived docker log files for the given site"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_container_logs_zip(
             &self,
             resource_group_name: impl Into<String>,
@@ -20069,6 +21927,12 @@ pub mod web_apps {
             }
         }
         #[doc = "List continuous web jobs for an app, or a deployment slot."]
+        #[doc = "List continuous web jobs for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_continuous_web_jobs(
             &self,
             resource_group_name: impl Into<String>,
@@ -20083,6 +21947,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a continuous web job by its ID for an app, or a deployment slot."]
+        #[doc = "Gets a continuous web job by its ID for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `web_job_name`: Name of Web Job."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_continuous_web_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -20099,6 +21970,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Delete a continuous web job by its ID for an app, or a deployment slot."]
+        #[doc = "Delete a continuous web job by its ID for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `web_job_name`: Name of Web Job."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_continuous_web_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -20115,6 +21993,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Start a continuous web job for an app, or a deployment slot."]
+        #[doc = "Start a continuous web job for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `web_job_name`: Name of Web Job."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn start_continuous_web_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -20131,6 +22016,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Stop a continuous web job for an app, or a deployment slot."]
+        #[doc = "Stop a continuous web job for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `web_job_name`: Name of Web Job."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn stop_continuous_web_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -20147,6 +22039,12 @@ pub mod web_apps {
             }
         }
         #[doc = "List deployments for an app, or a deployment slot."]
+        #[doc = "List deployments for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_deployments(
             &self,
             resource_group_name: impl Into<String>,
@@ -20161,6 +22059,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get a deployment by its ID for an app, or a deployment slot."]
+        #[doc = "Get a deployment by its ID for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `id`: Deployment ID."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_deployment(
             &self,
             resource_group_name: impl Into<String>,
@@ -20177,6 +22082,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Create a deployment for an app, or a deployment slot."]
+        #[doc = "Create a deployment for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `id`: ID of an existing deployment."]
+        #[doc = "* `deployment`: Deployment details."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_deployment(
             &self,
             resource_group_name: impl Into<String>,
@@ -20195,6 +22108,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Delete a deployment by its ID for an app, or a deployment slot."]
+        #[doc = "Delete a deployment by its ID for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `id`: Deployment ID."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_deployment(
             &self,
             resource_group_name: impl Into<String>,
@@ -20211,6 +22131,13 @@ pub mod web_apps {
             }
         }
         #[doc = "List deployment log for specific deployment for an app, or a deployment slot."]
+        #[doc = "List deployment log for specific deployment for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `id`: The ID of a specific deployment. This is the value of the name property in the JSON response from \"GET /api/sites/{siteName}/deployments\"."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_deployment_log(
             &self,
             resource_group_name: impl Into<String>,
@@ -20227,6 +22154,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Discovers an existing app backup that can be restored from a blob in Azure storage. Use this to get information about the databases stored in a backup."]
+        #[doc = "Discovers an existing app backup that can be restored from a blob in Azure storage. Use this to get information about the databases stored in a backup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `request`: A RestoreRequest object that includes Azure storage URL and blog name for discovery of backup."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn discover_backup(
             &self,
             resource_group_name: impl Into<String>,
@@ -20243,6 +22177,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Lists ownership identifiers for domain associated with web app."]
+        #[doc = "Lists ownership identifiers for domain associated with web app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_domain_ownership_identifiers(
             &self,
             resource_group_name: impl Into<String>,
@@ -20257,6 +22197,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get domain ownership identifier for web app."]
+        #[doc = "Get domain ownership identifier for web app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `domain_ownership_identifier_name`: Name of domain ownership identifier."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_domain_ownership_identifier(
             &self,
             resource_group_name: impl Into<String>,
@@ -20273,6 +22220,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a domain ownership identifier for web app, or updates an existing ownership identifier."]
+        #[doc = "Creates a domain ownership identifier for web app, or updates an existing ownership identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `domain_ownership_identifier_name`: Name of domain ownership identifier."]
+        #[doc = "* `domain_ownership_identifier`: A JSON representation of the domain ownership properties."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_domain_ownership_identifier(
             &self,
             resource_group_name: impl Into<String>,
@@ -20291,6 +22246,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a domain ownership identifier for web app, or updates an existing ownership identifier."]
+        #[doc = "Creates a domain ownership identifier for web app, or updates an existing ownership identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `domain_ownership_identifier_name`: Name of domain ownership identifier."]
+        #[doc = "* `domain_ownership_identifier`: A JSON representation of the domain ownership properties."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_domain_ownership_identifier(
             &self,
             resource_group_name: impl Into<String>,
@@ -20309,6 +22272,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes a domain ownership identifier for a web app."]
+        #[doc = "Deletes a domain ownership identifier for a web app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `domain_ownership_identifier_name`: Name of domain ownership identifier."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_domain_ownership_identifier(
             &self,
             resource_group_name: impl Into<String>,
@@ -20325,6 +22295,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Get the status of the last MSDeploy operation."]
+        #[doc = "Get the status of the last MSDeploy operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_ms_deploy_status(
             &self,
             resource_group_name: impl Into<String>,
@@ -20339,6 +22315,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Invoke the MSDeploy web app extension."]
+        #[doc = "Invoke the MSDeploy web app extension."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `ms_deploy`: Details of MSDeploy operation"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_ms_deploy_operation(
             &self,
             resource_group_name: impl Into<String>,
@@ -20355,6 +22338,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Get the MSDeploy Log for the last MSDeploy operation."]
+        #[doc = "Get the MSDeploy Log for the last MSDeploy operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_ms_deploy_log(
             &self,
             resource_group_name: impl Into<String>,
@@ -20369,6 +22358,12 @@ pub mod web_apps {
             }
         }
         #[doc = "List the functions for a web site, or a deployment slot."]
+        #[doc = "List the functions for a web site, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_functions(
             &self,
             resource_group_name: impl Into<String>,
@@ -20383,6 +22378,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Fetch a short lived token that can be exchanged for a master key."]
+        #[doc = "Fetch a short lived token that can be exchanged for a master key."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_functions_admin_token(
             &self,
             resource_group_name: impl Into<String>,
@@ -20397,6 +22398,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get function information by its ID for web site, or a deployment slot."]
+        #[doc = "Get function information by its ID for web site, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `function_name`: Function name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_function(
             &self,
             resource_group_name: impl Into<String>,
@@ -20413,6 +22421,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Create function for web site, or a deployment slot."]
+        #[doc = "Create function for web site, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `function_name`: Function name."]
+        #[doc = "* `function_envelope`: Function details."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_function(
             &self,
             resource_group_name: impl Into<String>,
@@ -20431,6 +22447,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Delete a function for web site, or a deployment slot."]
+        #[doc = "Delete a function for web site, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `function_name`: Function name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_function(
             &self,
             resource_group_name: impl Into<String>,
@@ -20447,6 +22470,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Add or update a function secret."]
+        #[doc = "Add or update a function secret."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `function_name`: The name of the function."]
+        #[doc = "* `key_name`: The name of the key."]
+        #[doc = "* `key`: The key to create or update"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_function_secret(
             &self,
             resource_group_name: impl Into<String>,
@@ -20467,6 +22499,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Delete a function secret."]
+        #[doc = "Delete a function secret."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `function_name`: The name of the function."]
+        #[doc = "* `key_name`: The name of the key."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_function_secret(
             &self,
             resource_group_name: impl Into<String>,
@@ -20485,6 +22525,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get function keys for a function in a web site, or a deployment slot."]
+        #[doc = "Get function keys for a function in a web site, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `function_name`: Function name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_function_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -20501,6 +22548,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get function secrets for a function in a web site, or a deployment slot."]
+        #[doc = "Get function secrets for a function in a web site, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `function_name`: Function name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_function_secrets(
             &self,
             resource_group_name: impl Into<String>,
@@ -20517,6 +22571,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Get host secrets for a function app."]
+        #[doc = "Get host secrets for a function app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_host_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -20531,6 +22591,12 @@ pub mod web_apps {
             }
         }
         #[doc = "This is to allow calling via powershell and ARM template."]
+        #[doc = "This is to allow calling via powershell and ARM template."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_sync_status(
             &self,
             resource_group_name: impl Into<String>,
@@ -20545,6 +22611,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Syncs function trigger metadata to the management database"]
+        #[doc = "Syncs function trigger metadata to the management database"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn sync_functions(
             &self,
             resource_group_name: impl Into<String>,
@@ -20559,6 +22631,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Add or update a host level secret."]
+        #[doc = "Add or update a host level secret."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `key_type`: The type of host key."]
+        #[doc = "* `key_name`: The name of the key."]
+        #[doc = "* `key`: The key to create or update"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_host_secret(
             &self,
             resource_group_name: impl Into<String>,
@@ -20579,6 +22660,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Delete a host level secret."]
+        #[doc = "Delete a host level secret."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `key_type`: The type of host key."]
+        #[doc = "* `key_name`: The name of the key."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_host_secret(
             &self,
             resource_group_name: impl Into<String>,
@@ -20597,6 +22686,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Get hostname bindings for an app or a deployment slot."]
+        #[doc = "Get hostname bindings for an app or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_host_name_bindings(
             &self,
             resource_group_name: impl Into<String>,
@@ -20611,6 +22706,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get the named hostname binding for an app (or deployment slot, if specified)."]
+        #[doc = "Get the named hostname binding for an app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `host_name`: Hostname in the hostname binding."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_host_name_binding(
             &self,
             resource_group_name: impl Into<String>,
@@ -20627,6 +22729,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a hostname binding for an app."]
+        #[doc = "Creates a hostname binding for an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `host_name`: Hostname in the hostname binding."]
+        #[doc = "* `host_name_binding`: Binding details. This is the JSON representation of a HostNameBinding object."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_host_name_binding(
             &self,
             resource_group_name: impl Into<String>,
@@ -20645,6 +22755,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes a hostname binding for an app."]
+        #[doc = "Deletes a hostname binding for an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `host_name`: Hostname in the hostname binding."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_host_name_binding(
             &self,
             resource_group_name: impl Into<String>,
@@ -20661,6 +22778,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Retrieves a specific Service Bus Hybrid Connection used by this Web App."]
+        #[doc = "Retrieves a specific Service Bus Hybrid Connection used by this Web App."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `namespace_name`: The namespace for this hybrid connection."]
+        #[doc = "* `relay_name`: The relay name for this hybrid connection."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_hybrid_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -20679,6 +22804,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a new Hybrid Connection using a Service Bus relay."]
+        #[doc = "Creates a new Hybrid Connection using a Service Bus relay."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `namespace_name`: The namespace for this hybrid connection."]
+        #[doc = "* `relay_name`: The relay name for this hybrid connection."]
+        #[doc = "* `connection_envelope`: The details of the hybrid connection."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_hybrid_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -20699,6 +22833,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a new Hybrid Connection using a Service Bus relay."]
+        #[doc = "Creates a new Hybrid Connection using a Service Bus relay."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `namespace_name`: The namespace for this hybrid connection."]
+        #[doc = "* `relay_name`: The relay name for this hybrid connection."]
+        #[doc = "* `connection_envelope`: The details of the hybrid connection."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_hybrid_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -20719,6 +22862,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Removes a Hybrid Connection from this site."]
+        #[doc = "Removes a Hybrid Connection from this site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `namespace_name`: The namespace for this hybrid connection."]
+        #[doc = "* `relay_name`: The relay name for this hybrid connection."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_hybrid_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -20737,6 +22888,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Retrieves all Service Bus Hybrid Connections used by this Web App."]
+        #[doc = "Retrieves all Service Bus Hybrid Connections used by this Web App."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_hybrid_connections(
             &self,
             resource_group_name: impl Into<String>,
@@ -20751,6 +22908,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets hybrid connections configured for an app (or deployment slot, if specified)."]
+        #[doc = "Gets hybrid connections configured for an app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_relay_service_connections(
             &self,
             resource_group_name: impl Into<String>,
@@ -20765,6 +22928,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a hybrid connection configuration by its name."]
+        #[doc = "Gets a hybrid connection configuration by its name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `entity_name`: Name of the hybrid connection."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_relay_service_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -20781,6 +22951,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a new hybrid connection configuration (PUT), or updates an existing one (PATCH)."]
+        #[doc = "Creates a new hybrid connection configuration (PUT), or updates an existing one (PATCH)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `entity_name`: Name of the hybrid connection configuration."]
+        #[doc = "* `connection_envelope`: Details of the hybrid connection configuration."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_relay_service_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -20799,6 +22977,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a new hybrid connection configuration (PUT), or updates an existing one (PATCH)."]
+        #[doc = "Creates a new hybrid connection configuration (PUT), or updates an existing one (PATCH)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `entity_name`: Name of the hybrid connection configuration."]
+        #[doc = "* `connection_envelope`: Details of the hybrid connection configuration."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_relay_service_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -20817,6 +23003,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes a relay service connection by its name."]
+        #[doc = "Deletes a relay service connection by its name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `entity_name`: Name of the hybrid connection configuration."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_relay_service_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -20833,6 +23026,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets all scale-out instances of an app."]
+        #[doc = "Gets all scale-out instances of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_instance_identifiers(
             &self,
             resource_group_name: impl Into<String>,
@@ -20847,6 +23046,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets all scale-out instances of an app."]
+        #[doc = "Gets all scale-out instances of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_instance_info(
             &self,
             resource_group_name: impl Into<String>,
@@ -20863,6 +23068,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get the status of the last MSDeploy operation."]
+        #[doc = "Get the status of the last MSDeploy operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `instance_id`: ID of web app instance."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_instance_ms_deploy_status(
             &self,
             resource_group_name: impl Into<String>,
@@ -20879,6 +23091,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Invoke the MSDeploy web app extension."]
+        #[doc = "Invoke the MSDeploy web app extension."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `instance_id`: ID of web app instance."]
+        #[doc = "* `ms_deploy`: Details of MSDeploy operation"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_instance_ms_deploy_operation(
             &self,
             resource_group_name: impl Into<String>,
@@ -20897,6 +23117,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get the MSDeploy Log for the last MSDeploy operation."]
+        #[doc = "Get the MSDeploy Log for the last MSDeploy operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `instance_id`: ID of web app instance."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_instance_ms_deploy_log(
             &self,
             resource_group_name: impl Into<String>,
@@ -20913,6 +23140,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get list of processes for a web site, or a deployment slot, or for a specific scaled-out instance in a web site."]
+        #[doc = "Get list of processes for a web site, or a deployment slot, or for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `instance_id`: ID of a specific scaled-out instance. This is the value of the name property in the JSON response from \"GET api/sites/{siteName}/instances\"."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_instance_processes(
             &self,
             resource_group_name: impl Into<String>,
@@ -20929,6 +23163,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
+        #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `instance_id`: ID of a specific scaled-out instance. This is the value of the name property in the JSON response from \"GET api/sites/{siteName}/instances\"."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_instance_process(
             &self,
             resource_group_name: impl Into<String>,
@@ -20947,6 +23189,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Terminate a process by its ID for a web site, or a deployment slot, or specific scaled-out instance in a web site."]
+        #[doc = "Terminate a process by its ID for a web site, or a deployment slot, or specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `instance_id`: ID of a specific scaled-out instance. This is the value of the name property in the JSON response from \"GET api/sites/{siteName}/instances\"."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_instance_process(
             &self,
             resource_group_name: impl Into<String>,
@@ -20965,6 +23215,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Get a memory dump of a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = "Get a memory dump of a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `instance_id`: ID of a specific scaled-out instance. This is the value of the name property in the JSON response from \"GET api/sites/{siteName}/instances\"."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_instance_process_dump(
             &self,
             resource_group_name: impl Into<String>,
@@ -20983,6 +23241,14 @@ pub mod web_apps {
             }
         }
         #[doc = "List module information for a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = "List module information for a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `instance_id`: ID of a specific scaled-out instance. This is the value of the name property in the JSON response from \"GET api/sites/{siteName}/instances\"."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_instance_process_modules(
             &self,
             resource_group_name: impl Into<String>,
@@ -21001,6 +23267,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
+        #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `base_address`: Module base address."]
+        #[doc = "* `instance_id`: ID of a specific scaled-out instance. This is the value of the name property in the JSON response from \"GET api/sites/{siteName}/instances\"."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_instance_process_module(
             &self,
             resource_group_name: impl Into<String>,
@@ -21021,6 +23296,14 @@ pub mod web_apps {
             }
         }
         #[doc = "List the threads in a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = "List the threads in a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `instance_id`: ID of a specific scaled-out instance. This is the value of the name property in the JSON response from \"GET api/sites/{siteName}/instances\"."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_instance_process_threads(
             &self,
             resource_group_name: impl Into<String>,
@@ -21039,6 +23322,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Shows whether an app can be cloned to another resource group or subscription."]
+        #[doc = "Shows whether an app can be cloned to another resource group or subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn is_cloneable(
             &self,
             resource_group_name: impl Into<String>,
@@ -21053,6 +23342,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets existing backups of an app."]
+        #[doc = "Gets existing backups of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_site_backups(
             &self,
             resource_group_name: impl Into<String>,
@@ -21067,6 +23362,12 @@ pub mod web_apps {
             }
         }
         #[doc = "This is to allow calling via powershell and ARM template."]
+        #[doc = "This is to allow calling via powershell and ARM template."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_sync_function_triggers(
             &self,
             resource_group_name: impl Into<String>,
@@ -21081,6 +23382,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Restores a web app."]
+        #[doc = "Restores a web app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_name`: Azure subscription."]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `migration_options`: Migration migrationOptions."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn migrate_storage(
             &self,
             subscription_name: impl Into<String>,
@@ -21099,6 +23408,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Migrates a local (in-app) MySql database to a remote MySql database."]
+        #[doc = "Migrates a local (in-app) MySql database to a remote MySql database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `migration_request_envelope`: MySql migration options."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn migrate_my_sql(
             &self,
             resource_group_name: impl Into<String>,
@@ -21115,6 +23431,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Returns the status of MySql in app migration, if one is active, and whether or not MySql in app is enabled"]
+        #[doc = "Returns the status of MySql in app migration, if one is active, and whether or not MySql in app is enabled"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_migrate_my_sql_status(
             &self,
             resource_group_name: impl Into<String>,
@@ -21129,6 +23451,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a Swift Virtual Network connection."]
+        #[doc = "Gets a Swift Virtual Network connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_swift_virtual_network_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -21143,6 +23471,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Integrates this Web App with a Virtual Network. This requires that 1) \"swiftSupported\" is true when doing a GET against this resource, and 2) that the target Subnet has already been delegated, and is not\r\nin use by another App Service Plan other than the one this App is in."]
+        #[doc = "Integrates this Web App with a Virtual Network. This requires that 1) \"swiftSupported\" is true when doing a GET against this resource, and 2) that the target Subnet has already been delegated, and is not\nin use by another App Service Plan other than the one this App is in."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `connection_envelope`: Properties of the Virtual Network connection. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_swift_virtual_network_connection_with_check(
             &self,
             resource_group_name: impl Into<String>,
@@ -21159,6 +23494,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Integrates this Web App with a Virtual Network. This requires that 1) \"swiftSupported\" is true when doing a GET against this resource, and 2) that the target Subnet has already been delegated, and is not\r\nin use by another App Service Plan other than the one this App is in."]
+        #[doc = "Integrates this Web App with a Virtual Network. This requires that 1) \"swiftSupported\" is true when doing a GET against this resource, and 2) that the target Subnet has already been delegated, and is not\nin use by another App Service Plan other than the one this App is in."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `connection_envelope`: Properties of the Virtual Network connection. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_swift_virtual_network_connection_with_check(
             &self,
             resource_group_name: impl Into<String>,
@@ -21175,6 +23517,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes a Swift Virtual Network connection from an app (or deployment slot)."]
+        #[doc = "Deletes a Swift Virtual Network connection from an app (or deployment slot)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_swift_virtual_network(
             &self,
             resource_group_name: impl Into<String>,
@@ -21189,6 +23537,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets all network features used by the app (or deployment slot, if specified)."]
+        #[doc = "Gets all network features used by the app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `view`: The type of view. Only \"summary\" is supported at this time."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_network_features(
             &self,
             resource_group_name: impl Into<String>,
@@ -21205,6 +23560,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
+        #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `operation_id`: GUID of the operation."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_network_trace_operation(
             &self,
             resource_group_name: impl Into<String>,
@@ -21221,6 +23583,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Start capturing network packets for the site (To be deprecated)."]
+        #[doc = "Start capturing network packets for the site (To be deprecated)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn start_web_site_network_trace(
             &self,
             resource_group_name: impl Into<String>,
@@ -21238,6 +23606,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Start capturing network packets for the site."]
+        #[doc = "Start capturing network packets for the site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn start_web_site_network_trace_operation(
             &self,
             resource_group_name: impl Into<String>,
@@ -21255,6 +23629,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Stop ongoing capturing network packets for the site."]
+        #[doc = "Stop ongoing capturing network packets for the site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn stop_web_site_network_trace(
             &self,
             resource_group_name: impl Into<String>,
@@ -21269,6 +23649,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
+        #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `operation_id`: GUID of the operation."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_network_traces(
             &self,
             resource_group_name: impl Into<String>,
@@ -21285,6 +23672,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
+        #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `operation_id`: GUID of the operation."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_network_trace_operation_v2(
             &self,
             resource_group_name: impl Into<String>,
@@ -21301,6 +23695,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
+        #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `operation_id`: GUID of the operation."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_network_traces_v2(
             &self,
             resource_group_name: impl Into<String>,
@@ -21317,6 +23718,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Generates a new publishing password for an app (or deployment slot, if specified)."]
+        #[doc = "Generates a new publishing password for an app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn generate_new_site_publishing_password(
             &self,
             resource_group_name: impl Into<String>,
@@ -21331,6 +23738,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets perfmon counters for web app."]
+        #[doc = "Gets perfmon counters for web app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_perf_mon_counters(
             &self,
             resource_group_name: impl Into<String>,
@@ -21346,6 +23759,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets web app's event logs."]
+        #[doc = "Gets web app's event logs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_site_php_error_log_flag(
             &self,
             resource_group_name: impl Into<String>,
@@ -21360,6 +23779,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the premier add-ons of an app."]
+        #[doc = "Gets the premier add-ons of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_premier_add_ons(
             &self,
             resource_group_name: impl Into<String>,
@@ -21374,6 +23799,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a named add-on of an app."]
+        #[doc = "Gets a named add-on of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `premier_add_on_name`: Add-on name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_premier_add_on(
             &self,
             resource_group_name: impl Into<String>,
@@ -21390,6 +23822,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates a named add-on of an app."]
+        #[doc = "Updates a named add-on of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `premier_add_on_name`: Add-on name."]
+        #[doc = "* `premier_add_on`: A JSON representation of the edited premier add-on."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn add_premier_add_on(
             &self,
             resource_group_name: impl Into<String>,
@@ -21408,6 +23848,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates a named add-on of an app."]
+        #[doc = "Updates a named add-on of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `premier_add_on_name`: Add-on name."]
+        #[doc = "* `premier_add_on`: A JSON representation of the edited premier add-on."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_premier_add_on(
             &self,
             resource_group_name: impl Into<String>,
@@ -21426,6 +23874,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Delete a premier add-on from an app."]
+        #[doc = "Delete a premier add-on from an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `premier_add_on_name`: Add-on name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_premier_add_on(
             &self,
             resource_group_name: impl Into<String>,
@@ -21442,6 +23897,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets data around private site access enablement and authorized Virtual Networks that can access the site."]
+        #[doc = "Gets data around private site access enablement and authorized Virtual Networks that can access the site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_private_access(
             &self,
             resource_group_name: impl Into<String>,
@@ -21456,6 +23917,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Sets data around private site access enablement and authorized Virtual Networks that can access the site."]
+        #[doc = "Sets data around private site access enablement and authorized Virtual Networks that can access the site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `access`: The information for the private access"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn put_private_access_vnet(
             &self,
             resource_group_name: impl Into<String>,
@@ -21472,6 +23940,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the list of private endpoint connections associated with a site"]
+        #[doc = "Gets the list of private endpoint connections associated with a site"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_private_endpoint_connection_list(
             &self,
             resource_group_name: impl Into<String>,
@@ -21486,6 +23960,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a private endpoint connection"]
+        #[doc = "Gets a private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the site."]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -21502,6 +23983,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Approves or rejects a private endpoint connection"]
+        #[doc = "Approves or rejects a private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn approve_or_reject_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -21520,6 +24007,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes a private endpoint connection"]
+        #[doc = "Deletes a private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -21536,6 +24029,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the private link resources"]
+        #[doc = "Gets the private link resources"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_private_link_resources(
             &self,
             resource_group_name: impl Into<String>,
@@ -21550,6 +24049,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Get list of processes for a web site, or a deployment slot, or for a specific scaled-out instance in a web site."]
+        #[doc = "Get list of processes for a web site, or a deployment slot, or for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_processes(
             &self,
             resource_group_name: impl Into<String>,
@@ -21564,6 +24069,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
+        #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_process(
             &self,
             resource_group_name: impl Into<String>,
@@ -21580,6 +24092,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Terminate a process by its ID for a web site, or a deployment slot, or specific scaled-out instance in a web site."]
+        #[doc = "Terminate a process by its ID for a web site, or a deployment slot, or specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_process(
             &self,
             resource_group_name: impl Into<String>,
@@ -21596,6 +24115,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get a memory dump of a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = "Get a memory dump of a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_process_dump(
             &self,
             resource_group_name: impl Into<String>,
@@ -21612,6 +24138,13 @@ pub mod web_apps {
             }
         }
         #[doc = "List module information for a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = "List module information for a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_process_modules(
             &self,
             resource_group_name: impl Into<String>,
@@ -21628,6 +24161,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
+        #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `base_address`: Module base address."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_process_module(
             &self,
             resource_group_name: impl Into<String>,
@@ -21646,6 +24187,13 @@ pub mod web_apps {
             }
         }
         #[doc = "List the threads in a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = "List the threads in a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_process_threads(
             &self,
             resource_group_name: impl Into<String>,
@@ -21662,6 +24210,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Get public certificates for an app or a deployment slot."]
+        #[doc = "Get public certificates for an app or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_public_certificates(
             &self,
             resource_group_name: impl Into<String>,
@@ -21676,6 +24230,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get the named public certificate for an app (or deployment slot, if specified)."]
+        #[doc = "Get the named public certificate for an app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `public_certificate_name`: Public certificate name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_public_certificate(
             &self,
             resource_group_name: impl Into<String>,
@@ -21692,6 +24253,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a hostname binding for an app."]
+        #[doc = "Creates a hostname binding for an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `public_certificate_name`: Public certificate name."]
+        #[doc = "* `public_certificate`: Public certificate details. This is the JSON representation of a PublicCertificate object."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_public_certificate(
             &self,
             resource_group_name: impl Into<String>,
@@ -21710,6 +24279,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes a hostname binding for an app."]
+        #[doc = "Deletes a hostname binding for an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `public_certificate_name`: Public certificate name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_public_certificate(
             &self,
             resource_group_name: impl Into<String>,
@@ -21726,6 +24302,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the publishing profile for an app (or deployment slot, if specified)."]
+        #[doc = "Gets the publishing profile for an app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `publishing_profile_options`: Specifies publishingProfileOptions for publishing profile. For example, use {\"format\": \"FileZilla3\"} to get a FileZilla publishing profile."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_publishing_profile_xml_with_secrets(
             &self,
             resource_group_name: impl Into<String>,
@@ -21742,6 +24325,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Resets the configuration settings of the current slot if they were previously modified by calling the API with POST."]
+        #[doc = "Resets the configuration settings of the current slot if they were previously modified by calling the API with POST."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn reset_production_slot_config(
             &self,
             resource_group_name: impl Into<String>,
@@ -21756,6 +24345,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Restarts an app (or deployment slot, if specified)."]
+        #[doc = "Restarts an app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn restart(
             &self,
             resource_group_name: impl Into<String>,
@@ -21772,6 +24367,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Restores an app from a backup blob in Azure Storage."]
+        #[doc = "Restores an app from a backup blob in Azure Storage."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `request`: Information on restore request ."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn restore_from_backup_blob(
             &self,
             resource_group_name: impl Into<String>,
@@ -21788,6 +24390,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Restores a deleted web app to this web app."]
+        #[doc = "Restores a deleted web app to this web app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `restore_request`: Deleted web app restore information."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn restore_from_deleted_app(
             &self,
             resource_group_name: impl Into<String>,
@@ -21804,6 +24413,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Restores a web app from a snapshot."]
+        #[doc = "Restores a web app from a snapshot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `restore_request`: Snapshot restore settings. Snapshot information can be obtained by calling GetDeletedSites or GetSiteSnapshots API."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn restore_snapshot(
             &self,
             resource_group_name: impl Into<String>,
@@ -21820,6 +24436,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Get list of siteextensions for a web site, or a deployment slot."]
+        #[doc = "Get list of siteextensions for a web site, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_site_extensions(
             &self,
             resource_group_name: impl Into<String>,
@@ -21834,6 +24456,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get site extension information by its ID for a web site, or a deployment slot."]
+        #[doc = "Get site extension information by its ID for a web site, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `site_extension_id`: Site extension name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_site_extension(
             &self,
             resource_group_name: impl Into<String>,
@@ -21850,6 +24479,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Install site extension on a web site, or a deployment slot."]
+        #[doc = "Install site extension on a web site, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `site_extension_id`: Site extension name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn install_site_extension(
             &self,
             resource_group_name: impl Into<String>,
@@ -21866,6 +24502,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Remove a site extension from a web site, or a deployment slot."]
+        #[doc = "Remove a site extension from a web site, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `site_extension_id`: Site extension name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_site_extension(
             &self,
             resource_group_name: impl Into<String>,
@@ -21882,6 +24525,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets an app's deployment slots."]
+        #[doc = "Gets an app's deployment slots."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_slots(
             &self,
             resource_group_name: impl Into<String>,
@@ -21896,6 +24545,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the details of a web, mobile, or API app."]
+        #[doc = "Gets the details of a web, mobile, or API app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. By default, this API returns the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -21912,6 +24568,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a new web, mobile, or API app in an existing resource group, or updates an existing app."]
+        #[doc = "Creates a new web, mobile, or API app in an existing resource group, or updates an existing app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Unique name of the app to create or update. To create or update a deployment slot, use the {slot} parameter."]
+        #[doc = "* `site_envelope`: A JSON representation of the app properties. See example."]
+        #[doc = "* `slot`: Name of the deployment slot to create or update. The name 'production' is reserved."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -21930,6 +24594,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a new web, mobile, or API app in an existing resource group, or updates an existing app."]
+        #[doc = "Creates a new web, mobile, or API app in an existing resource group, or updates an existing app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Unique name of the app to create or update. To create or update a deployment slot, use the {slot} parameter."]
+        #[doc = "* `site_envelope`: A JSON representation of the app properties. See example."]
+        #[doc = "* `slot`: Name of the deployment slot to create or update. The name 'production' is reserved."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -21948,6 +24620,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes a web, mobile, or API app, or one of the deployment slots."]
+        #[doc = "Deletes a web, mobile, or API app, or one of the deployment slots."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app to delete."]
+        #[doc = "* `slot`: Name of the deployment slot to delete. By default, the API deletes the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -21966,6 +24645,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Analyze a custom hostname."]
+        #[doc = "Analyze a custom hostname."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn analyze_custom_hostname_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -21983,6 +24669,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Applies the configuration settings from the target slot onto the current slot."]
+        #[doc = "Applies the configuration settings from the target slot onto the current slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot_swap_entity`: JSON object that contains the target slot name. See example."]
+        #[doc = "* `slot`: Name of the source slot. If a slot is not specified, the production slot is used as the source slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn apply_slot_configuration_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22001,6 +24695,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a backup of an app."]
+        #[doc = "Creates a backup of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `request`: Backup configuration. You can use the JSON response from the POST action as input here."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will create a backup for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn backup_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22019,6 +24721,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets existing backups of an app."]
+        #[doc = "Gets existing backups of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get backups of the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_backups_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22035,6 +24744,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a backup of an app by its ID."]
+        #[doc = "Gets a backup of an app by its ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `backup_id`: ID of the backup."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get a backup of the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_backup_status_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22053,6 +24770,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes a backup of an app by its ID."]
+        #[doc = "Deletes a backup of an app by its ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `backup_id`: ID of the backup."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will delete a backup of the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_backup_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22071,6 +24796,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets status of a web app backup that may be in progress, including secrets associated with the backup, such as the Azure Storage SAS URL. Also can be used to update the SAS URL for the backup if a new URL is passed in the request body."]
+        #[doc = "Gets status of a web app backup that may be in progress, including secrets associated with the backup, such as the Azure Storage SAS URL. Also can be used to update the SAS URL for the backup if a new URL is passed in the request body."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `backup_id`: ID of backup."]
+        #[doc = "* `request`: Information on backup request."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_backup_status_secrets_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22091,6 +24825,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Restores a specific backup to another app (or deployment slot, if specified)."]
+        #[doc = "Restores a specific backup to another app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `backup_id`: ID of the backup."]
+        #[doc = "* `request`: Information on restore request ."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will restore a backup of the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn restore_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22111,6 +24854,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Returns whether Scm basic auth is allowed and whether Ftp is allowed for a given site."]
+        #[doc = "Returns whether Scm basic auth is allowed and whether Ftp is allowed for a given site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_basic_publishing_credentials_policies_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22127,6 +24876,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Returns whether FTP is allowed on the site or not."]
+        #[doc = "Returns whether FTP is allowed on the site or not."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_ftp_allowed_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22143,6 +24898,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates whether FTP is allowed on the site or not."]
+        #[doc = "Updates whether FTP is allowed on the site or not."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_ftp_allowed_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22161,6 +24922,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Returns whether Scm basic auth is allowed on the site or not."]
+        #[doc = "Returns whether Scm basic auth is allowed on the site or not."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_scm_allowed_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22177,6 +24944,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates whether user publishing credentials are allowed on the site or not."]
+        #[doc = "Updates whether user publishing credentials are allowed on the site or not."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_scm_allowed_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22195,6 +24968,13 @@ pub mod web_apps {
             }
         }
         #[doc = "List the configurations of an app"]
+        #[doc = "List the configurations of an app"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will return configuration for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_configurations_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22211,6 +24991,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Replaces the application settings of an app."]
+        #[doc = "Replaces the application settings of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `app_settings`: Application settings of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will update the application settings for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_application_settings_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22229,6 +25017,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the application settings of an app."]
+        #[doc = "Gets the application settings of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get the application settings for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_application_settings_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22245,6 +25040,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates the Authentication / Authorization settings associated with web app."]
+        #[doc = "Updates the Authentication / Authorization settings associated with web app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `site_auth_settings`: Auth settings associated with web app."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_auth_settings_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22263,6 +25066,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the Authentication/Authorization settings of an app."]
+        #[doc = "Gets the Authentication/Authorization settings of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get the settings for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_auth_settings_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22279,6 +25089,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates site's Authentication / Authorization settings for apps via the V2 format"]
+        #[doc = "Updates site's Authentication / Authorization settings for apps via the V2 format"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `site_auth_settings_v2`: Auth settings associated with web app."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_auth_settings_v2_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22297,6 +25115,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets site's Authentication / Authorization settings for apps via the V2 format"]
+        #[doc = "Gets site's Authentication / Authorization settings for apps via the V2 format"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get the settings for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_auth_settings_v2_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22313,6 +25138,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates the Azure storage account configurations of an app."]
+        #[doc = "Updates the Azure storage account configurations of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `azure_storage_accounts`: Azure storage accounts of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will update the Azure storage account configurations for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_azure_storage_accounts_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22331,6 +25164,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the Azure storage account configurations of an app."]
+        #[doc = "Gets the Azure storage account configurations of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will update the Azure storage account configurations for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_azure_storage_accounts_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22347,6 +25187,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates the backup configuration of an app."]
+        #[doc = "Updates the backup configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `request`: Edited backup configuration."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will update the backup configuration for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_backup_configuration_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22365,6 +25213,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes the backup configuration of an app."]
+        #[doc = "Deletes the backup configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will delete the backup configuration for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_backup_configuration_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22381,6 +25236,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the backup configuration of an app."]
+        #[doc = "Gets the backup configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get the backup configuration for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_backup_configuration_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22397,6 +25259,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the config reference app settings and status of an app"]
+        #[doc = "Gets the config reference app settings and status of an app"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_app_settings_key_vault_references_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22413,6 +25281,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the config reference and status of an app"]
+        #[doc = "Gets the config reference and status of an app"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `app_setting_key`: App Setting key name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_app_setting_key_vault_reference_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22431,6 +25306,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the config reference app settings and status of an app"]
+        #[doc = "Gets the config reference app settings and status of an app"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_site_connection_string_key_vault_references_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22447,6 +25328,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the config reference and status of an app"]
+        #[doc = "Gets the config reference and status of an app"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_site_connection_string_key_vault_reference_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22465,6 +25352,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Replaces the connection strings of an app."]
+        #[doc = "Replaces the connection strings of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `connection_strings`: Connection strings of the app or deployment slot. See example."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will update the connection settings for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_connection_strings_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22483,6 +25378,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the connection strings of an app."]
+        #[doc = "Gets the connection strings of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get the connection settings for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_connection_strings_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22499,6 +25401,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the logging configuration of an app."]
+        #[doc = "Gets the logging configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get the logging configuration for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_diagnostic_logs_configuration_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22515,6 +25424,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates the logging configuration of an app."]
+        #[doc = "Updates the logging configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `site_logs_config`: A SiteLogsConfig JSON object that contains the logging configuration to change in the \"properties\" property."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will update the logging configuration for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_diagnostic_logs_config_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22533,6 +25450,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Replaces the metadata of an app."]
+        #[doc = "Replaces the metadata of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `metadata`: Edited metadata of the app or deployment slot. See example."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will update the metadata for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_metadata_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22551,6 +25476,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the metadata of an app."]
+        #[doc = "Gets the metadata of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get the metadata for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_metadata_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22567,6 +25499,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the Git/FTP publishing credentials of an app."]
+        #[doc = "Gets the Git/FTP publishing credentials of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get the publishing credentials for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_publishing_credentials_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22583,6 +25522,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates the Push settings associated with web app."]
+        #[doc = "Updates the Push settings associated with web app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `push_settings`: Push settings associated with web app."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_site_push_settings_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22601,6 +25548,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the Push settings associated with web app."]
+        #[doc = "Gets the Push settings associated with web app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_site_push_settings_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22617,6 +25571,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the configuration of an app, such as platform version and bitness, default documents, virtual applications, Always On, etc."]
+        #[doc = "Gets the configuration of an app, such as platform version and bitness, default documents, virtual applications, Always On, etc."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will return configuration for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_configuration_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22633,6 +25594,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates the configuration of an app."]
+        #[doc = "Updates the configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `site_config`: JSON representation of a SiteConfig object. See example."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will update configuration for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_configuration_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22651,6 +25620,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates the configuration of an app."]
+        #[doc = "Updates the configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `site_config`: JSON representation of a SiteConfig object. See example."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will update configuration for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_configuration_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22669,6 +25646,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a list of web app configuration snapshots identifiers. Each element of the list contains a timestamp and the ID of the snapshot."]
+        #[doc = "Gets a list of web app configuration snapshots identifiers. Each element of the list contains a timestamp and the ID of the snapshot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will return configuration for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_configuration_snapshot_info_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22685,6 +25669,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a snapshot of the configuration of an app at a previous point in time."]
+        #[doc = "Gets a snapshot of the configuration of an app at a previous point in time."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `snapshot_id`: The ID of the snapshot to read."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will return configuration for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_configuration_snapshot_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22703,6 +25695,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Reverts the configuration of an app to a previous snapshot."]
+        #[doc = "Reverts the configuration of an app to a previous snapshot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `snapshot_id`: The ID of the snapshot to read."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will return configuration for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn recover_site_configuration_snapshot_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22721,6 +25721,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the last lines of docker logs for the given site"]
+        #[doc = "Gets the last lines of docker logs for the given site"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_web_site_container_logs_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22737,6 +25744,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the ZIP archived docker log files for the given site"]
+        #[doc = "Gets the ZIP archived docker log files for the given site"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_container_logs_zip_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22753,6 +25767,13 @@ pub mod web_apps {
             }
         }
         #[doc = "List continuous web jobs for an app, or a deployment slot."]
+        #[doc = "List continuous web jobs for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API deletes a deployment for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_continuous_web_jobs_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22769,6 +25790,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a continuous web job by its ID for an app, or a deployment slot."]
+        #[doc = "Gets a continuous web job by its ID for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `web_job_name`: Name of Web Job."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API deletes a deployment for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_continuous_web_job_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22787,6 +25816,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Delete a continuous web job by its ID for an app, or a deployment slot."]
+        #[doc = "Delete a continuous web job by its ID for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `web_job_name`: Name of Web Job."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API deletes a deployment for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_continuous_web_job_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22805,6 +25842,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Start a continuous web job for an app, or a deployment slot."]
+        #[doc = "Start a continuous web job for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `web_job_name`: Name of Web Job."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API deletes a deployment for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn start_continuous_web_job_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22823,6 +25868,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Stop a continuous web job for an app, or a deployment slot."]
+        #[doc = "Stop a continuous web job for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `web_job_name`: Name of Web Job."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API deletes a deployment for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn stop_continuous_web_job_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22841,6 +25894,13 @@ pub mod web_apps {
             }
         }
         #[doc = "List deployments for an app, or a deployment slot."]
+        #[doc = "List deployments for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API returns deployments for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_deployments_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22857,6 +25917,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Get a deployment by its ID for an app, or a deployment slot."]
+        #[doc = "Get a deployment by its ID for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `id`: Deployment ID."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API gets a deployment for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_deployment_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22875,6 +25943,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Create a deployment for an app, or a deployment slot."]
+        #[doc = "Create a deployment for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `id`: ID of an existing deployment."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API creates a deployment for the production slot."]
+        #[doc = "* `deployment`: Deployment details."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_deployment_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22895,6 +25972,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Delete a deployment by its ID for an app, or a deployment slot."]
+        #[doc = "Delete a deployment by its ID for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `id`: Deployment ID."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API deletes a deployment for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_deployment_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22913,6 +25998,14 @@ pub mod web_apps {
             }
         }
         #[doc = "List deployment log for specific deployment for an app, or a deployment slot."]
+        #[doc = "List deployment log for specific deployment for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `id`: The ID of a specific deployment. This is the value of the name property in the JSON response from \"GET /api/sites/{siteName}/deployments\"."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API returns deployments for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_deployment_log_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22931,6 +26024,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Discovers an existing app backup that can be restored from a blob in Azure storage. Use this to get information about the databases stored in a backup."]
+        #[doc = "Discovers an existing app backup that can be restored from a blob in Azure storage. Use this to get information about the databases stored in a backup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `request`: A RestoreRequest object that includes Azure storage URL and blog name for discovery of backup."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will perform discovery for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn discover_backup_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22949,6 +26050,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Lists ownership identifiers for domain associated with web app."]
+        #[doc = "Lists ownership identifiers for domain associated with web app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will delete the binding for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_domain_ownership_identifiers_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22965,6 +26073,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Get domain ownership identifier for web app."]
+        #[doc = "Get domain ownership identifier for web app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `domain_ownership_identifier_name`: Name of domain ownership identifier."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will delete the binding for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_domain_ownership_identifier_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -22983,6 +26099,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a domain ownership identifier for web app, or updates an existing ownership identifier."]
+        #[doc = "Creates a domain ownership identifier for web app, or updates an existing ownership identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `domain_ownership_identifier_name`: Name of domain ownership identifier."]
+        #[doc = "* `domain_ownership_identifier`: A JSON representation of the domain ownership properties."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will delete the binding for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_domain_ownership_identifier_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23003,6 +26128,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a domain ownership identifier for web app, or updates an existing ownership identifier."]
+        #[doc = "Creates a domain ownership identifier for web app, or updates an existing ownership identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `domain_ownership_identifier_name`: Name of domain ownership identifier."]
+        #[doc = "* `domain_ownership_identifier`: A JSON representation of the domain ownership properties."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will delete the binding for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_domain_ownership_identifier_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23023,6 +26157,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes a domain ownership identifier for a web app."]
+        #[doc = "Deletes a domain ownership identifier for a web app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `domain_ownership_identifier_name`: Name of domain ownership identifier."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will delete the binding for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_domain_ownership_identifier_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23041,6 +26183,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get the status of the last MSDeploy operation."]
+        #[doc = "Get the status of the last MSDeploy operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_ms_deploy_status_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23057,6 +26206,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Invoke the MSDeploy web app extension."]
+        #[doc = "Invoke the MSDeploy web app extension."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `ms_deploy`: Details of MSDeploy operation"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_ms_deploy_operation_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23075,6 +26232,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get the MSDeploy Log for the last MSDeploy operation."]
+        #[doc = "Get the MSDeploy Log for the last MSDeploy operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_ms_deploy_log_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23091,6 +26255,13 @@ pub mod web_apps {
             }
         }
         #[doc = "List the functions for a web site, or a deployment slot."]
+        #[doc = "List the functions for a web site, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `slot`: Name of the deployment slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_instance_functions_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23107,6 +26278,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Fetch a short lived token that can be exchanged for a master key."]
+        #[doc = "Fetch a short lived token that can be exchanged for a master key."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_functions_admin_token_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23123,6 +26301,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Get function information by its ID for web site, or a deployment slot."]
+        #[doc = "Get function information by its ID for web site, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `function_name`: Function name."]
+        #[doc = "* `slot`: Name of the deployment slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_instance_function_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23141,6 +26327,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Create function for web site, or a deployment slot."]
+        #[doc = "Create function for web site, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `function_name`: Function name."]
+        #[doc = "* `slot`: Name of the deployment slot."]
+        #[doc = "* `function_envelope`: Function details."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_instance_function_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23161,6 +26356,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Delete a function for web site, or a deployment slot."]
+        #[doc = "Delete a function for web site, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `function_name`: Function name."]
+        #[doc = "* `slot`: Name of the deployment slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_instance_function_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23179,6 +26382,16 @@ pub mod web_apps {
             }
         }
         #[doc = "Add or update a function secret."]
+        #[doc = "Add or update a function secret."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `function_name`: The name of the function."]
+        #[doc = "* `key_name`: The name of the key."]
+        #[doc = "* `slot`: Name of the deployment slot."]
+        #[doc = "* `key`: The key to create or update"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_function_secret_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23201,6 +26414,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Delete a function secret."]
+        #[doc = "Delete a function secret."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `function_name`: The name of the function."]
+        #[doc = "* `key_name`: The name of the key."]
+        #[doc = "* `slot`: Name of the deployment slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_function_secret_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23221,6 +26443,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Get function keys for a function in a web site, or a deployment slot."]
+        #[doc = "Get function keys for a function in a web site, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `function_name`: Function name."]
+        #[doc = "* `slot`: Name of the deployment slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_function_keys_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23239,6 +26469,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Get function secrets for a function in a web site, or a deployment slot."]
+        #[doc = "Get function secrets for a function in a web site, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `function_name`: Function name."]
+        #[doc = "* `slot`: Name of the deployment slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_function_secrets_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23257,6 +26495,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get host secrets for a function app."]
+        #[doc = "Get host secrets for a function app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `slot`: Name of the deployment slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_host_keys_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23273,6 +26518,13 @@ pub mod web_apps {
             }
         }
         #[doc = "This is to allow calling via powershell and ARM template."]
+        #[doc = "This is to allow calling via powershell and ARM template."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_sync_status_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23289,6 +26541,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Syncs function trigger metadata to the management database"]
+        #[doc = "Syncs function trigger metadata to the management database"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn sync_functions_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23305,6 +26564,16 @@ pub mod web_apps {
             }
         }
         #[doc = "Add or update a host level secret."]
+        #[doc = "Add or update a host level secret."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `key_type`: The type of host key."]
+        #[doc = "* `key_name`: The name of the key."]
+        #[doc = "* `slot`: Name of the deployment slot."]
+        #[doc = "* `key`: The key to create or update"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_host_secret_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23327,6 +26596,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Delete a host level secret."]
+        #[doc = "Delete a host level secret."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `key_type`: The type of host key."]
+        #[doc = "* `key_name`: The name of the key."]
+        #[doc = "* `slot`: Name of the deployment slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_host_secret_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23347,6 +26625,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get hostname bindings for an app or a deployment slot."]
+        #[doc = "Get hostname bindings for an app or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API gets hostname bindings for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_host_name_bindings_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23363,6 +26648,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Get the named hostname binding for an app (or deployment slot, if specified)."]
+        #[doc = "Get the named hostname binding for an app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API the named binding for the production slot."]
+        #[doc = "* `host_name`: Hostname in the hostname binding."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_host_name_binding_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23381,6 +26674,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a hostname binding for an app."]
+        #[doc = "Creates a hostname binding for an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `host_name`: Hostname in the hostname binding."]
+        #[doc = "* `host_name_binding`: Binding details. This is the JSON representation of a HostNameBinding object."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will create a binding for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_host_name_binding_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23401,6 +26703,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes a hostname binding for an app."]
+        #[doc = "Deletes a hostname binding for an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will delete the binding for the production slot."]
+        #[doc = "* `host_name`: Hostname in the hostname binding."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_host_name_binding_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23419,6 +26729,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Retrieves a specific Service Bus Hybrid Connection used by this Web App."]
+        #[doc = "Retrieves a specific Service Bus Hybrid Connection used by this Web App."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `namespace_name`: The namespace for this hybrid connection."]
+        #[doc = "* `relay_name`: The relay name for this hybrid connection."]
+        #[doc = "* `slot`: The name of the slot for the web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_hybrid_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23439,6 +26758,16 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a new Hybrid Connection using a Service Bus relay."]
+        #[doc = "Creates a new Hybrid Connection using a Service Bus relay."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `namespace_name`: The namespace for this hybrid connection."]
+        #[doc = "* `relay_name`: The relay name for this hybrid connection."]
+        #[doc = "* `connection_envelope`: The details of the hybrid connection."]
+        #[doc = "* `slot`: The name of the slot for the web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_hybrid_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23461,6 +26790,16 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a new Hybrid Connection using a Service Bus relay."]
+        #[doc = "Creates a new Hybrid Connection using a Service Bus relay."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `namespace_name`: The namespace for this hybrid connection."]
+        #[doc = "* `relay_name`: The relay name for this hybrid connection."]
+        #[doc = "* `connection_envelope`: The details of the hybrid connection."]
+        #[doc = "* `slot`: The name of the slot for the web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_hybrid_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23483,6 +26822,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Removes a Hybrid Connection from this site."]
+        #[doc = "Removes a Hybrid Connection from this site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `namespace_name`: The namespace for this hybrid connection."]
+        #[doc = "* `relay_name`: The relay name for this hybrid connection."]
+        #[doc = "* `slot`: The name of the slot for the web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_hybrid_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23503,6 +26851,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Retrieves all Service Bus Hybrid Connections used by this Web App."]
+        #[doc = "Retrieves all Service Bus Hybrid Connections used by this Web App."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `slot`: The name of the slot for the web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_hybrid_connections_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23519,6 +26874,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets hybrid connections configured for an app (or deployment slot, if specified)."]
+        #[doc = "Gets hybrid connections configured for an app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get hybrid connections for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_relay_service_connections_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23535,6 +26897,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a hybrid connection configuration by its name."]
+        #[doc = "Gets a hybrid connection configuration by its name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `entity_name`: Name of the hybrid connection."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get a hybrid connection for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_relay_service_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23553,6 +26923,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a new hybrid connection configuration (PUT), or updates an existing one (PATCH)."]
+        #[doc = "Creates a new hybrid connection configuration (PUT), or updates an existing one (PATCH)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `entity_name`: Name of the hybrid connection configuration."]
+        #[doc = "* `connection_envelope`: Details of the hybrid connection configuration."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will create or update a hybrid connection for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_relay_service_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23573,6 +26952,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a new hybrid connection configuration (PUT), or updates an existing one (PATCH)."]
+        #[doc = "Creates a new hybrid connection configuration (PUT), or updates an existing one (PATCH)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `entity_name`: Name of the hybrid connection configuration."]
+        #[doc = "* `connection_envelope`: Details of the hybrid connection configuration."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will create or update a hybrid connection for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_relay_service_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23593,6 +26981,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes a relay service connection by its name."]
+        #[doc = "Deletes a relay service connection by its name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `entity_name`: Name of the hybrid connection configuration."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will delete a hybrid connection for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_relay_service_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23611,6 +27007,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets all scale-out instances of an app."]
+        #[doc = "Gets all scale-out instances of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API gets the production slot instances."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_instance_identifiers_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23627,6 +27030,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets all scale-out instances of an app."]
+        #[doc = "Gets all scale-out instances of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API gets the production slot instances."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_instance_info_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23645,6 +27055,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Get the status of the last MSDeploy operation."]
+        #[doc = "Get the status of the last MSDeploy operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `instance_id`: ID of web app instance."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_instance_ms_deploy_status_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23663,6 +27081,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Invoke the MSDeploy web app extension."]
+        #[doc = "Invoke the MSDeploy web app extension."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `instance_id`: ID of web app instance."]
+        #[doc = "* `ms_deploy`: Details of MSDeploy operation"]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_instance_ms_deploy_operation_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23683,6 +27110,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Get the MSDeploy Log for the last MSDeploy operation."]
+        #[doc = "Get the MSDeploy Log for the last MSDeploy operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `instance_id`: ID of web app instance."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_instance_ms_deploy_log_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23701,6 +27136,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Get list of processes for a web site, or a deployment slot, or for a specific scaled-out instance in a web site."]
+        #[doc = "Get list of processes for a web site, or a deployment slot, or for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API returns deployments for the production slot."]
+        #[doc = "* `instance_id`: ID of a specific scaled-out instance. This is the value of the name property in the JSON response from \"GET api/sites/{siteName}/instances\"."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_instance_processes_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23719,6 +27162,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
+        #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API returns deployments for the production slot."]
+        #[doc = "* `instance_id`: ID of a specific scaled-out instance. This is the value of the name property in the JSON response from \"GET api/sites/{siteName}/instances\"."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_instance_process_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23739,6 +27191,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Terminate a process by its ID for a web site, or a deployment slot, or specific scaled-out instance in a web site."]
+        #[doc = "Terminate a process by its ID for a web site, or a deployment slot, or specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API returns deployments for the production slot."]
+        #[doc = "* `instance_id`: ID of a specific scaled-out instance. This is the value of the name property in the JSON response from \"GET api/sites/{siteName}/instances\"."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_instance_process_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23759,6 +27220,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Get a memory dump of a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = "Get a memory dump of a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API returns deployments for the production slot."]
+        #[doc = "* `instance_id`: ID of a specific scaled-out instance. This is the value of the name property in the JSON response from \"GET api/sites/{siteName}/instances\"."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_instance_process_dump_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23779,6 +27249,15 @@ pub mod web_apps {
             }
         }
         #[doc = "List module information for a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = "List module information for a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API returns deployments for the production slot."]
+        #[doc = "* `instance_id`: ID of a specific scaled-out instance. This is the value of the name property in the JSON response from \"GET api/sites/{siteName}/instances\"."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_instance_process_modules_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23799,6 +27278,16 @@ pub mod web_apps {
             }
         }
         #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
+        #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `base_address`: Module base address."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API returns deployments for the production slot."]
+        #[doc = "* `instance_id`: ID of a specific scaled-out instance. This is the value of the name property in the JSON response from \"GET api/sites/{siteName}/instances\"."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_instance_process_module_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23821,6 +27310,15 @@ pub mod web_apps {
             }
         }
         #[doc = "List the threads in a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = "List the threads in a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API returns deployments for the production slot."]
+        #[doc = "* `instance_id`: ID of a specific scaled-out instance. This is the value of the name property in the JSON response from \"GET api/sites/{siteName}/instances\"."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_instance_process_threads_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23841,6 +27339,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Shows whether an app can be cloned to another resource group or subscription."]
+        #[doc = "Shows whether an app can be cloned to another resource group or subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. By default, this API returns information on the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn is_cloneable_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23857,6 +27362,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets existing backups of an app."]
+        #[doc = "Gets existing backups of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get backups of the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_site_backups_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23873,6 +27385,13 @@ pub mod web_apps {
             }
         }
         #[doc = "This is to allow calling via powershell and ARM template."]
+        #[doc = "This is to allow calling via powershell and ARM template."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_sync_function_triggers_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23889,6 +27408,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Returns the status of MySql in app migration, if one is active, and whether or not MySql in app is enabled"]
+        #[doc = "Returns the status of MySql in app migration, if one is active, and whether or not MySql in app is enabled"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `slot`: Name of the deployment slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_migrate_my_sql_status_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23905,6 +27431,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a Swift Virtual Network connection."]
+        #[doc = "Gets a Swift Virtual Network connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get a gateway for the production slot's Virtual Network."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_swift_virtual_network_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23921,6 +27454,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Integrates this Web App with a Virtual Network. This requires that 1) \"swiftSupported\" is true when doing a GET against this resource, and 2) that the target Subnet has already been delegated, and is not\r\nin use by another App Service Plan other than the one this App is in."]
+        #[doc = "Integrates this Web App with a Virtual Network. This requires that 1) \"swiftSupported\" is true when doing a GET against this resource, and 2) that the target Subnet has already been delegated, and is not\nin use by another App Service Plan other than the one this App is in."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `connection_envelope`: Properties of the Virtual Network connection. See example."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will add or update connections for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_swift_virtual_network_connection_with_check_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23939,6 +27480,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Integrates this Web App with a Virtual Network. This requires that 1) \"swiftSupported\" is true when doing a GET against this resource, and 2) that the target Subnet has already been delegated, and is not\r\nin use by another App Service Plan other than the one this App is in."]
+        #[doc = "Integrates this Web App with a Virtual Network. This requires that 1) \"swiftSupported\" is true when doing a GET against this resource, and 2) that the target Subnet has already been delegated, and is not\nin use by another App Service Plan other than the one this App is in."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `connection_envelope`: Properties of the Virtual Network connection. See example."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will add or update connections for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_swift_virtual_network_connection_with_check_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23957,6 +27506,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes a Swift Virtual Network connection from an app (or deployment slot)."]
+        #[doc = "Deletes a Swift Virtual Network connection from an app (or deployment slot)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will delete the connection for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_swift_virtual_network_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23973,6 +27529,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets all network features used by the app (or deployment slot, if specified)."]
+        #[doc = "Gets all network features used by the app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `view`: The type of view. Only \"summary\" is supported at this time."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get network features for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_network_features_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -23991,6 +27555,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
+        #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `operation_id`: GUID of the operation."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get an operation for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_network_trace_operation_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24009,6 +27581,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Start capturing network packets for the site (To be deprecated)."]
+        #[doc = "Start capturing network packets for the site (To be deprecated)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `slot`: The name of the slot for this web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn start_web_site_network_trace_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24028,6 +27607,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Start capturing network packets for the site."]
+        #[doc = "Start capturing network packets for the site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `slot`: The name of the slot for this web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn start_web_site_network_trace_operation_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24047,6 +27633,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Stop ongoing capturing network packets for the site."]
+        #[doc = "Stop ongoing capturing network packets for the site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `slot`: The name of the slot for this web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn stop_web_site_network_trace_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24063,6 +27656,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
+        #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `operation_id`: GUID of the operation."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get an operation for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_network_traces_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24081,6 +27682,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
+        #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `operation_id`: GUID of the operation."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get an operation for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_network_trace_operation_slot_v2(
             &self,
             resource_group_name: impl Into<String>,
@@ -24099,6 +27708,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
+        #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `operation_id`: GUID of the operation."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get an operation for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_network_traces_slot_v2(
             &self,
             resource_group_name: impl Into<String>,
@@ -24117,6 +27734,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Generates a new publishing password for an app (or deployment slot, if specified)."]
+        #[doc = "Generates a new publishing password for an app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API generate a new publishing password for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn generate_new_site_publishing_password_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24133,6 +27757,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets perfmon counters for web app."]
+        #[doc = "Gets perfmon counters for web app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_perf_mon_counters_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24150,6 +27781,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets web app's event logs."]
+        #[doc = "Gets web app's event logs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_site_php_error_log_flag_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24166,6 +27804,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the premier add-ons of an app."]
+        #[doc = "Gets the premier add-ons of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get the premier add-ons for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_premier_add_ons_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24182,6 +27827,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a named add-on of an app."]
+        #[doc = "Gets a named add-on of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `premier_add_on_name`: Add-on name."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get the named add-on for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_premier_add_on_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24200,6 +27853,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates a named add-on of an app."]
+        #[doc = "Updates a named add-on of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `premier_add_on_name`: Add-on name."]
+        #[doc = "* `premier_add_on`: A JSON representation of the edited premier add-on."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will update the named add-on for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn add_premier_add_on_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24220,6 +27882,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates a named add-on of an app."]
+        #[doc = "Updates a named add-on of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `premier_add_on_name`: Add-on name."]
+        #[doc = "* `premier_add_on`: A JSON representation of the edited premier add-on."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will update the named add-on for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_premier_add_on_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24240,6 +27911,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Delete a premier add-on from an app."]
+        #[doc = "Delete a premier add-on from an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `premier_add_on_name`: Add-on name."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will delete the named add-on for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_premier_add_on_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24258,6 +27937,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets data around private site access enablement and authorized Virtual Networks that can access the site."]
+        #[doc = "Gets data around private site access enablement and authorized Virtual Networks that can access the site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `slot`: The name of the slot for the web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_private_access_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24274,6 +27960,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Sets data around private site access enablement and authorized Virtual Networks that can access the site."]
+        #[doc = "Sets data around private site access enablement and authorized Virtual Networks that can access the site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `access`: The information for the private access"]
+        #[doc = "* `slot`: The name of the slot for the web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn put_private_access_vnet_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24292,6 +27986,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the list of private endpoint connections associated with a site"]
+        #[doc = "Gets the list of private endpoint connections associated with a site"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the site."]
+        #[doc = "* `slot`: Name of the site deployment slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_private_endpoint_connection_list_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24308,6 +28009,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a private endpoint connection"]
+        #[doc = "Gets a private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the site."]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection."]
+        #[doc = "* `slot`: Name of the site deployment slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_private_endpoint_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24326,6 +28035,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Approves or rejects a private endpoint connection"]
+        #[doc = "Approves or rejects a private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn approve_or_reject_private_endpoint_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24346,6 +28061,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes a private endpoint connection"]
+        #[doc = "Deletes a private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_private_endpoint_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24364,6 +28085,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the private link resources"]
+        #[doc = "Gets the private link resources"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the site."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_private_link_resources_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24380,6 +28107,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get list of processes for a web site, or a deployment slot, or for a specific scaled-out instance in a web site."]
+        #[doc = "Get list of processes for a web site, or a deployment slot, or for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API returns deployments for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_processes_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24396,6 +28130,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
+        #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API returns deployments for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_process_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24414,6 +28156,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Terminate a process by its ID for a web site, or a deployment slot, or specific scaled-out instance in a web site."]
+        #[doc = "Terminate a process by its ID for a web site, or a deployment slot, or specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API returns deployments for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_process_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24432,6 +28182,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Get a memory dump of a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = "Get a memory dump of a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API returns deployments for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_process_dump_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24450,6 +28208,14 @@ pub mod web_apps {
             }
         }
         #[doc = "List module information for a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = "List module information for a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API returns deployments for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_process_modules_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24468,6 +28234,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
+        #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `base_address`: Module base address."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API returns deployments for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_process_module_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24488,6 +28263,14 @@ pub mod web_apps {
             }
         }
         #[doc = "List the threads in a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = "List the threads in a process by its ID for a specific scaled-out instance in a web site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `process_id`: PID."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API returns deployments for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_process_threads_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24506,6 +28289,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get public certificates for an app or a deployment slot."]
+        #[doc = "Get public certificates for an app or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API gets hostname bindings for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_public_certificates_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24522,6 +28312,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Get the named public certificate for an app (or deployment slot, if specified)."]
+        #[doc = "Get the named public certificate for an app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API the named binding for the production slot."]
+        #[doc = "* `public_certificate_name`: Public certificate name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_public_certificate_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24540,6 +28338,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Creates a hostname binding for an app."]
+        #[doc = "Creates a hostname binding for an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `public_certificate_name`: Public certificate name."]
+        #[doc = "* `public_certificate`: Public certificate details. This is the JSON representation of a PublicCertificate object."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will create a binding for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_public_certificate_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24560,6 +28367,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes a hostname binding for an app."]
+        #[doc = "Deletes a hostname binding for an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will delete the binding for the production slot."]
+        #[doc = "* `public_certificate_name`: Public certificate name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_public_certificate_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24578,6 +28393,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the publishing profile for an app (or deployment slot, if specified)."]
+        #[doc = "Gets the publishing profile for an app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `publishing_profile_options`: Specifies publishingProfileOptions for publishing profile. For example, use {\"format\": \"FileZilla3\"} to get a FileZilla publishing profile."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get the publishing profile for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_publishing_profile_xml_with_secrets_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24596,6 +28419,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Resets the configuration settings of the current slot if they were previously modified by calling the API with POST."]
+        #[doc = "Resets the configuration settings of the current slot if they were previously modified by calling the API with POST."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API resets configuration settings for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn reset_slot_configuration_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24612,6 +28442,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Restarts an app (or deployment slot, if specified)."]
+        #[doc = "Restarts an app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will restart the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn restart_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24630,6 +28467,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Restores an app from a backup blob in Azure Storage."]
+        #[doc = "Restores an app from a backup blob in Azure Storage."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `request`: Information on restore request ."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will restore a backup of the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn restore_from_backup_blob_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24648,6 +28493,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Restores a deleted web app to this web app."]
+        #[doc = "Restores a deleted web app to this web app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `restore_request`: Deleted web app restore information."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn restore_from_deleted_app_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24666,6 +28519,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Restores a web app from a snapshot."]
+        #[doc = "Restores a web app from a snapshot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `restore_request`: Snapshot restore settings. Snapshot information can be obtained by calling GetDeletedSites or GetSiteSnapshots API."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn restore_snapshot_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24684,6 +28545,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get list of siteextensions for a web site, or a deployment slot."]
+        #[doc = "Get list of siteextensions for a web site, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API uses the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_site_extensions_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24700,6 +28568,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Get site extension information by its ID for a web site, or a deployment slot."]
+        #[doc = "Get site extension information by its ID for a web site, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `site_extension_id`: Site extension name."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API uses the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_site_extension_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24718,6 +28594,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Install site extension on a web site, or a deployment slot."]
+        #[doc = "Install site extension on a web site, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `site_extension_id`: Site extension name."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API uses the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn install_site_extension_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24736,6 +28620,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Remove a site extension from a web site, or a deployment slot."]
+        #[doc = "Remove a site extension from a web site, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `site_extension_id`: Site extension name."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API deletes a deployment for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_site_extension_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24754,6 +28646,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Get the difference in configuration settings between two web app slots."]
+        #[doc = "Get the difference in configuration settings between two web app slots."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot_swap_entity`: JSON object that contains the target slot name. See example."]
+        #[doc = "* `slot`: Name of the source slot. If a slot is not specified, the production slot is used as the source slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_slot_differences_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24772,6 +28672,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Swaps two deployment slots of an app."]
+        #[doc = "Swaps two deployment slots of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot_swap_entity`: JSON object that contains the target slot name. See example."]
+        #[doc = "* `slot`: Name of the source slot. If a slot is not specified, the production slot is used as the source slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn swap_slot_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24790,6 +28698,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Returns all Snapshots to the user."]
+        #[doc = "Returns all Snapshots to the user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Website Name."]
+        #[doc = "* `slot`: Website Slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_snapshots_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24806,6 +28721,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Returns all Snapshots to the user from DRSecondary endpoint."]
+        #[doc = "Returns all Snapshots to the user from DRSecondary endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Website Name."]
+        #[doc = "* `slot`: Website Slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_snapshots_from_dr_secondary_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24822,6 +28744,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the source control configuration of an app."]
+        #[doc = "Gets the source control configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get the source control configuration for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_source_control_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24838,6 +28767,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates the source control configuration of an app."]
+        #[doc = "Updates the source control configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `site_source_control`: JSON representation of a SiteSourceControl object. See example."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will update the source control configuration for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_source_control_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24856,6 +28793,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates the source control configuration of an app."]
+        #[doc = "Updates the source control configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `site_source_control`: JSON representation of a SiteSourceControl object. See example."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will update the source control configuration for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_source_control_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24874,6 +28819,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes the source control configuration of an app."]
+        #[doc = "Deletes the source control configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will delete the source control configuration for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_source_control_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24891,6 +28843,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Starts an app (or deployment slot, if specified)."]
+        #[doc = "Starts an app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will start the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn start_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24907,6 +28866,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Start capturing network packets for the site."]
+        #[doc = "Start capturing network packets for the site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `slot`: The name of the slot for this web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn start_network_trace_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24926,6 +28892,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Stops an app (or deployment slot, if specified)."]
+        #[doc = "Stops an app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will stop the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn stop_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24942,6 +28915,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Stop ongoing capturing network packets for the site."]
+        #[doc = "Stop ongoing capturing network packets for the site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `slot`: The name of the slot for this web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn stop_network_trace_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24958,6 +28938,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Sync web app repository."]
+        #[doc = "Sync web app repository."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `slot`: Name of web app slot. If not specified then will default to production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn sync_repository_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24974,6 +28961,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Syncs function trigger metadata to the management database"]
+        #[doc = "Syncs function trigger metadata to the management database"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn sync_function_triggers_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -24990,6 +28984,13 @@ pub mod web_apps {
             }
         }
         #[doc = "List triggered web jobs for an app, or a deployment slot."]
+        #[doc = "List triggered web jobs for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API deletes a deployment for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_triggered_web_jobs_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -25006,6 +29007,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a triggered web job by its ID for an app, or a deployment slot."]
+        #[doc = "Gets a triggered web job by its ID for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `web_job_name`: Name of Web Job."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API uses the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_triggered_web_job_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -25024,6 +29033,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Delete a triggered web job by its ID for an app, or a deployment slot."]
+        #[doc = "Delete a triggered web job by its ID for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `web_job_name`: Name of Web Job."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API deletes web job for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_triggered_web_job_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -25042,6 +29059,14 @@ pub mod web_apps {
             }
         }
         #[doc = "List a triggered web job's history for an app, or a deployment slot."]
+        #[doc = "List a triggered web job's history for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `web_job_name`: Name of Web Job."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API uses the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_triggered_web_job_history_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -25060,6 +29085,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a triggered web job's history by its ID for an app, , or a deployment slot."]
+        #[doc = "Gets a triggered web job's history by its ID for an app, , or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `web_job_name`: Name of Web Job."]
+        #[doc = "* `id`: History ID."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API uses the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_triggered_web_job_history_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -25080,6 +29114,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Run a triggered web job for an app, or a deployment slot."]
+        #[doc = "Run a triggered web job for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `web_job_name`: Name of Web Job."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API uses the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn run_triggered_web_job_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -25098,6 +29140,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the quota usage information of an app (or deployment slot, if specified)."]
+        #[doc = "Gets the quota usage information of an app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get quota information of the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_usages_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -25115,6 +29164,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the virtual networks the app (or deployment slot) is connected to."]
+        #[doc = "Gets the virtual networks the app (or deployment slot) is connected to."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get virtual network connections for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_vnet_connections_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -25131,6 +29187,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a virtual network the app (or deployment slot) is connected to by name."]
+        #[doc = "Gets a virtual network the app (or deployment slot) is connected to by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `vnet_name`: Name of the virtual network."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get the named virtual network for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_vnet_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -25149,6 +29213,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Adds a Virtual Network connection to an app or slot (PUT) or updates the connection properties (PATCH)."]
+        #[doc = "Adds a Virtual Network connection to an app or slot (PUT) or updates the connection properties (PATCH)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `vnet_name`: Name of an existing Virtual Network."]
+        #[doc = "* `connection_envelope`: Properties of the Virtual Network connection. See example."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will add or update connections for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_vnet_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -25169,6 +29242,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Adds a Virtual Network connection to an app or slot (PUT) or updates the connection properties (PATCH)."]
+        #[doc = "Adds a Virtual Network connection to an app or slot (PUT) or updates the connection properties (PATCH)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `vnet_name`: Name of an existing Virtual Network."]
+        #[doc = "* `connection_envelope`: Properties of the Virtual Network connection. See example."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will add or update connections for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_vnet_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -25189,6 +29271,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes a connection from an app (or deployment slot to a named virtual network."]
+        #[doc = "Deletes a connection from an app (or deployment slot to a named virtual network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `vnet_name`: Name of the virtual network."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will delete the connection for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_vnet_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -25207,6 +29297,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets an app's Virtual Network gateway."]
+        #[doc = "Gets an app's Virtual Network gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `vnet_name`: Name of the Virtual Network."]
+        #[doc = "* `gateway_name`: Name of the gateway. Currently, the only supported string is \"primary\"."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will get a gateway for the production slot's Virtual Network."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_vnet_connection_gateway_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -25227,6 +29326,16 @@ pub mod web_apps {
             }
         }
         #[doc = "Adds a gateway to a connected Virtual Network (PUT) or updates it (PATCH)."]
+        #[doc = "Adds a gateway to a connected Virtual Network (PUT) or updates it (PATCH)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `vnet_name`: Name of the Virtual Network."]
+        #[doc = "* `gateway_name`: Name of the gateway. Currently, the only supported string is \"primary\"."]
+        #[doc = "* `connection_envelope`: The properties to update this gateway with."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will add or update a gateway for the production slot's Virtual Network."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_vnet_connection_gateway_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -25249,6 +29358,16 @@ pub mod web_apps {
             }
         }
         #[doc = "Adds a gateway to a connected Virtual Network (PUT) or updates it (PATCH)."]
+        #[doc = "Adds a gateway to a connected Virtual Network (PUT) or updates it (PATCH)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `vnet_name`: Name of the Virtual Network."]
+        #[doc = "* `gateway_name`: Name of the gateway. Currently, the only supported string is \"primary\"."]
+        #[doc = "* `connection_envelope`: The properties to update this gateway with."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API will add or update a gateway for the production slot's Virtual Network."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_vnet_connection_gateway_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -25271,6 +29390,13 @@ pub mod web_apps {
             }
         }
         #[doc = "List webjobs for an app, or a deployment slot."]
+        #[doc = "List webjobs for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API returns deployments for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_web_jobs_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -25287,6 +29413,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Get webjob information for an app, or a deployment slot."]
+        #[doc = "Get webjob information for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `web_job_name`: Name of the web job."]
+        #[doc = "* `slot`: Name of the deployment slot. If a slot is not specified, the API returns deployments for the production slot."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_web_job_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -25305,6 +29439,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get the difference in configuration settings between two web app slots."]
+        #[doc = "Get the difference in configuration settings between two web app slots."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot_swap_entity`: JSON object that contains the target slot name. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_slot_differences_from_production(
             &self,
             resource_group_name: impl Into<String>,
@@ -25321,6 +29462,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Swaps two deployment slots of an app."]
+        #[doc = "Swaps two deployment slots of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `slot_swap_entity`: JSON object that contains the target slot name. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn swap_slot_with_production(
             &self,
             resource_group_name: impl Into<String>,
@@ -25337,6 +29485,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Returns all Snapshots to the user."]
+        #[doc = "Returns all Snapshots to the user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Website Name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_snapshots(
             &self,
             resource_group_name: impl Into<String>,
@@ -25351,6 +29505,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Returns all Snapshots to the user from DRSecondary endpoint."]
+        #[doc = "Returns all Snapshots to the user from DRSecondary endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Website Name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_snapshots_from_dr_secondary(
             &self,
             resource_group_name: impl Into<String>,
@@ -25365,6 +29525,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the source control configuration of an app."]
+        #[doc = "Gets the source control configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_source_control(
             &self,
             resource_group_name: impl Into<String>,
@@ -25379,6 +29545,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates the source control configuration of an app."]
+        #[doc = "Updates the source control configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `site_source_control`: JSON representation of a SiteSourceControl object. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_source_control(
             &self,
             resource_group_name: impl Into<String>,
@@ -25395,6 +29568,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Updates the source control configuration of an app."]
+        #[doc = "Updates the source control configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `site_source_control`: JSON representation of a SiteSourceControl object. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_source_control(
             &self,
             resource_group_name: impl Into<String>,
@@ -25411,6 +29591,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes the source control configuration of an app."]
+        #[doc = "Deletes the source control configuration of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_source_control(
             &self,
             resource_group_name: impl Into<String>,
@@ -25426,6 +29612,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Starts an app (or deployment slot, if specified)."]
+        #[doc = "Starts an app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn start(
             &self,
             resource_group_name: impl Into<String>,
@@ -25440,6 +29632,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Start capturing network packets for the site."]
+        #[doc = "Start capturing network packets for the site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn start_network_trace(
             &self,
             resource_group_name: impl Into<String>,
@@ -25457,6 +29655,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Stops an app (or deployment slot, if specified)."]
+        #[doc = "Stops an app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn stop(
             &self,
             resource_group_name: impl Into<String>,
@@ -25471,6 +29675,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Stop ongoing capturing network packets for the site."]
+        #[doc = "Stop ongoing capturing network packets for the site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: The name of the web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn stop_network_trace(
             &self,
             resource_group_name: impl Into<String>,
@@ -25485,6 +29695,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Sync web app repository."]
+        #[doc = "Sync web app repository."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of web app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn sync_repository(
             &self,
             resource_group_name: impl Into<String>,
@@ -25499,6 +29715,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Syncs function trigger metadata to the management database"]
+        #[doc = "Syncs function trigger metadata to the management database"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn sync_function_triggers(
             &self,
             resource_group_name: impl Into<String>,
@@ -25513,6 +29735,12 @@ pub mod web_apps {
             }
         }
         #[doc = "List triggered web jobs for an app, or a deployment slot."]
+        #[doc = "List triggered web jobs for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_triggered_web_jobs(
             &self,
             resource_group_name: impl Into<String>,
@@ -25527,6 +29755,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a triggered web job by its ID for an app, or a deployment slot."]
+        #[doc = "Gets a triggered web job by its ID for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `web_job_name`: Name of Web Job."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_triggered_web_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -25543,6 +29778,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Delete a triggered web job by its ID for an app, or a deployment slot."]
+        #[doc = "Delete a triggered web job by its ID for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `web_job_name`: Name of Web Job."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_triggered_web_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -25559,6 +29801,13 @@ pub mod web_apps {
             }
         }
         #[doc = "List a triggered web job's history for an app, or a deployment slot."]
+        #[doc = "List a triggered web job's history for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `web_job_name`: Name of Web Job."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_triggered_web_job_history(
             &self,
             resource_group_name: impl Into<String>,
@@ -25575,6 +29824,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a triggered web job's history by its ID for an app, , or a deployment slot."]
+        #[doc = "Gets a triggered web job's history by its ID for an app, , or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `web_job_name`: Name of Web Job."]
+        #[doc = "* `id`: History ID."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_triggered_web_job_history(
             &self,
             resource_group_name: impl Into<String>,
@@ -25593,6 +29850,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Run a triggered web job for an app, or a deployment slot."]
+        #[doc = "Run a triggered web job for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `web_job_name`: Name of Web Job."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn run_triggered_web_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -25609,6 +29873,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the quota usage information of an app (or deployment slot, if specified)."]
+        #[doc = "Gets the quota usage information of an app (or deployment slot, if specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_usages(
             &self,
             resource_group_name: impl Into<String>,
@@ -25624,6 +29894,12 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets the virtual networks the app (or deployment slot) is connected to."]
+        #[doc = "Gets the virtual networks the app (or deployment slot) is connected to."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_vnet_connections(
             &self,
             resource_group_name: impl Into<String>,
@@ -25638,6 +29914,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets a virtual network the app (or deployment slot) is connected to by name."]
+        #[doc = "Gets a virtual network the app (or deployment slot) is connected to by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `vnet_name`: Name of the virtual network."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_vnet_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -25654,6 +29937,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Adds a Virtual Network connection to an app or slot (PUT) or updates the connection properties (PATCH)."]
+        #[doc = "Adds a Virtual Network connection to an app or slot (PUT) or updates the connection properties (PATCH)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `vnet_name`: Name of an existing Virtual Network."]
+        #[doc = "* `connection_envelope`: Properties of the Virtual Network connection. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_vnet_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -25672,6 +29963,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Adds a Virtual Network connection to an app or slot (PUT) or updates the connection properties (PATCH)."]
+        #[doc = "Adds a Virtual Network connection to an app or slot (PUT) or updates the connection properties (PATCH)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `vnet_name`: Name of an existing Virtual Network."]
+        #[doc = "* `connection_envelope`: Properties of the Virtual Network connection. See example."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_vnet_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -25690,6 +29989,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Deletes a connection from an app (or deployment slot to a named virtual network."]
+        #[doc = "Deletes a connection from an app (or deployment slot to a named virtual network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `vnet_name`: Name of the virtual network."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn delete_vnet_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -25706,6 +30012,14 @@ pub mod web_apps {
             }
         }
         #[doc = "Gets an app's Virtual Network gateway."]
+        #[doc = "Gets an app's Virtual Network gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `vnet_name`: Name of the Virtual Network."]
+        #[doc = "* `gateway_name`: Name of the gateway. Currently, the only supported string is \"primary\"."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_vnet_connection_gateway(
             &self,
             resource_group_name: impl Into<String>,
@@ -25724,6 +30038,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Adds a gateway to a connected Virtual Network (PUT) or updates it (PATCH)."]
+        #[doc = "Adds a gateway to a connected Virtual Network (PUT) or updates it (PATCH)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `vnet_name`: Name of the Virtual Network."]
+        #[doc = "* `gateway_name`: Name of the gateway. Currently, the only supported string is \"primary\"."]
+        #[doc = "* `connection_envelope`: The properties to update this gateway with."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn create_or_update_vnet_connection_gateway(
             &self,
             resource_group_name: impl Into<String>,
@@ -25744,6 +30067,15 @@ pub mod web_apps {
             }
         }
         #[doc = "Adds a gateway to a connected Virtual Network (PUT) or updates it (PATCH)."]
+        #[doc = "Adds a gateway to a connected Virtual Network (PUT) or updates it (PATCH)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the app."]
+        #[doc = "* `vnet_name`: Name of the Virtual Network."]
+        #[doc = "* `gateway_name`: Name of the gateway. Currently, the only supported string is \"primary\"."]
+        #[doc = "* `connection_envelope`: The properties to update this gateway with."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn update_vnet_connection_gateway(
             &self,
             resource_group_name: impl Into<String>,
@@ -25764,6 +30096,12 @@ pub mod web_apps {
             }
         }
         #[doc = "List webjobs for an app, or a deployment slot."]
+        #[doc = "List webjobs for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_web_jobs(
             &self,
             resource_group_name: impl Into<String>,
@@ -25778,6 +30116,13 @@ pub mod web_apps {
             }
         }
         #[doc = "Get webjob information for an app, or a deployment slot."]
+        #[doc = "Get webjob information for an app, or a deployment slot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group to which the resource belongs."]
+        #[doc = "* `name`: Site name."]
+        #[doc = "* `web_job_name`: Name of the web job."]
+        #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get_web_job(
             &self,
             resource_group_name: impl Into<String>,

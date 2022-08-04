@@ -91,6 +91,14 @@ pub mod endpoints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a Traffic Manager endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Traffic Manager endpoint."]
+        #[doc = "* `profile_name`: The name of the Traffic Manager profile."]
+        #[doc = "* `endpoint_type`: The type of the Traffic Manager endpoint."]
+        #[doc = "* `endpoint_name`: The name of the Traffic Manager endpoint."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -108,6 +116,15 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a Traffic Manager endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Traffic Manager endpoint to be created or updated."]
+        #[doc = "* `profile_name`: The name of the Traffic Manager profile."]
+        #[doc = "* `endpoint_type`: The type of the Traffic Manager endpoint to be created or updated."]
+        #[doc = "* `endpoint_name`: The name of the Traffic Manager endpoint to be created or updated."]
+        #[doc = "* `parameters`: The Traffic Manager endpoint parameters supplied to the CreateOrUpdate operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -127,6 +144,15 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update a Traffic Manager endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Traffic Manager endpoint to be updated."]
+        #[doc = "* `profile_name`: The name of the Traffic Manager profile."]
+        #[doc = "* `endpoint_type`: The type of the Traffic Manager endpoint to be updated."]
+        #[doc = "* `endpoint_name`: The name of the Traffic Manager endpoint to be updated."]
+        #[doc = "* `parameters`: The Traffic Manager endpoint parameters supplied to the Update operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -146,6 +172,14 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a Traffic Manager endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Traffic Manager endpoint to be deleted."]
+        #[doc = "* `profile_name`: The name of the Traffic Manager profile."]
+        #[doc = "* `endpoint_type`: The type of the Traffic Manager endpoint to be deleted."]
+        #[doc = "* `endpoint_name`: The name of the Traffic Manager endpoint to be deleted."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -411,6 +445,10 @@ pub mod profiles {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Checks the availability of a Traffic Manager Relative DNS name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: The Traffic Manager name parameters supplied to the CheckTrafficManagerNameAvailability operation."]
         pub fn check_traffic_manager_relative_dns_name_availability(
             &self,
             parameters: impl Into<models::CheckTrafficManagerRelativeDnsNameAvailabilityParameters>,
@@ -420,6 +458,11 @@ pub mod profiles {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Lists all Traffic Manager profiles within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Traffic Manager profiles to be listed."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -431,12 +474,22 @@ pub mod profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all Traffic Manager profiles within a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a Traffic Manager profile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Traffic Manager profile."]
+        #[doc = "* `profile_name`: The name of the Traffic Manager profile."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -450,6 +503,13 @@ pub mod profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a Traffic Manager profile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Traffic Manager profile."]
+        #[doc = "* `profile_name`: The name of the Traffic Manager profile."]
+        #[doc = "* `parameters`: The Traffic Manager profile parameters supplied to the CreateOrUpdate operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -465,6 +525,13 @@ pub mod profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update a Traffic Manager profile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Traffic Manager profile."]
+        #[doc = "* `profile_name`: The name of the Traffic Manager profile."]
+        #[doc = "* `parameters`: The Traffic Manager profile parameters supplied to the Update operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -480,6 +547,12 @@ pub mod profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a Traffic Manager profile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Traffic Manager profile to be deleted."]
+        #[doc = "* `profile_name`: The name of the Traffic Manager profile to be deleted."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -873,6 +946,7 @@ pub mod geographic_hierarchies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the default Geographic Hierarchy used by the Geographic traffic routing method."]
         pub fn get_default(&self) -> get_default::Builder {
             get_default::Builder { client: self.0.clone() }
         }
@@ -928,6 +1002,13 @@ pub mod heat_map {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets latest heatmap for Traffic Manager profile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the Traffic Manager endpoint."]
+        #[doc = "* `profile_name`: The name of the Traffic Manager profile."]
+        #[doc = "* `heat_map_type`: The type of HeatMap for the Traffic Manager profile."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,

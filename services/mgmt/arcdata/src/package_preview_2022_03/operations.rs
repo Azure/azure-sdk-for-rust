@@ -97,6 +97,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Azure Data Services on Azure Arc API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -177,6 +178,9 @@ pub mod sql_managed_instances {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List sqlManagedInstance resources in the subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -184,6 +188,11 @@ pub mod sql_managed_instances {
             }
         }
         #[doc = "List sqlManagedInstance resources in the resource group"]
+        #[doc = "Gets all sqlManagedInstances in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -195,6 +204,12 @@ pub mod sql_managed_instances {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Retrieves a SQL Managed Instance resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
+        #[doc = "* `sql_managed_instance_name`: Name of SQL Managed Instance"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -208,6 +223,13 @@ pub mod sql_managed_instances {
                 sql_managed_instance_name: sql_managed_instance_name.into(),
             }
         }
+        #[doc = "Creates or replaces a SQL Managed Instance resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
+        #[doc = "* `sql_managed_instance_name`: Name of SQL Managed Instance"]
+        #[doc = "* `sql_managed_instance`: The SQL Managed Instance to be created or updated."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -223,6 +245,13 @@ pub mod sql_managed_instances {
                 sql_managed_instance: sql_managed_instance.into(),
             }
         }
+        #[doc = "Updates a SQL Managed Instance resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
+        #[doc = "* `sql_managed_instance_name`: Name of SQL Managed Instance"]
+        #[doc = "* `parameters`: The SQL Managed Instance."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -238,6 +267,12 @@ pub mod sql_managed_instances {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a SQL Managed Instance resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
+        #[doc = "* `sql_managed_instance_name`: Name of SQL Managed Instance"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -634,6 +669,9 @@ pub mod sql_server_instances {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List sqlServerInstance resources in the subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -641,6 +679,11 @@ pub mod sql_server_instances {
             }
         }
         #[doc = "List sqlServerInstance resources in the resource group"]
+        #[doc = "Gets all sqlServerInstances in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -652,6 +695,12 @@ pub mod sql_server_instances {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Retrieves a SQL Server Instance resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
+        #[doc = "* `sql_server_instance_name`: Name of SQL Server Instance"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -665,6 +714,13 @@ pub mod sql_server_instances {
                 sql_server_instance_name: sql_server_instance_name.into(),
             }
         }
+        #[doc = "Creates or replaces a SQL Server Instance resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
+        #[doc = "* `sql_server_instance_name`: Name of SQL Server Instance"]
+        #[doc = "* `sql_server_instance`: The SQL Server Instance to be created or updated."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -680,6 +736,13 @@ pub mod sql_server_instances {
                 sql_server_instance: sql_server_instance.into(),
             }
         }
+        #[doc = "Updates a SQL Server Instance resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
+        #[doc = "* `sql_server_instance_name`: Name of SQL Server Instance"]
+        #[doc = "* `parameters`: The SQL Server Instance."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -695,6 +758,12 @@ pub mod sql_server_instances {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a SQL Server Instance resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
+        #[doc = "* `sql_server_instance_name`: Name of SQL Server Instance"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1091,6 +1160,9 @@ pub mod data_controllers {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List dataController resources in the subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
         pub fn list_in_subscription(&self, subscription_id: impl Into<String>) -> list_in_subscription::Builder {
             list_in_subscription::Builder {
                 client: self.0.clone(),
@@ -1098,6 +1170,10 @@ pub mod data_controllers {
             }
         }
         #[doc = "List dataController resources in the resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
         pub fn list_in_group(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list_in_group::Builder {
             list_in_group::Builder {
                 client: self.0.clone(),
@@ -1105,6 +1181,12 @@ pub mod data_controllers {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Retrieves a dataController resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
+        #[doc = "* `data_controller_name`: The name of the data controller"]
         pub fn get_data_controller(
             &self,
             subscription_id: impl Into<String>,
@@ -1118,6 +1200,13 @@ pub mod data_controllers {
                 data_controller_name: data_controller_name.into(),
             }
         }
+        #[doc = "Creates or replaces a dataController resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
+        #[doc = "* `data_controller_resource`: desc"]
+        #[doc = "* `data_controller_name`: The name of the data controller"]
         pub fn put_data_controller(
             &self,
             subscription_id: impl Into<String>,
@@ -1133,6 +1222,13 @@ pub mod data_controllers {
                 data_controller_name: data_controller_name.into(),
             }
         }
+        #[doc = "Updates a dataController resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
+        #[doc = "* `data_controller_name`: The name of the data controller"]
+        #[doc = "* `data_controller_resource`: The update data controller resource"]
         pub fn patch_data_controller(
             &self,
             subscription_id: impl Into<String>,
@@ -1148,6 +1244,12 @@ pub mod data_controllers {
                 data_controller_resource: data_controller_resource.into(),
             }
         }
+        #[doc = "Deletes a dataController resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
+        #[doc = "* `data_controller_name`: The name of the data controller"]
         pub fn delete_data_controller(
             &self,
             subscription_id: impl Into<String>,
@@ -1550,6 +1652,11 @@ pub mod active_directory_connectors {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the active directory connectors associated with the given data controller."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
+        #[doc = "* `data_controller_name`: The name of the data controller"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1563,6 +1670,13 @@ pub mod active_directory_connectors {
                 data_controller_name: data_controller_name.into(),
             }
         }
+        #[doc = "Retrieves an Active Directory connector resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
+        #[doc = "* `data_controller_name`: The name of the data controller"]
+        #[doc = "* `active_directory_connector_name`: The name of the Active Directory connector instance"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1578,6 +1692,14 @@ pub mod active_directory_connectors {
                 active_directory_connector_name: active_directory_connector_name.into(),
             }
         }
+        #[doc = "Creates or replaces an Active Directory connector resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
+        #[doc = "* `active_directory_connector_resource`: desc"]
+        #[doc = "* `data_controller_name`: The name of the data controller"]
+        #[doc = "* `active_directory_connector_name`: The name of the Active Directory connector instance"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1595,6 +1717,13 @@ pub mod active_directory_connectors {
                 active_directory_connector_name: active_directory_connector_name.into(),
             }
         }
+        #[doc = "Deletes an Active Directory connector resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
+        #[doc = "* `data_controller_name`: The name of the data controller"]
+        #[doc = "* `active_directory_connector_name`: The name of the Active Directory connector instance"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1846,6 +1975,9 @@ pub mod postgres_instances {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List postgres Instance resources in the subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1853,6 +1985,11 @@ pub mod postgres_instances {
             }
         }
         #[doc = "List postgres Instance resources in the resource group"]
+        #[doc = "Get a postgres Instances list by Resource group name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1864,6 +2001,12 @@ pub mod postgres_instances {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Retrieves a postgres Instance resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
+        #[doc = "* `postgres_instance_name`: Name of Postgres Instance"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1877,6 +2020,13 @@ pub mod postgres_instances {
                 postgres_instance_name: postgres_instance_name.into(),
             }
         }
+        #[doc = "Creates or replaces a postgres Instance resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
+        #[doc = "* `postgres_instance_name`: Name of Postgres Instance"]
+        #[doc = "* `resource`: The postgres instance"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1892,6 +2042,13 @@ pub mod postgres_instances {
                 resource: resource.into(),
             }
         }
+        #[doc = "Updates a postgres Instance resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
+        #[doc = "* `postgres_instance_name`: Name of Postgres Instance"]
+        #[doc = "* `parameters`: The Postgres Instance."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1907,6 +2064,12 @@ pub mod postgres_instances {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a postgres Instance resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the Azure subscription"]
+        #[doc = "* `resource_group_name`: The name of the Azure resource group"]
+        #[doc = "* `postgres_instance_name`: Name of Postgres Instance"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

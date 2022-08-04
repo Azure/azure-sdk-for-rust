@@ -112,6 +112,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Azure Machine Learning Workspaces REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -168,6 +169,12 @@ pub mod workspaces {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the properties of the specified machine learning workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -181,6 +188,13 @@ pub mod workspaces {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Creates or updates a workspace with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
+        #[doc = "* `parameters`: The parameters for creating or updating a machine learning workspace."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -196,6 +210,13 @@ pub mod workspaces {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates a machine learning workspace with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
+        #[doc = "* `parameters`: The parameters for updating a machine learning workspace."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -211,6 +232,12 @@ pub mod workspaces {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a machine learning workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -224,6 +251,11 @@ pub mod workspaces {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Lists all the available machine learning workspaces under the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -237,6 +269,11 @@ pub mod workspaces {
             }
         }
         #[doc = "Diagnose workspace setup issue."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
         pub fn diagnose(
             &self,
             subscription_id: impl Into<String>,
@@ -251,6 +288,12 @@ pub mod workspaces {
                 parameters: None,
             }
         }
+        #[doc = "Lists all the keys associated with this workspace. This includes keys for the storage account, app insights and password for container registry"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
         pub fn list_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -264,6 +307,12 @@ pub mod workspaces {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Resync all the keys associated with this workspace. This includes keys for the storage account, app insights and password for container registry"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
         pub fn resync_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -277,6 +326,10 @@ pub mod workspaces {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Lists all the available machine learning workspaces under the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -284,6 +337,12 @@ pub mod workspaces {
                 skip: None,
             }
         }
+        #[doc = "return notebook access token and refresh token"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
         pub fn list_notebook_access_token(
             &self,
             subscription_id: impl Into<String>,
@@ -297,6 +356,12 @@ pub mod workspaces {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Prepare a notebook."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
         pub fn prepare_notebook(
             &self,
             subscription_id: impl Into<String>,
@@ -310,6 +375,12 @@ pub mod workspaces {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "List storage account keys of a workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
         pub fn list_storage_account_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -323,6 +394,12 @@ pub mod workspaces {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "List keys of a notebook."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
         pub fn list_notebook_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -337,6 +414,11 @@ pub mod workspaces {
             }
         }
         #[doc = "Called by Client (Portal, CLI, etc) to get a list of all external outbound dependencies (FQDNs) programmatically."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
         pub fn list_outbound_network_dependencies_endpoints(
             &self,
             subscription_id: impl Into<String>,
@@ -1160,6 +1242,11 @@ pub mod usages {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the current usage information as well as limits for AML resources for given subscription and location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: The location for which resource usage is queried."]
         pub fn list(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1249,6 +1336,11 @@ pub mod virtual_machine_sizes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns supported VM Sizes in a location"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location upon which virtual-machine-sizes is queried."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, location: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1312,6 +1404,12 @@ pub mod quotas {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Update quota for each VM family in workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location for update quota is queried."]
+        #[doc = "* `parameters`: Quota update parameters."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn update(
             &self,
             location: impl Into<String>,
@@ -1325,6 +1423,11 @@ pub mod quotas {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the currently assigned Workspace Quotas based on VMFamily."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: The location for which resource usage is queried."]
         pub fn list(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1466,6 +1569,12 @@ pub mod compute {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets computes in specified workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1480,6 +1589,13 @@ pub mod compute {
                 skip: None,
             }
         }
+        #[doc = "Gets compute definition by its name. Any secrets (storage keys, service credentials, etc) are not returned - use 'keys' nested resource to get them."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
+        #[doc = "* `compute_name`: Name of the Azure Machine Learning compute."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1495,6 +1611,14 @@ pub mod compute {
                 compute_name: compute_name.into(),
             }
         }
+        #[doc = "Creates or updates compute. This call will overwrite a compute if it exists. This is a nonrecoverable operation. If your intent is to create a new compute, do a GET first to verify that it does not exist yet."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
+        #[doc = "* `compute_name`: Name of the Azure Machine Learning compute."]
+        #[doc = "* `parameters`: Payload with Machine Learning compute definition."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1512,6 +1636,14 @@ pub mod compute {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates properties of a compute. This call will overwrite a compute if it exists. This is a nonrecoverable operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
+        #[doc = "* `compute_name`: Name of the Azure Machine Learning compute."]
+        #[doc = "* `parameters`: Additional parameters for cluster update."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1529,6 +1661,14 @@ pub mod compute {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes specified Machine Learning compute."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
+        #[doc = "* `compute_name`: Name of the Azure Machine Learning compute."]
+        #[doc = "* `underlying_resource_action`: Delete the underlying compute if 'Delete', or detach the underlying compute from workspace if 'Detach'."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1546,6 +1686,13 @@ pub mod compute {
                 underlying_resource_action: underlying_resource_action.into(),
             }
         }
+        #[doc = "Get the details (e.g IP address, port etc) of all the compute nodes in the compute."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
+        #[doc = "* `compute_name`: Name of the Azure Machine Learning compute."]
         pub fn list_nodes(
             &self,
             subscription_id: impl Into<String>,
@@ -1561,6 +1708,13 @@ pub mod compute {
                 compute_name: compute_name.into(),
             }
         }
+        #[doc = "Gets secrets related to Machine Learning compute (storage keys, service credentials, etc)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
+        #[doc = "* `compute_name`: Name of the Azure Machine Learning compute."]
         pub fn list_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -1576,6 +1730,13 @@ pub mod compute {
                 compute_name: compute_name.into(),
             }
         }
+        #[doc = "Posts a start action to a compute instance"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
+        #[doc = "* `compute_name`: Name of the Azure Machine Learning compute."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -1591,6 +1752,13 @@ pub mod compute {
                 compute_name: compute_name.into(),
             }
         }
+        #[doc = "Posts a stop action to a compute instance"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
+        #[doc = "* `compute_name`: Name of the Azure Machine Learning compute."]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -1606,6 +1774,13 @@ pub mod compute {
                 compute_name: compute_name.into(),
             }
         }
+        #[doc = "Posts a restart action to a compute instance"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
+        #[doc = "* `compute_name`: Name of the Azure Machine Learning compute."]
         pub fn restart(
             &self,
             subscription_id: impl Into<String>,
@@ -2208,6 +2383,12 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all the private endpoint connections associated with the workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -2221,6 +2402,13 @@ pub mod private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the specified private endpoint connection associated with the workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the workspace"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2236,6 +2424,14 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Update the state of specified private endpoint connection associated with the workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the workspace"]
+        #[doc = "* `properties`: The private endpoint connection properties."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2253,6 +2449,13 @@ pub mod private_endpoint_connections {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes the specified private endpoint connection associated with the workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the workspace"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2465,6 +2668,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources that need to be created for a workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2530,6 +2739,12 @@ pub mod workspace_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all connections under a AML workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2545,6 +2760,13 @@ pub mod workspace_connections {
                 category: None,
             }
         }
+        #[doc = "Get the detail of a workspace connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
+        #[doc = "* `connection_name`: Friendly name of the workspace connection"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2560,6 +2782,14 @@ pub mod workspace_connections {
                 connection_name: connection_name.into(),
             }
         }
+        #[doc = "Add a new workspace connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
+        #[doc = "* `connection_name`: Friendly name of the workspace connection"]
+        #[doc = "* `parameters`: The object for creating or updating a new workspace connection"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -2577,6 +2807,13 @@ pub mod workspace_connections {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a workspace connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
+        #[doc = "* `connection_name`: Friendly name of the workspace connection"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2811,6 +3048,12 @@ pub mod workspace_features {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all enabled features for a workspace"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: Name of Azure Machine Learning workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2908,6 +3151,10 @@ pub mod workspace_skus {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all skus with associated features"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

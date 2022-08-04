@@ -106,6 +106,7 @@ pub mod provider_operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Result of the request to list REST API operations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -185,6 +186,11 @@ pub mod global_users {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the virtual machine details"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `user_name`: The name of the user."]
+        #[doc = "* `environment_operations_payload`: Represents payload for any Environment operations like get, start, stop, connect"]
         pub fn get_environment(
             &self,
             user_name: impl Into<String>,
@@ -197,6 +203,11 @@ pub mod global_users {
                 expand: None,
             }
         }
+        #[doc = "Get batch operation status"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `user_name`: The name of the user."]
+        #[doc = "* `operation_batch_status_payload`: Payload to get the status of an operation"]
         pub fn get_operation_batch_status(
             &self,
             user_name: impl Into<String>,
@@ -208,6 +219,11 @@ pub mod global_users {
                 operation_batch_status_payload: operation_batch_status_payload.into(),
             }
         }
+        #[doc = "Gets the status of long running operation"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `user_name`: The name of the user."]
+        #[doc = "* `operation_status_payload`: Payload to get the status of an operation"]
         pub fn get_operation_status(
             &self,
             user_name: impl Into<String>,
@@ -219,6 +235,11 @@ pub mod global_users {
                 operation_status_payload: operation_status_payload.into(),
             }
         }
+        #[doc = "Get personal preferences for a user"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `user_name`: The name of the user."]
+        #[doc = "* `personal_preferences_operations_payload`: Represents payload for any Environment operations like get, start, stop, connect"]
         pub fn get_personal_preferences(
             &self,
             user_name: impl Into<String>,
@@ -230,6 +251,11 @@ pub mod global_users {
                 personal_preferences_operations_payload: personal_preferences_operations_payload.into(),
             }
         }
+        #[doc = "List Environments for the user"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `user_name`: The name of the user."]
+        #[doc = "* `list_environments_payload`: Represents the payload to list environments owned by a user"]
         pub fn list_environments(
             &self,
             user_name: impl Into<String>,
@@ -241,12 +267,21 @@ pub mod global_users {
                 list_environments_payload: list_environments_payload.into(),
             }
         }
+        #[doc = "List labs for the user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `user_name`: The name of the user."]
         pub fn list_labs(&self, user_name: impl Into<String>) -> list_labs::Builder {
             list_labs::Builder {
                 client: self.0.clone(),
                 user_name: user_name.into(),
             }
         }
+        #[doc = "Register a user to a managed lab"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `user_name`: The name of the user."]
+        #[doc = "* `register_payload`: Represents payload for Register action."]
         pub fn register(&self, user_name: impl Into<String>, register_payload: impl Into<models::RegisterPayload>) -> register::Builder {
             register::Builder {
                 client: self.0.clone(),
@@ -254,6 +289,11 @@ pub mod global_users {
                 register_payload: register_payload.into(),
             }
         }
+        #[doc = "Resets the user password on an environment This operation can take a while to complete"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `user_name`: The name of the user."]
+        #[doc = "* `reset_password_payload`: Represents the payload for resetting passwords."]
         pub fn reset_password(
             &self,
             user_name: impl Into<String>,
@@ -265,6 +305,11 @@ pub mod global_users {
                 reset_password_payload: reset_password_payload.into(),
             }
         }
+        #[doc = "Starts an environment by starting all resources inside the environment. This operation can take a while to complete"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `user_name`: The name of the user."]
+        #[doc = "* `environment_operations_payload`: Represents payload for any Environment operations like get, start, stop, connect"]
         pub fn start_environment(
             &self,
             user_name: impl Into<String>,
@@ -276,6 +321,11 @@ pub mod global_users {
                 environment_operations_payload: environment_operations_payload.into(),
             }
         }
+        #[doc = "Stops an environment by stopping all resources inside the environment This operation can take a while to complete"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `user_name`: The name of the user."]
+        #[doc = "* `environment_operations_payload`: Represents payload for any Environment operations like get, start, stop, connect"]
         pub fn stop_environment(
             &self,
             user_name: impl Into<String>,
@@ -802,6 +852,10 @@ pub mod lab_accounts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List lab accounts in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -812,6 +866,11 @@ pub mod lab_accounts {
                 orderby: None,
             }
         }
+        #[doc = "List lab accounts in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -827,6 +886,12 @@ pub mod lab_accounts {
                 orderby: None,
             }
         }
+        #[doc = "Get lab account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -841,6 +906,13 @@ pub mod lab_accounts {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing Lab Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_account`: Represents a lab account."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -856,6 +928,13 @@ pub mod lab_accounts {
                 lab_account: lab_account.into(),
             }
         }
+        #[doc = "Modify properties of lab accounts."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_account`: Represents a lab account."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -871,6 +950,12 @@ pub mod lab_accounts {
                 lab_account: lab_account.into(),
             }
         }
+        #[doc = "Delete lab account. This operation can take a while to complete"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -884,6 +969,13 @@ pub mod lab_accounts {
                 lab_account_name: lab_account_name.into(),
             }
         }
+        #[doc = "Create a lab in a lab account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `create_lab_properties`: Properties for creating a managed lab and a default environment setting"]
         pub fn create_lab(
             &self,
             subscription_id: impl Into<String>,
@@ -899,6 +991,12 @@ pub mod lab_accounts {
                 create_lab_properties: create_lab_properties.into(),
             }
         }
+        #[doc = "Get regional availability information for each size category configured under a lab account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
         pub fn get_regional_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -1466,6 +1564,12 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get operation"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `location_name`: The name of the location."]
+        #[doc = "* `operation_name`: The name of the operation."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1537,6 +1641,12 @@ pub mod gallery_images {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List gallery images in a given lab account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1554,6 +1664,13 @@ pub mod gallery_images {
                 orderby: None,
             }
         }
+        #[doc = "Get gallery image"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `gallery_image_name`: The name of the gallery Image."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1570,6 +1687,14 @@ pub mod gallery_images {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing Gallery Image."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `gallery_image_name`: The name of the gallery Image."]
+        #[doc = "* `gallery_image`: Represents an image from the Azure Marketplace"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1587,6 +1712,14 @@ pub mod gallery_images {
                 gallery_image: gallery_image.into(),
             }
         }
+        #[doc = "Modify properties of gallery images."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `gallery_image_name`: The name of the gallery Image."]
+        #[doc = "* `gallery_image`: Represents an image from the Azure Marketplace"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1604,6 +1737,13 @@ pub mod gallery_images {
                 gallery_image: gallery_image.into(),
             }
         }
+        #[doc = "Delete gallery image."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `gallery_image_name`: The name of the gallery Image."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1973,6 +2113,12 @@ pub mod labs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List labs in a given lab account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1990,6 +2136,13 @@ pub mod labs {
                 orderby: None,
             }
         }
+        #[doc = "Get lab"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2006,6 +2159,14 @@ pub mod labs {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing Lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `lab`: Represents a lab."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2023,6 +2184,14 @@ pub mod labs {
                 lab: lab.into(),
             }
         }
+        #[doc = "Modify properties of labs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `lab`: Represents a lab."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2040,6 +2209,13 @@ pub mod labs {
                 lab: lab.into(),
             }
         }
+        #[doc = "Delete lab. This operation can take a while to complete"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2055,6 +2231,14 @@ pub mod labs {
                 lab_name: lab_name.into(),
             }
         }
+        #[doc = "Add users to a lab"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `add_users_payload`: Payload for Add Users operation on a Lab."]
         pub fn add_users(
             &self,
             subscription_id: impl Into<String>,
@@ -2072,6 +2256,13 @@ pub mod labs {
                 add_users_payload: add_users_payload.into(),
             }
         }
+        #[doc = "Register to managed lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn register(
             &self,
             subscription_id: impl Into<String>,
@@ -2545,6 +2736,13 @@ pub mod environment_settings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List environment setting in a given lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2564,6 +2762,14 @@ pub mod environment_settings {
                 orderby: None,
             }
         }
+        #[doc = "Get environment setting"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `environment_setting_name`: The name of the environment Setting."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2582,6 +2788,15 @@ pub mod environment_settings {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing Environment Setting. This operation can take a while to complete"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `environment_setting_name`: The name of the environment Setting."]
+        #[doc = "* `environment_setting`: Represents settings of an environment, from which environment instances would be created"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2601,6 +2816,15 @@ pub mod environment_settings {
                 environment_setting: environment_setting.into(),
             }
         }
+        #[doc = "Modify properties of environment setting."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `environment_setting_name`: The name of the environment Setting."]
+        #[doc = "* `environment_setting`: Represents settings of an environment, from which environment instances would be created"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2620,6 +2844,14 @@ pub mod environment_settings {
                 environment_setting: environment_setting.into(),
             }
         }
+        #[doc = "Delete environment setting. This operation can take a while to complete"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `environment_setting_name`: The name of the environment Setting."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2637,6 +2869,14 @@ pub mod environment_settings {
                 environment_setting_name: environment_setting_name.into(),
             }
         }
+        #[doc = "Claims a random environment for a user in an environment settings"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `environment_setting_name`: The name of the environment Setting."]
         pub fn claim_any(
             &self,
             subscription_id: impl Into<String>,
@@ -2654,6 +2894,15 @@ pub mod environment_settings {
                 environment_setting_name: environment_setting_name.into(),
             }
         }
+        #[doc = "Provisions/deprovisions required resources for an environment setting based on current state of the lab/environment setting."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `environment_setting_name`: The name of the environment Setting."]
+        #[doc = "* `publish_payload`: Payload for Publish operation on EnvironmentSetting."]
         pub fn publish(
             &self,
             subscription_id: impl Into<String>,
@@ -2673,6 +2922,14 @@ pub mod environment_settings {
                 publish_payload: publish_payload.into(),
             }
         }
+        #[doc = "Starts a template by starting all resources inside the template. This operation can take a while to complete"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `environment_setting_name`: The name of the environment Setting."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -2690,6 +2947,14 @@ pub mod environment_settings {
                 environment_setting_name: environment_setting_name.into(),
             }
         }
+        #[doc = "Starts a template by starting all resources inside the template. This operation can take a while to complete"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `environment_setting_name`: The name of the environment Setting."]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -3227,6 +3492,14 @@ pub mod environments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List environments in a given environment setting."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `environment_setting_name`: The name of the environment Setting."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3248,6 +3521,15 @@ pub mod environments {
                 orderby: None,
             }
         }
+        #[doc = "Get environment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `environment_setting_name`: The name of the environment Setting."]
+        #[doc = "* `environment_name`: The name of the environment."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3268,6 +3550,16 @@ pub mod environments {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing Environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `environment_setting_name`: The name of the environment Setting."]
+        #[doc = "* `environment_name`: The name of the environment."]
+        #[doc = "* `environment`: Represents an environment instance"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3289,6 +3581,16 @@ pub mod environments {
                 environment: environment.into(),
             }
         }
+        #[doc = "Modify properties of environments."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `environment_setting_name`: The name of the environment Setting."]
+        #[doc = "* `environment_name`: The name of the environment."]
+        #[doc = "* `environment`: Represents an environment instance"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3310,6 +3612,15 @@ pub mod environments {
                 environment: environment.into(),
             }
         }
+        #[doc = "Delete environment. This operation can take a while to complete"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `environment_setting_name`: The name of the environment Setting."]
+        #[doc = "* `environment_name`: The name of the environment."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3329,6 +3640,15 @@ pub mod environments {
                 environment_name: environment_name.into(),
             }
         }
+        #[doc = "Claims the environment and assigns it to the user"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `environment_setting_name`: The name of the environment Setting."]
+        #[doc = "* `environment_name`: The name of the environment."]
         pub fn claim(
             &self,
             subscription_id: impl Into<String>,
@@ -3348,6 +3668,16 @@ pub mod environments {
                 environment_name: environment_name.into(),
             }
         }
+        #[doc = "Resets the user password on an environment This operation can take a while to complete"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `environment_setting_name`: The name of the environment Setting."]
+        #[doc = "* `environment_name`: The name of the environment."]
+        #[doc = "* `reset_password_payload`: Represents the payload for resetting passwords."]
         pub fn reset_password(
             &self,
             subscription_id: impl Into<String>,
@@ -3369,6 +3699,15 @@ pub mod environments {
                 reset_password_payload: reset_password_payload.into(),
             }
         }
+        #[doc = "Starts an environment by starting all resources inside the environment. This operation can take a while to complete"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `environment_setting_name`: The name of the environment Setting."]
+        #[doc = "* `environment_name`: The name of the environment."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -3388,6 +3727,15 @@ pub mod environments {
                 environment_name: environment_name.into(),
             }
         }
+        #[doc = "Stops an environment by stopping all resources inside the environment This operation can take a while to complete"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `environment_setting_name`: The name of the environment Setting."]
+        #[doc = "* `environment_name`: The name of the environment."]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -3941,6 +4289,13 @@ pub mod users {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List users in a given lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3960,6 +4315,14 @@ pub mod users {
                 orderby: None,
             }
         }
+        #[doc = "Get user"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3978,6 +4341,15 @@ pub mod users {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing User."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user."]
+        #[doc = "* `user`: The User registered to a lab"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3997,6 +4369,15 @@ pub mod users {
                 user: user.into(),
             }
         }
+        #[doc = "Modify properties of users."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user."]
+        #[doc = "* `user`: The User registered to a lab"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4016,6 +4397,14 @@ pub mod users {
                 user: user.into(),
             }
         }
+        #[doc = "Delete user. This operation can take a while to complete"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_account_name`: The name of the lab Account."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

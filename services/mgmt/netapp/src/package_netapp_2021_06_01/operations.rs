@@ -116,6 +116,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Describes the Resource Provider"]
+        #[doc = "Lists all of the available Microsoft.NetApp Rest API operations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -170,6 +171,12 @@ pub mod net_app_resource {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Check resource name availability"]
+        #[doc = "Check if a resource name is available."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `body`: Name availability request."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: The location"]
         pub fn check_name_availability(
             &self,
             body: impl Into<models::ResourceNameAvailabilityRequest>,
@@ -184,6 +191,12 @@ pub mod net_app_resource {
             }
         }
         #[doc = "Check file path availability"]
+        #[doc = "Check if a file path is available."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `body`: File path availability request."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: The location"]
         pub fn check_file_path_availability(
             &self,
             body: impl Into<models::FilePathAvailabilityRequest>,
@@ -198,6 +211,12 @@ pub mod net_app_resource {
             }
         }
         #[doc = "Check quota availability"]
+        #[doc = "Check if a quota is available."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `body`: Quota availability request."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: The location"]
         pub fn check_quota_availability(
             &self,
             body: impl Into<models::QuotaAvailabilityRequest>,
@@ -374,6 +393,11 @@ pub mod net_app_resource_quota_limits {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get quota limits"]
+        #[doc = "Get the default and current limits for quotas"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: The location"]
         pub fn list(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -382,6 +406,12 @@ pub mod net_app_resource_quota_limits {
             }
         }
         #[doc = "Get quota limits"]
+        #[doc = "Get the default and current subscription quota limit"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: The location"]
+        #[doc = "* `quota_limit_name`: The name of the Quota Limit"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -505,6 +535,10 @@ pub mod accounts {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Describe all NetApp Accounts in a subscription"]
+        #[doc = "List and describe all NetApp accounts in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -512,6 +546,11 @@ pub mod accounts {
             }
         }
         #[doc = "Describe all NetApp Accounts in a resource group"]
+        #[doc = "List and describe all NetApp accounts in the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -520,6 +559,12 @@ pub mod accounts {
             }
         }
         #[doc = "Describe a NetApp Account"]
+        #[doc = "Get the NetApp account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -534,6 +579,13 @@ pub mod accounts {
             }
         }
         #[doc = "Create or update a NetApp account"]
+        #[doc = "Create or update the specified NetApp account within the resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `body`: NetApp Account object supplied in the body of the operation."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
         pub fn create_or_update(
             &self,
             body: impl Into<models::NetAppAccount>,
@@ -550,6 +602,13 @@ pub mod accounts {
             }
         }
         #[doc = "Update a NetApp account"]
+        #[doc = "Patch the specified NetApp account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `body`: NetApp Account object supplied in the body of the operation."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
         pub fn update(
             &self,
             body: impl Into<models::NetAppAccountPatch>,
@@ -566,6 +625,12 @@ pub mod accounts {
             }
         }
         #[doc = "Delete a NetApp account"]
+        #[doc = "Delete the specified NetApp account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -970,6 +1035,12 @@ pub mod pools {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Describe all Capacity Pools"]
+        #[doc = "List all capacity pools in the NetApp Account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -984,6 +1055,13 @@ pub mod pools {
             }
         }
         #[doc = "Describe a Capacity Pool"]
+        #[doc = "Get details of the specified capacity pool"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1000,6 +1078,14 @@ pub mod pools {
             }
         }
         #[doc = "Create or Update the specified capacity pool within the resource group"]
+        #[doc = "Create or Update a capacity pool"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `body`: Capacity pool object supplied in the body of the operation."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
         pub fn create_or_update(
             &self,
             body: impl Into<models::CapacityPool>,
@@ -1018,6 +1104,14 @@ pub mod pools {
             }
         }
         #[doc = "Update a capacity pool"]
+        #[doc = "Patch the specified capacity pool"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `body`: Capacity pool object supplied in the body of the operation."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
         pub fn update(
             &self,
             body: impl Into<models::CapacityPoolPatch>,
@@ -1036,6 +1130,13 @@ pub mod pools {
             }
         }
         #[doc = "Delete a capacity pool"]
+        #[doc = "Delete the specified capacity pool"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1374,6 +1475,13 @@ pub mod volumes {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Describe all volumes"]
+        #[doc = "List all volumes within the capacity pool"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1390,6 +1498,14 @@ pub mod volumes {
             }
         }
         #[doc = "Describe a volume"]
+        #[doc = "Get the details of the specified volume"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1408,6 +1524,15 @@ pub mod volumes {
             }
         }
         #[doc = "Create or Update a volume"]
+        #[doc = "Create or update the specified volume within the capacity pool"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `body`: Volume object supplied in the body of the operation."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
         pub fn create_or_update(
             &self,
             body: impl Into<models::Volume>,
@@ -1428,6 +1553,15 @@ pub mod volumes {
             }
         }
         #[doc = "Update a volume"]
+        #[doc = "Patch the specified volume"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `body`: Volume object supplied in the body of the operation."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
         pub fn update(
             &self,
             body: impl Into<models::VolumePatch>,
@@ -1448,6 +1582,14 @@ pub mod volumes {
             }
         }
         #[doc = "Delete a volume"]
+        #[doc = "Delete the specified volume"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1466,6 +1608,15 @@ pub mod volumes {
             }
         }
         #[doc = "Revert a volume to one of its snapshots"]
+        #[doc = "Revert a volume to the snapshot specified in the body"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
+        #[doc = "* `body`: Object for snapshot to revert supplied in the body of the operation."]
         pub fn revert(
             &self,
             subscription_id: impl Into<String>,
@@ -1486,6 +1637,14 @@ pub mod volumes {
             }
         }
         #[doc = "Break volume replication"]
+        #[doc = "Break the replication connection on the destination volume"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
         pub fn break_replication(
             &self,
             subscription_id: impl Into<String>,
@@ -1505,6 +1664,14 @@ pub mod volumes {
             }
         }
         #[doc = "Get volume replication status"]
+        #[doc = "Get the status of the replication"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
         pub fn replication_status(
             &self,
             subscription_id: impl Into<String>,
@@ -1523,6 +1690,14 @@ pub mod volumes {
             }
         }
         #[doc = "Resync volume replication"]
+        #[doc = "Resync the connection on the destination volume. If the operation is ran on the source volume it will reverse-resync the connection and sync from destination to source."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
         pub fn resync_replication(
             &self,
             subscription_id: impl Into<String>,
@@ -1541,6 +1716,14 @@ pub mod volumes {
             }
         }
         #[doc = "Delete volume replication"]
+        #[doc = "Delete the replication connection on the destination volume, and send release to the source replication"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
         pub fn delete_replication(
             &self,
             subscription_id: impl Into<String>,
@@ -1559,6 +1742,15 @@ pub mod volumes {
             }
         }
         #[doc = "Authorize source volume replication"]
+        #[doc = "Authorize the replication connection on the source volume"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
+        #[doc = "* `body`: Authorize request object supplied in the body of the operation."]
         pub fn authorize_replication(
             &self,
             subscription_id: impl Into<String>,
@@ -1579,6 +1771,14 @@ pub mod volumes {
             }
         }
         #[doc = "ReInitialize volume replication"]
+        #[doc = "Re-Initializes the replication connection on the destination volume"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
         pub fn re_initialize_replication(
             &self,
             subscription_id: impl Into<String>,
@@ -1597,6 +1797,15 @@ pub mod volumes {
             }
         }
         #[doc = "Change pool for volume"]
+        #[doc = "Moves volume to another pool"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
+        #[doc = "* `body`: Move volume to the pool supplied in the body of the operation."]
         pub fn pool_change(
             &self,
             subscription_id: impl Into<String>,
@@ -2336,6 +2545,14 @@ pub mod snapshots {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Describe all snapshots"]
+        #[doc = "List all snapshots associated with the volume"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2354,6 +2571,15 @@ pub mod snapshots {
             }
         }
         #[doc = "Describe a snapshot"]
+        #[doc = "Get details of the specified snapshot"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
+        #[doc = "* `snapshot_name`: The name of the snapshot"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2374,6 +2600,16 @@ pub mod snapshots {
             }
         }
         #[doc = "Create a snapshot"]
+        #[doc = "Create the specified snapshot within the given volume"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `body`: Snapshot object supplied in the body of the operation."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
+        #[doc = "* `snapshot_name`: The name of the snapshot"]
         pub fn create(
             &self,
             body: impl Into<models::Snapshot>,
@@ -2396,6 +2632,16 @@ pub mod snapshots {
             }
         }
         #[doc = "Update a snapshot"]
+        #[doc = "Patch a snapshot"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `body`: Snapshot object supplied in the body of the operation."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
+        #[doc = "* `snapshot_name`: The name of the snapshot"]
         pub fn update(
             &self,
             body: impl Into<models::SnapshotPatch>,
@@ -2418,6 +2664,15 @@ pub mod snapshots {
             }
         }
         #[doc = "Delete a snapshot"]
+        #[doc = "Delete snapshot"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
+        #[doc = "* `snapshot_name`: The name of the snapshot"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2708,6 +2963,12 @@ pub mod snapshot_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List snapshot policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2721,6 +2982,13 @@ pub mod snapshot_policies {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Get a snapshot Policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `snapshot_policy_name`: The name of the snapshot policy"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2736,6 +3004,14 @@ pub mod snapshot_policies {
                 snapshot_policy_name: snapshot_policy_name.into(),
             }
         }
+        #[doc = "Create a snapshot policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `snapshot_policy_name`: The name of the snapshot policy"]
+        #[doc = "* `body`: Snapshot policy object supplied in the body of the operation."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -2753,6 +3029,14 @@ pub mod snapshot_policies {
                 body: body.into(),
             }
         }
+        #[doc = "Patch a snapshot policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `snapshot_policy_name`: The name of the snapshot policy"]
+        #[doc = "* `body`: Snapshot policy object supplied in the body of the operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2770,6 +3054,13 @@ pub mod snapshot_policies {
                 body: body.into(),
             }
         }
+        #[doc = "Delete snapshot policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `snapshot_policy_name`: The name of the snapshot policy"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2786,6 +3077,13 @@ pub mod snapshot_policies {
             }
         }
         #[doc = "Get volumes for snapshot policy"]
+        #[doc = "Get volumes associated with snapshot policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `snapshot_policy_name`: The name of the snapshot policy"]
         pub fn list_volumes(
             &self,
             subscription_id: impl Into<String>,
@@ -3151,6 +3449,14 @@ pub mod backups {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get volume's backup status"]
+        #[doc = "Get the status of the backup for a volume"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
         pub fn get_status(
             &self,
             subscription_id: impl Into<String>,
@@ -3169,6 +3475,14 @@ pub mod backups {
             }
         }
         #[doc = "Get volume's restore status"]
+        #[doc = "Get the status of the restore for a volume"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
         pub fn get_volume_restore_status(
             &self,
             subscription_id: impl Into<String>,
@@ -3187,6 +3501,14 @@ pub mod backups {
             }
         }
         #[doc = "List Backups"]
+        #[doc = "List all backups for a volume"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3205,6 +3527,15 @@ pub mod backups {
             }
         }
         #[doc = "Get a backup"]
+        #[doc = "Gets the specified backup of the volume"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
+        #[doc = "* `backup_name`: The name of the backup"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3225,6 +3556,16 @@ pub mod backups {
             }
         }
         #[doc = "Create a backup"]
+        #[doc = "Create a backup for the volume"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
+        #[doc = "* `backup_name`: The name of the backup"]
+        #[doc = "* `body`: Backup object supplied in the body of the operation."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -3247,6 +3588,15 @@ pub mod backups {
             }
         }
         #[doc = "Patch a backup"]
+        #[doc = "Patch a backup for the volume"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
+        #[doc = "* `backup_name`: The name of the backup"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3268,6 +3618,15 @@ pub mod backups {
             }
         }
         #[doc = "Delete backup"]
+        #[doc = "Delete a backup of the volume"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `pool_name`: The name of the capacity pool"]
+        #[doc = "* `volume_name`: The name of the volume"]
+        #[doc = "* `backup_name`: The name of the backup"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3673,6 +4032,12 @@ pub mod account_backups {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Backups for a Netapp Account"]
+        #[doc = "List all Backups for a Netapp Account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3687,6 +4052,13 @@ pub mod account_backups {
             }
         }
         #[doc = "Get Backup for a Netapp Account"]
+        #[doc = "Gets the specified backup for a Netapp Account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `backup_name`: The name of the backup"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3703,6 +4075,13 @@ pub mod account_backups {
             }
         }
         #[doc = "Delete Backup for a Netapp Account"]
+        #[doc = "Delete the specified Backup for a Netapp Account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `backup_name`: The name of the backup"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3890,6 +4269,12 @@ pub mod backup_policies {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List backup policies"]
+        #[doc = "List backup policies for Netapp Account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3904,6 +4289,13 @@ pub mod backup_policies {
             }
         }
         #[doc = "Get a backup Policy"]
+        #[doc = "Get a particular backup Policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `backup_policy_name`: Backup policy Name which uniquely identify backup policy."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3920,6 +4312,14 @@ pub mod backup_policies {
             }
         }
         #[doc = "Create a backup policy"]
+        #[doc = "Create a backup policy for Netapp Account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `backup_policy_name`: Backup policy Name which uniquely identify backup policy."]
+        #[doc = "* `body`: Backup policy object supplied in the body of the operation."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -3938,6 +4338,14 @@ pub mod backup_policies {
             }
         }
         #[doc = "Patch a backup policy"]
+        #[doc = "Patch a backup policy for Netapp Account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `backup_policy_name`: Backup policy Name which uniquely identify backup policy."]
+        #[doc = "* `body`: Backup policy object supplied in the body of the operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3956,6 +4364,13 @@ pub mod backup_policies {
             }
         }
         #[doc = "Delete a backup policy"]
+        #[doc = "Delete backup policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
+        #[doc = "* `backup_policy_name`: Backup policy Name which uniquely identify backup policy."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4277,6 +4692,12 @@ pub mod vaults {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List vaults"]
+        #[doc = "List vaults for a Netapp Account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `account_name`: The name of the NetApp account"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,

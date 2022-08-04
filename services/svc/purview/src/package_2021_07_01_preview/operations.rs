@@ -85,6 +85,7 @@ pub mod metadata_roles {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists roles for Purview Account"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -163,18 +164,27 @@ pub mod metadata_policy {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List or Get metadata policies"]
         pub fn list_all(&self) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
                 collection_name: None,
             }
         }
+        #[doc = "Gets a metadata policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_id`: Id of an existing policy that needs to be fetched."]
         pub fn get(&self, policy_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 policy_id: policy_id.into(),
             }
         }
+        #[doc = "Updates a metadata policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_id`: Unique policy id."]
         pub fn update(&self, policy_id: impl Into<String>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),

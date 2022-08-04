@@ -91,6 +91,7 @@ pub mod domain_service_operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the available Domain Services operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -170,6 +171,10 @@ pub mod domain_services {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Domain Services in Subscription"]
+        #[doc = "The List Domain Services in Subscription operation lists all the domain services available under the given subscription (and across all resource groups within that subscription)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -177,6 +182,11 @@ pub mod domain_services {
             }
         }
         #[doc = "List Domain Services in Resource Group"]
+        #[doc = "The List Domain Services in Resource Group operation lists all the domain services available under the given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -189,6 +199,12 @@ pub mod domain_services {
             }
         }
         #[doc = "Get Domain Service"]
+        #[doc = "The Get Domain Service operation retrieves a json representation of the Domain Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `domain_service_name`: The name of the domain service."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -203,6 +219,13 @@ pub mod domain_services {
             }
         }
         #[doc = "Create or Update Domain Service (PUT Resource)"]
+        #[doc = "The Create Domain Service operation creates a new domain service with the specified parameters. If the specific service already exists, then any patchable properties will be updated and any immutable properties will remain unchanged."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `domain_service_name`: The name of the domain service."]
+        #[doc = "* `domain_service`: Properties supplied to the Create or Update a Domain Service operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -219,6 +242,13 @@ pub mod domain_services {
             }
         }
         #[doc = "Update Domain Service (PATCH Resource)"]
+        #[doc = "The Update Domain Service operation can be used to update the existing deployment. The update call only supports the properties listed in the PATCH body."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `domain_service_name`: The name of the domain service."]
+        #[doc = "* `domain_service`: Properties supplied to the Update a Domain Service operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -235,6 +265,12 @@ pub mod domain_services {
             }
         }
         #[doc = "Delete Domain Service (DELETE Resource)"]
+        #[doc = "The Delete Domain Service operation deletes an existing Domain Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `domain_service_name`: The name of the domain service."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -644,6 +680,7 @@ pub mod ou_container_operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the available OuContainer operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -723,6 +760,12 @@ pub mod ou_container {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List of OuContainers in DomainService instance"]
+        #[doc = "The List of OuContainers in DomainService instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `domain_service_name`: The name of the domain service."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -737,6 +780,13 @@ pub mod ou_container {
             }
         }
         #[doc = "Get particular OuContainer in DomainService instance"]
+        #[doc = "Get OuContainer in DomainService instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `domain_service_name`: The name of the domain service."]
+        #[doc = "* `ou_container_name`: The name of the OuContainer."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -753,6 +803,14 @@ pub mod ou_container {
             }
         }
         #[doc = "Create OuContainer"]
+        #[doc = "The Create OuContainer operation creates a new OuContainer under the specified Domain Service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `domain_service_name`: The name of the domain service."]
+        #[doc = "* `ou_container_name`: The name of the OuContainer."]
+        #[doc = "* `container_account`: Container Account Description."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -771,6 +829,14 @@ pub mod ou_container {
             }
         }
         #[doc = "Update OuContainer (PATCH Resource)"]
+        #[doc = "The Update OuContainer operation can be used to update the existing OuContainers."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `domain_service_name`: The name of the domain service."]
+        #[doc = "* `ou_container_name`: The name of the OuContainer."]
+        #[doc = "* `container_account`: Container Account Description."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -789,6 +855,13 @@ pub mod ou_container {
             }
         }
         #[doc = "Delete OuContainer"]
+        #[doc = "The Delete OuContainer operation deletes specified OuContainer."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `domain_service_name`: The name of the domain service."]
+        #[doc = "* `ou_container_name`: The name of the OuContainer."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

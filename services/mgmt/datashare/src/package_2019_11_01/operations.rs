@@ -119,6 +119,10 @@ pub mod accounts {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Accounts in a subscription"]
+        #[doc = "List Accounts in Subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -127,6 +131,12 @@ pub mod accounts {
             }
         }
         #[doc = "Get an account under a resource group"]
+        #[doc = "Get an account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -141,6 +151,13 @@ pub mod accounts {
             }
         }
         #[doc = "Create an account in the given resource group"]
+        #[doc = "Create an account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `account`: The account payload."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -157,6 +174,13 @@ pub mod accounts {
             }
         }
         #[doc = "Patch a given account"]
+        #[doc = "Patch an account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `account_update_parameters`: The account update parameters."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -173,6 +197,12 @@ pub mod accounts {
             }
         }
         #[doc = "Delete an account"]
+        #[doc = "DeleteAccount"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -187,6 +217,11 @@ pub mod accounts {
             }
         }
         #[doc = "List Accounts in a resource group"]
+        #[doc = "List Accounts in ResourceGroup"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -602,6 +637,7 @@ pub mod consumer_invitations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the invitations"]
+        #[doc = "Lists invitations"]
         pub fn list_invitations(&self) -> list_invitations::Builder {
             list_invitations::Builder {
                 client: self.0.clone(),
@@ -609,6 +645,11 @@ pub mod consumer_invitations {
             }
         }
         #[doc = "Gets the invitation identified by invitationId"]
+        #[doc = "Get an invitation"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: Location of the invitation"]
+        #[doc = "* `invitation_id`: An invitation id"]
         pub fn get(&self, location: impl Into<String>, invitation_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -617,6 +658,11 @@ pub mod consumer_invitations {
             }
         }
         #[doc = "Rejects the invitation identified by invitationId"]
+        #[doc = "Reject an invitation"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: Location of the invitation"]
+        #[doc = "* `invitation`: An invitation payload"]
         pub fn reject_invitation(
             &self,
             location: impl Into<String>,
@@ -813,6 +859,14 @@ pub mod data_sets {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get DataSet in a share."]
+        #[doc = "Get a DataSet in a share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share."]
+        #[doc = "* `data_set_name`: The name of the dataSet."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -831,6 +885,15 @@ pub mod data_sets {
             }
         }
         #[doc = "Adds a new data set to an existing share."]
+        #[doc = "Create a DataSet "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share to add the data set to."]
+        #[doc = "* `data_set_name`: The name of the dataSet."]
+        #[doc = "* `data_set`: The new data set information."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -851,6 +914,14 @@ pub mod data_sets {
             }
         }
         #[doc = "Delete DataSet in a share."]
+        #[doc = "Delete a DataSet in a share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share."]
+        #[doc = "* `data_set_name`: The name of the dataSet."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -869,6 +940,13 @@ pub mod data_sets {
             }
         }
         #[doc = "List DataSets in a share."]
+        #[doc = "List DataSets in a share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share."]
         pub fn list_by_share(
             &self,
             subscription_id: impl Into<String>,
@@ -1181,6 +1259,14 @@ pub mod data_set_mappings {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get DataSetMapping in a shareSubscription."]
+        #[doc = "Get a DataSetMapping in a shareSubscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_subscription_name`: The name of the shareSubscription."]
+        #[doc = "* `data_set_mapping_name`: The name of the dataSetMapping."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1199,6 +1285,15 @@ pub mod data_set_mappings {
             }
         }
         #[doc = "Maps a source data set in the source share to a sink data set in the share subscription.\r\nEnables copying the data set from source to destination."]
+        #[doc = "Create a DataSetMapping "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_subscription_name`: The name of the share subscription which will hold the data set sink."]
+        #[doc = "* `data_set_mapping_name`: The name of the data set mapping to be created."]
+        #[doc = "* `data_set_mapping`: Destination data set configuration details."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1219,6 +1314,14 @@ pub mod data_set_mappings {
             }
         }
         #[doc = "Delete DataSetMapping in a shareSubscription."]
+        #[doc = "Delete a DataSetMapping in a shareSubscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_subscription_name`: The name of the shareSubscription."]
+        #[doc = "* `data_set_mapping_name`: The name of the dataSetMapping."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1237,6 +1340,13 @@ pub mod data_set_mappings {
             }
         }
         #[doc = "List DataSetMappings in a share subscription."]
+        #[doc = "List DataSetMappings in a share subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_subscription_name`: The name of the share subscription."]
         pub fn list_by_share_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -1515,6 +1625,11 @@ pub mod email_registrations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Activates the tenant and email combination using email code received."]
+        #[doc = "Activate the email registration for the current tenant"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: Location of the activation."]
+        #[doc = "* `email_registration`: The payload for tenant domain activation."]
         pub fn activate_email(
             &self,
             location: impl Into<String>,
@@ -1527,6 +1642,10 @@ pub mod email_registrations {
             }
         }
         #[doc = "Registers the tenant and email combination for verification."]
+        #[doc = "Register an email for the current tenant"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: Location of the registration"]
         pub fn register_email(&self, location: impl Into<String>) -> register_email::Builder {
             register_email::Builder {
                 client: self.0.clone(),
@@ -1639,6 +1758,14 @@ pub mod invitations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get Invitation in a share."]
+        #[doc = "Get an invitation in a share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share."]
+        #[doc = "* `invitation_name`: The name of the invitation."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1657,6 +1784,15 @@ pub mod invitations {
             }
         }
         #[doc = "Sends a new invitation to a recipient to access a share."]
+        #[doc = "Create an invitation "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share to send the invitation for."]
+        #[doc = "* `invitation_name`: The name of the invitation."]
+        #[doc = "* `invitation`: Invitation details."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1677,6 +1813,14 @@ pub mod invitations {
             }
         }
         #[doc = "Delete Invitation in a share."]
+        #[doc = "Delete an invitation in a share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share."]
+        #[doc = "* `invitation_name`: The name of the invitation."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1695,6 +1839,13 @@ pub mod invitations {
             }
         }
         #[doc = "List all Invitations in a share."]
+        #[doc = "List invitations in a share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share."]
         pub fn list_by_share(
             &self,
             subscription_id: impl Into<String>,
@@ -2004,6 +2155,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists the available operations"]
+        #[doc = "List of available operations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -2084,6 +2236,14 @@ pub mod shares {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List data set level details for a share synchronization"]
+        #[doc = "List synchronization details"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share."]
+        #[doc = "* `share_synchronization`: Share Synchronization payload."]
         pub fn list_synchronization_details(
             &self,
             subscription_id: impl Into<String>,
@@ -2105,6 +2265,13 @@ pub mod shares {
             }
         }
         #[doc = "List Synchronizations in a share"]
+        #[doc = "List synchronizations of a share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share."]
         pub fn list_synchronizations(
             &self,
             subscription_id: impl Into<String>,
@@ -2124,6 +2291,13 @@ pub mod shares {
             }
         }
         #[doc = "Get a specified share"]
+        #[doc = "Get a share "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share to retrieve."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2140,6 +2314,14 @@ pub mod shares {
             }
         }
         #[doc = "Create a share in the given account."]
+        #[doc = "Create a share "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share."]
+        #[doc = "* `share`: The share payload"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -2158,6 +2340,13 @@ pub mod shares {
             }
         }
         #[doc = "Deletes a share"]
+        #[doc = "Delete a share "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2174,6 +2363,12 @@ pub mod shares {
             }
         }
         #[doc = "List of available shares under an account."]
+        #[doc = "List shares in an account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
         pub fn list_by_account(
             &self,
             subscription_id: impl Into<String>,
@@ -2677,6 +2872,14 @@ pub mod provider_share_subscriptions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Reinstate share subscription in a provider share."]
+        #[doc = "Reinstate share subscription in a provider share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share."]
+        #[doc = "* `provider_share_subscription_id`: To locate shareSubscription"]
         pub fn reinstate(
             &self,
             subscription_id: impl Into<String>,
@@ -2695,6 +2898,14 @@ pub mod provider_share_subscriptions {
             }
         }
         #[doc = "Revoke share subscription in a provider share."]
+        #[doc = "Revoke share subscription in a provider share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share."]
+        #[doc = "* `provider_share_subscription_id`: To locate shareSubscription"]
         pub fn revoke(
             &self,
             subscription_id: impl Into<String>,
@@ -2713,6 +2924,14 @@ pub mod provider_share_subscriptions {
             }
         }
         #[doc = "Get share subscription in a provider share."]
+        #[doc = "Get share subscription in a provider share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share."]
+        #[doc = "* `provider_share_subscription_id`: To locate shareSubscription"]
         pub fn get_by_share(
             &self,
             subscription_id: impl Into<String>,
@@ -2731,6 +2950,13 @@ pub mod provider_share_subscriptions {
             }
         }
         #[doc = "List of available share subscriptions to a provider share."]
+        #[doc = "List share subscriptions in a provider share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share."]
         pub fn list_by_share(
             &self,
             subscription_id: impl Into<String>,
@@ -2991,6 +3217,14 @@ pub mod share_subscriptions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Request cancellation of a data share snapshot"]
+        #[doc = "Request to cancel a synchronization."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_subscription_name`: The name of the shareSubscription."]
+        #[doc = "* `share_subscription_synchronization`: Share Subscription Synchronization payload."]
         pub fn cancel_synchronization(
             &self,
             subscription_id: impl Into<String>,
@@ -3009,6 +3243,13 @@ pub mod share_subscriptions {
             }
         }
         #[doc = "Get source share synchronization settings for a shareSubscription."]
+        #[doc = "Get synchronization settings set on a share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_subscription_name`: The name of the shareSubscription."]
         pub fn list_source_share_synchronization_settings(
             &self,
             subscription_id: impl Into<String>,
@@ -3026,6 +3267,14 @@ pub mod share_subscriptions {
             }
         }
         #[doc = "List data set level details for a share subscription synchronization"]
+        #[doc = "List synchronization details"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_subscription_name`: The name of the share subscription."]
+        #[doc = "* `share_subscription_synchronization`: Share Subscription Synchronization payload."]
         pub fn list_synchronization_details(
             &self,
             subscription_id: impl Into<String>,
@@ -3047,6 +3296,13 @@ pub mod share_subscriptions {
             }
         }
         #[doc = "List Synchronizations in a share subscription."]
+        #[doc = "List synchronizations of a share subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_subscription_name`: The name of the share subscription."]
         pub fn list_synchronizations(
             &self,
             subscription_id: impl Into<String>,
@@ -3066,6 +3322,14 @@ pub mod share_subscriptions {
             }
         }
         #[doc = "Initiate an asynchronous data share job"]
+        #[doc = "Initiate a copy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_subscription_name`: The name of share subscription"]
+        #[doc = "* `synchronize`: Synchronize payload"]
         pub fn synchronize(
             &self,
             subscription_id: impl Into<String>,
@@ -3084,6 +3348,13 @@ pub mod share_subscriptions {
             }
         }
         #[doc = "Get shareSubscription in an account."]
+        #[doc = "Get a shareSubscription in an account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_subscription_name`: The name of the shareSubscription."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3100,6 +3371,14 @@ pub mod share_subscriptions {
             }
         }
         #[doc = "Create shareSubscription in an account."]
+        #[doc = "Create a shareSubscription in an account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_subscription_name`: The name of the shareSubscription."]
+        #[doc = "* `share_subscription`: create parameters for shareSubscription"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -3118,6 +3397,13 @@ pub mod share_subscriptions {
             }
         }
         #[doc = "Delete shareSubscription in an account."]
+        #[doc = "Delete a shareSubscription in an account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_subscription_name`: The name of the shareSubscription."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3134,6 +3420,12 @@ pub mod share_subscriptions {
             }
         }
         #[doc = "List of available share subscriptions under an account."]
+        #[doc = "List share subscriptions in an account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
         pub fn list_by_account(
             &self,
             subscription_id: impl Into<String>,
@@ -3837,6 +4129,13 @@ pub mod consumer_source_data_sets {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get source dataSets of a shareSubscription."]
+        #[doc = "Get source dataSets of a shareSubscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_subscription_name`: The name of the shareSubscription."]
         pub fn list_by_share_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -3941,6 +4240,14 @@ pub mod synchronization_settings {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get synchronizationSetting in a share."]
+        #[doc = "Get a synchronizationSetting in a share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share."]
+        #[doc = "* `synchronization_setting_name`: The name of the synchronizationSetting."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3959,6 +4266,15 @@ pub mod synchronization_settings {
             }
         }
         #[doc = "Adds a new synchronization setting to an existing share."]
+        #[doc = "Create a synchronizationSetting"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share to add the synchronization setting to."]
+        #[doc = "* `synchronization_setting_name`: The name of the synchronizationSetting."]
+        #[doc = "* `synchronization_setting`: The new synchronization setting information."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -3979,6 +4295,14 @@ pub mod synchronization_settings {
             }
         }
         #[doc = "Delete synchronizationSetting in a share."]
+        #[doc = "Delete a synchronizationSetting in a share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share."]
+        #[doc = "* `synchronization_setting_name`: The name of the synchronizationSetting ."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3997,6 +4321,13 @@ pub mod synchronization_settings {
             }
         }
         #[doc = "List synchronizationSettings in a share."]
+        #[doc = "List synchronizationSettings in a share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_name`: The name of the share."]
         pub fn list_by_share(
             &self,
             subscription_id: impl Into<String>,
@@ -4264,6 +4595,14 @@ pub mod triggers {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get Trigger in a shareSubscription."]
+        #[doc = "Get a Trigger in a shareSubscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_subscription_name`: The name of the shareSubscription."]
+        #[doc = "* `trigger_name`: The name of the trigger."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4282,6 +4621,15 @@ pub mod triggers {
             }
         }
         #[doc = "This method creates a trigger for a share subscription"]
+        #[doc = "Create a Trigger "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_subscription_name`: The name of the share subscription which will hold the data set sink."]
+        #[doc = "* `trigger_name`: The name of the trigger."]
+        #[doc = "* `trigger`: Trigger details."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -4302,6 +4650,14 @@ pub mod triggers {
             }
         }
         #[doc = "Delete Trigger in a shareSubscription."]
+        #[doc = "Delete a Trigger in a shareSubscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_subscription_name`: The name of the shareSubscription."]
+        #[doc = "* `trigger_name`: The name of the trigger."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4320,6 +4676,13 @@ pub mod triggers {
             }
         }
         #[doc = "List Triggers in a share subscription."]
+        #[doc = "List Triggers in a share subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the share account."]
+        #[doc = "* `share_subscription_name`: The name of the share subscription."]
         pub fn list_by_share_subscription(
             &self,
             subscription_id: impl Into<String>,

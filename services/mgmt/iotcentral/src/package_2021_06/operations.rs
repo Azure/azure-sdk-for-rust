@@ -85,6 +85,12 @@ pub mod apps {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the metadata of an IoT Central application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT Central application."]
+        #[doc = "* `resource_name`: The ARM resource name of the IoT Central application."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -98,6 +104,13 @@ pub mod apps {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create or update the metadata of an IoT Central application. The usual pattern to modify a property is to retrieve the IoT Central application metadata and security metadata, and then combine them with the modified values in a new body to update the IoT Central application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT Central application."]
+        #[doc = "* `resource_name`: The ARM resource name of the IoT Central application."]
+        #[doc = "* `app`: The IoT Central application metadata and security metadata."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -113,6 +126,13 @@ pub mod apps {
                 app: app.into(),
             }
         }
+        #[doc = "Update the metadata of an IoT Central application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT Central application."]
+        #[doc = "* `resource_name`: The ARM resource name of the IoT Central application."]
+        #[doc = "* `app_patch`: The IoT Central application metadata and security metadata."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -128,6 +148,12 @@ pub mod apps {
                 app_patch: app_patch.into(),
             }
         }
+        #[doc = "Delete an IoT Central application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT Central application."]
+        #[doc = "* `resource_name`: The ARM resource name of the IoT Central application."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -141,12 +167,21 @@ pub mod apps {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get all IoT Central Applications in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all the IoT Central Applications in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT Central application."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -158,6 +193,11 @@ pub mod apps {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Check if an IoT Central application name is available."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `operation_inputs`: Set the name parameter in the OperationInputs structure to the name of the IoT Central application to check."]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -169,6 +209,11 @@ pub mod apps {
                 operation_inputs: operation_inputs.into(),
             }
         }
+        #[doc = "Check if an IoT Central application subdomain is available."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `operation_inputs`: Set the name parameter in the OperationInputs structure to the subdomain of the IoT Central application to check."]
         pub fn check_subdomain_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -180,6 +225,10 @@ pub mod apps {
                 operation_inputs: operation_inputs.into(),
             }
         }
+        #[doc = "Get all available application templates."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
         pub fn list_templates(&self, subscription_id: impl Into<String>) -> list_templates::Builder {
             list_templates::Builder {
                 client: self.0.clone(),
@@ -751,6 +800,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available IoT Central Resource Provider operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

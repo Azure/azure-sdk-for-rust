@@ -118,6 +118,14 @@ pub mod attached_data_networks {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified attached data network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `packet_core_control_plane_name`: The name of the packet core control plane."]
+        #[doc = "* `packet_core_data_plane_name`: The name of the packet core data plane."]
+        #[doc = "* `attached_data_network_name`: The name of the attached data network."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -135,6 +143,15 @@ pub mod attached_data_networks {
                 attached_data_network_name: attached_data_network_name.into(),
             }
         }
+        #[doc = "Creates or updates an attached data network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `packet_core_control_plane_name`: The name of the packet core control plane."]
+        #[doc = "* `packet_core_data_plane_name`: The name of the packet core data plane."]
+        #[doc = "* `attached_data_network_name`: The name of the attached data network."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update attached data network operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -154,6 +171,15 @@ pub mod attached_data_networks {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates an attached data network tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `packet_core_control_plane_name`: The name of the packet core control plane."]
+        #[doc = "* `packet_core_data_plane_name`: The name of the packet core data plane."]
+        #[doc = "* `attached_data_network_name`: The name of the attached data network."]
+        #[doc = "* `parameters`: Parameters supplied to update attached data network tags."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -173,6 +199,14 @@ pub mod attached_data_networks {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the specified attached data network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `packet_core_control_plane_name`: The name of the packet core control plane."]
+        #[doc = "* `packet_core_data_plane_name`: The name of the packet core data plane."]
+        #[doc = "* `attached_data_network_name`: The name of the attached data network."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -190,6 +224,13 @@ pub mod attached_data_networks {
                 attached_data_network_name: attached_data_network_name.into(),
             }
         }
+        #[doc = "Gets all the attached data networks associated with a packet core data plane."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `packet_core_control_plane_name`: The name of the packet core control plane."]
+        #[doc = "* `packet_core_data_plane_name`: The name of the packet core data plane."]
         pub fn list_by_packet_core_data_plane(
             &self,
             subscription_id: impl Into<String>,
@@ -494,6 +535,13 @@ pub mod data_networks {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified data network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `data_network_name`: The name of the data network."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -509,6 +557,14 @@ pub mod data_networks {
                 data_network_name: data_network_name.into(),
             }
         }
+        #[doc = "Creates or updates a data network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `data_network_name`: The name of the data network."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update data network operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -526,6 +582,14 @@ pub mod data_networks {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates data network tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `data_network_name`: The name of the data network."]
+        #[doc = "* `parameters`: Parameters supplied to update data network tags."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -543,6 +607,13 @@ pub mod data_networks {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the specified data network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `data_network_name`: The name of the data network."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -558,6 +629,12 @@ pub mod data_networks {
                 data_network_name: data_network_name.into(),
             }
         }
+        #[doc = "Lists all data networks in the mobile network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
         pub fn list_by_mobile_network(
             &self,
             subscription_id: impl Into<String>,
@@ -889,6 +966,12 @@ pub mod mobile_networks {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified mobile network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -902,6 +985,13 @@ pub mod mobile_networks {
                 mobile_network_name: mobile_network_name.into(),
             }
         }
+        #[doc = "Creates or updates a mobile network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update mobile network operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -917,6 +1007,13 @@ pub mod mobile_networks {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates mobile network tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `parameters`: Parameters supplied to update mobile network tags."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -932,6 +1029,12 @@ pub mod mobile_networks {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the specified mobile network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -945,12 +1048,21 @@ pub mod mobile_networks {
                 mobile_network_name: mobile_network_name.into(),
             }
         }
+        #[doc = "Lists all the mobile networks in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the mobile networks in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -962,6 +1074,12 @@ pub mod mobile_networks {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists the IDs of all provisioned SIMs in a mobile network"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
         pub fn list_sim_ids(
             &self,
             subscription_id: impl Into<String>,
@@ -1420,6 +1538,13 @@ pub mod sites {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified mobile network site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `site_name`: The name of the mobile network site."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1435,6 +1560,14 @@ pub mod sites {
                 site_name: site_name.into(),
             }
         }
+        #[doc = "Creates or updates a mobile network site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `site_name`: The name of the mobile network site."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update mobile network site operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1452,6 +1585,14 @@ pub mod sites {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates site tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `site_name`: The name of the mobile network site."]
+        #[doc = "* `parameters`: Parameters supplied to update network site tags."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -1469,6 +1610,13 @@ pub mod sites {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the specified mobile network site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `site_name`: The name of the mobile network site."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1484,6 +1632,12 @@ pub mod sites {
                 site_name: site_name.into(),
             }
         }
+        #[doc = "Lists all sites in the mobile network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
         pub fn list_by_mobile_network(
             &self,
             subscription_id: impl Into<String>,
@@ -1815,6 +1969,12 @@ pub mod sim_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified SIM group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sim_group_name`: The name of the SIM Group."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1828,6 +1988,13 @@ pub mod sim_groups {
                 sim_group_name: sim_group_name.into(),
             }
         }
+        #[doc = "Creates or updates a SIM group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sim_group_name`: The name of the SIM Group."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update SIM group operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1843,6 +2010,13 @@ pub mod sim_groups {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates SIM group tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sim_group_name`: The name of the SIM Group."]
+        #[doc = "* `parameters`: Parameters supplied to update SIM group tags."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -1858,6 +2032,12 @@ pub mod sim_groups {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the specified SIM group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sim_group_name`: The name of the SIM Group."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1871,12 +2051,21 @@ pub mod sim_groups {
                 sim_group_name: sim_group_name.into(),
             }
         }
+        #[doc = "Gets all the SIM groups in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the SIM groups in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -2270,6 +2459,13 @@ pub mod sims {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified SIM."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sim_group_name`: The name of the SIM Group."]
+        #[doc = "* `sim_name`: The name of the SIM."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2285,6 +2481,14 @@ pub mod sims {
                 sim_name: sim_name.into(),
             }
         }
+        #[doc = "Creates or updates a SIM."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sim_group_name`: The name of the SIM Group."]
+        #[doc = "* `sim_name`: The name of the SIM."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update SIM operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2302,6 +2506,13 @@ pub mod sims {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the specified SIM."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sim_group_name`: The name of the SIM Group."]
+        #[doc = "* `sim_name`: The name of the SIM."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2317,6 +2528,12 @@ pub mod sims {
                 sim_name: sim_name.into(),
             }
         }
+        #[doc = "Gets all the SIMs in a SIM group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `sim_group_name`: The name of the SIM Group."]
         pub fn list_by_sim_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -2592,6 +2809,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of the operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -2671,6 +2889,12 @@ pub mod packet_core_control_planes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified packet core control plane."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `packet_core_control_plane_name`: The name of the packet core control plane."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2684,6 +2908,13 @@ pub mod packet_core_control_planes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a packet core control plane."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `packet_core_control_plane_name`: The name of the packet core control plane."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update packet core control plane operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -2699,6 +2930,13 @@ pub mod packet_core_control_planes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates packet core control planes tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `packet_core_control_plane_name`: The name of the packet core control plane."]
+        #[doc = "* `parameters`: Parameters supplied to update packet core control plane tags."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -2714,6 +2952,12 @@ pub mod packet_core_control_planes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified packet core control plane."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `packet_core_control_plane_name`: The name of the packet core control plane."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2727,12 +2971,21 @@ pub mod packet_core_control_planes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the packet core control planes in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the packet core control planes in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -3126,12 +3379,17 @@ pub mod packet_core_control_plane_versions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified packet core control plane version."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `version_name`: The name of the packet core control plane version."]
         pub fn get(&self, version_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 version_name: version_name.into(),
             }
         }
+        #[doc = "Lists all supported packet core control planes versions."]
         pub fn list_by_resource_group(&self) -> list_by_resource_group::Builder {
             list_by_resource_group::Builder { client: self.0.clone() }
         }
@@ -3261,6 +3519,13 @@ pub mod packet_core_data_planes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified packet core data plane."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `packet_core_control_plane_name`: The name of the packet core control plane."]
+        #[doc = "* `packet_core_data_plane_name`: The name of the packet core data plane."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -3276,6 +3541,14 @@ pub mod packet_core_data_planes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a packet core data plane."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `packet_core_control_plane_name`: The name of the packet core control plane."]
+        #[doc = "* `packet_core_data_plane_name`: The name of the packet core data plane."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update packet core data plane operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3293,6 +3566,14 @@ pub mod packet_core_data_planes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates packet core data planes tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `packet_core_control_plane_name`: The name of the packet core control plane."]
+        #[doc = "* `packet_core_data_plane_name`: The name of the packet core data plane."]
+        #[doc = "* `parameters`: Parameters supplied to update packet core data plane tags."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -3310,6 +3591,13 @@ pub mod packet_core_data_planes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified packet core data plane."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `packet_core_control_plane_name`: The name of the packet core control plane."]
+        #[doc = "* `packet_core_data_plane_name`: The name of the packet core data plane."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -3325,6 +3613,12 @@ pub mod packet_core_data_planes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the packet core data planes associated with a packet core control plane."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `packet_core_control_plane_name`: The name of the packet core control plane."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_packet_core_control_plane(
             &self,
             resource_group_name: impl Into<String>,
@@ -3622,6 +3916,13 @@ pub mod services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `service_name`: The name of the service. You must not use any of the following reserved strings - `default`, `requested` or `service`"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -3637,6 +3938,14 @@ pub mod services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `service_name`: The name of the service. You must not use any of the following reserved strings - `default`, `requested` or `service`"]
+        #[doc = "* `parameters`: Parameters supplied to the create or update service operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3654,6 +3963,14 @@ pub mod services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates service tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `service_name`: The name of the service. You must not use any of the following reserved strings - `default`, `requested` or `service`"]
+        #[doc = "* `parameters`: Parameters supplied to update service tags."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -3671,6 +3988,13 @@ pub mod services {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the specified service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `service_name`: The name of the service. You must not use any of the following reserved strings - `default`, `requested` or `service`"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -3686,6 +4010,12 @@ pub mod services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the services in a mobile network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_mobile_network(
             &self,
             resource_group_name: impl Into<String>,
@@ -4017,6 +4347,13 @@ pub mod sim_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified SIM policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `sim_policy_name`: The name of the SIM policy."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -4032,6 +4369,14 @@ pub mod sim_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a SIM policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `sim_policy_name`: The name of the SIM policy."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update SIM policy operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -4049,6 +4394,14 @@ pub mod sim_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates SIM policy tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `sim_policy_name`: The name of the SIM policy."]
+        #[doc = "* `parameters`: Parameters supplied to update SIM policy tags."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -4066,6 +4419,13 @@ pub mod sim_policies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the specified SIM policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `sim_policy_name`: The name of the SIM policy."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -4081,6 +4441,12 @@ pub mod sim_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the SIM policies in a mobile network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_mobile_network(
             &self,
             resource_group_name: impl Into<String>,
@@ -4412,6 +4778,13 @@ pub mod slices {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified network slice."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `slice_name`: The name of the network slice."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4427,6 +4800,14 @@ pub mod slices {
                 slice_name: slice_name.into(),
             }
         }
+        #[doc = "Creates or updates a network slice."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `slice_name`: The name of the network slice."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update network slice operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4444,6 +4825,14 @@ pub mod slices {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates slice tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `slice_name`: The name of the network slice."]
+        #[doc = "* `parameters`: Parameters supplied to update network slice tags."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -4461,6 +4850,13 @@ pub mod slices {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the specified network slice."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
+        #[doc = "* `slice_name`: The name of the network slice."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4476,6 +4872,12 @@ pub mod slices {
                 slice_name: slice_name.into(),
             }
         }
+        #[doc = "Lists all slices in the mobile network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `mobile_network_name`: The name of the mobile network."]
         pub fn list_by_mobile_network(
             &self,
             subscription_id: impl Into<String>,

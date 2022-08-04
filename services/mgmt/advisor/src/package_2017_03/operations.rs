@@ -88,12 +88,21 @@ pub mod recommendations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Initiates the recommendation generation or computation process for a subscription. This operation is asynchronous. The generated recommendations are stored in a cache in the Advisor service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn generate(&self, subscription_id: impl Into<String>) -> generate::Builder {
             generate::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieves the status of the recommendation computation or generation process. Invoke this API after calling the generation recommendation. The URI of this API is returned in the Location field of the response header."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `operation_id`: The operation ID, which can be found from the Location field in the generate recommendation response header."]
         pub fn get_generate_status(
             &self,
             subscription_id: impl Into<String>,
@@ -105,6 +114,10 @@ pub mod recommendations {
                 operation_id: operation_id.into(),
             }
         }
+        #[doc = "Obtains cached recommendations for a subscription. The recommendations are generated or computed by invoking generateRecommendations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -114,6 +127,11 @@ pub mod recommendations {
                 skip_token: None,
             }
         }
+        #[doc = "Obtains details of a cached recommendation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified Azure Resource Manager identifier of the resource to which the recommendation applies."]
+        #[doc = "* `recommendation_id`: The recommendation ID."]
         pub fn get(&self, resource_uri: impl Into<String>, recommendation_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -371,6 +389,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the available Advisor REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -450,6 +469,12 @@ pub mod suppressions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Obtains the details of a suppression."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified Azure Resource Manager identifier of the resource to which the recommendation applies."]
+        #[doc = "* `recommendation_id`: The recommendation ID."]
+        #[doc = "* `name`: The name of the suppression."]
         pub fn get(&self, resource_uri: impl Into<String>, recommendation_id: impl Into<String>, name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -458,6 +483,13 @@ pub mod suppressions {
                 name: name.into(),
             }
         }
+        #[doc = "Enables the snoozed or dismissed attribute of a recommendation. The snoozed or dismissed attribute is referred to as a suppression. Use this API to create or update the snoozed or dismissed status of a recommendation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified Azure Resource Manager identifier of the resource to which the recommendation applies."]
+        #[doc = "* `recommendation_id`: The recommendation ID."]
+        #[doc = "* `name`: The name of the suppression."]
+        #[doc = "* `suppression_contract`: The snoozed or dismissed attribute; for example, the snooze duration."]
         pub fn create(
             &self,
             resource_uri: impl Into<String>,
@@ -473,6 +505,12 @@ pub mod suppressions {
                 suppression_contract: suppression_contract.into(),
             }
         }
+        #[doc = "Enables the activation of a snoozed or dismissed recommendation. The snoozed or dismissed attribute of a recommendation is referred to as a suppression."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified Azure Resource Manager identifier of the resource to which the recommendation applies."]
+        #[doc = "* `recommendation_id`: The recommendation ID."]
+        #[doc = "* `name`: The name of the suppression."]
         pub fn delete(
             &self,
             resource_uri: impl Into<String>,
@@ -486,6 +524,10 @@ pub mod suppressions {
                 name: name.into(),
             }
         }
+        #[doc = "Retrieves the list of snoozed or dismissed suppressions for a subscription. The snoozed or dismissed attribute of a recommendation is referred to as a suppression."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

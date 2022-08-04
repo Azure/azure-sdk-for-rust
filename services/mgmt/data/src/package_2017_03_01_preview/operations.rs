@@ -88,6 +88,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available SQL Server Registration API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -167,6 +168,12 @@ pub mod sql_server_registrations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a SQL Server registration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_server_registration_name`: Name of the SQL Server registration."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -180,6 +187,13 @@ pub mod sql_server_registrations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a SQL Server registration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_server_registration_name`: Name of the SQL Server registration."]
+        #[doc = "* `parameters`: The SQL Server registration to be created or updated."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -195,6 +209,13 @@ pub mod sql_server_registrations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates SQL Server Registration tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_server_registration_name`: Name of the SQL Server registration."]
+        #[doc = "* `parameters`: The SQL Server Registration."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -210,6 +231,12 @@ pub mod sql_server_registrations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a SQL Server registration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_server_registration_name`: Name of the SQL Server registration."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -223,6 +250,11 @@ pub mod sql_server_registrations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all SQL Server registrations in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -234,6 +266,10 @@ pub mod sql_server_registrations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all SQL Server registrations in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -618,6 +654,13 @@ pub mod sql_servers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a SQL Server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_server_registration_name`: Name of the SQL Server registration."]
+        #[doc = "* `sql_server_name`: Name of the SQL Server."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -634,6 +677,14 @@ pub mod sql_servers {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates a SQL Server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_server_registration_name`: Name of the SQL Server registration."]
+        #[doc = "* `sql_server_name`: Name of the SQL Server."]
+        #[doc = "* `parameters`: The SQL Server to be created or updated."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -651,6 +702,13 @@ pub mod sql_servers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a SQL Server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_server_registration_name`: Name of the SQL Server registration."]
+        #[doc = "* `sql_server_name`: Name of the SQL Server."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -666,6 +724,12 @@ pub mod sql_servers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all SQL Servers in a SQL Server Registration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_server_registration_name`: Name of the SQL Server registration."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,

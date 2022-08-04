@@ -91,6 +91,12 @@ pub mod move_collections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the move collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription ID."]
+        #[doc = "* `resource_group_name`: The Resource Group Name."]
+        #[doc = "* `move_collection_name`: The Move Collection Name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -104,6 +110,12 @@ pub mod move_collections {
                 move_collection_name: move_collection_name.into(),
             }
         }
+        #[doc = "Creates or updates a move collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription ID."]
+        #[doc = "* `resource_group_name`: The Resource Group Name."]
+        #[doc = "* `move_collection_name`: The Move Collection Name."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -118,6 +130,12 @@ pub mod move_collections {
                 body: None,
             }
         }
+        #[doc = "Updates a move collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription ID."]
+        #[doc = "* `resource_group_name`: The Resource Group Name."]
+        #[doc = "* `move_collection_name`: The Move Collection Name."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -132,6 +150,12 @@ pub mod move_collections {
                 body: None,
             }
         }
+        #[doc = "Deletes a move collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription ID."]
+        #[doc = "* `resource_group_name`: The Resource Group Name."]
+        #[doc = "* `move_collection_name`: The Move Collection Name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -145,6 +169,12 @@ pub mod move_collections {
                 move_collection_name: move_collection_name.into(),
             }
         }
+        #[doc = "Initiates prepare for the set of resources included in the request body. The prepare operation is on the moveResources that are in the moveState 'PreparePending' or 'PrepareFailed', on a successful completion the moveResource moveState do a transition to MovePending. To aid the user to prerequisite the operation the client can call operation with validateOnly property set to true."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription ID."]
+        #[doc = "* `resource_group_name`: The Resource Group Name."]
+        #[doc = "* `move_collection_name`: The Move Collection Name."]
         pub fn prepare(
             &self,
             subscription_id: impl Into<String>,
@@ -159,6 +189,12 @@ pub mod move_collections {
                 body: None,
             }
         }
+        #[doc = "Moves the set of resources included in the request body. The move operation is triggered after the moveResources are in the moveState 'MovePending' or 'MoveFailed', on a successful completion the moveResource moveState do a transition to CommitPending. To aid the user to prerequisite the operation the client can call operation with validateOnly property set to true."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription ID."]
+        #[doc = "* `resource_group_name`: The Resource Group Name."]
+        #[doc = "* `move_collection_name`: The Move Collection Name."]
         pub fn initiate_move(
             &self,
             subscription_id: impl Into<String>,
@@ -173,6 +209,12 @@ pub mod move_collections {
                 body: None,
             }
         }
+        #[doc = "Commits the set of resources included in the request body. The commit operation is triggered on the moveResources in the moveState 'CommitPending' or 'CommitFailed', on a successful completion the moveResource moveState do a transition to Committed. To aid the user to prerequisite the operation the client can call operation with validateOnly property set to true."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription ID."]
+        #[doc = "* `resource_group_name`: The Resource Group Name."]
+        #[doc = "* `move_collection_name`: The Move Collection Name."]
         pub fn commit(
             &self,
             subscription_id: impl Into<String>,
@@ -187,6 +229,12 @@ pub mod move_collections {
                 body: None,
             }
         }
+        #[doc = "Discards the set of resources included in the request body. The discard operation is triggered on the moveResources in the moveState 'CommitPending' or 'DiscardFailed', on a successful completion the moveResource moveState do a transition to MovePending. To aid the user to prerequisite the operation the client can call operation with validateOnly property set to true."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription ID."]
+        #[doc = "* `resource_group_name`: The Resource Group Name."]
+        #[doc = "* `move_collection_name`: The Move Collection Name."]
         pub fn discard(
             &self,
             subscription_id: impl Into<String>,
@@ -201,6 +249,12 @@ pub mod move_collections {
                 body: None,
             }
         }
+        #[doc = "Computes, resolves and validate the dependencies of the moveResources in the move collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription ID."]
+        #[doc = "* `resource_group_name`: The Resource Group Name."]
+        #[doc = "* `move_collection_name`: The Move Collection Name."]
         pub fn resolve_dependencies(
             &self,
             subscription_id: impl Into<String>,
@@ -214,6 +268,10 @@ pub mod move_collections {
                 move_collection_name: move_collection_name.into(),
             }
         }
+        #[doc = "Removes the set of move resources included in the request body from move collection. The orchestration is done by service. To aid the user to prerequisite the operation the client can call operation with validateOnly property set to true."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription ID."]
         pub fn bulk_remove(
             &self,
             subscription_id: impl Into<String>,
@@ -229,6 +287,10 @@ pub mod move_collections {
             }
         }
         #[doc = "Get all Move Collections."]
+        #[doc = "Get all the Move Collections in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription ID."]
         pub fn list_move_collections_by_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -239,6 +301,11 @@ pub mod move_collections {
             }
         }
         #[doc = "Get all Move Collections."]
+        #[doc = "Get all the Move Collections in the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription ID."]
+        #[doc = "* `resource_group_name`: The Resource Group Name."]
         pub fn list_move_collections_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -250,6 +317,13 @@ pub mod move_collections {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "List of the move resources for which an arm resource is required for."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription ID."]
+        #[doc = "* `resource_group_name`: The Resource Group Name."]
+        #[doc = "* `move_collection_name`: The Move Collection Name."]
+        #[doc = "* `source_id`: The sourceId for which the api is invoked."]
         pub fn list_required_for(
             &self,
             subscription_id: impl Into<String>,
@@ -1120,6 +1194,12 @@ pub mod move_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the Move Resources in the move collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription ID."]
+        #[doc = "* `resource_group_name`: The Resource Group Name."]
+        #[doc = "* `move_collection_name`: The Move Collection Name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1134,6 +1214,13 @@ pub mod move_resources {
                 filter: None,
             }
         }
+        #[doc = "Gets the Move Resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription ID."]
+        #[doc = "* `resource_group_name`: The Resource Group Name."]
+        #[doc = "* `move_collection_name`: The Move Collection Name."]
+        #[doc = "* `move_resource_name`: The Move Resource Name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1149,6 +1236,13 @@ pub mod move_resources {
                 move_resource_name: move_resource_name.into(),
             }
         }
+        #[doc = "Creates or updates a Move Resource in the move collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription ID."]
+        #[doc = "* `resource_group_name`: The Resource Group Name."]
+        #[doc = "* `move_collection_name`: The Move Collection Name."]
+        #[doc = "* `move_resource_name`: The Move Resource Name."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1165,6 +1259,13 @@ pub mod move_resources {
                 body: None,
             }
         }
+        #[doc = "Deletes a Move Resource from the move collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription ID."]
+        #[doc = "* `resource_group_name`: The Resource Group Name."]
+        #[doc = "* `move_collection_name`: The Move Collection Name."]
+        #[doc = "* `move_resource_name`: The Move Resource Name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1458,6 +1559,12 @@ pub mod unresolved_dependencies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of unresolved dependencies."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription ID."]
+        #[doc = "* `resource_group_name`: The Resource Group Name."]
+        #[doc = "* `move_collection_name`: The Move Collection Name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,

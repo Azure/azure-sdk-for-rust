@@ -193,6 +193,9 @@ pub mod monitors {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all monitors under the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -200,6 +203,10 @@ pub mod monitors {
             }
         }
         #[doc = "List all monitors under the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Elastic resource belongs."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -212,6 +219,11 @@ pub mod monitors {
             }
         }
         #[doc = "Get the properties of a specific monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Elastic resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -226,6 +238,11 @@ pub mod monitors {
             }
         }
         #[doc = "Create a monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Elastic resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -241,6 +258,11 @@ pub mod monitors {
             }
         }
         #[doc = "Update a monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Elastic resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -256,6 +278,11 @@ pub mod monitors {
             }
         }
         #[doc = "Delete a monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Elastic resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -668,6 +695,11 @@ pub mod monitored_resources {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the resources currently being monitored by the Elastic monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Elastic resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -767,6 +799,11 @@ pub mod deployment_info {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Fetch information regarding Elastic cloud deployment corresponding to the Elastic monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Elastic resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -840,6 +877,11 @@ pub mod external_user {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Create User inside elastic deployment which are used by customers to perform operations on the elastic deployment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Elastic resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -923,6 +965,11 @@ pub mod tag_rules {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the tag rules for a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Elastic resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -937,6 +984,12 @@ pub mod tag_rules {
             }
         }
         #[doc = "Get a tag rule set for a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Elastic resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `rule_set_name`: Tag Rule Set resource name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -953,6 +1006,12 @@ pub mod tag_rules {
             }
         }
         #[doc = "Create or update a tag rule set for a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Elastic resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `rule_set_name`: Tag Rule Set resource name"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -970,6 +1029,12 @@ pub mod tag_rules {
             }
         }
         #[doc = "Delete a tag rule set for a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Elastic resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `rule_set_name`: Tag Rule Set resource name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1246,6 +1311,11 @@ pub mod vm_host {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the vm resources currently being monitored by the Elastic monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Elastic resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1345,6 +1415,11 @@ pub mod vm_ingestion {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the vm ingestion details that will be monitored by the Elastic monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Elastic resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn details(
             &self,
             subscription_id: impl Into<String>,
@@ -1418,6 +1493,11 @@ pub mod vm_collection {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Update the vm details that will be monitored by the Elastic monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Elastic resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1497,6 +1577,11 @@ pub mod upgradable_versions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List of upgradable versions for a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Elastic resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn details(
             &self,
             subscription_id: impl Into<String>,
@@ -1570,6 +1655,11 @@ pub mod monitor {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Upgradable version for a monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Elastic resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn upgrade(
             &self,
             subscription_id: impl Into<String>,

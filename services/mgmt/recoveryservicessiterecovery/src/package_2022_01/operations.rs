@@ -164,6 +164,11 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Returns the list of available operations."]
+        #[doc = "Operation to return the list of available operations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -254,6 +259,12 @@ pub mod replication_alert_settings {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of configured email notification(alert) configurations."]
+        #[doc = "Gets the list of email notification(alert) configurations for the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -268,6 +279,13 @@ pub mod replication_alert_settings {
             }
         }
         #[doc = "Gets an email notification(alert) configuration."]
+        #[doc = "Gets the details of the specified email notification(alert) configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `alert_setting_name`: The name of the email notification configuration."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -284,6 +302,14 @@ pub mod replication_alert_settings {
             }
         }
         #[doc = "Configures email notifications for this vault."]
+        #[doc = "Create or update an email notification(alert) configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `alert_setting_name`: The name of the email notification(alert) configuration."]
+        #[doc = "* `request`: The input to configure the email notification(alert)."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -482,6 +508,12 @@ pub mod replication_appliances {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of appliances."]
+        #[doc = "Gets the list of Azure Site Recovery appliances for the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -589,6 +621,12 @@ pub mod replication_eligibility_results {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the validation errors in case the VM is unsuitable for protection."]
+        #[doc = "Validates whether a given VM can be protected or not in which case returns list of errors."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `virtual_machine_name`: Virtual Machine name."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -603,6 +641,12 @@ pub mod replication_eligibility_results {
             }
         }
         #[doc = "Gets the validation errors in case the VM is unsuitable for protection."]
+        #[doc = "Validates whether a given VM can be protected or not in which case returns list of errors."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `virtual_machine_name`: Virtual Machine name."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -715,6 +759,12 @@ pub mod replication_events {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of Azure Site Recovery events."]
+        #[doc = "Gets the list of Azure Site Recovery events for the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -730,6 +780,13 @@ pub mod replication_events {
             }
         }
         #[doc = "Get the details of an Azure Site recovery event."]
+        #[doc = "The operation to get the details of an Azure Site recovery event."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `event_name`: The name of the Azure Site Recovery event."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -892,6 +949,12 @@ pub mod replication_fabrics {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of ASR fabrics."]
+        #[doc = "Gets a list of the Azure Site Recovery fabrics in the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -906,6 +969,13 @@ pub mod replication_fabrics {
             }
         }
         #[doc = "Gets the details of an ASR fabric."]
+        #[doc = "Gets the details of an Azure Site Recovery fabric."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -923,6 +993,14 @@ pub mod replication_fabrics {
             }
         }
         #[doc = "Creates an Azure Site Recovery fabric."]
+        #[doc = "The operation to create an Azure Site Recovery fabric (for e.g. Hyper-V site)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Name of the ASR fabric."]
+        #[doc = "* `input`: Fabric creation input."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -941,6 +1019,13 @@ pub mod replication_fabrics {
             }
         }
         #[doc = "Purges the site."]
+        #[doc = "The operation to purge(force delete) an Azure Site Recovery fabric."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: ASR fabric to purge."]
         pub fn purge(
             &self,
             resource_name: impl Into<String>,
@@ -957,6 +1042,13 @@ pub mod replication_fabrics {
             }
         }
         #[doc = "Checks the consistency of the ASR fabric."]
+        #[doc = "The operation to perform a consistency check on the fabric."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
         pub fn check_consistency(
             &self,
             resource_name: impl Into<String>,
@@ -973,6 +1065,13 @@ pub mod replication_fabrics {
             }
         }
         #[doc = "Migrates the site to AAD."]
+        #[doc = "The operation to migrate an Azure Site Recovery fabric to AAD."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: ASR fabric to migrate."]
         pub fn migrate_to_aad(
             &self,
             resource_name: impl Into<String>,
@@ -989,6 +1088,14 @@ pub mod replication_fabrics {
             }
         }
         #[doc = "Perform failover of the process server."]
+        #[doc = "The operation to move replications from a process server to another process server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: The name of the fabric containing the process server."]
+        #[doc = "* `failover_process_server_request`: The input to the failover process server operation."]
         pub fn reassociate_gateway(
             &self,
             resource_name: impl Into<String>,
@@ -1007,6 +1114,13 @@ pub mod replication_fabrics {
             }
         }
         #[doc = "Deletes the site."]
+        #[doc = "The operation to delete or remove an Azure Site Recovery fabric."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: ASR fabric to delete."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -1023,6 +1137,14 @@ pub mod replication_fabrics {
             }
         }
         #[doc = "Renews certificate for the fabric."]
+        #[doc = "Renews the connection certificate for the ASR replication fabric."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: fabric name to renew certs for."]
+        #[doc = "* `renew_certificate`: Renew certificate input."]
         pub fn renew_certificate(
             &self,
             resource_name: impl Into<String>,
@@ -1569,6 +1691,13 @@ pub mod replication_logical_networks {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of logical networks under a fabric."]
+        #[doc = "Lists all the logical networks of the Azure Site Recovery fabric."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Server Id."]
         pub fn list_by_replication_fabrics(
             &self,
             resource_name: impl Into<String>,
@@ -1585,6 +1714,14 @@ pub mod replication_logical_networks {
             }
         }
         #[doc = "Gets a logical network with specified server id and logical network name."]
+        #[doc = "Gets the details of a logical network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Server Id."]
+        #[doc = "* `logical_network_name`: Logical network name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -1730,6 +1867,13 @@ pub mod replication_networks {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of networks under a fabric."]
+        #[doc = "Lists the networks available for a fabric."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
         pub fn list_by_replication_fabrics(
             &self,
             resource_name: impl Into<String>,
@@ -1746,6 +1890,14 @@ pub mod replication_networks {
             }
         }
         #[doc = "Gets a network with specified server id and network name."]
+        #[doc = "Gets the details of a network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Server Id."]
+        #[doc = "* `network_name`: Primary network name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -1764,6 +1916,12 @@ pub mod replication_networks {
             }
         }
         #[doc = "Gets the list of networks. View-only API."]
+        #[doc = "Lists the networks available in a vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -1983,6 +2141,14 @@ pub mod replication_network_mappings {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets all the network mappings under a network."]
+        #[doc = "Lists all ASR network mappings for the specified network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Primary fabric name."]
+        #[doc = "* `network_name`: Primary network name."]
         pub fn list_by_replication_networks(
             &self,
             resource_name: impl Into<String>,
@@ -2001,6 +2167,15 @@ pub mod replication_network_mappings {
             }
         }
         #[doc = "Gets network mapping by name."]
+        #[doc = "Gets the details of an ASR network mapping."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Primary fabric name."]
+        #[doc = "* `network_name`: Primary network name."]
+        #[doc = "* `network_mapping_name`: Network mapping name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -2021,6 +2196,16 @@ pub mod replication_network_mappings {
             }
         }
         #[doc = "Creates network mapping."]
+        #[doc = "The operation to create an ASR network mapping."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Primary fabric name."]
+        #[doc = "* `network_name`: Primary network name."]
+        #[doc = "* `network_mapping_name`: Network mapping name."]
+        #[doc = "* `input`: Create network mapping input."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -2043,6 +2228,16 @@ pub mod replication_network_mappings {
             }
         }
         #[doc = "Updates network mapping."]
+        #[doc = "The operation to update an ASR network mapping."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Primary fabric name."]
+        #[doc = "* `network_name`: Primary network name."]
+        #[doc = "* `network_mapping_name`: Network mapping name."]
+        #[doc = "* `input`: Update network mapping input."]
         pub fn update(
             &self,
             resource_name: impl Into<String>,
@@ -2065,6 +2260,15 @@ pub mod replication_network_mappings {
             }
         }
         #[doc = "Delete network mapping."]
+        #[doc = "The operation to delete a network mapping."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Primary fabric name."]
+        #[doc = "* `network_name`: Primary network name."]
+        #[doc = "* `network_mapping_name`: ARM Resource Name for network mapping."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -2085,6 +2289,12 @@ pub mod replication_network_mappings {
             }
         }
         #[doc = "Gets all the network mappings under a vault."]
+        #[doc = "Lists all ASR network mappings in the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -2465,6 +2675,13 @@ pub mod replication_protection_containers {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of protection container for a fabric."]
+        #[doc = "Lists the protection containers in the specified fabric."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
         pub fn list_by_replication_fabrics(
             &self,
             resource_name: impl Into<String>,
@@ -2481,6 +2698,14 @@ pub mod replication_protection_containers {
             }
         }
         #[doc = "Gets the protection container details."]
+        #[doc = "Gets the details of a protection container."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -2499,6 +2724,15 @@ pub mod replication_protection_containers {
             }
         }
         #[doc = "Create a protection container."]
+        #[doc = "Operation to create a protection container."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Unique fabric ARM name."]
+        #[doc = "* `protection_container_name`: Unique protection container ARM name."]
+        #[doc = "* `creation_input`: Creation input."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -2519,6 +2753,15 @@ pub mod replication_protection_containers {
             }
         }
         #[doc = "Adds a protectable item to the replication protection container."]
+        #[doc = "The operation to a add a protectable item to a protection container(Add physical server)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: The name of the fabric."]
+        #[doc = "* `protection_container_name`: The name of the protection container."]
+        #[doc = "* `discover_protectable_item_request`: The request object to add a protectable item."]
         pub fn discover_protectable_item(
             &self,
             resource_name: impl Into<String>,
@@ -2539,6 +2782,14 @@ pub mod replication_protection_containers {
             }
         }
         #[doc = "Removes a protection container."]
+        #[doc = "Operation to remove a protection container."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Unique fabric ARM name."]
+        #[doc = "* `protection_container_name`: Unique protection container ARM name."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -2557,6 +2808,15 @@ pub mod replication_protection_containers {
             }
         }
         #[doc = "Switches protection from one container to another or one replication provider to another."]
+        #[doc = "Operation to switch protection from one container to another or one replication provider to another."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Unique fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `switch_input`: Switch protection input."]
         pub fn switch_protection(
             &self,
             resource_name: impl Into<String>,
@@ -2577,6 +2837,12 @@ pub mod replication_protection_containers {
             }
         }
         #[doc = "Gets the list of all protection containers in a vault."]
+        #[doc = "Lists the protection containers in a vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -3009,6 +3275,14 @@ pub mod replication_migration_items {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of migration items in the protection container."]
+        #[doc = "Gets the list of ASR migration items in the protection container."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
         pub fn list_by_replication_protection_containers(
             &self,
             resource_name: impl Into<String>,
@@ -3030,6 +3304,14 @@ pub mod replication_migration_items {
             }
         }
         #[doc = "Gets the details of a migration item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric unique name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `migration_item_name`: Migration item name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -3050,6 +3332,16 @@ pub mod replication_migration_items {
             }
         }
         #[doc = "Enables migration."]
+        #[doc = "The operation to create an ASR migration item (enable migration)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `migration_item_name`: Migration item name."]
+        #[doc = "* `input`: Enable migration input."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -3072,6 +3364,16 @@ pub mod replication_migration_items {
             }
         }
         #[doc = "Updates migration item."]
+        #[doc = "The operation to update the recovery settings of an ASR migration item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `migration_item_name`: Migration item name."]
+        #[doc = "* `input`: Update migration item input."]
         pub fn update(
             &self,
             resource_name: impl Into<String>,
@@ -3094,6 +3396,15 @@ pub mod replication_migration_items {
             }
         }
         #[doc = "Delete the migration item."]
+        #[doc = "The operation to delete an ASR migration item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `migration_item_name`: Migration item name."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -3115,6 +3426,16 @@ pub mod replication_migration_items {
             }
         }
         #[doc = "Migrate item."]
+        #[doc = "The operation to initiate migration of the item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `migration_item_name`: Migration item name."]
+        #[doc = "* `migrate_input`: Migrate input."]
         pub fn migrate(
             &self,
             resource_name: impl Into<String>,
@@ -3137,6 +3458,16 @@ pub mod replication_migration_items {
             }
         }
         #[doc = "Resynchronizes replication."]
+        #[doc = "The operation to resynchronize replication of an ASR migration item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `migration_item_name`: Migration item name."]
+        #[doc = "* `input`: Resync input."]
         pub fn resync(
             &self,
             resource_name: impl Into<String>,
@@ -3159,6 +3490,16 @@ pub mod replication_migration_items {
             }
         }
         #[doc = "Test migrate item."]
+        #[doc = "The operation to initiate test migration of the item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `migration_item_name`: Migration item name."]
+        #[doc = "* `test_migrate_input`: Test migrate input."]
         pub fn test_migrate(
             &self,
             resource_name: impl Into<String>,
@@ -3181,6 +3522,16 @@ pub mod replication_migration_items {
             }
         }
         #[doc = "Test migrate cleanup."]
+        #[doc = "The operation to initiate test migrate cleanup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `migration_item_name`: Migration item name."]
+        #[doc = "* `test_migrate_cleanup_input`: Test migrate cleanup input."]
         pub fn test_migrate_cleanup(
             &self,
             resource_name: impl Into<String>,
@@ -3203,6 +3554,11 @@ pub mod replication_migration_items {
             }
         }
         #[doc = "Gets the list of migration items in the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -3870,6 +4226,14 @@ pub mod migration_recovery_points {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the recovery points for a migration item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric unique name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `migration_item_name`: Migration item name."]
         pub fn list_by_replication_migration_items(
             &self,
             resource_name: impl Into<String>,
@@ -3890,6 +4254,15 @@ pub mod migration_recovery_points {
             }
         }
         #[doc = "Gets a recovery point for a migration item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric unique name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `migration_item_name`: Migration item name."]
+        #[doc = "* `migration_recovery_point_name`: The migration recovery point name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -4043,6 +4416,14 @@ pub mod replication_protectable_items {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of protectable items."]
+        #[doc = "Lists the protectable items in a protection container."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
         pub fn list_by_replication_protection_containers(
             &self,
             resource_name: impl Into<String>,
@@ -4064,6 +4445,15 @@ pub mod replication_protectable_items {
             }
         }
         #[doc = "Gets the details of a protectable item."]
+        #[doc = "The operation to get the details of a protectable item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `protectable_item_name`: Protectable item name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -4237,6 +4627,14 @@ pub mod replication_protected_items {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of Replication protected items."]
+        #[doc = "Gets the list of ASR replication protected items in the protection container."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
         pub fn list_by_replication_protection_containers(
             &self,
             resource_name: impl Into<String>,
@@ -4255,6 +4653,15 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Gets the details of a Replication protected item."]
+        #[doc = "Gets the details of an ASR replication protected item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric unique name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `replicated_protected_item_name`: Replication protected item name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -4275,6 +4682,16 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Enables protection."]
+        #[doc = "The operation to create an ASR replication protected item (Enable replication)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Name of the fabric."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `replicated_protected_item_name`: A name for the replication protected item."]
+        #[doc = "* `input`: Enable Protection Input."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -4297,6 +4714,16 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Updates the replication protected item settings."]
+        #[doc = "The operation to update the recovery settings of an ASR replication protected item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `replicated_protected_item_name`: Replication protected item name."]
+        #[doc = "* `update_protection_input`: Update protection input."]
         pub fn update(
             &self,
             resource_name: impl Into<String>,
@@ -4319,6 +4746,15 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Purges protection."]
+        #[doc = "The operation to delete or purge a replication protected item. This operation will force delete the replication protected item. Use the remove operation on replication protected item to perform a clean disable replication for the item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `replicated_protected_item_name`: Replication protected item name."]
         pub fn purge(
             &self,
             resource_name: impl Into<String>,
@@ -4339,6 +4775,16 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Add disk(s) for protection."]
+        #[doc = "Operation to add disks(s) to the replication protected item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Unique fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `replicated_protected_item_name`: Replication protected item name."]
+        #[doc = "* `add_disks_input`: Add disks input."]
         pub fn add_disks(
             &self,
             resource_name: impl Into<String>,
@@ -4361,6 +4807,16 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Change or apply recovery point."]
+        #[doc = "The operation to change the recovery point of a failed over replication protected item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: The ARM fabric name."]
+        #[doc = "* `protection_container_name`: The protection container name."]
+        #[doc = "* `replicated_protected_item_name`: The replicated protected item name."]
+        #[doc = "* `apply_recovery_point_input`: The ApplyRecoveryPointInput."]
         pub fn apply_recovery_point(
             &self,
             resource_name: impl Into<String>,
@@ -4383,6 +4839,15 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Execute cancel failover."]
+        #[doc = "Operation to cancel the failover of the replication protected item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Unique fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `replicated_protected_item_name`: Replication protected item name."]
         pub fn failover_cancel(
             &self,
             resource_name: impl Into<String>,
@@ -4403,6 +4868,15 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Execute commit failover."]
+        #[doc = "Operation to commit the failover of the replication protected item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Unique fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `replicated_protected_item_name`: Replication protected item name."]
         pub fn failover_commit(
             &self,
             resource_name: impl Into<String>,
@@ -4423,6 +4897,16 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Execute planned failover."]
+        #[doc = "Operation to initiate a planned failover of the replication protected item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Unique fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `replicated_protected_item_name`: Replication protected item name."]
+        #[doc = "* `failover_input`: Planned failover input."]
         pub fn planned_failover(
             &self,
             resource_name: impl Into<String>,
@@ -4445,6 +4929,16 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Disables protection."]
+        #[doc = "The operation to disable replication on a replication protected item. This will also remove the item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `replicated_protected_item_name`: Replication protected item name."]
+        #[doc = "* `disable_protection_input`: Disable protection input."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -4467,6 +4961,16 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Removes disk(s)."]
+        #[doc = "Operation to remove disk(s) from the replication protected item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Unique fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `replicated_protected_item_name`: Replication protected item name."]
+        #[doc = "* `remove_disks_input`: Remove disks input."]
         pub fn remove_disks(
             &self,
             resource_name: impl Into<String>,
@@ -4489,6 +4993,15 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Resynchronize or repair replication."]
+        #[doc = "The operation to start resynchronize/repair replication for a replication protected item requiring resynchronization."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: The name of the fabric."]
+        #[doc = "* `protection_container_name`: The name of the container."]
+        #[doc = "* `replicated_protected_item_name`: The name of the replication protected item."]
         pub fn repair_replication(
             &self,
             resource_name: impl Into<String>,
@@ -4509,6 +5022,16 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Execute Reverse Replication\\Reprotect."]
+        #[doc = "Operation to reprotect or reverse replicate a failed over replication protected item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Unique fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `replicated_protected_item_name`: Replication protected item name."]
+        #[doc = "* `reprotect_input`: Reverse replication input."]
         pub fn reprotect(
             &self,
             resource_name: impl Into<String>,
@@ -4531,6 +5054,16 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Resolve health errors."]
+        #[doc = "Operation to resolve health issues of the replication protected item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Unique fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `replicated_protected_item_name`: Replication protected item name."]
+        #[doc = "* `resolve_health_input`: Health issue input object."]
         pub fn resolve_health_errors(
             &self,
             resource_name: impl Into<String>,
@@ -4553,6 +5086,16 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Execute switch provider."]
+        #[doc = "Operation to initiate a switch provider of the replication protected item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Unique fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `replicated_protected_item_name`: Replication protected item name."]
+        #[doc = "* `switch_provider_input`: Switch provider input."]
         pub fn switch_provider(
             &self,
             resource_name: impl Into<String>,
@@ -4575,6 +5118,16 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Execute test failover."]
+        #[doc = "Operation to perform a test failover of the replication protected item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Unique fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `replicated_protected_item_name`: Replication protected item name."]
+        #[doc = "* `testfailover_input`: Test failover input."]
         pub fn test_failover(
             &self,
             resource_name: impl Into<String>,
@@ -4597,6 +5150,16 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Execute test failover cleanup."]
+        #[doc = "Operation to clean up the test failover of a replication protected item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Unique fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `replicated_protected_item_name`: Replication protected item name."]
+        #[doc = "* `cleanup_input`: Test failover cleanup input."]
         pub fn test_failover_cleanup(
             &self,
             resource_name: impl Into<String>,
@@ -4619,6 +5182,16 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Execute unplanned failover."]
+        #[doc = "Operation to initiate a failover of the replication protected item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Unique fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `replicated_protected_item_name`: Replication protected item name."]
+        #[doc = "* `failover_input`: Failover input."]
         pub fn unplanned_failover(
             &self,
             resource_name: impl Into<String>,
@@ -4641,6 +5214,16 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Updates appliance for replication protected Item."]
+        #[doc = "The operation to update appliance of an ASR replication protected item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `replicated_protected_item_name`: Replication protected item name."]
+        #[doc = "* `appliance_update_input`: Appliance update protection input."]
         pub fn update_appliance(
             &self,
             resource_name: impl Into<String>,
@@ -4663,6 +5246,16 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Update the mobility service on a protected item."]
+        #[doc = "The operation to update(push update) the installed mobility service software on a replication protected item to the latest available version."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: The name of the fabric containing the protected item."]
+        #[doc = "* `protection_container_name`: The name of the container containing the protected item."]
+        #[doc = "* `replication_protected_item_name`: The name of the protected item on which the agent is to be updated."]
+        #[doc = "* `update_mobility_service_request`: Request to update the mobility service on the protected item."]
         pub fn update_mobility_service(
             &self,
             resource_name: impl Into<String>,
@@ -4685,6 +5278,12 @@ pub mod replication_protected_items {
             }
         }
         #[doc = "Gets the list of replication protected items."]
+        #[doc = "Gets the list of ASR replication protected items in the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -5988,6 +6587,15 @@ pub mod recovery_points {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of recovery points for a replication protected item."]
+        #[doc = "Lists the available recovery points for a replication protected item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: The fabric name."]
+        #[doc = "* `protection_container_name`: The protection container name."]
+        #[doc = "* `replicated_protected_item_name`: The replication protected item name."]
         pub fn list_by_replication_protected_items(
             &self,
             resource_name: impl Into<String>,
@@ -6008,6 +6616,16 @@ pub mod recovery_points {
             }
         }
         #[doc = "Gets a recovery point."]
+        #[doc = "Get the details of specified recovery point."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: The fabric name."]
+        #[doc = "* `protection_container_name`: The protection container name."]
+        #[doc = "* `replicated_protected_item_name`: The replication protected item name."]
+        #[doc = "* `recovery_point_name`: The recovery point name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -6161,6 +6779,15 @@ pub mod target_compute_sizes {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of target compute sizes for the replication protected item."]
+        #[doc = "Lists the available target compute sizes for a replication protected item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: protection container name."]
+        #[doc = "* `replicated_protected_item_name`: Replication protected item name."]
         pub fn list_by_replication_protected_items(
             &self,
             resource_name: impl Into<String>,
@@ -6262,6 +6889,14 @@ pub mod replication_protection_container_mappings {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of protection container mappings for a protection container."]
+        #[doc = "Lists the protection container mappings for a protection container."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
         pub fn list_by_replication_protection_containers(
             &self,
             resource_name: impl Into<String>,
@@ -6280,6 +6915,15 @@ pub mod replication_protection_container_mappings {
             }
         }
         #[doc = "Gets a protection container mapping."]
+        #[doc = "Gets the details of a protection container mapping."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `mapping_name`: Protection Container mapping name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -6300,6 +6944,16 @@ pub mod replication_protection_container_mappings {
             }
         }
         #[doc = "Create protection container mapping."]
+        #[doc = "The operation to create a protection container mapping."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `mapping_name`: Protection container mapping name."]
+        #[doc = "* `creation_input`: Mapping creation input."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -6322,6 +6976,16 @@ pub mod replication_protection_container_mappings {
             }
         }
         #[doc = "Update protection container mapping."]
+        #[doc = "The operation to update protection container mapping."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `mapping_name`: Protection container mapping name."]
+        #[doc = "* `update_input`: Mapping update input."]
         pub fn update(
             &self,
             resource_name: impl Into<String>,
@@ -6344,6 +7008,15 @@ pub mod replication_protection_container_mappings {
             }
         }
         #[doc = "Purge protection container mapping."]
+        #[doc = "The operation to purge(force delete) a protection container mapping."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `mapping_name`: Protection container mapping name."]
         pub fn purge(
             &self,
             resource_name: impl Into<String>,
@@ -6364,6 +7037,16 @@ pub mod replication_protection_container_mappings {
             }
         }
         #[doc = "Remove protection container mapping."]
+        #[doc = "The operation to delete or remove a protection container mapping."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `protection_container_name`: Protection container name."]
+        #[doc = "* `mapping_name`: Protection container mapping name."]
+        #[doc = "* `removal_input`: Removal input."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -6386,6 +7069,12 @@ pub mod replication_protection_container_mappings {
             }
         }
         #[doc = "Gets the list of all protection container mappings in a vault."]
+        #[doc = "Lists the protection container mappings in the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -6819,6 +7508,13 @@ pub mod replication_recovery_services_providers {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of registered recovery services providers for the fabric."]
+        #[doc = "Lists the registered recovery services providers for the specified fabric."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
         pub fn list_by_replication_fabrics(
             &self,
             resource_name: impl Into<String>,
@@ -6835,6 +7531,14 @@ pub mod replication_recovery_services_providers {
             }
         }
         #[doc = "Gets the details of a recovery services provider."]
+        #[doc = "Gets the details of registered recovery services provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `provider_name`: Recovery services provider name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -6853,6 +7557,15 @@ pub mod replication_recovery_services_providers {
             }
         }
         #[doc = "Adds a recovery services provider."]
+        #[doc = "The operation to add a recovery services provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `provider_name`: Recovery services provider name."]
+        #[doc = "* `add_provider_input`: Add provider input."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -6873,6 +7586,14 @@ pub mod replication_recovery_services_providers {
             }
         }
         #[doc = "Purges recovery service provider from fabric."]
+        #[doc = "The operation to purge(force delete) a recovery services provider from the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `provider_name`: Recovery services provider name."]
         pub fn purge(
             &self,
             resource_name: impl Into<String>,
@@ -6891,6 +7612,14 @@ pub mod replication_recovery_services_providers {
             }
         }
         #[doc = "Refresh details from the recovery services provider."]
+        #[doc = "The operation to refresh the information from the recovery services provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `provider_name`: Recovery services provider name."]
         pub fn refresh_provider(
             &self,
             resource_name: impl Into<String>,
@@ -6909,6 +7638,14 @@ pub mod replication_recovery_services_providers {
             }
         }
         #[doc = "Deletes provider from fabric. Note: Deleting provider for any fabric other than SingleHost is unsupported. To maintain backward compatibility for released clients the object \"deleteRspInput\" is used (if the object is empty we assume that it is old client and continue the old behavior)."]
+        #[doc = "The operation to removes/delete(unregister) a recovery services provider from the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `provider_name`: Recovery services provider name."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -6927,6 +7664,12 @@ pub mod replication_recovery_services_providers {
             }
         }
         #[doc = "Gets the list of registered recovery services providers in the vault. This is a view only api."]
+        #[doc = "Lists the registered recovery services providers in the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -7352,6 +8095,13 @@ pub mod replication_storage_classifications {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of storage classification objects under a fabric."]
+        #[doc = "Lists the storage classifications available in the specified fabric."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Site name of interest."]
         pub fn list_by_replication_fabrics(
             &self,
             resource_name: impl Into<String>,
@@ -7368,6 +8118,14 @@ pub mod replication_storage_classifications {
             }
         }
         #[doc = "Gets the details of a storage classification."]
+        #[doc = "Gets the details of the specified storage classification."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `storage_classification_name`: Storage classification name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -7386,6 +8144,12 @@ pub mod replication_storage_classifications {
             }
         }
         #[doc = "Gets the list of storage classification objects under a vault."]
+        #[doc = "Lists the storage classifications in the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -7599,6 +8363,14 @@ pub mod replication_storage_classification_mappings {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of storage classification mappings objects under a storage."]
+        #[doc = "Lists the storage classification mappings for the fabric."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `storage_classification_name`: Storage classification name."]
         pub fn list_by_replication_storage_classifications(
             &self,
             resource_name: impl Into<String>,
@@ -7617,6 +8389,15 @@ pub mod replication_storage_classification_mappings {
             }
         }
         #[doc = "Gets the details of a storage classification mapping."]
+        #[doc = "Gets the details of the specified storage classification mapping."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `storage_classification_name`: Storage classification name."]
+        #[doc = "* `storage_classification_mapping_name`: Storage classification mapping name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -7637,6 +8418,16 @@ pub mod replication_storage_classification_mappings {
             }
         }
         #[doc = "Create storage classification mapping."]
+        #[doc = "The operation to create a storage classification mapping."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `storage_classification_name`: Storage classification name."]
+        #[doc = "* `storage_classification_mapping_name`: Storage classification mapping name."]
+        #[doc = "* `pairing_input`: Pairing input."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -7659,6 +8450,15 @@ pub mod replication_storage_classification_mappings {
             }
         }
         #[doc = "Delete a storage classification mapping."]
+        #[doc = "The operation to delete a storage classification mapping."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `storage_classification_name`: Storage classification name."]
+        #[doc = "* `storage_classification_mapping_name`: Storage classification mapping name."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -7679,6 +8479,12 @@ pub mod replication_storage_classification_mappings {
             }
         }
         #[doc = "Gets the list of storage classification mappings objects under a vault."]
+        #[doc = "Lists the storage classification mappings in the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -8002,6 +8808,13 @@ pub mod replicationv_centers {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of vCenter registered under a fabric."]
+        #[doc = "Lists the vCenter servers registered in a fabric."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
         pub fn list_by_replication_fabrics(
             &self,
             resource_name: impl Into<String>,
@@ -8018,6 +8831,14 @@ pub mod replicationv_centers {
             }
         }
         #[doc = "Gets the details of a vCenter."]
+        #[doc = "Gets the details of a registered vCenter server(Add vCenter server)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `vcenter_name`: vcenter name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -8036,6 +8857,15 @@ pub mod replicationv_centers {
             }
         }
         #[doc = "Add vCenter."]
+        #[doc = "The operation to create a vCenter object.."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `vcenter_name`: vcenter name."]
+        #[doc = "* `add_v_center_request`: The input to the add vCenter operation."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -8056,6 +8886,15 @@ pub mod replicationv_centers {
             }
         }
         #[doc = "Update vCenter operation."]
+        #[doc = "The operation to update a registered vCenter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `vcenter_name`: vcenter name."]
+        #[doc = "* `update_v_center_request`: The input to the update vCenter operation."]
         pub fn update(
             &self,
             resource_name: impl Into<String>,
@@ -8076,6 +8915,14 @@ pub mod replicationv_centers {
             }
         }
         #[doc = "Remove vcenter operation."]
+        #[doc = "The operation to remove(unregister) a registered vCenter server from the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name."]
+        #[doc = "* `vcenter_name`: vcenter name."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -8094,6 +8941,12 @@ pub mod replicationv_centers {
             }
         }
         #[doc = "Gets the list of vCenter registered under the vault."]
+        #[doc = "Lists the vCenter servers registered in the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -8475,6 +9328,12 @@ pub mod replication_jobs {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of jobs."]
+        #[doc = "Gets the list of Azure Site Recovery Jobs for the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -8490,6 +9349,13 @@ pub mod replication_jobs {
             }
         }
         #[doc = "Gets the job details."]
+        #[doc = "Get the details of an Azure Site Recovery job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `job_name`: Job identifier."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -8506,6 +9372,13 @@ pub mod replication_jobs {
             }
         }
         #[doc = "Cancels the specified job."]
+        #[doc = "The operation to cancel an Azure Site Recovery job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `job_name`: Job identifier."]
         pub fn cancel(
             &self,
             resource_name: impl Into<String>,
@@ -8522,6 +9395,13 @@ pub mod replication_jobs {
             }
         }
         #[doc = "Restarts the specified job."]
+        #[doc = "The operation to restart an Azure Site Recovery job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `job_name`: Job identifier."]
         pub fn restart(
             &self,
             resource_name: impl Into<String>,
@@ -8538,6 +9418,14 @@ pub mod replication_jobs {
             }
         }
         #[doc = "Resumes the specified job."]
+        #[doc = "The operation to resume an Azure Site Recovery job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `job_name`: Job identifier."]
+        #[doc = "* `resume_job_params`: Resume rob comments."]
         pub fn resume(
             &self,
             resource_name: impl Into<String>,
@@ -8556,6 +9444,13 @@ pub mod replication_jobs {
             }
         }
         #[doc = "Exports the details of the Azure Site Recovery jobs of the vault."]
+        #[doc = "The operation to export the details of the Azure Site Recovery jobs of the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `job_query_parameter`: job query filter."]
         pub fn export(
             &self,
             resource_name: impl Into<String>,
@@ -8941,6 +9836,12 @@ pub mod replication_policies {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of replication policies."]
+        #[doc = "Lists the replication policies for a vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -8955,6 +9856,13 @@ pub mod replication_policies {
             }
         }
         #[doc = "Gets the requested policy."]
+        #[doc = "Gets the details of a replication policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `policy_name`: Replication policy name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -8971,6 +9879,14 @@ pub mod replication_policies {
             }
         }
         #[doc = "Creates the policy."]
+        #[doc = "The operation to create a replication policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `policy_name`: Replication policy name."]
+        #[doc = "* `input`: Create policy input."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -8989,6 +9905,14 @@ pub mod replication_policies {
             }
         }
         #[doc = "Updates the policy."]
+        #[doc = "The operation to update a replication policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `policy_name`: Policy Id."]
+        #[doc = "* `input`: Update Policy Input."]
         pub fn update(
             &self,
             resource_name: impl Into<String>,
@@ -9007,6 +9931,13 @@ pub mod replication_policies {
             }
         }
         #[doc = "Delete the policy."]
+        #[doc = "The operation to delete a replication policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `policy_name`: Replication policy name."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -9341,6 +10272,12 @@ pub mod replication_protection_intents {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of replication protection intent objects."]
+        #[doc = "Gets the list of ASR replication protection intent objects in the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -9357,6 +10294,13 @@ pub mod replication_protection_intents {
             }
         }
         #[doc = "Gets the details of a Replication protection intent item."]
+        #[doc = "Gets the details of an ASR replication protection intent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `intent_object_name`: Replication protection intent name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -9373,6 +10317,14 @@ pub mod replication_protection_intents {
             }
         }
         #[doc = "Create protection intent Resource."]
+        #[doc = "The operation to create an ASR replication protection intent item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `intent_object_name`: A name for the replication protection item."]
+        #[doc = "* `input`: Create Protection Intent Input."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -9581,6 +10533,12 @@ pub mod replication_recovery_plans {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of recovery plans."]
+        #[doc = "Lists the recovery plans in the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -9595,6 +10553,13 @@ pub mod replication_recovery_plans {
             }
         }
         #[doc = "Gets the requested recovery plan."]
+        #[doc = "Gets the details of the recovery plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `recovery_plan_name`: Name of the recovery plan."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -9611,6 +10576,14 @@ pub mod replication_recovery_plans {
             }
         }
         #[doc = "Creates a recovery plan with the given details."]
+        #[doc = "The operation to create a recovery plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `recovery_plan_name`: Recovery plan name."]
+        #[doc = "* `input`: Recovery Plan creation input."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -9629,6 +10602,14 @@ pub mod replication_recovery_plans {
             }
         }
         #[doc = "Updates the given recovery plan."]
+        #[doc = "The operation to update a recovery plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `recovery_plan_name`: Recovery plan name."]
+        #[doc = "* `input`: Update recovery plan input."]
         pub fn update(
             &self,
             resource_name: impl Into<String>,
@@ -9647,6 +10628,13 @@ pub mod replication_recovery_plans {
             }
         }
         #[doc = "Deletes the specified recovery plan."]
+        #[doc = "Delete a recovery plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `recovery_plan_name`: Recovery plan name."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -9663,6 +10651,13 @@ pub mod replication_recovery_plans {
             }
         }
         #[doc = "Execute cancel failover of the recovery plan."]
+        #[doc = "The operation to cancel the failover of a recovery plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `recovery_plan_name`: Recovery plan name."]
         pub fn failover_cancel(
             &self,
             resource_name: impl Into<String>,
@@ -9679,6 +10674,13 @@ pub mod replication_recovery_plans {
             }
         }
         #[doc = "Execute commit failover of the recovery plan."]
+        #[doc = "The operation to commit the failover of a recovery plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `recovery_plan_name`: Recovery plan name."]
         pub fn failover_commit(
             &self,
             resource_name: impl Into<String>,
@@ -9695,6 +10697,14 @@ pub mod replication_recovery_plans {
             }
         }
         #[doc = "Execute planned failover of the recovery plan."]
+        #[doc = "The operation to start the planned failover of a recovery plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `recovery_plan_name`: Recovery plan name."]
+        #[doc = "* `input`: Failover input."]
         pub fn planned_failover(
             &self,
             resource_name: impl Into<String>,
@@ -9713,6 +10723,13 @@ pub mod replication_recovery_plans {
             }
         }
         #[doc = "Execute reprotect of the recovery plan."]
+        #[doc = "The operation to reprotect(reverse replicate) a recovery plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `recovery_plan_name`: Recovery plan name."]
         pub fn reprotect(
             &self,
             resource_name: impl Into<String>,
@@ -9729,6 +10746,14 @@ pub mod replication_recovery_plans {
             }
         }
         #[doc = "Execute test failover of the recovery plan."]
+        #[doc = "The operation to start the test failover of a recovery plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `recovery_plan_name`: Recovery plan name."]
+        #[doc = "* `input`: Recovery plan test failover input."]
         pub fn test_failover(
             &self,
             resource_name: impl Into<String>,
@@ -9747,6 +10772,14 @@ pub mod replication_recovery_plans {
             }
         }
         #[doc = "Execute test failover cleanup of the recovery plan."]
+        #[doc = "The operation to cleanup test failover of a recovery plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `recovery_plan_name`: Recovery plan name."]
+        #[doc = "* `input`: Recovery plan test failover cleanup input."]
         pub fn test_failover_cleanup(
             &self,
             resource_name: impl Into<String>,
@@ -9765,6 +10798,14 @@ pub mod replication_recovery_plans {
             }
         }
         #[doc = "Execute unplanned failover of the recovery plan."]
+        #[doc = "The operation to start the unplanned failover of a recovery plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `recovery_plan_name`: Recovery plan name."]
+        #[doc = "* `input`: Recovery plan unplanned failover input."]
         pub fn unplanned_failover(
             &self,
             resource_name: impl Into<String>,
@@ -10455,6 +11496,11 @@ pub mod supported_operating_systems {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the data of supported operating systems by SRS."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -10530,6 +11576,12 @@ pub mod replication_vault_health {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the health summary for the vault."]
+        #[doc = "Gets the health details of the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -10544,6 +11596,11 @@ pub mod replication_vault_health {
             }
         }
         #[doc = "Refreshes health summary of the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn refresh(
             &self,
             resource_name: impl Into<String>,
@@ -10669,6 +11726,12 @@ pub mod replication_vault_setting {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of vault setting."]
+        #[doc = "Gets the list of vault setting. This includes the Migration Hub connection settings."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -10683,6 +11746,13 @@ pub mod replication_vault_setting {
             }
         }
         #[doc = "Gets the vault setting."]
+        #[doc = "Gets the vault setting. This includes the Migration Hub connection settings."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `vault_setting_name`: Vault setting name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -10699,6 +11769,14 @@ pub mod replication_vault_setting {
             }
         }
         #[doc = "Updates vault setting. A vault setting object is a singleton per vault and it is always present by default."]
+        #[doc = "The operation to configure vault setting."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `vault_setting_name`: Vault setting name."]
+        #[doc = "* `input`: Vault setting creation input."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,

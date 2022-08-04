@@ -153,6 +153,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the operations available from this provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -232,12 +233,21 @@ pub mod access_review_schedule_definitions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get access review schedule definitions"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get single access review definition"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_by_id(&self, schedule_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
@@ -245,6 +255,12 @@ pub mod access_review_schedule_definitions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or Update access review schedule definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `properties`: Access review schedule definition properties."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update_by_id(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -258,6 +274,11 @@ pub mod access_review_schedule_definitions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete access review schedule definition"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete_by_id(&self, schedule_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> delete_by_id::Builder {
             delete_by_id::Builder {
                 client: self.0.clone(),
@@ -265,6 +286,11 @@ pub mod access_review_schedule_definitions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Stop access review definition"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn stop(&self, schedule_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> stop::Builder {
             stop::Builder {
                 client: self.0.clone(),
@@ -552,6 +578,11 @@ pub mod access_review_instances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get access review instances"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, schedule_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -559,6 +590,12 @@ pub mod access_review_instances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get access review instances"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_by_id(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -706,6 +743,12 @@ pub mod access_review_instance {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "An action to stop an access review instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn stop(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -719,6 +762,12 @@ pub mod access_review_instance {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "An action to reset all decisions for an access review instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn reset_decisions(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -732,6 +781,12 @@ pub mod access_review_instance {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "An action to apply all decisions for an access review instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn apply_decisions(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -745,6 +800,12 @@ pub mod access_review_instance {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "An action to send reminders for an access review instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn send_reminders(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -758,6 +819,11 @@ pub mod access_review_instance {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "An action to accept recommendations for decision in an access review instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
         pub fn accept_recommendations(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -1000,6 +1066,12 @@ pub mod access_review_instance_decisions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get access review instance decisions"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -1091,12 +1163,21 @@ pub mod access_review_default_settings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get access review default settings for the subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(&self, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get access review default settings for the subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `properties`: Access review schedule settings."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn put(&self, properties: impl Into<models::AccessReviewScheduleSettings>, subscription_id: impl Into<String>) -> put::Builder {
             put::Builder {
                 client: self.0.clone(),
@@ -1208,6 +1289,7 @@ pub mod access_review_schedule_definitions_assigned_for_my_approval {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get access review instances assigned for my approval."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1289,12 +1371,21 @@ pub mod access_review_instances_assigned_for_my_approval {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get access review instances assigned for my approval."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
         pub fn list(&self, schedule_definition_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
             }
         }
+        #[doc = "Get single access review instance assigned for my approval."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
         pub fn get_by_id(&self, schedule_definition_id: impl Into<String>, id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
@@ -1432,6 +1523,11 @@ pub mod access_review_instance_my_decisions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get my access review instance decisions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
         pub fn list(&self, schedule_definition_id: impl Into<String>, id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1439,6 +1535,12 @@ pub mod access_review_instance_my_decisions {
                 id: id.into(),
             }
         }
+        #[doc = "Get my single access review instance decision."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
+        #[doc = "* `decision_id`: The id of the decision record."]
         pub fn get_by_id(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -1452,6 +1554,13 @@ pub mod access_review_instance_my_decisions {
                 decision_id: decision_id.into(),
             }
         }
+        #[doc = "Record a decision."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
+        #[doc = "* `decision_id`: The id of the decision record."]
+        #[doc = "* `properties`: Access review decision properties to patch."]
         pub fn patch(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -1655,6 +1764,15 @@ pub mod deny_assignments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets deny assignments for a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `parent_resource_path`: The parent resource identity."]
+        #[doc = "* `resource_type`: The resource type of the resource."]
+        #[doc = "* `resource_name`: The name of the resource to get deny assignments for."]
         pub fn list_for_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -1675,6 +1793,11 @@ pub mod deny_assignments {
                 filter: None,
             }
         }
+        #[doc = "Gets deny assignments for a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_for_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1687,6 +1810,10 @@ pub mod deny_assignments {
                 filter: None,
             }
         }
+        #[doc = "Gets all deny assignments for the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1694,6 +1821,11 @@ pub mod deny_assignments {
                 filter: None,
             }
         }
+        #[doc = "Get the specified deny assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the deny assignment."]
+        #[doc = "* `deny_assignment_id`: The ID of the deny assignment to get."]
         pub fn get(&self, scope: impl Into<String>, deny_assignment_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1701,12 +1833,20 @@ pub mod deny_assignments {
                 deny_assignment_id: deny_assignment_id.into(),
             }
         }
+        #[doc = "Gets a deny assignment by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deny_assignment_id`: The fully qualified deny assignment ID. For example, use the format, /subscriptions/{guid}/providers/Microsoft.Authorization/denyAssignments/{denyAssignmentId} for subscription level deny assignments, or /providers/Microsoft.Authorization/denyAssignments/{denyAssignmentId} for tenant level deny assignments."]
         pub fn get_by_id(&self, deny_assignment_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
                 deny_assignment_id: deny_assignment_id.into(),
             }
         }
+        #[doc = "Gets deny assignments for a scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the deny assignments."]
         pub fn list_for_scope(&self, scope: impl Into<String>) -> list_for_scope::Builder {
             list_for_scope::Builder {
                 client: self.0.clone(),
@@ -2154,6 +2294,10 @@ pub mod provider_operations_metadata {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets provider operations metadata for the specified resource provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
         pub fn get(&self, resource_provider_namespace: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -2161,6 +2305,7 @@ pub mod provider_operations_metadata {
                 expand: None,
             }
         }
+        #[doc = "Gets provider operations metadata for all resource providers."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2309,6 +2454,10 @@ pub mod role_assignments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all role assignments that apply to a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_for_subscription(&self, subscription_id: impl Into<String>) -> list_for_subscription::Builder {
             list_for_subscription::Builder {
                 client: self.0.clone(),
@@ -2317,6 +2466,11 @@ pub mod role_assignments {
                 tenant_id: None,
             }
         }
+        #[doc = "List all role assignments that apply to a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_for_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -2330,6 +2484,14 @@ pub mod role_assignments {
                 tenant_id: None,
             }
         }
+        #[doc = "List all role assignments that apply to a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `resource_type`: The resource type name. For example the type name of a web app is 'sites' (from Microsoft.Web/sites)."]
+        #[doc = "* `resource_name`: The resource name."]
         pub fn list_for_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -2349,6 +2511,11 @@ pub mod role_assignments {
                 tenant_id: None,
             }
         }
+        #[doc = "Get a role assignment by scope and name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the operation or resource. Valid scopes are: subscription (format: '/subscriptions/{subscriptionId}'), resource group (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}', or resource (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}'"]
+        #[doc = "* `role_assignment_name`: The name of the role assignment. It can be any valid GUID."]
         pub fn get(&self, scope: impl Into<String>, role_assignment_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -2357,6 +2524,12 @@ pub mod role_assignments {
                 tenant_id: None,
             }
         }
+        #[doc = "Create or update a role assignment by scope and name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the operation or resource. Valid scopes are: subscription (format: '/subscriptions/{subscriptionId}'), resource group (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}', or resource (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}'"]
+        #[doc = "* `role_assignment_name`: The name of the role assignment. It can be any valid GUID."]
+        #[doc = "* `parameters`: Parameters for the role assignment."]
         pub fn create(
             &self,
             scope: impl Into<String>,
@@ -2370,6 +2543,11 @@ pub mod role_assignments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a role assignment by scope and name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the operation or resource. Valid scopes are: subscription (format: '/subscriptions/{subscriptionId}'), resource group (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}', or resource (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}'"]
+        #[doc = "* `role_assignment_name`: The name of the role assignment. It can be any valid GUID."]
         pub fn delete(&self, scope: impl Into<String>, role_assignment_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -2378,6 +2556,12 @@ pub mod role_assignments {
                 tenant_id: None,
             }
         }
+        #[doc = "Validate a role assignment create or update operation by scope and name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the operation or resource. Valid scopes are: subscription (format: '/subscriptions/{subscriptionId}'), resource group (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}', or resource (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}'"]
+        #[doc = "* `role_assignment_name`: The name of the role assignment. It can be any valid GUID."]
+        #[doc = "* `parameters`: Parameters for the role assignment."]
         pub fn validate(
             &self,
             scope: impl Into<String>,
@@ -2391,6 +2575,10 @@ pub mod role_assignments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "List all role assignments that apply to a scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the operation or resource. Valid scopes are: subscription (format: '/subscriptions/{subscriptionId}'), resource group (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}', or resource (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}'"]
         pub fn list_for_scope(&self, scope: impl Into<String>) -> list_for_scope::Builder {
             list_for_scope::Builder {
                 client: self.0.clone(),
@@ -2399,6 +2587,10 @@ pub mod role_assignments {
                 tenant_id: None,
             }
         }
+        #[doc = "Get a role assignment by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `role_assignment_id`: The fully qualified ID of the role assignment including scope, resource name, and resource type. Format: /{scope}/providers/Microsoft.Authorization/roleAssignments/{roleAssignmentName}. Example: /subscriptions/<SUB_ID>/resourcegroups/<RESOURCE_GROUP>/providers/Microsoft.Authorization/roleAssignments/<ROLE_ASSIGNMENT_NAME>"]
         pub fn get_by_id(&self, role_assignment_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
@@ -2406,6 +2598,11 @@ pub mod role_assignments {
                 tenant_id: None,
             }
         }
+        #[doc = "Create or update a role assignment by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `role_assignment_id`: The fully qualified ID of the role assignment including scope, resource name, and resource type. Format: /{scope}/providers/Microsoft.Authorization/roleAssignments/{roleAssignmentName}. Example: /subscriptions/<SUB_ID>/resourcegroups/<RESOURCE_GROUP>/providers/Microsoft.Authorization/roleAssignments/<ROLE_ASSIGNMENT_NAME>"]
+        #[doc = "* `parameters`: Parameters for the role assignment."]
         pub fn create_by_id(
             &self,
             role_assignment_id: impl Into<String>,
@@ -2417,6 +2614,10 @@ pub mod role_assignments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a role assignment by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `role_assignment_id`: The fully qualified ID of the role assignment including scope, resource name, and resource type. Format: /{scope}/providers/Microsoft.Authorization/roleAssignments/{roleAssignmentName}. Example: /subscriptions/<SUB_ID>/resourcegroups/<RESOURCE_GROUP>/providers/Microsoft.Authorization/roleAssignments/<ROLE_ASSIGNMENT_NAME>"]
         pub fn delete_by_id(&self, role_assignment_id: impl Into<String>) -> delete_by_id::Builder {
             delete_by_id::Builder {
                 client: self.0.clone(),
@@ -2424,6 +2625,11 @@ pub mod role_assignments {
                 tenant_id: None,
             }
         }
+        #[doc = "Validate a role assignment create or update operation by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `role_assignment_id`: The fully qualified ID of the role assignment including scope, resource name, and resource type. Format: /{scope}/providers/Microsoft.Authorization/roleAssignments/{roleAssignmentName}. Example: /subscriptions/<SUB_ID>/resourcegroups/<RESOURCE_GROUP>/providers/Microsoft.Authorization/roleAssignments/<ROLE_ASSIGNMENT_NAME>"]
+        #[doc = "* `parameters`: Parameters for the role assignment."]
         pub fn validate_by_id(
             &self,
             role_assignment_id: impl Into<String>,
@@ -3255,12 +3461,21 @@ pub mod role_definitions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a role definition by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `role_id`: The fully qualified role definition ID. Use the format, /subscriptions/{guid}/providers/Microsoft.Authorization/roleDefinitions/{roleDefinitionId} for subscription level role definitions, or /providers/Microsoft.Authorization/roleDefinitions/{roleDefinitionId} for tenant level role definitions."]
         pub fn get_by_id(&self, role_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
                 role_id: role_id.into(),
             }
         }
+        #[doc = "Get role definition by name (GUID)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role definition."]
+        #[doc = "* `role_definition_id`: The ID of the role definition."]
         pub fn get(&self, scope: impl Into<String>, role_definition_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -3268,6 +3483,12 @@ pub mod role_definitions {
                 role_definition_id: role_definition_id.into(),
             }
         }
+        #[doc = "Creates or updates a role definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role definition."]
+        #[doc = "* `role_definition_id`: The ID of the role definition."]
+        #[doc = "* `role_definition`: The values for the role definition."]
         pub fn create_or_update(
             &self,
             scope: impl Into<String>,
@@ -3281,6 +3502,11 @@ pub mod role_definitions {
                 role_definition: role_definition.into(),
             }
         }
+        #[doc = "Deletes a role definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role definition."]
+        #[doc = "* `role_definition_id`: The ID of the role definition to delete."]
         pub fn delete(&self, scope: impl Into<String>, role_definition_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -3288,6 +3514,10 @@ pub mod role_definitions {
                 role_definition_id: role_definition_id.into(),
             }
         }
+        #[doc = "Get all role definitions that are applicable at scope and above."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role definition."]
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -3584,6 +3814,11 @@ pub mod permissions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all permissions the caller has for a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_for_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -3595,6 +3830,15 @@ pub mod permissions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all permissions the caller has for a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `parent_resource_path`: The parent resource identity."]
+        #[doc = "* `resource_type`: The resource type of the resource."]
+        #[doc = "* `resource_name`: The name of the resource to get the permissions for."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_for_resource(
             &self,
             resource_group_name: impl Into<String>,
@@ -3780,6 +4024,10 @@ pub mod role_assignment_metrics {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get role assignment usage metrics for a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_metrics_for_subscription(&self, subscription_id: impl Into<String>) -> get_metrics_for_subscription::Builder {
             get_metrics_for_subscription::Builder {
                 client: self.0.clone(),
@@ -3840,6 +4088,10 @@ pub mod eligible_child_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the child resources of a resource on which user has eligible access"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role management policy."]
         pub fn get(&self, scope: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -3935,6 +4187,11 @@ pub mod role_assignment_schedules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the specified role assignment schedule for a resource scope"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role assignment schedule."]
+        #[doc = "* `role_assignment_schedule_name`: The name (guid) of the role assignment schedule to get."]
         pub fn get(&self, scope: impl Into<String>, role_assignment_schedule_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -3942,6 +4199,10 @@ pub mod role_assignment_schedules {
                 role_assignment_schedule_name: role_assignment_schedule_name.into(),
             }
         }
+        #[doc = "Gets role assignment schedules for a resource scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role assignments schedules."]
         pub fn list_for_scope(&self, scope: impl Into<String>) -> list_for_scope::Builder {
             list_for_scope::Builder {
                 client: self.0.clone(),
@@ -4087,6 +4348,10 @@ pub mod role_assignment_schedule_instances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets role assignment schedule instances of a role assignment schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role assignment schedule."]
         pub fn list_for_scope(&self, scope: impl Into<String>) -> list_for_scope::Builder {
             list_for_scope::Builder {
                 client: self.0.clone(),
@@ -4094,6 +4359,11 @@ pub mod role_assignment_schedule_instances {
                 filter: None,
             }
         }
+        #[doc = "Gets the specified role assignment schedule instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role assignments schedules."]
+        #[doc = "* `role_assignment_schedule_instance_name`: The name (hash of schedule name + time) of the role assignment schedule to get."]
         pub fn get(&self, scope: impl Into<String>, role_assignment_schedule_instance_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -4239,6 +4509,11 @@ pub mod role_assignment_schedule_requests {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the specified role assignment schedule request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role assignment schedule request."]
+        #[doc = "* `role_assignment_schedule_request_name`: The name (guid) of the role assignment schedule request to get."]
         pub fn get(&self, scope: impl Into<String>, role_assignment_schedule_request_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -4246,6 +4521,12 @@ pub mod role_assignment_schedule_requests {
                 role_assignment_schedule_request_name: role_assignment_schedule_request_name.into(),
             }
         }
+        #[doc = "Creates a role assignment schedule request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role assignment schedule request to create. The scope can be any REST resource instance. For example, use '/providers/Microsoft.Subscription/subscriptions/{subscription-id}/' for a subscription, '/providers/Microsoft.Subscription/subscriptions/{subscription-id}/resourceGroups/{resource-group-name}' for a resource group, and '/providers/Microsoft.Subscription/subscriptions/{subscription-id}/resourceGroups/{resource-group-name}/providers/{resource-provider}/{resource-type}/{resource-name}' for a resource."]
+        #[doc = "* `role_assignment_schedule_request_name`: A GUID for the role assignment to create. The name must be unique and different for each role assignment."]
+        #[doc = "* `parameters`: Parameters for the role assignment schedule request."]
         pub fn create(
             &self,
             scope: impl Into<String>,
@@ -4259,6 +4540,10 @@ pub mod role_assignment_schedule_requests {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Gets role assignment schedule requests for a scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role assignments schedule requests."]
         pub fn list_for_scope(&self, scope: impl Into<String>) -> list_for_scope::Builder {
             list_for_scope::Builder {
                 client: self.0.clone(),
@@ -4266,6 +4551,11 @@ pub mod role_assignment_schedule_requests {
                 filter: None,
             }
         }
+        #[doc = "Cancels a pending role assignment schedule request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role assignment request to cancel."]
+        #[doc = "* `role_assignment_schedule_request_name`: The name of the role assignment request to cancel."]
         pub fn cancel(&self, scope: impl Into<String>, role_assignment_schedule_request_name: impl Into<String>) -> cancel::Builder {
             cancel::Builder {
                 client: self.0.clone(),
@@ -4510,6 +4800,11 @@ pub mod role_eligibility_schedules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the specified role eligibility schedule for a resource scope"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role eligibility schedule."]
+        #[doc = "* `role_eligibility_schedule_name`: The name (guid) of the role eligibility schedule to get."]
         pub fn get(&self, scope: impl Into<String>, role_eligibility_schedule_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -4517,6 +4812,10 @@ pub mod role_eligibility_schedules {
                 role_eligibility_schedule_name: role_eligibility_schedule_name.into(),
             }
         }
+        #[doc = "Gets role eligibility schedules for a resource scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role eligibility schedules."]
         pub fn list_for_scope(&self, scope: impl Into<String>) -> list_for_scope::Builder {
             list_for_scope::Builder {
                 client: self.0.clone(),
@@ -4662,6 +4961,10 @@ pub mod role_eligibility_schedule_instances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets role eligibility schedule instances of a role eligibility schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role eligibility schedule."]
         pub fn list_for_scope(&self, scope: impl Into<String>) -> list_for_scope::Builder {
             list_for_scope::Builder {
                 client: self.0.clone(),
@@ -4669,6 +4972,11 @@ pub mod role_eligibility_schedule_instances {
                 filter: None,
             }
         }
+        #[doc = "Gets the specified role eligibility schedule instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role eligibility schedules."]
+        #[doc = "* `role_eligibility_schedule_instance_name`: The name (hash of schedule name + time) of the role eligibility schedule to get."]
         pub fn get(&self, scope: impl Into<String>, role_eligibility_schedule_instance_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -4814,6 +5122,11 @@ pub mod role_eligibility_schedule_requests {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the specified role eligibility schedule request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role eligibility schedule request."]
+        #[doc = "* `role_eligibility_schedule_request_name`: The name (guid) of the role eligibility schedule request to get."]
         pub fn get(&self, scope: impl Into<String>, role_eligibility_schedule_request_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -4821,6 +5134,12 @@ pub mod role_eligibility_schedule_requests {
                 role_eligibility_schedule_request_name: role_eligibility_schedule_request_name.into(),
             }
         }
+        #[doc = "Creates a role eligibility schedule request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role eligibility schedule request to create. The scope can be any REST resource instance. For example, use '/providers/Microsoft.Subscription/subscriptions/{subscription-id}/' for a subscription, '/providers/Microsoft.Subscription/subscriptions/{subscription-id}/resourceGroups/{resource-group-name}' for a resource group, and '/providers/Microsoft.Subscription/subscriptions/{subscription-id}/resourceGroups/{resource-group-name}/providers/{resource-provider}/{resource-type}/{resource-name}' for a resource."]
+        #[doc = "* `role_eligibility_schedule_request_name`: The name of the role eligibility to create. It can be any valid GUID."]
+        #[doc = "* `parameters`: Parameters for the role eligibility schedule request."]
         pub fn create(
             &self,
             scope: impl Into<String>,
@@ -4834,6 +5153,10 @@ pub mod role_eligibility_schedule_requests {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Gets role eligibility schedule requests for a scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role eligibility schedule requests."]
         pub fn list_for_scope(&self, scope: impl Into<String>) -> list_for_scope::Builder {
             list_for_scope::Builder {
                 client: self.0.clone(),
@@ -4841,6 +5164,11 @@ pub mod role_eligibility_schedule_requests {
                 filter: None,
             }
         }
+        #[doc = "Cancels a pending role eligibility schedule request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role eligibility request to cancel."]
+        #[doc = "* `role_eligibility_schedule_request_name`: The name of the role eligibility request to cancel."]
         pub fn cancel(&self, scope: impl Into<String>, role_eligibility_schedule_request_name: impl Into<String>) -> cancel::Builder {
             cancel::Builder {
                 client: self.0.clone(),
@@ -5085,6 +5413,11 @@ pub mod role_management_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the specified role management policy for a resource scope"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role management policy."]
+        #[doc = "* `role_management_policy_name`: The name (guid) of the role management policy to get."]
         pub fn get(&self, scope: impl Into<String>, role_management_policy_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -5092,6 +5425,12 @@ pub mod role_management_policies {
                 role_management_policy_name: role_management_policy_name.into(),
             }
         }
+        #[doc = "Update a role management policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role management policy to upsert."]
+        #[doc = "* `role_management_policy_name`: The name (guid) of the role management policy to upsert."]
+        #[doc = "* `parameters`: Parameters for the role management policy."]
         pub fn update(
             &self,
             scope: impl Into<String>,
@@ -5105,6 +5444,11 @@ pub mod role_management_policies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a role management policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role management policy to upsert."]
+        #[doc = "* `role_management_policy_name`: The name (guid) of the role management policy to upsert."]
         pub fn delete(&self, scope: impl Into<String>, role_management_policy_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -5112,6 +5456,10 @@ pub mod role_management_policies {
                 role_management_policy_name: role_management_policy_name.into(),
             }
         }
+        #[doc = "Gets role management policies for a resource scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role management policy."]
         pub fn list_for_scope(&self, scope: impl Into<String>) -> list_for_scope::Builder {
             list_for_scope::Builder {
                 client: self.0.clone(),
@@ -5351,6 +5699,11 @@ pub mod role_management_policy_assignments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the specified role management policy assignment for a resource scope"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role management policy."]
+        #[doc = "* `role_management_policy_assignment_name`: The name of format {guid_guid} the role management policy assignment to get."]
         pub fn get(&self, scope: impl Into<String>, role_management_policy_assignment_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -5358,6 +5711,12 @@ pub mod role_management_policy_assignments {
                 role_management_policy_assignment_name: role_management_policy_assignment_name.into(),
             }
         }
+        #[doc = "Create a role management policy assignment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role management policy assignment to upsert."]
+        #[doc = "* `role_management_policy_assignment_name`: The name of format {guid_guid} the role management policy assignment to upsert."]
+        #[doc = "* `parameters`: Parameters for the role management policy assignment."]
         pub fn create(
             &self,
             scope: impl Into<String>,
@@ -5371,6 +5730,11 @@ pub mod role_management_policy_assignments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a role management policy assignment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role management policy assignment to delete."]
+        #[doc = "* `role_management_policy_assignment_name`: The name of format {guid_guid} the role management policy assignment to delete."]
         pub fn delete(&self, scope: impl Into<String>, role_management_policy_assignment_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -5378,6 +5742,10 @@ pub mod role_management_policy_assignments {
                 role_management_policy_assignment_name: role_management_policy_assignment_name.into(),
             }
         }
+        #[doc = "Gets role management assignment policies for a resource scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role management policy."]
         pub fn list_for_scope(&self, scope: impl Into<String>) -> list_for_scope::Builder {
             list_for_scope::Builder {
                 client: self.0.clone(),

@@ -82,6 +82,12 @@ pub mod server_keys {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of  Server keys."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_instance(
             &self,
             resource_group_name: impl Into<String>,
@@ -95,6 +101,13 @@ pub mod server_keys {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a MariaDB Server key."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `key_name`: The name of the MariaDB Server key to be retrieved."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -110,6 +123,14 @@ pub mod server_keys {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a MariaDB Server key."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `key_name`: The name of the MariaDB Server key to be operated on (updated or created)."]
+        #[doc = "* `parameters`: The requested MariaDB Server key resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -127,6 +148,13 @@ pub mod server_keys {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the MariaDB Server key with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `key_name`: The name of the MariaDB Server key to be deleted."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,

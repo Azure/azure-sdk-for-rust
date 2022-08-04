@@ -115,12 +115,17 @@ pub mod best_practices {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get information about a Automanage best practice"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `best_practice_name`: The Automanage best practice name."]
         pub fn get(&self, best_practice_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 best_practice_name: best_practice_name.into(),
             }
         }
+        #[doc = "Retrieve a list of Automanage best practices"]
         pub fn list_by_tenant(&self) -> list_by_tenant::Builder {
             list_by_tenant::Builder { client: self.0.clone() }
         }
@@ -223,6 +228,11 @@ pub mod best_practices_versions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get information about a Automanage best practice version"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `best_practice_name`: The Automanage best practice name."]
+        #[doc = "* `version_name`: The Automanage best practice version name."]
         pub fn get(&self, best_practice_name: impl Into<String>, version_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -230,6 +240,10 @@ pub mod best_practices_versions {
                 version_name: version_name.into(),
             }
         }
+        #[doc = "Retrieve a list of Automanage best practices versions"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `best_practice_name`: The Automanage best practice name."]
         pub fn list_by_tenant(&self, best_practice_name: impl Into<String>) -> list_by_tenant::Builder {
             list_by_tenant::Builder {
                 client: self.0.clone(),
@@ -341,6 +355,12 @@ pub mod configuration_profiles {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get information about a configuration profile"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `configuration_profile_name`: The configuration profile name."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn get(
             &self,
             configuration_profile_name: impl Into<String>,
@@ -354,6 +374,13 @@ pub mod configuration_profiles {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Creates a configuration profile"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `configuration_profile_name`: Name of the configuration profile."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `parameters`: Parameters supplied to create or update configuration profile."]
         pub fn create_or_update(
             &self,
             configuration_profile_name: impl Into<String>,
@@ -369,6 +396,13 @@ pub mod configuration_profiles {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates a configuration profile"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `configuration_profile_name`: Name of the configuration profile."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `parameters`: Parameters supplied to update configuration profile."]
         pub fn update(
             &self,
             configuration_profile_name: impl Into<String>,
@@ -384,6 +418,12 @@ pub mod configuration_profiles {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a configuration profile"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `configuration_profile_name`: Name of the configuration profile"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -397,6 +437,11 @@ pub mod configuration_profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of configuration profile within a given resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -408,6 +453,10 @@ pub mod configuration_profiles {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Retrieve a list of configuration profile within a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -742,6 +791,13 @@ pub mod configuration_profiles_versions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get information about a configuration profile version"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `configuration_profile_name`: The configuration profile name."]
+        #[doc = "* `version_name`: The configuration profile version name."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn get(
             &self,
             configuration_profile_name: impl Into<String>,
@@ -757,6 +813,14 @@ pub mod configuration_profiles_versions {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Creates a configuration profile version"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `configuration_profile_name`: Name of the configuration profile."]
+        #[doc = "* `version_name`: The configuration profile version name."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `parameters`: Parameters supplied to create or update configuration profile."]
         pub fn create_or_update(
             &self,
             configuration_profile_name: impl Into<String>,
@@ -774,6 +838,14 @@ pub mod configuration_profiles_versions {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates a configuration profile version"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `configuration_profile_name`: Name of the configuration profile."]
+        #[doc = "* `version_name`: The configuration profile version name."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `parameters`: Parameters supplied to update configuration profile."]
         pub fn update(
             &self,
             configuration_profile_name: impl Into<String>,
@@ -791,6 +863,13 @@ pub mod configuration_profiles_versions {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a configuration profile version"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `configuration_profile_name`: Name of the configuration profile"]
+        #[doc = "* `version_name`: The configuration profile version name."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -806,6 +885,12 @@ pub mod configuration_profiles_versions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of configuration profile version for a configuration profile "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `configuration_profile_name`: Name of the configuration profile."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_child_resources(
             &self,
             configuration_profile_name: impl Into<String>,
@@ -1108,6 +1193,13 @@ pub mod configuration_profile_assignments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get information about a configuration profile assignment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `configuration_profile_assignment_name`: The configuration profile assignment name."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `vm_name`: The name of the virtual machine."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1123,6 +1215,14 @@ pub mod configuration_profile_assignments {
                 vm_name: vm_name.into(),
             }
         }
+        #[doc = "Creates an association between a VM and Automanage configuration profile"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `configuration_profile_assignment_name`: Name of the configuration profile assignment. Only default is supported."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update configuration profile assignment."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `vm_name`: The name of the virtual machine."]
         pub fn create_or_update(
             &self,
             configuration_profile_assignment_name: impl Into<String>,
@@ -1140,6 +1240,13 @@ pub mod configuration_profile_assignments {
                 vm_name: vm_name.into(),
             }
         }
+        #[doc = "Delete a configuration profile assignment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `configuration_profile_assignment_name`: Name of the configuration profile assignment"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `vm_name`: The name of the virtual machine."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1155,6 +1262,12 @@ pub mod configuration_profile_assignments {
                 vm_name: vm_name.into(),
             }
         }
+        #[doc = "Get list of configuration profile assignments"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `vm_name`: The name of the virtual machine."]
         pub fn list_by_virtual_machines(
             &self,
             subscription_id: impl Into<String>,
@@ -1168,6 +1281,11 @@ pub mod configuration_profile_assignments {
                 vm_name: vm_name.into(),
             }
         }
+        #[doc = "Get list of configuration profile assignments"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1175,12 +1293,22 @@ pub mod configuration_profile_assignments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get list of configuration profile assignments under a given subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get list of configuration profile assignments"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `machine_name`: The name of the Arc machine."]
         pub fn list_by_machine_name(
             &self,
             subscription_id: impl Into<String>,
@@ -1194,6 +1322,12 @@ pub mod configuration_profile_assignments {
                 machine_name: machine_name.into(),
             }
         }
+        #[doc = "Get list of configuration profile assignments"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the Arc machine."]
         pub fn list_by_cluster_name(
             &self,
             subscription_id: impl Into<String>,
@@ -1607,6 +1741,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Automanage REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1661,6 +1796,14 @@ pub mod reports {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get information about a report associated with a configuration profile assignment run"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `configuration_profile_assignment_name`: The configuration profile assignment name."]
+        #[doc = "* `report_name`: The report name."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `vm_name`: The name of the virtual machine."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1678,6 +1821,13 @@ pub mod reports {
                 vm_name: vm_name.into(),
             }
         }
+        #[doc = "Retrieve a list of reports within a given configuration profile assignment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `configuration_profile_assignment_name`: The configuration profile assignment name."]
+        #[doc = "* `vm_name`: The name of the virtual machine."]
         pub fn list_by_configuration_profile_assignments(
             &self,
             subscription_id: impl Into<String>,
@@ -1795,12 +1945,20 @@ pub mod service_principals {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the Automanage AAD first party Application Service Principal details for the subscription id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the Automanage AAD first party Application Service Principal details for the subscription id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(&self, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1910,6 +2068,13 @@ pub mod configuration_profile_hcrp_assignments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get information about a configuration profile assignment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `machine_name`: The name of the Arc machine."]
+        #[doc = "* `configuration_profile_assignment_name`: The configuration profile assignment name."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1925,6 +2090,14 @@ pub mod configuration_profile_hcrp_assignments {
                 configuration_profile_assignment_name: configuration_profile_assignment_name.into(),
             }
         }
+        #[doc = "Creates an association between a ARC machine and Automanage configuration profile"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters supplied to the create or update configuration profile assignment."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `machine_name`: The name of the Arc machine."]
+        #[doc = "* `configuration_profile_assignment_name`: Name of the configuration profile assignment. Only default is supported."]
         pub fn create_or_update(
             &self,
             parameters: impl Into<models::ConfigurationProfileAssignment>,
@@ -1942,6 +2115,13 @@ pub mod configuration_profile_hcrp_assignments {
                 configuration_profile_assignment_name: configuration_profile_assignment_name.into(),
             }
         }
+        #[doc = "Delete a configuration profile assignment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `machine_name`: The name of the Arc machine."]
+        #[doc = "* `configuration_profile_assignment_name`: Name of the configuration profile assignment"]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2116,6 +2296,14 @@ pub mod hcrp_reports {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get information about a report associated with a configuration profile assignment run"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `machine_name`: The name of the Arc machine."]
+        #[doc = "* `configuration_profile_assignment_name`: The configuration profile assignment name."]
+        #[doc = "* `report_name`: The report name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2133,6 +2321,13 @@ pub mod hcrp_reports {
                 report_name: report_name.into(),
             }
         }
+        #[doc = "Retrieve a list of reports within a given configuration profile assignment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `machine_name`: The name of the Arc machine."]
+        #[doc = "* `configuration_profile_assignment_name`: The configuration profile assignment name."]
         pub fn list_by_configuration_profile_assignments(
             &self,
             subscription_id: impl Into<String>,
@@ -2250,6 +2445,13 @@ pub mod configuration_profile_hci_assignments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get information about a configuration profile assignment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `cluster_name`: The name of the Arc machine."]
+        #[doc = "* `configuration_profile_assignment_name`: The configuration profile assignment name."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2265,6 +2467,14 @@ pub mod configuration_profile_hci_assignments {
                 configuration_profile_assignment_name: configuration_profile_assignment_name.into(),
             }
         }
+        #[doc = "Creates an association between a AzureStackHCI cluster and Automanage configuration profile"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters supplied to the create or update configuration profile assignment."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the Arc machine."]
+        #[doc = "* `configuration_profile_assignment_name`: Name of the configuration profile assignment. Only default is supported."]
         pub fn create_or_update(
             &self,
             parameters: impl Into<models::ConfigurationProfileAssignment>,
@@ -2282,6 +2492,13 @@ pub mod configuration_profile_hci_assignments {
                 configuration_profile_assignment_name: configuration_profile_assignment_name.into(),
             }
         }
+        #[doc = "Delete a configuration profile assignment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the Arc machine."]
+        #[doc = "* `configuration_profile_assignment_name`: Name of the configuration profile assignment"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2456,6 +2673,14 @@ pub mod hci_reports {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get information about a report associated with a configuration profile assignment run"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `cluster_name`: The name of the Arc machine."]
+        #[doc = "* `configuration_profile_assignment_name`: The configuration profile assignment name."]
+        #[doc = "* `report_name`: The report name."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2473,6 +2698,13 @@ pub mod hci_reports {
                 report_name: report_name.into(),
             }
         }
+        #[doc = "Retrieve a list of reports within a given configuration profile assignment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the Arc machine."]
+        #[doc = "* `configuration_profile_assignment_name`: The configuration profile assignment name."]
         pub fn list_by_configuration_profile_assignments(
             &self,
             subscription_id: impl Into<String>,

@@ -166,6 +166,9 @@ pub mod grafana {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all resources of workspaces for Grafana under the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -173,6 +176,10 @@ pub mod grafana {
             }
         }
         #[doc = "List all resources of workspaces for Grafana under the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -185,6 +192,11 @@ pub mod grafana {
             }
         }
         #[doc = "Get the properties of a specific workspace for Grafana resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The workspace name of Azure Managed Grafana."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -199,6 +211,11 @@ pub mod grafana {
             }
         }
         #[doc = "Create or update a workspace for Grafana resource. This API is idempotent, so user can either create a new grafana or update an existing grafana."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The workspace name of Azure Managed Grafana."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -215,6 +232,11 @@ pub mod grafana {
             }
         }
         #[doc = "Update a workspace for Grafana resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The workspace name of Azure Managed Grafana."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -231,6 +253,11 @@ pub mod grafana {
             }
         }
         #[doc = "Delete a workspace for Grafana resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The workspace name of Azure Managed Grafana."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

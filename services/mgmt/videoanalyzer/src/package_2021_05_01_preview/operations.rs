@@ -98,6 +98,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Operations"]
+        #[doc = "Lists all the Media operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -151,6 +152,11 @@ pub mod video_analyzers {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Video Analyzer accounts"]
+        #[doc = "Lists the Video Analyzer accounts in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -159,6 +165,12 @@ pub mod video_analyzers {
             }
         }
         #[doc = "Get a Video Analyzer account"]
+        #[doc = "Get the details of the specified Video Analyzer account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Video Analyzer account name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -173,6 +185,13 @@ pub mod video_analyzers {
             }
         }
         #[doc = "Create or update a Video Analyzer account"]
+        #[doc = "Create or update an instance of a Video Analyzer account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Video Analyzer account name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -189,6 +208,13 @@ pub mod video_analyzers {
             }
         }
         #[doc = "Update a Video Analyzer account"]
+        #[doc = "Updates an existing instance of Video Analyzer account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Video Analyzer account name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -205,6 +231,12 @@ pub mod video_analyzers {
             }
         }
         #[doc = "Delete a Video Analyzer account."]
+        #[doc = "Delete the specified Video Analyzer account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Video Analyzer account name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -219,6 +251,13 @@ pub mod video_analyzers {
             }
         }
         #[doc = "Synchronizes Storage Account Keys"]
+        #[doc = "Synchronizes storage account keys for a storage account associated with the Video Analyzer account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Video Analyzer account name."]
+        #[doc = "* `parameters`: The request parameters."]
         pub fn sync_storage_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -235,6 +274,10 @@ pub mod video_analyzers {
             }
         }
         #[doc = "List Video Analyzer accounts"]
+        #[doc = "Lists the Video Analyzer accounts in the specific subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -618,6 +661,12 @@ pub mod locations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Check Name Availability"]
+        #[doc = "Checks whether the Video Analyzer resource name is available."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location_name`: The name of the location."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -690,6 +739,12 @@ pub mod edge_modules {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List edge module resources."]
+        #[doc = "List all of the existing edge module resources for a given Video Analyzer account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -707,6 +762,13 @@ pub mod edge_modules {
             }
         }
         #[doc = "Retrieves an existing edge module resource."]
+        #[doc = "Retrieves a specific existing edge module resource in the given Video Analyzer account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `edge_module_name`: The name of the edge module to retrieve."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -723,6 +785,14 @@ pub mod edge_modules {
             }
         }
         #[doc = "Creates a new edge module or updates an existing one."]
+        #[doc = "Creates a new edge module or updates an existing one. An edge module resource enables a single instance of an Azure Video Analyzer IoT edge module to interact with the Video Analyzer Account. This is used for authorization and also to make sure that the particular edge module instance only has access to the data it requires from the Azure Video Analyzer service. A new edge module resource should be created for every new instance of an Azure Video Analyzer edge module deployed to you Azure IoT edge environment. Edge module resources can be deleted if the specific module is not in use anymore."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `edge_module_name`: The name of the edge module to create or update."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -741,6 +811,13 @@ pub mod edge_modules {
             }
         }
         #[doc = "Deletes an existing edge module resource."]
+        #[doc = "Deletes an existing edge module resource. Deleting the edge module resource will prevent an Azure Video Analyzer IoT edge module which was previously initiated with the module provisioning token from communicating with the cloud."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `edge_module_name`: The name of the edge module to be deleted."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -757,6 +834,14 @@ pub mod edge_modules {
             }
         }
         #[doc = "Creates a new provisioning token."]
+        #[doc = "Creates a new provisioning token. A provisioning token allows for a single instance of Azure Video analyzer IoT edge module to be initialized and authorized to the cloud account. The provisioning token itself is short lived and it is only used for the initial handshake between IoT edge module and the cloud. After the initial handshake, the IoT edge module will agree on a set of authentication keys which will be auto-rotated as long as the module is able to periodically connect to the cloud. A new provisioning token can be generated for the same IoT edge module in case the module state lost or reset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `edge_module_name`: The name of the edge module used to create a new provisioning token."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn list_provisioning_token(
             &self,
             subscription_id: impl Into<String>,
@@ -1106,6 +1191,12 @@ pub mod videos {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all existing video resources."]
+        #[doc = "List all existing video resources in the specified account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1121,6 +1212,13 @@ pub mod videos {
             }
         }
         #[doc = "Retrieves a video resource."]
+        #[doc = "Retrieves an existing video resource within an account with a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `video_name`: The name of the video to retrieve."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1137,6 +1235,14 @@ pub mod videos {
             }
         }
         #[doc = "Create or updates a video resource."]
+        #[doc = "Creates a new video resource or updates an existing one in an account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `video_name`: The name of the video to create or update."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1155,6 +1261,14 @@ pub mod videos {
             }
         }
         #[doc = "Updates the properties of a video resource."]
+        #[doc = "Updates individual properties of an existing video resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `video_name`: The name of the video to update."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1173,6 +1287,13 @@ pub mod videos {
             }
         }
         #[doc = "Deletes a video resource."]
+        #[doc = "Deletes an existing video resource and its underlying data. This operation is irreversible."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `video_name`: The name of the video to delete."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1189,6 +1310,13 @@ pub mod videos {
             }
         }
         #[doc = "Generates a streaming token for video playback."]
+        #[doc = "Generates a streaming token used for authenticating video playback."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `video_name`: The name of the video to generate a token for playback."]
         pub fn list_streaming_token(
             &self,
             subscription_id: impl Into<String>,
@@ -1575,6 +1703,12 @@ pub mod access_policies {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List access policy resources."]
+        #[doc = "List all existing access policy resources for the specified account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1590,6 +1724,13 @@ pub mod access_policies {
             }
         }
         #[doc = "Retrieves an access policy resource."]
+        #[doc = "Retrieves an existing access policy resource from an account by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `access_policy_name`: The name of the access policy to retrieve."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1606,6 +1747,14 @@ pub mod access_policies {
             }
         }
         #[doc = "Creates or updates an access policy."]
+        #[doc = "Creates a new access policy resource or updates an existing one."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `access_policy_name`: The name of the access policy to create or update."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1624,6 +1773,14 @@ pub mod access_policies {
             }
         }
         #[doc = "Updates an existing access policy."]
+        #[doc = "Updates individual properties of an existing access policy resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `access_policy_name`: The name of the access policy to update."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1642,6 +1799,13 @@ pub mod access_policies {
             }
         }
         #[doc = "Deletes an access policy."]
+        #[doc = "Deletes an existing access policy resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `access_policy_name`: The name of the access policy to delete."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

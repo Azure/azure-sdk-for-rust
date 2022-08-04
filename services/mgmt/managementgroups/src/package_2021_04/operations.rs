@@ -94,6 +94,7 @@ pub mod management_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List management groups for the authenticated user.\n"]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -101,6 +102,10 @@ pub mod management_groups {
                 skiptoken: None,
             }
         }
+        #[doc = "Get the details of the management group.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
         pub fn get(&self, group_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -111,6 +116,11 @@ pub mod management_groups {
                 cache_control: None,
             }
         }
+        #[doc = "Create or update a management group.\nIf a management group is already created and a subsequent create request is issued with different properties, the management group properties will be updated.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
+        #[doc = "* `create_management_group_request`: Management group creation parameters."]
         pub fn create_or_update(
             &self,
             group_id: impl Into<String>,
@@ -123,6 +133,11 @@ pub mod management_groups {
                 cache_control: None,
             }
         }
+        #[doc = "Update a management group.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
+        #[doc = "* `patch_group_request`: Management group patch parameters."]
         pub fn update(
             &self,
             group_id: impl Into<String>,
@@ -135,6 +150,10 @@ pub mod management_groups {
                 cache_control: None,
             }
         }
+        #[doc = "Delete management group.\nIf a management group contains child resources, the request will fail.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
         pub fn delete(&self, group_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -142,6 +161,10 @@ pub mod management_groups {
                 cache_control: None,
             }
         }
+        #[doc = "List all entities that descend from a management group.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
         pub fn get_descendants(&self, group_id: impl Into<String>) -> get_descendants::Builder {
             get_descendants::Builder {
                 client: self.0.clone(),
@@ -602,6 +625,11 @@ pub mod management_group_subscriptions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves details about given subscription which is associated with the management group.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
+        #[doc = "* `subscription_id`: Subscription ID."]
         pub fn get_subscription(&self, group_id: impl Into<String>, subscription_id: impl Into<String>) -> get_subscription::Builder {
             get_subscription::Builder {
                 client: self.0.clone(),
@@ -610,6 +638,11 @@ pub mod management_group_subscriptions {
                 cache_control: None,
             }
         }
+        #[doc = "Associates existing subscription with the management group.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
+        #[doc = "* `subscription_id`: Subscription ID."]
         pub fn create(&self, group_id: impl Into<String>, subscription_id: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -618,6 +651,11 @@ pub mod management_group_subscriptions {
                 cache_control: None,
             }
         }
+        #[doc = "De-associates subscription from the management group.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
+        #[doc = "* `subscription_id`: Subscription ID."]
         pub fn delete(&self, group_id: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -626,6 +664,10 @@ pub mod management_group_subscriptions {
                 cache_control: None,
             }
         }
+        #[doc = "Retrieves details about all subscriptions which are associated with the management group.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
         pub fn get_subscriptions_under_management_group(
             &self,
             group_id: impl Into<String>,
@@ -899,18 +941,31 @@ pub mod hierarchy_settings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the hierarchy settings defined at the Management Group level. Settings can only be set on the root Management Group of the hierarchy.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
         pub fn list(&self, group_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 group_id: group_id.into(),
             }
         }
+        #[doc = "Gets the hierarchy settings defined at the Management Group level. Settings can only be set on the root Management Group of the hierarchy.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
         pub fn get(&self, group_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 group_id: group_id.into(),
             }
         }
+        #[doc = "Creates or updates the hierarchy settings defined at the Management Group level.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
+        #[doc = "* `create_tenant_settings_request`: Tenant level settings request parameter."]
         pub fn create_or_update(
             &self,
             group_id: impl Into<String>,
@@ -922,6 +977,11 @@ pub mod hierarchy_settings {
                 create_tenant_settings_request: create_tenant_settings_request.into(),
             }
         }
+        #[doc = "Updates the hierarchy settings defined at the Management Group level.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
+        #[doc = "* `create_tenant_settings_request`: Tenant level settings request parameter."]
         pub fn update(
             &self,
             group_id: impl Into<String>,
@@ -933,6 +993,10 @@ pub mod hierarchy_settings {
                 create_tenant_settings_request: create_tenant_settings_request.into(),
             }
         }
+        #[doc = "Deletes the hierarchy settings defined at the Management Group level.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
         pub fn delete(&self, group_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1185,6 +1249,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Management REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1261,6 +1326,10 @@ pub mod operations {
     }
 }
 impl Client {
+    #[doc = "Checks if the specified management group name is valid and unique"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `check_name_availability_request`: Management group name availability check parameters."]
     pub fn check_name_availability(
         &self,
         check_name_availability_request: impl Into<models::CheckNameAvailabilityRequest>,
@@ -1270,9 +1339,11 @@ impl Client {
             check_name_availability_request: check_name_availability_request.into(),
         }
     }
+    #[doc = "Starts backfilling subscriptions for the Tenant."]
     pub fn start_tenant_backfill(&self) -> start_tenant_backfill::Builder {
         start_tenant_backfill::Builder { client: self.clone() }
     }
+    #[doc = "Gets tenant backfill status"]
     pub fn tenant_backfill_status(&self) -> tenant_backfill_status::Builder {
         tenant_backfill_status::Builder { client: self.clone() }
     }
@@ -1423,6 +1494,7 @@ pub mod entities {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all entities (Management Groups, Subscriptions, etc.) for the authenticated user.\n"]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

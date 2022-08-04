@@ -103,12 +103,21 @@ pub mod profiles {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the CDN profiles within an Azure subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all of the CDN profiles within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -120,6 +129,12 @@ pub mod profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a CDN profile with the specified profile name under the specified subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -133,6 +148,13 @@ pub mod profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new CDN profile with a profile name under the specified subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `profile`: Profile properties needed to create a new profile."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -148,6 +170,13 @@ pub mod profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing CDN profile with the specified profile name under the specified subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `profile_update_parameters`: Profile properties needed to update an existing profile."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -163,6 +192,12 @@ pub mod profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing CDN profile with the specified parameters. Deleting a profile will result in the deletion of all of the sub-resources including endpoints, origins and custom domains."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -176,6 +211,12 @@ pub mod profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Generates a dynamic SSO URI used to sign in to the CDN supplemental portal. Supplemental portal is used to configure advanced feature capabilities that are not yet available in the Azure portal, such as core reports in a standard profile; rules engine, advanced HTTP reports, and real-time stats and alerts in a premium profile. The SSO URI changes approximately every 10 minutes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn generate_sso_uri(
             &self,
             resource_group_name: impl Into<String>,
@@ -189,6 +230,12 @@ pub mod profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the supported optimization types for the current profile. A user can create an endpoint with an optimization type from the listed values."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list_supported_optimization_types(
             &self,
             resource_group_name: impl Into<String>,
@@ -202,6 +249,12 @@ pub mod profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Checks the quota and actual usage of endpoints under the given CDN profile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list_resource_usage(
             &self,
             resource_group_name: impl Into<String>,
@@ -796,6 +849,12 @@ pub mod endpoints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists existing CDN endpoints."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list_by_profile(
             &self,
             resource_group_name: impl Into<String>,
@@ -809,6 +868,13 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets an existing CDN endpoint with the specified endpoint name under the specified subscription, resource group and profile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -824,6 +890,14 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new CDN endpoint with the specified endpoint name under the specified subscription, resource group and profile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `endpoint`: Endpoint properties"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -841,6 +915,14 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing CDN endpoint with the specified endpoint name under the specified subscription, resource group and profile. To update origins, use the Update Origin operation. To update origin groups, use the Update Origin Group operation. To update custom domains, use the Update Custom Domain operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `endpoint_update_properties`: Endpoint update properties"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -858,6 +940,13 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing CDN endpoint with the specified endpoint name under the specified subscription, resource group and profile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -873,6 +962,13 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Starts an existing CDN endpoint that is on a stopped state."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn start(
             &self,
             resource_group_name: impl Into<String>,
@@ -888,6 +984,13 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Stops an existing running CDN endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn stop(
             &self,
             resource_group_name: impl Into<String>,
@@ -903,6 +1006,14 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Removes a content from CDN."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `content_file_paths`: The path to the content to be purged. Path can be a full URL, e.g. '/pictures/city.png' which removes a single file, or a directory with a wildcard, e.g. '/pictures/*' which removes all folders and files in the directory."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn purge_content(
             &self,
             resource_group_name: impl Into<String>,
@@ -920,6 +1031,14 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Pre-loads a content to CDN. Available for Verizon Profiles."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `content_file_paths`: The path to the content to be loaded. Path should be a full URL, e.g. ‘/pictures/city.png' which loads a single file "]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn load_content(
             &self,
             resource_group_name: impl Into<String>,
@@ -937,6 +1056,14 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Validates the custom domain mapping to ensure it maps to the correct CDN endpoint in DNS."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `custom_domain_properties`: Custom domain to be validated."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn validate_custom_domain(
             &self,
             resource_group_name: impl Into<String>,
@@ -954,6 +1081,13 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Checks the quota and usage of geo filters and custom domains under the given endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list_resource_usage(
             &self,
             resource_group_name: impl Into<String>,
@@ -1684,6 +1818,13 @@ pub mod origins {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the existing origins within an endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list_by_endpoint(
             &self,
             resource_group_name: impl Into<String>,
@@ -1699,6 +1840,14 @@ pub mod origins {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets an existing origin within an endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `origin_name`: Name of the origin which is unique within the endpoint."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1716,6 +1865,15 @@ pub mod origins {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new origin within the specified endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `origin_name`: Name of the origin that is unique within the endpoint."]
+        #[doc = "* `origin`: Origin properties"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -1735,6 +1893,15 @@ pub mod origins {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing origin within an endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `origin_name`: Name of the origin which is unique within the endpoint."]
+        #[doc = "* `origin_update_properties`: Origin properties"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1754,6 +1921,14 @@ pub mod origins {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing origin within an endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `origin_name`: Name of the origin which is unique within the endpoint."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2113,6 +2288,13 @@ pub mod origin_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the existing origin groups within an endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list_by_endpoint(
             &self,
             resource_group_name: impl Into<String>,
@@ -2128,6 +2310,14 @@ pub mod origin_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets an existing origin group within an endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `origin_group_name`: Name of the origin group which is unique within the endpoint."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2145,6 +2335,15 @@ pub mod origin_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new origin group within the specified endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `origin_group_name`: Name of the origin group which is unique within the endpoint."]
+        #[doc = "* `origin_group`: Origin group properties"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -2164,6 +2363,15 @@ pub mod origin_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing origin group within an endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `origin_group_name`: Name of the origin group which is unique within the endpoint."]
+        #[doc = "* `origin_group_update_properties`: Origin group properties"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -2183,6 +2391,14 @@ pub mod origin_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing origin group within an endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `origin_group_name`: Name of the origin group which is unique within the endpoint."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2542,6 +2758,13 @@ pub mod custom_domains {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the existing custom domains within an endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list_by_endpoint(
             &self,
             resource_group_name: impl Into<String>,
@@ -2557,6 +2780,14 @@ pub mod custom_domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets an existing custom domain within an endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `custom_domain_name`: Name of the custom domain within an endpoint."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2574,6 +2805,15 @@ pub mod custom_domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new custom domain within an endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `custom_domain_name`: Name of the custom domain within an endpoint."]
+        #[doc = "* `custom_domain_properties`: Properties required to create a new custom domain."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -2593,6 +2833,14 @@ pub mod custom_domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing custom domain within an endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `custom_domain_name`: Name of the custom domain within an endpoint."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2610,6 +2858,14 @@ pub mod custom_domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Disable https delivery of the custom domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `custom_domain_name`: Name of the custom domain within an endpoint."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn disable_custom_https(
             &self,
             resource_group_name: impl Into<String>,
@@ -2627,6 +2883,14 @@ pub mod custom_domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Enable https delivery of the custom domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the CDN profile which is unique within the resource group."]
+        #[doc = "* `endpoint_name`: Name of the endpoint under the profile which is unique globally."]
+        #[doc = "* `custom_domain_name`: Name of the custom domain within an endpoint."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn enable_custom_https(
             &self,
             resource_group_name: impl Into<String>,
@@ -3044,6 +3308,10 @@ pub mod custom_domains {
     }
 }
 impl Client {
+    #[doc = "Check the availability of a resource name. This is needed for resources where name is globally unique, such as a CDN endpoint."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `check_name_availability_input`: Input to check."]
     pub fn check_name_availability(
         &self,
         check_name_availability_input: impl Into<models::CheckNameAvailabilityInput>,
@@ -3053,6 +3321,11 @@ impl Client {
             check_name_availability_input: check_name_availability_input.into(),
         }
     }
+    #[doc = "Check the availability of a resource name. This is needed for resources where name is globally unique, such as a CDN endpoint."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `check_name_availability_input`: Input to check."]
+    #[doc = "* `subscription_id`: Azure Subscription ID."]
     pub fn check_name_availability_with_subscription(
         &self,
         check_name_availability_input: impl Into<models::CheckNameAvailabilityInput>,
@@ -3064,6 +3337,11 @@ impl Client {
             subscription_id: subscription_id.into(),
         }
     }
+    #[doc = "Check if the probe path is a valid path and the file can be accessed. Probe path is the path to a file hosted on the origin server to help accelerate the delivery of dynamic content via the CDN endpoint. This path is relative to the origin path specified in the endpoint configuration."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `validate_probe_input`: Input to check."]
+    #[doc = "* `subscription_id`: Azure Subscription ID."]
     pub fn validate_probe(
         &self,
         validate_probe_input: impl Into<models::ValidateProbeInput>,
@@ -3226,6 +3504,10 @@ pub mod resource_usage {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Check the quota and actual usage of the CDN profiles under the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -3313,6 +3595,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available CDN REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -3391,6 +3674,7 @@ pub mod edge_nodes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Edgenodes are the global Point of Presence (POP) locations used to deliver CDN content to end users."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

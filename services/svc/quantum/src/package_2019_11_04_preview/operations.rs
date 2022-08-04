@@ -91,6 +91,12 @@ pub mod jobs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List jobs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: Name of an Azure resource group."]
+        #[doc = "* `workspace_name`: Name of the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -104,6 +110,13 @@ pub mod jobs {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Get job by id"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: Name of an Azure resource group."]
+        #[doc = "* `workspace_name`: Name of the workspace."]
+        #[doc = "* `job_id`: Id of the job."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -119,6 +132,14 @@ pub mod jobs {
                 job_id: job_id.into(),
             }
         }
+        #[doc = "Create a job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: Name of an Azure resource group."]
+        #[doc = "* `workspace_name`: Name of the workspace."]
+        #[doc = "* `job_id`: Id of the job."]
+        #[doc = "* `job`: The complete metadata of the job to submit."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -136,6 +157,13 @@ pub mod jobs {
                 job: job.into(),
             }
         }
+        #[doc = "Cancel a job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: Name of an Azure resource group."]
+        #[doc = "* `workspace_name`: Name of the workspace."]
+        #[doc = "* `job_id`: Id of the job."]
         pub fn cancel(
             &self,
             subscription_id: impl Into<String>,
@@ -385,6 +413,12 @@ pub mod providers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get provider status."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: Name of an Azure resource group."]
+        #[doc = "* `workspace_name`: Name of the workspace."]
         pub fn get_status(
             &self,
             subscription_id: impl Into<String>,
@@ -472,6 +506,13 @@ pub mod storage {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a URL with SAS token for a container/blob in the storage account associated with the workspace. The SAS URL can be used to upload job input and/or download job output."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: Name of an Azure resource group."]
+        #[doc = "* `workspace_name`: Name of the workspace."]
+        #[doc = "* `blob_details`: The details (name and container) of the blob to store or download data."]
         pub fn sas_uri(
             &self,
             subscription_id: impl Into<String>,
@@ -544,6 +585,12 @@ pub mod quotas {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List quotas for the given workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: Name of an Azure resource group."]
+        #[doc = "* `workspace_name`: Name of the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,

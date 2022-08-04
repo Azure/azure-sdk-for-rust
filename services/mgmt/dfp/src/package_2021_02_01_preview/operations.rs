@@ -82,6 +82,12 @@ pub mod instances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets details about the specified instances."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given DFP instance is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `instance_name`: The name of the instance. It must be a minimum of 3 characters, and a maximum of 63."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_details(
             &self,
             resource_group_name: impl Into<String>,
@@ -95,6 +101,13 @@ pub mod instances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Provisions the specified DFP instance based on the configuration specified in the request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given DFP instance is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `instance_name`: The name of the DFP instances. It must be a minimum of 3 characters, and a maximum of 63."]
+        #[doc = "* `instance_parameters`: Contains the information used to provision the DFP instance."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -110,6 +123,13 @@ pub mod instances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the current state of the specified DFP instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given DFP instance is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `instance_name`: The name of the DFP instance. It must be at least 3 characters in length, and no more than 63."]
+        #[doc = "* `instance_update_parameters`: Request object that contains the updated information for the instance."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -125,6 +145,12 @@ pub mod instances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified DFP instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given DFP instance is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `instance_name`: The name of the DFP instance. It must be at least 3 characters in length, and no more than 63."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -138,6 +164,11 @@ pub mod instances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the Dedicated instance for the given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given DFP instance is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -149,12 +180,22 @@ pub mod instances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the Dedicated instances for the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Check the name availability in the target location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The region name which the operation will lookup into."]
+        #[doc = "* `instance_parameters`: The name of the instance."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check_name_availability(
             &self,
             location: impl Into<String>,
@@ -615,6 +656,7 @@ pub mod instances {
     }
 }
 impl Client {
+    #[doc = "Lists all of the available DFP REST API operations."]
     pub fn list_operations(&self) -> list_operations::Builder {
         list_operations::Builder { client: self.clone() }
     }

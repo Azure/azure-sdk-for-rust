@@ -94,6 +94,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Azure Machine Learning Studio Commitment Plan RP REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -150,6 +151,10 @@ pub mod skus {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the available commitment plan SKUs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -211,6 +216,13 @@ pub mod commitment_associations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a commitment association."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `commitment_plan_name`: The Azure ML commitment plan name."]
+        #[doc = "* `commitment_association_name`: The commitment association name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -226,6 +238,12 @@ pub mod commitment_associations {
                 commitment_association_name: commitment_association_name.into(),
             }
         }
+        #[doc = "Get all commitment associations for a parent commitment plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `commitment_plan_name`: The Azure ML commitment plan name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -240,6 +258,14 @@ pub mod commitment_associations {
                 skip_token: None,
             }
         }
+        #[doc = "Re-parent a commitment association from one commitment plan to another."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `commitment_plan_name`: The Azure ML commitment plan name."]
+        #[doc = "* `commitment_association_name`: The commitment association name."]
+        #[doc = "* `move_payload`: The move request payload."]
         pub fn move_(
             &self,
             subscription_id: impl Into<String>,
@@ -439,6 +465,12 @@ pub mod commitment_plans {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve an Azure ML commitment plan by its subscription, resource group and name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `commitment_plan_name`: The Azure ML commitment plan name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -452,6 +484,13 @@ pub mod commitment_plans {
                 commitment_plan_name: commitment_plan_name.into(),
             }
         }
+        #[doc = "Create a new Azure ML commitment plan resource or updates an existing one."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `commitment_plan_name`: The Azure ML commitment plan name."]
+        #[doc = "* `create_or_update_payload`: The payload to create or update the Azure ML commitment plan."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -467,6 +506,13 @@ pub mod commitment_plans {
                 create_or_update_payload: create_or_update_payload.into(),
             }
         }
+        #[doc = "Patch an existing Azure ML commitment plan resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `commitment_plan_name`: The Azure ML commitment plan name."]
+        #[doc = "* `patch_payload`: The payload to use to patch the Azure ML commitment plan. Only tags and SKU may be modified on an existing commitment plan."]
         pub fn patch(
             &self,
             subscription_id: impl Into<String>,
@@ -482,6 +528,12 @@ pub mod commitment_plans {
                 patch_payload: patch_payload.into(),
             }
         }
+        #[doc = "Remove an existing Azure ML commitment plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `commitment_plan_name`: The Azure ML commitment plan name."]
         pub fn remove(
             &self,
             subscription_id: impl Into<String>,
@@ -495,6 +547,10 @@ pub mod commitment_plans {
                 commitment_plan_name: commitment_plan_name.into(),
             }
         }
+        #[doc = "Retrieve all Azure ML commitment plans in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -502,6 +558,11 @@ pub mod commitment_plans {
                 skip_token: None,
             }
         }
+        #[doc = "Retrieve all Azure ML commitment plans in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_in_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -903,6 +964,12 @@ pub mod usage_history {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the usage history for an Azure ML commitment plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `commitment_plan_name`: The Azure ML commitment plan name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,

@@ -103,6 +103,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Resource Provider operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -182,6 +183,10 @@ pub mod skus {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the list of StorageCache.Cache SKUs available to this subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -268,6 +273,10 @@ pub mod usage_models {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the list of Cache Usage Models available to this subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -354,6 +363,12 @@ pub mod asc_operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the status of an asynchronous operation for the Azure HPC Cache"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: The name of the region used to look up the operation."]
+        #[doc = "* `operation_id`: The operation id which uniquely identifies the asynchronous operation."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -425,6 +440,11 @@ pub mod asc_usages {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the quantity used and quota limit for resources"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: The name of the region to query for usage information."]
         pub fn list(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -514,12 +534,21 @@ pub mod caches {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns all Caches the user has access to under a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns all Caches the user has access to under a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -531,6 +560,12 @@ pub mod caches {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns a Cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -544,6 +579,12 @@ pub mod caches {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a Cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -558,6 +599,12 @@ pub mod caches {
                 cache: None,
             }
         }
+        #[doc = "Update a Cache instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -572,6 +619,12 @@ pub mod caches {
                 cache: None,
             }
         }
+        #[doc = "Schedules a Cache for deletion."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -585,6 +638,12 @@ pub mod caches {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Tells a Cache to write generate debug info for support to process."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
         pub fn debug_info(
             &self,
             resource_group_name: impl Into<String>,
@@ -598,6 +657,12 @@ pub mod caches {
                 cache_name: cache_name.into(),
             }
         }
+        #[doc = "Tells a Cache to write all dirty data to the Storage Target(s). During the flush, clients will see errors returned until the flush is complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
         pub fn flush(
             &self,
             resource_group_name: impl Into<String>,
@@ -611,6 +676,12 @@ pub mod caches {
                 cache_name: cache_name.into(),
             }
         }
+        #[doc = "Tells a Stopped state Cache to transition to Active state."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
         pub fn start(
             &self,
             resource_group_name: impl Into<String>,
@@ -624,6 +695,12 @@ pub mod caches {
                 cache_name: cache_name.into(),
             }
         }
+        #[doc = "Tells an Active Cache to transition to Stopped state."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
         pub fn stop(
             &self,
             resource_group_name: impl Into<String>,
@@ -637,6 +714,12 @@ pub mod caches {
                 cache_name: cache_name.into(),
             }
         }
+        #[doc = "Create a priming job. This operation is only allowed when the cache is healthy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
         pub fn start_priming_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -651,6 +734,12 @@ pub mod caches {
                 primingjob: None,
             }
         }
+        #[doc = "Schedule a priming job for deletion."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn stop_priming_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -665,6 +754,12 @@ pub mod caches {
                 priming_job_id: None,
             }
         }
+        #[doc = "Schedule a priming job to be paused."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn pause_priming_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -679,6 +774,12 @@ pub mod caches {
                 priming_job_id: None,
             }
         }
+        #[doc = "Resumes a paused priming job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn resume_priming_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -693,6 +794,12 @@ pub mod caches {
                 priming_job_id: None,
             }
         }
+        #[doc = "Upgrade a Cache's firmware if a new version is available. Otherwise, this operation has no effect."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
         pub fn upgrade_firmware(
             &self,
             resource_group_name: impl Into<String>,
@@ -706,6 +813,12 @@ pub mod caches {
                 cache_name: cache_name.into(),
             }
         }
+        #[doc = "Update cache space allocation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
         pub fn space_allocation(
             &self,
             resource_group_name: impl Into<String>,
@@ -1715,6 +1828,13 @@ pub mod storage_targets {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Tells a storage target to refresh its DNS information."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
+        #[doc = "* `storage_target_name`: Name of Storage Target."]
         pub fn dns_refresh(
             &self,
             resource_group_name: impl Into<String>,
@@ -1730,6 +1850,12 @@ pub mod storage_targets {
                 storage_target_name: storage_target_name.into(),
             }
         }
+        #[doc = "Returns a list of Storage Targets for the specified Cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
         pub fn list_by_cache(
             &self,
             resource_group_name: impl Into<String>,
@@ -1743,6 +1869,13 @@ pub mod storage_targets {
                 cache_name: cache_name.into(),
             }
         }
+        #[doc = "Returns a Storage Target from a Cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
+        #[doc = "* `storage_target_name`: Name of Storage Target."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1758,6 +1891,13 @@ pub mod storage_targets {
                 storage_target_name: storage_target_name.into(),
             }
         }
+        #[doc = "Create or update a Storage Target. This operation is allowed at any time, but if the Cache is down or unhealthy, the actual creation/modification of the Storage Target may be delayed until the Cache is healthy again."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
+        #[doc = "* `storage_target_name`: Name of Storage Target."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1774,6 +1914,13 @@ pub mod storage_targets {
                 storagetarget: None,
             }
         }
+        #[doc = "Removes a Storage Target from a Cache. This operation is allowed at any time, but if the Cache is down or unhealthy, the actual removal of the Storage Target may be delayed until the Cache is healthy again. Note that if the Cache has data to flush to the Storage Target, the data will be flushed before the Storage Target will be deleted."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
+        #[doc = "* `storage_target_name`: Name of Storage Target."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2127,6 +2274,13 @@ pub mod storage_target {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Tells the cache to write all dirty data to the Storage Target's backend storage. Client requests to this storage target's namespace will return errors until the flush operation completes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
+        #[doc = "* `storage_target_name`: Name of Storage Target."]
         pub fn flush(
             &self,
             resource_group_name: impl Into<String>,
@@ -2142,6 +2296,13 @@ pub mod storage_target {
                 storage_target_name: storage_target_name.into(),
             }
         }
+        #[doc = "Suspends client access to a storage target."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
+        #[doc = "* `storage_target_name`: Name of Storage Target."]
         pub fn suspend(
             &self,
             resource_group_name: impl Into<String>,
@@ -2157,6 +2318,13 @@ pub mod storage_target {
                 storage_target_name: storage_target_name.into(),
             }
         }
+        #[doc = "Resumes client access to a previously suspended storage target."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
+        #[doc = "* `storage_target_name`: Name of Storage Target."]
         pub fn resume(
             &self,
             resource_group_name: impl Into<String>,
@@ -2172,6 +2340,13 @@ pub mod storage_target {
                 storage_target_name: storage_target_name.into(),
             }
         }
+        #[doc = "Invalidate all cached data for a storage target. Cached files are discarded and fetched from the back end on the next request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Target resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `cache_name`: Name of Cache. Length of name must not be greater than 80 and chars must be from the [-0-9a-zA-Z_] char class."]
+        #[doc = "* `storage_target_name`: Name of Storage Target."]
         pub fn invalidate(
             &self,
             resource_group_name: impl Into<String>,

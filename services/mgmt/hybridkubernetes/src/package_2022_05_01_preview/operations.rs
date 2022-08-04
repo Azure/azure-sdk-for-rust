@@ -86,6 +86,12 @@ pub mod connected_cluster {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the properties of the specified connected cluster."]
+        #[doc = "Returns the properties of the specified connected cluster, including name, identity, properties, and additional cluster details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the Kubernetes cluster on which get is called."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -100,6 +106,13 @@ pub mod connected_cluster {
             }
         }
         #[doc = "Register a new Kubernetes cluster with Azure Resource Manager."]
+        #[doc = "API to register a new Kubernetes cluster and create a tracked resource in Azure Resource Manager (ARM)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the Kubernetes cluster on which get is called."]
+        #[doc = "* `connected_cluster`: Parameters supplied to Create a Connected Cluster."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -116,6 +129,13 @@ pub mod connected_cluster {
             }
         }
         #[doc = "Updates a connected cluster."]
+        #[doc = "API to update certain properties of the connected cluster resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the Kubernetes cluster on which get is called."]
+        #[doc = "* `connected_cluster_patch`: Parameters supplied to update Connected Cluster."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -132,6 +152,12 @@ pub mod connected_cluster {
             }
         }
         #[doc = "Delete a connected cluster."]
+        #[doc = "Delete a connected cluster, removing the tracked resource in Azure Resource Manager (ARM)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the Kubernetes cluster on which get is called."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -146,6 +172,13 @@ pub mod connected_cluster {
             }
         }
         #[doc = "Gets cluster user credentials of a connected cluster"]
+        #[doc = "Gets cluster user credentials of the connected cluster with a specified resource group and name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the Kubernetes cluster on which get is called."]
+        #[doc = "* `properties`: ListClusterUserCredential properties"]
         pub fn list_cluster_user_credential(
             &self,
             subscription_id: impl Into<String>,
@@ -162,6 +195,11 @@ pub mod connected_cluster {
             }
         }
         #[doc = "Lists all connected clusters"]
+        #[doc = "API to enumerate registered connected K8s clusters under a Resource Group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -174,6 +212,10 @@ pub mod connected_cluster {
             }
         }
         #[doc = "Lists all connected clusters"]
+        #[doc = "API to enumerate registered connected K8s clusters under a Subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -610,6 +652,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available API operations for Connected Cluster resource."]
         pub fn get(&self) -> get::Builder {
             get::Builder { client: self.0.clone() }
         }

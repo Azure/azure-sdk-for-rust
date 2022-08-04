@@ -121,12 +121,21 @@ pub mod backup_vaults {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns resource collection belonging to a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get_in_subscription(&self, subscription_id: impl Into<String>) -> get_in_subscription::Builder {
             get_in_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns resource collection belonging to a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get_in_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -138,6 +147,12 @@ pub mod backup_vaults {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns a resource belonging to a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -151,6 +166,13 @@ pub mod backup_vaults {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a BackupVault resource belonging to a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: Request body for operation"]
         pub fn create_or_update(
             &self,
             vault_name: impl Into<String>,
@@ -166,6 +188,13 @@ pub mod backup_vaults {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates a BackupVault resource belonging to a resource group. For example, updating tags for a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: Request body for operation"]
         pub fn update(
             &self,
             vault_name: impl Into<String>,
@@ -181,6 +210,12 @@ pub mod backup_vaults {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a BackupVault resource from the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn delete(
             &self,
             vault_name: impl Into<String>,
@@ -195,6 +230,12 @@ pub mod backup_vaults {
             }
         }
         #[doc = "API to check for resource name availability"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `location`: The location in which uniqueness will be verified."]
+        #[doc = "* `parameters`: Check name availability request"]
         pub fn check_name_availability(
             &self,
             resource_group_name: impl Into<String>,
@@ -652,6 +693,10 @@ pub mod operation_result {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the operation status for a resource."]
+        #[doc = "Gets the operation result for a resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -729,6 +774,9 @@ pub mod operation_status {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the operation status for a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -800,6 +848,10 @@ pub mod backup_vault_operation_results {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -881,6 +933,10 @@ pub mod data_protection {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Validates if a feature is supported"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: Feature support request object"]
         pub fn check_feature_support(
             &self,
             subscription_id: impl Into<String>,
@@ -952,6 +1008,7 @@ pub mod data_protection_operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the list of available operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1031,6 +1088,12 @@ pub mod backup_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns list of backup policies belonging to a backup vault"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             vault_name: impl Into<String>,
@@ -1045,6 +1108,12 @@ pub mod backup_policies {
             }
         }
         #[doc = "Gets a backup policy belonging to a backup vault"]
+        #[doc = "Gets a backup policy belonging to a backup vault"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -1061,6 +1130,13 @@ pub mod backup_policies {
             }
         }
         #[doc = "Creates or Updates a backup policy belonging to a backup vault"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `backup_policy_name`: Name of the policy"]
+        #[doc = "* `parameters`: Request body for operation"]
         pub fn create_or_update(
             &self,
             vault_name: impl Into<String>,
@@ -1079,6 +1155,11 @@ pub mod backup_policies {
             }
         }
         #[doc = "Deletes a backup policy belonging to a backup vault"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn delete(
             &self,
             vault_name: impl Into<String>,
@@ -1343,6 +1424,12 @@ pub mod backup_instances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a backup instances belonging to a backup vault"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             vault_name: impl Into<String>,
@@ -1356,6 +1443,13 @@ pub mod backup_instances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a backup instance with name in a backup vault"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `backup_instance_name`: The name of the backup instance"]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -1371,6 +1465,14 @@ pub mod backup_instances {
                 backup_instance_name: backup_instance_name.into(),
             }
         }
+        #[doc = "Create or update a backup instance in a backup vault"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `backup_instance_name`: The name of the backup instance"]
+        #[doc = "* `parameters`: Request body for operation"]
         pub fn create_or_update(
             &self,
             vault_name: impl Into<String>,
@@ -1388,6 +1490,13 @@ pub mod backup_instances {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a backup instance in a backup vault"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `backup_instance_name`: The name of the backup instance"]
         pub fn delete(
             &self,
             vault_name: impl Into<String>,
@@ -1403,6 +1512,14 @@ pub mod backup_instances {
                 backup_instance_name: backup_instance_name.into(),
             }
         }
+        #[doc = "Trigger adhoc backup "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `backup_instance_name`: The name of the backup instance"]
+        #[doc = "* `parameters`: Request body for operation"]
         pub fn adhoc_backup(
             &self,
             vault_name: impl Into<String>,
@@ -1420,6 +1537,13 @@ pub mod backup_instances {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Validate whether adhoc backup will be successful or not"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: Request body for operation"]
         pub fn validate_for_backup(
             &self,
             vault_name: impl Into<String>,
@@ -1435,6 +1559,13 @@ pub mod backup_instances {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "rehydrate recovery point for restore for a BackupInstance"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `parameters`: Request body for operation"]
         pub fn trigger_rehydrate(
             &self,
             resource_group_name: impl Into<String>,
@@ -1452,6 +1583,14 @@ pub mod backup_instances {
                 backup_instance_name: backup_instance_name.into(),
             }
         }
+        #[doc = "Triggers restore for a BackupInstance"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `backup_instance_name`: The name of the backup instance"]
+        #[doc = "* `parameters`: Request body for operation"]
         pub fn trigger_restore(
             &self,
             vault_name: impl Into<String>,
@@ -1469,6 +1608,14 @@ pub mod backup_instances {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Validates if Restore can be triggered for a DataSource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `backup_instance_name`: The name of the backup instance"]
+        #[doc = "* `parameters`: Request body for operation"]
         pub fn validate_for_restore(
             &self,
             vault_name: impl Into<String>,
@@ -2024,6 +2171,13 @@ pub mod recovery_points {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns a list of Recovery Points for a DataSource in a vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `backup_instance_name`: The name of the backup instance"]
         pub fn list(
             &self,
             vault_name: impl Into<String>,
@@ -2041,6 +2195,13 @@ pub mod recovery_points {
                 skip_token: None,
             }
         }
+        #[doc = "Gets a Recovery Point using recoveryPointId for a Datasource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `backup_instance_name`: The name of the backup instance"]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -2201,6 +2362,12 @@ pub mod jobs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns list of jobs belonging to a backup vault"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `vault_name`: The name of the backup vault."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2214,6 +2381,13 @@ pub mod jobs {
                 vault_name: vault_name.into(),
             }
         }
+        #[doc = "Gets a job with id in a backup vault"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `job_id`: The Job ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2367,6 +2541,12 @@ pub mod restorable_time_ranges {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `backup_instance_name`: The name of the backup instance"]
+        #[doc = "* `parameters`: Request body for operation"]
         pub fn find(
             &self,
             vault_name: impl Into<String>,
@@ -2440,6 +2620,12 @@ pub mod export_jobs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Triggers export of jobs and returns an OperationID to track."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `vault_name`: The name of the backup vault."]
         pub fn trigger(
             &self,
             subscription_id: impl Into<String>,
@@ -2514,6 +2700,13 @@ pub mod export_jobs_operation_result {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the operation result of operation triggered by Export Jobs API. If the operation is successful, then it also contains URL of a Blob and a SAS key to access the same. The blob contains exported jobs in JSON serialized format."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `vault_name`: The name of the backup vault."]
+        #[doc = "* `operation_id`: OperationID which represents the export job."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2588,6 +2781,9 @@ pub mod resource_guards {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Returns ResourceGuards collection belonging to a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get_resources_in_subscription(&self, subscription_id: impl Into<String>) -> get_resources_in_subscription::Builder {
             get_resources_in_subscription::Builder {
                 client: self.0.clone(),
@@ -2595,6 +2791,10 @@ pub mod resource_guards {
             }
         }
         #[doc = "Returns ResourceGuards collection belonging to a ResourceGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
         pub fn get_resources_in_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -2607,6 +2807,11 @@ pub mod resource_guards {
             }
         }
         #[doc = "Returns a ResourceGuard belonging to a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_guards_name`: The name of ResourceGuard"]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2621,6 +2826,12 @@ pub mod resource_guards {
             }
         }
         #[doc = "Creates or updates a ResourceGuard resource belonging to a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_guards_name`: The name of ResourceGuard"]
+        #[doc = "* `parameters`: Request body for operation"]
         pub fn put(
             &self,
             resource_group_name: impl Into<String>,
@@ -2637,6 +2848,12 @@ pub mod resource_guards {
             }
         }
         #[doc = "Updates a ResourceGuard resource belonging to a resource group. For example, updating tags for a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_guards_name`: The name of ResourceGuard"]
+        #[doc = "* `parameters`: Request body for operation"]
         pub fn patch(
             &self,
             resource_group_name: impl Into<String>,
@@ -2653,6 +2870,11 @@ pub mod resource_guards {
             }
         }
         #[doc = "Deletes a ResourceGuard resource from the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_guards_name`: The name of ResourceGuard"]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2667,6 +2889,10 @@ pub mod resource_guards {
             }
         }
         #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get_disable_soft_delete_requests_objects(
             &self,
             resource_group_name: impl Into<String>,
@@ -2681,6 +2907,10 @@ pub mod resource_guards {
             }
         }
         #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get_delete_resource_guard_proxy_requests_objects(
             &self,
             resource_group_name: impl Into<String>,
@@ -2695,6 +2925,10 @@ pub mod resource_guards {
             }
         }
         #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get_backup_security_pin_requests_objects(
             &self,
             resource_group_name: impl Into<String>,
@@ -2709,6 +2943,10 @@ pub mod resource_guards {
             }
         }
         #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get_delete_protected_item_requests_objects(
             &self,
             resource_group_name: impl Into<String>,
@@ -2723,6 +2961,10 @@ pub mod resource_guards {
             }
         }
         #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get_update_protection_policy_requests_objects(
             &self,
             resource_group_name: impl Into<String>,
@@ -2737,6 +2979,10 @@ pub mod resource_guards {
             }
         }
         #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get_update_protected_item_requests_objects(
             &self,
             resource_group_name: impl Into<String>,
@@ -2751,6 +2997,10 @@ pub mod resource_guards {
             }
         }
         #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get_default_disable_soft_delete_requests_object(
             &self,
             resource_group_name: impl Into<String>,
@@ -2767,6 +3017,10 @@ pub mod resource_guards {
             }
         }
         #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get_default_delete_resource_guard_proxy_requests_object(
             &self,
             resource_group_name: impl Into<String>,
@@ -2783,6 +3037,10 @@ pub mod resource_guards {
             }
         }
         #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get_default_backup_security_pin_requests_object(
             &self,
             resource_group_name: impl Into<String>,
@@ -2799,6 +3057,10 @@ pub mod resource_guards {
             }
         }
         #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get_default_delete_protected_item_requests_object(
             &self,
             resource_group_name: impl Into<String>,
@@ -2815,6 +3077,10 @@ pub mod resource_guards {
             }
         }
         #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get_default_update_protection_policy_requests_object(
             &self,
             resource_group_name: impl Into<String>,
@@ -2831,6 +3097,10 @@ pub mod resource_guards {
             }
         }
         #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group where the backup vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get_default_update_protected_item_requests_object(
             &self,
             resource_group_name: impl Into<String>,

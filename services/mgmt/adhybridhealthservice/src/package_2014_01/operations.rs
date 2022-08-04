@@ -130,6 +130,7 @@ pub mod adds_services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the details of Active Directory Domain Service, for a tenant, that are onboarded to Azure Active Directory Connect Health."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -139,18 +140,31 @@ pub mod adds_services {
                 take_count: None,
             }
         }
+        #[doc = "Onboards a service for a given tenant in Azure Active Directory Connect Health."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service`: The service object."]
         pub fn add(&self, service: impl Into<models::ServiceProperties>) -> add::Builder {
             add::Builder {
                 client: self.0.clone(),
                 service: service.into(),
             }
         }
+        #[doc = "Gets the details of an Active Directory Domain Service for a tenant having Azure AD Premium license and is onboarded to Azure Active Directory Connect Health."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn get(&self, service_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
             }
         }
+        #[doc = "Updates an Active Directory Domain Service properties of an onboarded service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service which needs to be deleted."]
+        #[doc = "* `service`: The service object."]
         pub fn update(&self, service_name: impl Into<String>, service: impl Into<models::ServiceProperties>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -158,6 +172,10 @@ pub mod adds_services {
                 service: service.into(),
             }
         }
+        #[doc = "Deletes an Active Directory Domain Service which is onboarded to Azure Active Directory Connect Health."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service which needs to be deleted."]
         pub fn delete(&self, service_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -165,12 +183,22 @@ pub mod adds_services {
                 confirm: None,
             }
         }
+        #[doc = "Gets the forest summary for a given Active Directory Domain Service, that is onboarded to Azure Active Directory Connect Health."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn get_forest_summary(&self, service_name: impl Into<String>) -> get_forest_summary::Builder {
             get_forest_summary::Builder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
             }
         }
+        #[doc = "Gets the average of the metric values for a given metric and group combination."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `metric_name`: The metric name"]
+        #[doc = "* `group_name`: The group name"]
         pub fn list_metrics_average(
             &self,
             service_name: impl Into<String>,
@@ -184,6 +212,12 @@ pub mod adds_services {
                 group_name: group_name.into(),
             }
         }
+        #[doc = "Gets the sum of the metric values for a given metric and group combination."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `metric_name`: The metric name"]
+        #[doc = "* `group_name`: The group name"]
         pub fn list_metrics_sum(
             &self,
             service_name: impl Into<String>,
@@ -197,6 +231,10 @@ pub mod adds_services {
                 group_name: group_name.into(),
             }
         }
+        #[doc = "Gets the service related metrics information."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn list_metric_metadata(&self, service_name: impl Into<String>) -> list_metric_metadata::Builder {
             list_metric_metadata::Builder {
                 client: self.0.clone(),
@@ -205,6 +243,11 @@ pub mod adds_services {
                 perf_counter: None,
             }
         }
+        #[doc = "Gets the service related metric information."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `metric_name`: The metric name"]
         pub fn get_metric_metadata(&self, service_name: impl Into<String>, metric_name: impl Into<String>) -> get_metric_metadata::Builder {
             get_metric_metadata::Builder {
                 client: self.0.clone(),
@@ -212,6 +255,12 @@ pub mod adds_services {
                 metric_name: metric_name.into(),
             }
         }
+        #[doc = "Gets the service related metrics for a given metric and group combination."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `metric_name`: The metric name"]
+        #[doc = "* `group_name`: The group name"]
         pub fn get_metric_metadata_for_group(
             &self,
             service_name: impl Into<String>,
@@ -228,6 +277,10 @@ pub mod adds_services {
                 to_date: None,
             }
         }
+        #[doc = "Gets complete domain controller list along with replication details for a given Active Directory Domain Service, that is onboarded to Azure Active Directory Connect Health."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn list_replication_details(&self, service_name: impl Into<String>) -> list_replication_details::Builder {
             list_replication_details::Builder {
                 client: self.0.clone(),
@@ -236,6 +289,14 @@ pub mod adds_services {
                 with_details: None,
             }
         }
+        #[doc = "Gets complete domain controller list along with replication details for a given Active Directory Domain Service, that is onboarded to Azure Active Directory Connect Health."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `is_groupby_site`: Indicates if the result should be grouped by site or not."]
+        #[doc = "* `query`: The custom query."]
+        #[doc = "* `next_partition_key`: The next partition key to query for."]
+        #[doc = "* `next_row_key`: The next row key to query for."]
         pub fn list_replication_summary(
             &self,
             service_name: impl Into<String>,
@@ -255,6 +316,11 @@ pub mod adds_services {
                 take_count: None,
             }
         }
+        #[doc = "Gets the details of an alert for a given Active Directory Domain Controller service and server combination."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_member_id`: The server Id for which the alert details needs to be queried."]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn list_server_alerts(
             &self,
             service_member_id: impl Into<String>,
@@ -270,6 +336,7 @@ pub mod adds_services {
                 to: None,
             }
         }
+        #[doc = "Gets the details of Active Directory Domain Services for a tenant having Azure AD Premium license and is onboarded to Azure Active Directory Connect Health."]
         pub fn list_premium_services(&self) -> list_premium_services::Builder {
             list_premium_services::Builder {
                 client: self.0.clone(),
@@ -1367,6 +1434,10 @@ pub mod alerts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the alerts for a given Active Directory Domain Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn list_adds_alerts(&self, service_name: impl Into<String>) -> list_adds_alerts::Builder {
             list_adds_alerts::Builder {
                 client: self.0.clone(),
@@ -1489,6 +1560,10 @@ pub mod configuration {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the service configurations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn list_adds_configurations(&self, service_name: impl Into<String>) -> list_adds_configurations::Builder {
             list_adds_configurations::Builder {
                 client: self.0.clone(),
@@ -1496,12 +1571,18 @@ pub mod configuration {
                 grouping: None,
             }
         }
+        #[doc = "Gets the details of a tenant onboarded to Azure Active Directory Connect Health."]
         pub fn get(&self) -> get::Builder {
             get::Builder { client: self.0.clone() }
         }
+        #[doc = "Onboards a tenant in Azure Active Directory Connect Health."]
         pub fn add(&self) -> add::Builder {
             add::Builder { client: self.0.clone() }
         }
+        #[doc = "Updates tenant properties for tenants onboarded to Azure Active Directory Connect Health."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tenant`: The tenant object with the properties set to the updated value."]
         pub fn update(&self, tenant: impl Into<models::Tenant>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -1727,6 +1808,11 @@ pub mod dimensions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the dimensions for a given dimension type in a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `dimension`: The dimension type."]
         pub fn list_adds_dimensions(&self, service_name: impl Into<String>, dimension: impl Into<String>) -> list_adds_dimensions::Builder {
             list_adds_dimensions::Builder {
                 client: self.0.clone(),
@@ -1816,6 +1902,10 @@ pub mod adds_service_members {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the details of the Active Directory Domain servers, for a given Active Directory Domain Service, that are onboarded to Azure Active Directory Connect Health."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn list(&self, service_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1823,6 +1913,11 @@ pub mod adds_service_members {
                 filter: None,
             }
         }
+        #[doc = "Gets the details of a server, for a given Active Directory Domain Controller service, that are onboarded to Azure Active Directory Connect Health Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `service_member_id`: The server Id."]
         pub fn get(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1830,6 +1925,11 @@ pub mod adds_service_members {
                 service_member_id: service_member_id.into(),
             }
         }
+        #[doc = "Deletes a Active Directory Domain Controller server that has been onboarded to Azure Active Directory Connect Health Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `service_member_id`: The server Id."]
         pub fn delete(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1838,6 +1938,11 @@ pub mod adds_service_members {
                 confirm: None,
             }
         }
+        #[doc = "Gets the credentials of the server which is needed by the agent to connect to Azure Active Directory Connect Health Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `service_member_id`: The server Id."]
         pub fn list_credentials(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> list_credentials::Builder {
             list_credentials::Builder {
                 client: self.0.clone(),
@@ -2097,6 +2202,13 @@ pub mod ad_domain_service_members {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the details of the servers, for a given Active Directory Domain Service, that are onboarded to Azure Active Directory Connect Health."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `is_groupby_site`: Indicates if the result should be grouped by site or not."]
+        #[doc = "* `next_partition_key`: The next partition key to query for."]
+        #[doc = "* `next_row_key`: The next row key to query for."]
         pub fn list(
             &self,
             service_name: impl Into<String>,
@@ -2230,6 +2342,11 @@ pub mod adds_services_user_preference {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the user preferences for a given feature."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `feature_name`: The name of the feature."]
         pub fn get(&self, service_name: impl Into<String>, feature_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -2237,6 +2354,12 @@ pub mod adds_services_user_preference {
                 feature_name: feature_name.into(),
             }
         }
+        #[doc = "Adds the user preferences for a given feature."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `feature_name`: The name of the feature."]
+        #[doc = "* `setting`: The user preference setting."]
         pub fn add(
             &self,
             service_name: impl Into<String>,
@@ -2250,6 +2373,11 @@ pub mod adds_services_user_preference {
                 setting: setting.into(),
             }
         }
+        #[doc = "Deletes the user preferences for a given feature."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `feature_name`: The name of the feature."]
         pub fn delete(&self, service_name: impl Into<String>, feature_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -2407,6 +2535,12 @@ pub mod adds_service {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the server related metrics for a given metric and group combination."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `metric_name`: The metric name"]
+        #[doc = "* `group_name`: The group name"]
         pub fn get_metrics(
             &self,
             service_name: impl Into<String>,
@@ -2505,6 +2639,10 @@ pub mod adds_services_replication_status {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets Replication status for a given Active Directory Domain Service, that is onboarded to Azure Active Directory Connect Health."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn get(&self, service_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -2565,6 +2703,10 @@ pub mod adds_services_service_members {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the details of the servers, for a given Active Directory Domain Controller service, that are onboarded to Azure Active Directory Connect Health Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn list(&self, service_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2574,6 +2716,11 @@ pub mod adds_services_service_members {
                 dimension_signature: None,
             }
         }
+        #[doc = "Onboards  a server, for a given Active Directory Domain Controller service, to Azure Active Directory Connect Health Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service under which the server is to be onboarded."]
+        #[doc = "* `service_member`: The server object."]
         pub fn add(&self, service_name: impl Into<String>, service_member: impl Into<models::ServiceMember>) -> add::Builder {
             add::Builder {
                 client: self.0.clone(),
@@ -2737,6 +2884,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the available Azure Data Factory API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -2818,6 +2966,7 @@ pub mod reports {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Checks if the user is enabled for Dev Ops access."]
         pub fn get_dev_ops(&self) -> get_dev_ops::Builder {
             get_dev_ops::Builder { client: self.0.clone() }
         }
@@ -2873,6 +3022,7 @@ pub mod services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the details of services, for a tenant, that are onboarded to Azure Active Directory Connect Health."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2882,12 +3032,17 @@ pub mod services {
                 take_count: None,
             }
         }
+        #[doc = "Onboards a service for a given tenant in Azure Active Directory Connect Health."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service`: The service object."]
         pub fn add(&self, service: impl Into<models::ServiceProperties>) -> add::Builder {
             add::Builder {
                 client: self.0.clone(),
                 service: service.into(),
             }
         }
+        #[doc = "Gets the details of services for a tenant having Azure AD Premium license and is onboarded to Azure Active Directory Connect Health."]
         pub fn list_premium(&self) -> list_premium::Builder {
             list_premium::Builder {
                 client: self.0.clone(),
@@ -2897,12 +3052,21 @@ pub mod services {
                 take_count: None,
             }
         }
+        #[doc = "Gets the details of a service for a tenant having Azure AD Premium license and is onboarded to Azure Active Directory Connect Health."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn get(&self, service_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
             }
         }
+        #[doc = "Updates the service properties of an onboarded service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service which needs to be deleted."]
+        #[doc = "* `service`: The service object."]
         pub fn update(&self, service_name: impl Into<String>, service: impl Into<models::ServiceProperties>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -2910,6 +3074,10 @@ pub mod services {
                 service: service.into(),
             }
         }
+        #[doc = "Deletes a service which is onboarded to Azure Active Directory Connect Health."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service which needs to be deleted."]
         pub fn delete(&self, service_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -2917,6 +3085,10 @@ pub mod services {
                 confirm: None,
             }
         }
+        #[doc = "Gets the alerts for a given service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn list_alerts(&self, service_name: impl Into<String>) -> list_alerts::Builder {
             list_alerts::Builder {
                 client: self.0.clone(),
@@ -2927,6 +3099,11 @@ pub mod services {
                 to: None,
             }
         }
+        #[doc = "Checks if the service has all the pre-requisites met to use a feature."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `feature_name`: The name of the feature."]
         pub fn get_feature_availibility(
             &self,
             service_name: impl Into<String>,
@@ -2938,12 +3115,21 @@ pub mod services {
                 feature_name: feature_name.into(),
             }
         }
+        #[doc = "Gets the count of latest AAD export errors."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn list_export_errors(&self, service_name: impl Into<String>) -> list_export_errors::Builder {
             list_export_errors::Builder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
             }
         }
+        #[doc = " Gets the categorized export errors."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `error_bucket`: The error category to query for."]
         pub fn list_export_errors_v2(
             &self,
             service_name: impl Into<String>,
@@ -2955,12 +3141,21 @@ pub mod services {
                 error_bucket: error_bucket.into(),
             }
         }
+        #[doc = "Gets the export status."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn list_export_status(&self, service_name: impl Into<String>) -> list_export_status::Builder {
             list_export_status::Builder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
             }
         }
+        #[doc = "Adds an alert feedback submitted by customer."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `alert_feedback`: The alert feedback."]
         pub fn add_alert_feedback(
             &self,
             service_name: impl Into<String>,
@@ -2972,6 +3167,11 @@ pub mod services {
                 alert_feedback: alert_feedback.into(),
             }
         }
+        #[doc = "Gets a list of all alert feedback for a given tenant and alert type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `short_name`: The name of the alert."]
         pub fn list_alert_feedback(&self, service_name: impl Into<String>, short_name: impl Into<String>) -> list_alert_feedback::Builder {
             list_alert_feedback::Builder {
                 client: self.0.clone(),
@@ -2979,6 +3179,12 @@ pub mod services {
                 short_name: short_name.into(),
             }
         }
+        #[doc = "Gets the average of the metric values for a given metric and group combination."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `metric_name`: The metric name"]
+        #[doc = "* `group_name`: The group name"]
         pub fn list_metrics_average(
             &self,
             service_name: impl Into<String>,
@@ -2992,6 +3198,12 @@ pub mod services {
                 group_name: group_name.into(),
             }
         }
+        #[doc = "Gets the sum of the metric values for a given metric and group combination."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `metric_name`: The metric name"]
+        #[doc = "* `group_name`: The group name"]
         pub fn list_metrics_sum(
             &self,
             service_name: impl Into<String>,
@@ -3005,6 +3217,10 @@ pub mod services {
                 group_name: group_name.into(),
             }
         }
+        #[doc = "Gets the service related metrics information."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn list_metric_metadata(&self, service_name: impl Into<String>) -> list_metric_metadata::Builder {
             list_metric_metadata::Builder {
                 client: self.0.clone(),
@@ -3013,6 +3229,11 @@ pub mod services {
                 perf_counter: None,
             }
         }
+        #[doc = "Gets the service related metrics information."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `metric_name`: The metric name"]
         pub fn get_metric_metadata(&self, service_name: impl Into<String>, metric_name: impl Into<String>) -> get_metric_metadata::Builder {
             get_metric_metadata::Builder {
                 client: self.0.clone(),
@@ -3020,6 +3241,12 @@ pub mod services {
                 metric_name: metric_name.into(),
             }
         }
+        #[doc = "Gets the service related metrics for a given metric and group combination."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `metric_name`: The metric name"]
+        #[doc = "* `group_name`: The group name"]
         pub fn get_metric_metadata_for_group(
             &self,
             service_name: impl Into<String>,
@@ -3036,6 +3263,11 @@ pub mod services {
                 to_date: None,
             }
         }
+        #[doc = "Updates the service level monitoring configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `configuration_setting`: The monitoring configuration to update"]
         pub fn update_monitoring_configuration(
             &self,
             service_name: impl Into<String>,
@@ -3047,12 +3279,20 @@ pub mod services {
                 configuration_setting: configuration_setting.into(),
             }
         }
+        #[doc = "Gets the service level monitoring configurations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn list_monitoring_configurations(&self, service_name: impl Into<String>) -> list_monitoring_configurations::Builder {
             list_monitoring_configurations::Builder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
             }
         }
+        #[doc = "Gets the bad password login attempt report for an user"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn list_user_bad_password_report(&self, service_name: impl Into<String>) -> list_user_bad_password_report::Builder {
             list_user_bad_password_report::Builder {
                 client: self.0.clone(),
@@ -3060,6 +3300,11 @@ pub mod services {
                 data_source: None,
             }
         }
+        #[doc = "Checks if the tenant, to which a service is registered, is whitelisted to use a feature."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `feature_name`: The name of the feature."]
         pub fn get_tenant_whitelisting(
             &self,
             service_name: impl Into<String>,
@@ -3071,12 +3316,20 @@ pub mod services {
                 feature_name: feature_name.into(),
             }
         }
+        #[doc = "Gets all Risky IP report URIs for the last 7 days."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn list_all_risky_ip_download_report(&self, service_name: impl Into<String>) -> list_all_risky_ip_download_report::Builder {
             list_all_risky_ip_download_report::Builder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
             }
         }
+        #[doc = "Initiate the generation of a new Risky IP report. Returns the URI for the new one."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn list_current_risky_ip_download_report(
             &self,
             service_name: impl Into<String>,
@@ -4605,6 +4858,12 @@ pub mod service {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the server related metrics for a given metric and group combination."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `metric_name`: The metric name"]
+        #[doc = "* `group_name`: The group name"]
         pub fn get_metrics(
             &self,
             service_name: impl Into<String>,
@@ -4703,6 +4962,10 @@ pub mod service_members {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the details of the servers, for a given service, that are onboarded to Azure Active Directory Connect Health Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn list(&self, service_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -4712,6 +4975,11 @@ pub mod service_members {
                 dimension_signature: None,
             }
         }
+        #[doc = "Onboards  a server, for a given service, to Azure Active Directory Connect Health Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service under which the server is to be onboarded."]
+        #[doc = "* `service_member`: The server object."]
         pub fn add(&self, service_name: impl Into<String>, service_member: impl Into<models::ServiceMember>) -> add::Builder {
             add::Builder {
                 client: self.0.clone(),
@@ -4719,6 +4987,11 @@ pub mod service_members {
                 service_member: service_member.into(),
             }
         }
+        #[doc = "Gets the details of a server, for a given service, that are onboarded to Azure Active Directory Connect Health Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `service_member_id`: The server Id."]
         pub fn get(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -4726,6 +4999,11 @@ pub mod service_members {
                 service_member_id: service_member_id.into(),
             }
         }
+        #[doc = "Deletes a server that has been onboarded to Azure Active Directory Connect Health Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `service_member_id`: The server Id."]
         pub fn delete(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -4734,6 +5012,11 @@ pub mod service_members {
                 confirm: None,
             }
         }
+        #[doc = "Gets the details of an alert for a given service and server combination."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_member_id`: The server Id for which the alert details needs to be queried."]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn list_alerts(&self, service_member_id: impl Into<String>, service_name: impl Into<String>) -> list_alerts::Builder {
             list_alerts::Builder {
                 client: self.0.clone(),
@@ -4745,6 +5028,11 @@ pub mod service_members {
                 to: None,
             }
         }
+        #[doc = "Gets the connector details for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `service_member_id`: The server Id."]
         pub fn list_connectors(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> list_connectors::Builder {
             list_connectors::Builder {
                 client: self.0.clone(),
@@ -4752,6 +5040,11 @@ pub mod service_members {
                 service_member_id: service_member_id.into(),
             }
         }
+        #[doc = "Gets the credentials of the server which is needed by the agent to connect to Azure Active Directory Connect Health Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `service_member_id`: The server Id."]
         pub fn list_credentials(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> list_credentials::Builder {
             list_credentials::Builder {
                 client: self.0.clone(),
@@ -4760,6 +5053,11 @@ pub mod service_members {
                 filter: None,
             }
         }
+        #[doc = "Deletes the data uploaded by the server to Azure Active Directory Connect Health Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `service_member_id`: The server Id."]
         pub fn delete_data(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> delete_data::Builder {
             delete_data::Builder {
                 client: self.0.clone(),
@@ -4767,6 +5065,11 @@ pub mod service_members {
                 service_member_id: service_member_id.into(),
             }
         }
+        #[doc = "Gets the last time when the server uploaded data to Azure Active Directory Connect Health Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `service_member_id`: The server Id."]
         pub fn list_data_freshness(
             &self,
             service_name: impl Into<String>,
@@ -4778,6 +5081,11 @@ pub mod service_members {
                 service_member_id: service_member_id.into(),
             }
         }
+        #[doc = "Gets the export status."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `service_member_id`: The server Id."]
         pub fn list_export_status(
             &self,
             service_name: impl Into<String>,
@@ -4789,6 +5097,11 @@ pub mod service_members {
                 service_member_id: service_member_id.into(),
             }
         }
+        #[doc = "Gets the global configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `service_member_id`: The server id."]
         pub fn list_global_configuration(
             &self,
             service_name: impl Into<String>,
@@ -4800,6 +5113,13 @@ pub mod service_members {
                 service_member_id: service_member_id.into(),
             }
         }
+        #[doc = "Gets the server related metrics for a given metric and group combination."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `metric_name`: The metric name"]
+        #[doc = "* `group_name`: The group name"]
+        #[doc = "* `service_member_id`: The server id."]
         pub fn get_metrics(
             &self,
             service_name: impl Into<String>,
@@ -4818,6 +5138,11 @@ pub mod service_members {
                 to_date: None,
             }
         }
+        #[doc = "Gets the service configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `service_member_id`: The server Id."]
         pub fn get_service_configuration(
             &self,
             service_name: impl Into<String>,
@@ -4829,6 +5154,12 @@ pub mod service_members {
                 service_member_id: service_member_id.into(),
             }
         }
+        #[doc = "Gets the list of connectors and run profile names."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `service_member_id`: The service member id."]
+        #[doc = "* `metric_name`: The name of the metric."]
         pub fn get_connector_metadata(
             &self,
             service_name: impl Into<String>,
@@ -5724,6 +6055,10 @@ pub mod list {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the IP address aggregates for a given service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn ip_address_aggregates_by_service(&self, service_name: impl Into<String>) -> ip_address_aggregates_by_service::Builder {
             ip_address_aggregates_by_service::Builder {
                 client: self.0.clone(),
@@ -5731,6 +6066,10 @@ pub mod list {
                 skiptoken: None,
             }
         }
+        #[doc = "Gets the IP address aggregate settings."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
         pub fn ip_address_aggregate_settings(&self, service_name: impl Into<String>) -> ip_address_aggregate_settings::Builder {
             ip_address_aggregate_settings::Builder {
                 client: self.0.clone(),
@@ -5873,6 +6212,11 @@ pub mod update {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Updates the IP address aggregate settings alert thresholds."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: The name of the service."]
+        #[doc = "* `ip_address_aggregate_setting`: The IP address aggregate setting object."]
         pub fn ip_address_aggregate_settings(
             &self,
             service_name: impl Into<String>,

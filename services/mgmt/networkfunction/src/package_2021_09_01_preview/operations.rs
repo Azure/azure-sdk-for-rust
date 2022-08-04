@@ -94,6 +94,7 @@ pub mod network_function {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available NetworkFunction Rest API operations."]
         pub fn list_operations(&self) -> list_operations::Builder {
             list_operations::Builder { client: self.0.clone() }
         }
@@ -150,6 +151,10 @@ pub mod azure_traffic_collectors_by_subscription {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Return list of Azure Traffic Collectors in a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -236,6 +241,11 @@ pub mod azure_traffic_collectors_by_resource_group {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Return list of Azure Traffic Collectors in a Resource Group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -325,6 +335,12 @@ pub mod azure_traffic_collectors {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified Azure Traffic Collector in a specified resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `azure_traffic_collector_name`: Azure Traffic Collector name"]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -338,6 +354,13 @@ pub mod azure_traffic_collectors {
                 azure_traffic_collector_name: azure_traffic_collector_name.into(),
             }
         }
+        #[doc = "Creates or updates a Azure Traffic Collector resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `azure_traffic_collector_name`: Azure Traffic Collector name"]
+        #[doc = "* `parameters`: The parameters to provide for the created Azure Traffic Collector."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -353,6 +376,13 @@ pub mod azure_traffic_collectors {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates the specified Azure Traffic Collector tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `parameters`: Parameters supplied to update Azure Traffic Collector tags."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `azure_traffic_collector_name`: Azure Traffic Collector name"]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -368,6 +398,12 @@ pub mod azure_traffic_collectors {
                 azure_traffic_collector_name: azure_traffic_collector_name.into(),
             }
         }
+        #[doc = "Deletes a specified Azure Traffic Collector resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `azure_traffic_collector_name`: Azure Traffic Collector name"]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -613,6 +649,12 @@ pub mod collector_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Return list of Collector policies in a Azure Traffic Collector"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `azure_traffic_collector_name`: Azure Traffic Collector name"]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -626,6 +668,13 @@ pub mod collector_policies {
                 azure_traffic_collector_name: azure_traffic_collector_name.into(),
             }
         }
+        #[doc = "Gets the collector policy in a specified Traffic Collector"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `azure_traffic_collector_name`: Azure Traffic Collector name"]
+        #[doc = "* `collector_policy_name`: Collector Policy Name"]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -641,6 +690,14 @@ pub mod collector_policies {
                 collector_policy_name: collector_policy_name.into(),
             }
         }
+        #[doc = "Creates or updates a Collector Policy resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `azure_traffic_collector_name`: Azure Traffic Collector name"]
+        #[doc = "* `collector_policy_name`: Collector Policy Name"]
+        #[doc = "* `parameters`: The parameters to provide for the created Collector Policy."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -658,6 +715,13 @@ pub mod collector_policies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a specified Collector Policy resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `azure_traffic_collector_name`: Azure Traffic Collector name"]
+        #[doc = "* `collector_policy_name`: Collector Policy Name"]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,

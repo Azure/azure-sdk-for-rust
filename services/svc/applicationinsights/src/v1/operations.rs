@@ -92,6 +92,11 @@ pub mod metrics {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieve metric data"]
+        #[doc = "Gets metric values for a single metric"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
+        #[doc = "* `metric_id`: ID of the metric. This is either a standard AI metric, or an application-specific custom metric."]
         pub fn get(&self, app_id: impl Into<String>, metric_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -107,6 +112,11 @@ pub mod metrics {
             }
         }
         #[doc = "Retrieve metric data"]
+        #[doc = "Gets metric values for multiple metrics"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
+        #[doc = "* `body`: The batched metrics query."]
         pub fn get_multiple(&self, app_id: impl Into<String>, body: impl Into<models::MetricsPostBody>) -> get_multiple::Builder {
             get_multiple::Builder {
                 client: self.0.clone(),
@@ -115,6 +125,10 @@ pub mod metrics {
             }
         }
         #[doc = "Retrieve metric metadata"]
+        #[doc = "Gets metadata describing the available metrics"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
         pub fn get_metadata(&self, app_id: impl Into<String>) -> get_metadata::Builder {
             get_metadata::Builder {
                 client: self.0.clone(),
@@ -309,6 +323,11 @@ pub mod events {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Execute OData query"]
+        #[doc = "Executes an OData query for events"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
+        #[doc = "* `event_type`: The type of events to query; either a standard event type (`traces`, `customEvents`, `pageViews`, `requests`, `dependencies`, `exceptions`, `availabilityResults`) or `$all` to query across all event types."]
         pub fn get_by_type(&self, app_id: impl Into<String>, event_type: impl Into<String>) -> get_by_type::Builder {
             get_by_type::Builder {
                 client: self.0.clone(),
@@ -327,6 +346,12 @@ pub mod events {
             }
         }
         #[doc = "Get an event"]
+        #[doc = "Gets the data for a single event"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
+        #[doc = "* `event_type`: The type of events to query; either a standard event type (`traces`, `customEvents`, `pageViews`, `requests`, `dependencies`, `exceptions`, `availabilityResults`) or `$all` to query across all event types."]
+        #[doc = "* `event_id`: ID of event."]
         pub fn get(&self, app_id: impl Into<String>, event_type: impl Into<String>, event_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -337,6 +362,10 @@ pub mod events {
             }
         }
         #[doc = "Get OData metadata"]
+        #[doc = "Gets OData EDMX metadata describing the event data model"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
         pub fn get_odata_metadata(&self, app_id: impl Into<String>) -> get_odata_metadata::Builder {
             get_odata_metadata::Builder {
                 client: self.0.clone(),
@@ -575,6 +604,11 @@ pub mod query {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Execute an Analytics query"]
+        #[doc = "Executes an Analytics query for data"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
+        #[doc = "* `query`: The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)"]
         pub fn get(&self, app_id: impl Into<String>, query: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -584,6 +618,11 @@ pub mod query {
             }
         }
         #[doc = "Execute an Analytics query"]
+        #[doc = "Executes an Analytics query for data. [Here](https://dev.applicationinsights.io/documentation/Using-the-API/Query) is an example for using POST with an Analytics query."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
+        #[doc = "* `body`: The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)"]
         pub fn execute(&self, app_id: impl Into<String>, body: impl Into<models::QueryBody>) -> execute::Builder {
             execute::Builder {
                 client: self.0.clone(),
@@ -693,6 +732,10 @@ pub mod metadata {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets metadata information"]
+        #[doc = "Retrieve the metadata information for the app, including its schema, etc."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
         pub fn get(&self, app_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -700,6 +743,10 @@ pub mod metadata {
             }
         }
         #[doc = "Gets metadata information"]
+        #[doc = "Retrieve the metadata information for the app, including its schema, etc."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
         pub fn post(&self, app_id: impl Into<String>) -> post::Builder {
             post::Builder {
                 client: self.0.clone(),

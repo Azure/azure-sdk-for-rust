@@ -223,6 +223,12 @@ pub mod backup_resource_storage_configs_non_crr {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Fetches resource storage config."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -236,6 +242,13 @@ pub mod backup_resource_storage_configs_non_crr {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates vault storage model type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: Vault storage config request"]
         pub fn update(
             &self,
             vault_name: impl Into<String>,
@@ -251,6 +264,13 @@ pub mod backup_resource_storage_configs_non_crr {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates vault storage model type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: Vault storage config request"]
         pub fn patch(
             &self,
             vault_name: impl Into<String>,
@@ -411,6 +431,11 @@ pub mod protection_intent {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "It will validate followings\r\n1. Vault capacity\r\n2. VM is already protected\r\n3. Any VM related configuration passed in properties."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `azure_region`: Azure region to hit Api"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: Enable backup validation request on Virtual Machine"]
         pub fn validate(
             &self,
             azure_region: impl Into<String>,
@@ -424,6 +449,14 @@ pub mod protection_intent {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Provides the details of the protection intent up item. This is an asynchronous operation. To know the status of the operation,\r\ncall the GetItemOperationResult API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with the backed up item."]
+        #[doc = "* `intent_object_name`: Backed up item name whose details are to be fetched."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -441,6 +474,15 @@ pub mod protection_intent {
                 intent_object_name: intent_object_name.into(),
             }
         }
+        #[doc = "Create Intent for Enabling backup of an item. This is a synchronous operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with the backup item."]
+        #[doc = "* `intent_object_name`: Intent object name."]
+        #[doc = "* `parameters`: resource backed up item"]
         pub fn create_or_update(
             &self,
             vault_name: impl Into<String>,
@@ -460,6 +502,14 @@ pub mod protection_intent {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Used to remove intent from an item"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with the intent."]
+        #[doc = "* `intent_object_name`: Intent to be deleted."]
         pub fn delete(
             &self,
             vault_name: impl Into<String>,
@@ -678,6 +728,11 @@ pub mod backup_status {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the container backup status"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `azure_region`: Azure region to hit Api"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: Container Backup Status Request"]
         pub fn get(
             &self,
             azure_region: impl Into<String>,
@@ -750,6 +805,11 @@ pub mod feature_support {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "It will validate if given feature with resource properties is supported in service"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `azure_region`: Azure region to hit Api"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: Feature support request object"]
         pub fn validate(
             &self,
             azure_region: impl Into<String>,
@@ -821,6 +881,12 @@ pub mod backup_protection_intent {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Provides a pageable list of all intents that are present within a vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             vault_name: impl Into<String>,
@@ -936,6 +1002,12 @@ pub mod backup_usage_summaries {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Fetches the backup management usage summaries of the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             vault_name: impl Into<String>,
@@ -1026,6 +1098,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the list of available operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1107,6 +1180,12 @@ pub mod backup_resource_vault_configs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Fetches resource vault config."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -1120,6 +1199,13 @@ pub mod backup_resource_vault_configs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates vault security config. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: resource config request"]
         pub fn put(
             &self,
             vault_name: impl Into<String>,
@@ -1135,6 +1221,13 @@ pub mod backup_resource_vault_configs {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates vault security config."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: resource config request"]
         pub fn update(
             &self,
             vault_name: impl Into<String>,
@@ -1316,6 +1409,12 @@ pub mod backup_resource_encryption_configs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Fetches Vault Encryption config."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -1329,6 +1428,13 @@ pub mod backup_resource_encryption_configs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates Vault encryption config."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: Vault encryption input config request"]
         pub fn update(
             &self,
             vault_name: impl Into<String>,
@@ -1440,6 +1546,13 @@ pub mod private_endpoint_connection {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Private Endpoint Connection. This call is made by Backup Admin."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -1455,6 +1568,14 @@ pub mod private_endpoint_connection {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Approve or Reject Private Endpoint requests. This call is made by Backup Admin."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
+        #[doc = "* `parameters`: Request body for operation"]
         pub fn put(
             &self,
             vault_name: impl Into<String>,
@@ -1472,6 +1593,13 @@ pub mod private_endpoint_connection {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete Private Endpoint requests. This call is made by Backup Admin."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn delete(
             &self,
             vault_name: impl Into<String>,
@@ -1651,6 +1779,13 @@ pub mod private_endpoint {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the operation status for a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
+        #[doc = "* `operation_id`: Operation id"]
         pub fn get_operation_status(
             &self,
             vault_name: impl Into<String>,
@@ -1719,6 +1854,12 @@ pub mod private_endpoint {
     }
 }
 impl Client {
+    #[doc = "Fetches operation status for data move operation on vault"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `vault_name`: The name of the recovery services vault."]
+    #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+    #[doc = "* `subscription_id`: The subscription Id."]
     pub fn get_operation_status(
         &self,
         vault_name: impl Into<String>,
@@ -1734,6 +1875,13 @@ impl Client {
             operation_id: operation_id.into(),
         }
     }
+    #[doc = "Prepares source vault for Data Move operation"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `vault_name`: The name of the recovery services vault."]
+    #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+    #[doc = "* `subscription_id`: The subscription Id."]
+    #[doc = "* `parameters`: Prepare data move request"]
     pub fn bms_prepare_data_move(
         &self,
         vault_name: impl Into<String>,
@@ -1749,6 +1897,13 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Triggers Data Move Operation on target vault"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `vault_name`: The name of the recovery services vault."]
+    #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+    #[doc = "* `subscription_id`: The subscription Id."]
+    #[doc = "* `parameters`: Trigger data move request"]
     pub fn bms_trigger_data_move(
         &self,
         vault_name: impl Into<String>,
@@ -1765,6 +1920,12 @@ impl Client {
         }
     }
     #[doc = "Move recovery point from one datastore to another store."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `vault_name`: The name of the recovery services vault."]
+    #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+    #[doc = "* `subscription_id`: The subscription Id."]
+    #[doc = "* `parameters`: Move Resource Across Tiers Request"]
     pub fn move_recovery_point(
         &self,
         vault_name: impl Into<String>,
@@ -1989,6 +2150,12 @@ pub mod bms_prepare_data_move_operation_result {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Fetches Operation Result for Prepare Data Move"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -2062,6 +2229,15 @@ pub mod protected_items {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Provides the details of the backed up item. This is an asynchronous operation. To know the status of the operation,\r\ncall the GetItemOperationResult API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with the backed up item."]
+        #[doc = "* `container_name`: Container name associated with the backed up item."]
+        #[doc = "* `protected_item_name`: Backed up item name whose details are to be fetched."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -2082,6 +2258,16 @@ pub mod protected_items {
                 filter: None,
             }
         }
+        #[doc = "Enables backup of an item or to modifies the backup policy information of an already backed up item. This is an\r\nasynchronous operation. To know the status of the operation, call the GetItemOperationResult API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with the backup item."]
+        #[doc = "* `container_name`: Container name associated with the backup item."]
+        #[doc = "* `protected_item_name`: Item name to be backed up."]
+        #[doc = "* `parameters`: resource backed up item"]
         pub fn create_or_update(
             &self,
             vault_name: impl Into<String>,
@@ -2103,6 +2289,15 @@ pub mod protected_items {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Used to disable backup of an item within a container. This is an asynchronous operation. To know the status of the\r\nrequest, call the GetItemOperationResult API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with the backed up item."]
+        #[doc = "* `container_name`: Container name associated with the backed up item."]
+        #[doc = "* `protected_item_name`: Backed up item to be deleted."]
         pub fn delete(
             &self,
             vault_name: impl Into<String>,
@@ -2293,6 +2488,16 @@ pub mod protected_item_operation_results {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Fetches the result of any operation on the backup item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with the backup item."]
+        #[doc = "* `container_name`: Container name associated with the backup item."]
+        #[doc = "* `protected_item_name`: Backup item name whose details are to be fetched."]
+        #[doc = "* `operation_id`: OperationID which represents the operation whose result needs to be fetched."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -2377,6 +2582,15 @@ pub mod recovery_points {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the backup copies for the backed up item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with the backed up item."]
+        #[doc = "* `container_name`: Container name associated with the backed up item."]
+        #[doc = "* `protected_item_name`: Backed up item whose backup copies are to be fetched."]
         pub fn list(
             &self,
             vault_name: impl Into<String>,
@@ -2397,6 +2611,16 @@ pub mod recovery_points {
                 filter: None,
             }
         }
+        #[doc = "Provides the information of the backed up data identified using RecoveryPointID. This is an asynchronous operation.\r\nTo know the status of the operation, call the GetProtectedItemOperationResult API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with backed up item."]
+        #[doc = "* `container_name`: Container name associated with backed up item."]
+        #[doc = "* `protected_item_name`: Backed up item name whose backup data needs to be fetched."]
+        #[doc = "* `recovery_point_id`: RecoveryPointID represents the backed up data to be fetched."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -2557,6 +2781,17 @@ pub mod restores {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Restores the specified backed up data. This is an asynchronous operation. To know the status of this API call, use\r\nGetProtectedItemOperationResult API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with the backed up items."]
+        #[doc = "* `container_name`: Container name associated with the backed up items."]
+        #[doc = "* `protected_item_name`: Backed up item to be restored."]
+        #[doc = "* `recovery_point_id`: Recovery point ID which represents the backed up data to be restored."]
+        #[doc = "* `parameters`: resource restore request"]
         pub fn trigger(
             &self,
             vault_name: impl Into<String>,
@@ -2635,6 +2870,12 @@ pub mod backup_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists of backup policies associated with Recovery Services Vault. API provides pagination parameters to fetch\r\nscoped results."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             vault_name: impl Into<String>,
@@ -2741,6 +2982,13 @@ pub mod protection_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Provides the details of the backup policies associated to Recovery Services Vault. This is an asynchronous\r\noperation. Status of the operation can be fetched using GetPolicyOperationResult API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `policy_name`: Backup policy information to be fetched."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -2756,6 +3004,14 @@ pub mod protection_policies {
                 policy_name: policy_name.into(),
             }
         }
+        #[doc = "Creates or modifies a backup policy. This is an asynchronous operation. Status of the operation can be fetched\r\nusing GetPolicyOperationResult API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `policy_name`: Backup policy to be created."]
+        #[doc = "* `parameters`: resource backup policy"]
         pub fn create_or_update(
             &self,
             vault_name: impl Into<String>,
@@ -2773,6 +3029,13 @@ pub mod protection_policies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes specified backup policy from your Recovery Services Vault. This is an asynchronous operation. Status of the\r\noperation can be fetched using GetProtectionPolicyOperationResult API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `policy_name`: Backup policy to be deleted."]
         pub fn delete(
             &self,
             vault_name: impl Into<String>,
@@ -2965,6 +3228,14 @@ pub mod protection_policy_operation_results {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Provides the result of an operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `policy_name`: Backup policy name whose operation's result needs to be fetched."]
+        #[doc = "* `operation_id`: Operation ID which represents the operation whose result needs to be fetched."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -3036,6 +3307,12 @@ pub mod backup_jobs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Provides a pageable list of jobs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             vault_name: impl Into<String>,
@@ -3151,6 +3428,13 @@ pub mod job_details {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets extended information associated with the job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `job_name`: Name of the job whose details are to be fetched."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -3226,6 +3510,13 @@ pub mod job_cancellations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Cancels a job. This is an asynchronous operation. To know the status of the cancellation, call\r\nGetCancelOperationResult API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `job_name`: Name of the job to cancel."]
         pub fn trigger(
             &self,
             vault_name: impl Into<String>,
@@ -3298,6 +3589,14 @@ pub mod job_operation_results {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Fetches the result of any operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `job_name`: Job name whose operation result has to be fetched."]
+        #[doc = "* `operation_id`: OperationID which represents the operation whose result has to be fetched."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -3372,6 +3671,13 @@ pub mod export_jobs_operation_results {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the operation result of operation triggered by Export Jobs API. If the operation is successful, then it also\r\ncontains URL of a Blob and a SAS key to access the same. The blob contains exported jobs in JSON serialized format."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `operation_id`: OperationID which represents the export job."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -3449,6 +3755,12 @@ pub mod jobs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Triggers export of jobs specified by filters and returns an OperationID to track."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn export(
             &self,
             vault_name: impl Into<String>,
@@ -3526,6 +3838,12 @@ pub mod backup_protected_items {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Provides a pageable list of all items that are backed up within a vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             vault_name: impl Into<String>,
@@ -3641,6 +3959,13 @@ pub mod operation {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Validate operation for specified backed up item. This is a synchronous operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: resource validate operation request"]
         pub fn validate(
             &self,
             vault_name: impl Into<String>,
@@ -3716,6 +4041,13 @@ pub mod validate_operation {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Validate operation for specified backed up item in the form of an asynchronous operation. Returns tracking headers which can be tracked using GetValidateOperationResult API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: resource validate operation request"]
         pub fn trigger(
             &self,
             vault_name: impl Into<String>,
@@ -3782,6 +4114,13 @@ pub mod validate_operation_results {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Fetches the result of a triggered validate operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `operation_id`: OperationID which represents the operation whose result needs to be fetched."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -3855,6 +4194,13 @@ pub mod validate_operation_statuses {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Fetches the status of a triggered validate operation. The status can be in progress, completed\r\nor failed. You can refer to the OperationStatus enum for all the possible states of the operation.\r\nIf operation has completed, this method returns the list of errors obtained while validating the operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `operation_id`: OperationID represents the operation whose status needs to be fetched."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -3923,6 +4269,12 @@ pub mod backup_engines {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Backup management servers registered to Recovery Services Vault. Returns a pageable list of servers."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             vault_name: impl Into<String>,
@@ -3938,6 +4290,13 @@ pub mod backup_engines {
                 skip_token: None,
             }
         }
+        #[doc = "Returns backup management server registered to Recovery Services Vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `backup_engine_name`: Name of the backup management server."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -4125,6 +4484,14 @@ pub mod protection_container_refresh_operation_results {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Provides the result of the refresh operation triggered by the BeginRefresh operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with the container."]
+        #[doc = "* `operation_id`: Operation ID associated with the operation whose result needs to be fetched."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -4197,6 +4564,12 @@ pub mod protectable_containers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the containers that can be registered to Recovery Services Vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             vault_name: impl Into<String>,
@@ -4300,6 +4673,14 @@ pub mod protection_containers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets details of the specific container registered to your Recovery Services Vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Name of the fabric where the container belongs."]
+        #[doc = "* `container_name`: Name of the container whose details need to be fetched."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -4317,6 +4698,15 @@ pub mod protection_containers {
                 container_name: container_name.into(),
             }
         }
+        #[doc = "Registers the container with Recovery Services vault.\r\nThis is an asynchronous operation. To track the operation status, use location header to call get latest status of\r\nthe operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with the container."]
+        #[doc = "* `container_name`: Name of the container to be registered."]
+        #[doc = "* `parameters`: Request body for operation"]
         pub fn register(
             &self,
             vault_name: impl Into<String>,
@@ -4336,6 +4726,14 @@ pub mod protection_containers {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Unregisters the given container from your Recovery Services Vault. This is an asynchronous operation. To determine\r\nwhether the backend service has finished processing the request, call Get Container Operation Result API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Name of the fabric where the container belongs."]
+        #[doc = "* `container_name`: Name of the container which needs to be unregistered from the Recovery Services Vault."]
         pub fn unregister(
             &self,
             vault_name: impl Into<String>,
@@ -4354,6 +4752,14 @@ pub mod protection_containers {
             }
         }
         #[doc = "Inquires all the protectable items under the given container."]
+        #[doc = "This is an async operation and the results should be tracked using location header or Azure-async-url."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric Name associated with the container."]
+        #[doc = "* `container_name`: Name of the container in which inquiry needs to be triggered."]
         pub fn inquire(
             &self,
             vault_name: impl Into<String>,
@@ -4372,6 +4778,13 @@ pub mod protection_containers {
                 filter: None,
             }
         }
+        #[doc = "Discovers all the containers in the subscription that can be backed up to Recovery Services Vault. This is an\r\nasynchronous operation. To know the status of the operation, call GetRefreshOperationResult API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated the container."]
         pub fn refresh(
             &self,
             vault_name: impl Into<String>,
@@ -4653,6 +5066,14 @@ pub mod backup_workload_items {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Provides a pageable list of workload item of a specific container according to the query filter and the pagination\r\nparameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with the container."]
+        #[doc = "* `container_name`: Name of the container."]
         pub fn list(
             &self,
             vault_name: impl Into<String>,
@@ -4768,6 +5189,15 @@ pub mod protection_container_operation_results {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Fetches the result of any operation on the container."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with the container."]
+        #[doc = "* `container_name`: Container name whose information should be fetched."]
+        #[doc = "* `operation_id`: Operation ID which represents the operation whose result needs to be fetched."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -4849,6 +5279,16 @@ pub mod backups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Triggers backup for specified backed up item. This is an asynchronous operation. To know the status of the\r\noperation, call GetProtectedItemOperationResult API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with the backup item."]
+        #[doc = "* `container_name`: Container name associated with the backup item."]
+        #[doc = "* `protected_item_name`: Backup item for which backup needs to be triggered."]
+        #[doc = "* `parameters`: resource backup request"]
         pub fn trigger(
             &self,
             vault_name: impl Into<String>,
@@ -4923,6 +5363,16 @@ pub mod protected_item_operation_statuses {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Fetches the status of an operation such as triggering a backup, restore. The status can be in progress, completed\r\nor failed. You can refer to the OperationStatus enum for all the possible states of the operation. Some operations\r\ncreate jobs. This method returns the list of jobs associated with the operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with the backup item."]
+        #[doc = "* `container_name`: Container name associated with the backup item."]
+        #[doc = "* `protected_item_name`: Backup item name whose details are to be fetched."]
+        #[doc = "* `operation_id`: OperationID represents the operation whose status needs to be fetched."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -5000,6 +5450,17 @@ pub mod item_level_recovery_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Provisions a script which invokes an iSCSI connection to the backup data. Executing this script opens a file\r\nexplorer displaying all the recoverable files and folders. This is an asynchronous operation. To know the status of\r\nprovisioning, call GetProtectedItemOperationResult API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with the backed up items."]
+        #[doc = "* `container_name`: Container name associated with the backed up items."]
+        #[doc = "* `protected_item_name`: Backed up item name whose files/folders are to be restored."]
+        #[doc = "* `recovery_point_id`: Recovery point ID which represents backed up data. iSCSI connection will be provisioned\r\nfor this backed up data."]
+        #[doc = "* `parameters`: resource ILR request"]
         pub fn provision(
             &self,
             vault_name: impl Into<String>,
@@ -5023,6 +5484,16 @@ pub mod item_level_recovery_connections {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Revokes an iSCSI connection which can be used to download a script. Executing this script opens a file explorer\r\ndisplaying all recoverable files and folders. This is an asynchronous operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with the backed up items."]
+        #[doc = "* `container_name`: Container name associated with the backed up items."]
+        #[doc = "* `protected_item_name`: Backed up item name whose files/folders are to be restored."]
+        #[doc = "* `recovery_point_id`: Recovery point ID which represents backed up data. iSCSI connection will be revoked for\r\nthis backed up data."]
         pub fn revoke(
             &self,
             vault_name: impl Into<String>,
@@ -5145,6 +5616,13 @@ pub mod backup_operation_results {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Provides the status of the delete operations such as deleting backed up item. Once the operation has started, the\r\nstatus code in the response would be Accepted. It will continue to be in this state till it reaches completion. On\r\nsuccessful completion, the status code will be OK. This method expects OperationID as an argument. OperationID is\r\npart of the Location header of the operation response."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `operation_id`: OperationID which represents the operation."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -5216,6 +5694,13 @@ pub mod backup_operation_statuses {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Fetches the status of an operation such as triggering a backup, restore. The status can be in progress, completed\r\nor failed. You can refer to the OperationStatus enum for all the possible states of an operation. Some operations\r\ncreate jobs. This method returns the list of jobs when the operation is complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `operation_id`: OperationID which represents the operation."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -5291,6 +5776,14 @@ pub mod protection_policy_operation_statuses {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Provides the status of the asynchronous operations like backup, restore. The status can be in progress, completed\r\nor failed. You can refer to the Operation Status enum for all the possible states of an operation. Some operations\r\ncreate jobs. This method returns the list of jobs associated with operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `policy_name`: Backup policy name whose operation's status needs to be fetched."]
+        #[doc = "* `operation_id`: Operation ID which represents an operation whose status needs to be fetched."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -5362,6 +5855,12 @@ pub mod backup_protectable_items {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Provides a pageable list of protectable objects within your subscription according to the query filter and the\r\npagination parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             vault_name: impl Into<String>,
@@ -5477,6 +5976,12 @@ pub mod backup_protection_containers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the containers registered to Recovery Services Vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list(
             &self,
             vault_name: impl Into<String>,
@@ -5577,6 +6082,12 @@ pub mod security_pi_ns {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the security PIN."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -5659,6 +6170,13 @@ pub mod recovery_points_recommended_for_move {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the recovery points recommended for move to another tier"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: List Recovery points Recommended for Move Request"]
         pub fn list(
             &self,
             vault_name: impl Into<String>,
@@ -5763,6 +6281,12 @@ pub mod resource_guard_proxies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the ResourceGuardProxies under vault"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -5854,6 +6378,12 @@ pub mod resource_guard_proxy {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns ResourceGuardProxy under vault and with the name referenced in request"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -5869,6 +6399,12 @@ pub mod resource_guard_proxy {
                 resource_guard_proxy_name: resource_guard_proxy_name.into(),
             }
         }
+        #[doc = "Add or Update ResourceGuardProxy under vault\r\nSecures vault critical operations"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn put(
             &self,
             vault_name: impl Into<String>,
@@ -5884,6 +6420,12 @@ pub mod resource_guard_proxy {
                 resource_guard_proxy_name: resource_guard_proxy_name.into(),
             }
         }
+        #[doc = "Delete ResourceGuardProxy under vault"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn delete(
             &self,
             vault_name: impl Into<String>,
@@ -5899,6 +6441,13 @@ pub mod resource_guard_proxy {
                 resource_guard_proxy_name: resource_guard_proxy_name.into(),
             }
         }
+        #[doc = "Secures delete ResourceGuardProxy operations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: Request body for operation"]
         pub fn unlock_delete(
             &self,
             vault_name: impl Into<String>,

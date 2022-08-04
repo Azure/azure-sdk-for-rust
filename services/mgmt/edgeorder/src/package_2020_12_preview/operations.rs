@@ -76,9 +76,14 @@ impl Client {
     }
 }
 impl Client {
+    #[doc = "This method gets all the operations that are exposed for customer."]
     pub fn list_operations(&self) -> list_operations::Builder {
         list_operations::Builder { client: self.clone() }
     }
+    #[doc = "Lists all the addresses available under the subscription."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
     pub fn list_addresses_at_subscription_level(
         &self,
         subscription_id: impl Into<String>,
@@ -90,6 +95,11 @@ impl Client {
             skip_token: None,
         }
     }
+    #[doc = "This method provides the list of product families for the given subscription."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `product_families_request`: Filters for showing the product families."]
     pub fn list_product_families(
         &self,
         subscription_id: impl Into<String>,
@@ -103,6 +113,11 @@ impl Client {
             skip_token: None,
         }
     }
+    #[doc = "This method provides the list of configurations for the given product family, product line and product under subscription."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `configurations_request`: Filters for showing the configurations."]
     pub fn list_configurations(
         &self,
         subscription_id: impl Into<String>,
@@ -115,6 +130,10 @@ impl Client {
             skip_token: None,
         }
     }
+    #[doc = "This method provides the list of product families metadata for the given subscription."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
     pub fn list_product_families_metadata(&self, subscription_id: impl Into<String>) -> list_product_families_metadata::Builder {
         list_product_families_metadata::Builder {
             client: self.clone(),
@@ -122,6 +141,10 @@ impl Client {
             skip_token: None,
         }
     }
+    #[doc = "Lists order at subscription level."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
     pub fn list_order_at_subscription_level(&self, subscription_id: impl Into<String>) -> list_order_at_subscription_level::Builder {
         list_order_at_subscription_level::Builder {
             client: self.clone(),
@@ -129,6 +152,10 @@ impl Client {
             skip_token: None,
         }
     }
+    #[doc = "Lists order item at subscription level."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
     pub fn list_order_items_at_subscription_level(
         &self,
         subscription_id: impl Into<String>,
@@ -141,6 +168,11 @@ impl Client {
             skip_token: None,
         }
     }
+    #[doc = "Lists all the addresses available under the given resource group."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
     pub fn list_addresses_at_resource_group_level(
         &self,
         subscription_id: impl Into<String>,
@@ -154,6 +186,12 @@ impl Client {
             skip_token: None,
         }
     }
+    #[doc = "Gets information about the specified address."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `address_name`: The name of the address Resource within the specified resource group. address names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
     pub fn get_address_by_name(
         &self,
         address_name: impl Into<String>,
@@ -167,6 +205,13 @@ impl Client {
             resource_group_name: resource_group_name.into(),
         }
     }
+    #[doc = "Creates a new address with the specified parameters. Existing address cannot be updated with this API and should instead be updated with the Update address API."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `address_name`: The name of the address Resource within the specified resource group. address names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+    #[doc = "* `address_resource`: Address details from request body."]
     pub fn create_address(
         &self,
         address_name: impl Into<String>,
@@ -182,6 +227,13 @@ impl Client {
             address_resource: address_resource.into(),
         }
     }
+    #[doc = "Updates the properties of an existing address."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `address_name`: The name of the address Resource within the specified resource group. address names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+    #[doc = "* `address_update_parameter`: Address update parameters from request body."]
     pub fn update_address(
         &self,
         address_name: impl Into<String>,
@@ -198,6 +250,12 @@ impl Client {
             if_match: None,
         }
     }
+    #[doc = "Deletes an address."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `address_name`: The name of the address Resource within the specified resource group. address names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
     pub fn delete_address_by_name(
         &self,
         address_name: impl Into<String>,
@@ -211,6 +269,11 @@ impl Client {
             resource_group_name: resource_group_name.into(),
         }
     }
+    #[doc = "Lists order at resource group level."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
     pub fn list_order_at_resource_group_level(
         &self,
         subscription_id: impl Into<String>,
@@ -223,6 +286,13 @@ impl Client {
             skip_token: None,
         }
     }
+    #[doc = "Gets an order."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `order_name`: The name of the order"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+    #[doc = "* `location`: The name of Azure region."]
     pub fn get_order_by_name(
         &self,
         order_name: impl Into<String>,
@@ -238,6 +308,11 @@ impl Client {
             location: location.into(),
         }
     }
+    #[doc = "Lists order item at resource group level."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
     pub fn list_order_items_at_resource_group_level(
         &self,
         subscription_id: impl Into<String>,
@@ -252,6 +327,12 @@ impl Client {
             skip_token: None,
         }
     }
+    #[doc = "Gets an order item."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `order_item_name`: The name of the order item"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
     pub fn get_order_item_by_name(
         &self,
         order_item_name: impl Into<String>,
@@ -266,6 +347,13 @@ impl Client {
             expand: None,
         }
     }
+    #[doc = "Creates an order item. Existing order item cannot be updated with this api and should instead be updated with the Update order item API."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `order_item_name`: The name of the order item"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+    #[doc = "* `order_item_resource`: Order item details from request body."]
     pub fn create_order_item(
         &self,
         order_item_name: impl Into<String>,
@@ -281,6 +369,13 @@ impl Client {
             order_item_resource: order_item_resource.into(),
         }
     }
+    #[doc = "Updates the properties of an existing order item."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `order_item_name`: The name of the order item"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+    #[doc = "* `order_item_update_parameter`: order item update parameters from request body."]
     pub fn update_order_item(
         &self,
         order_item_name: impl Into<String>,
@@ -297,6 +392,12 @@ impl Client {
             if_match: None,
         }
     }
+    #[doc = "Deletes an order item."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `order_item_name`: The name of the order item"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
     pub fn delete_order_item_by_name(
         &self,
         order_item_name: impl Into<String>,
@@ -310,6 +411,13 @@ impl Client {
             resource_group_name: resource_group_name.into(),
         }
     }
+    #[doc = "Cancel order item."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `order_item_name`: The name of the order item"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+    #[doc = "* `cancellation_reason`: Reason for cancellation."]
     pub fn cancel_order_item(
         &self,
         order_item_name: impl Into<String>,
@@ -325,6 +433,13 @@ impl Client {
             cancellation_reason: cancellation_reason.into(),
         }
     }
+    #[doc = "Return order item."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `order_item_name`: The name of the order item"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+    #[doc = "* `return_order_item_details`: Return order item CurrentStatus."]
     pub fn return_order_item(
         &self,
         order_item_name: impl Into<String>,

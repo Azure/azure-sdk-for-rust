@@ -92,6 +92,9 @@ pub mod app_component {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get App Component details by App Component name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Unique name of the App Component, must be a valid URL character ^[a-z0-9_-]*$."]
         pub fn get_app_component_by_name(&self, name: impl Into<String>) -> get_app_component_by_name::Builder {
             get_app_component_by_name::Builder {
                 client: self.0.clone(),
@@ -99,6 +102,10 @@ pub mod app_component {
             }
         }
         #[doc = "Associate an App Component (Azure resource) to a test or test run."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Unique name of the App Component, must be a valid URL character ^[a-z0-9_-]*$."]
+        #[doc = "* `body`: App Component model."]
         pub fn create_or_update_app_components(
             &self,
             name: impl Into<String>,
@@ -111,6 +118,9 @@ pub mod app_component {
             }
         }
         #[doc = "Delete an App Component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Unique name of the App Component, must be a valid URL character ^[a-z0-9_-]*$."]
         pub fn delete_app_component(&self, name: impl Into<String>) -> delete_app_component::Builder {
             delete_app_component::Builder {
                 client: self.0.clone(),
@@ -330,6 +340,9 @@ pub mod server_metrics {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get server metrics configuration by its name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Unique name for server metrics, must be a valid URL character ^[a-z0-9_-]*$."]
         pub fn get_server_metrics_by_name(&self, name: impl Into<String>) -> get_server_metrics_by_name::Builder {
             get_server_metrics_by_name::Builder {
                 client: self.0.clone(),
@@ -337,6 +350,10 @@ pub mod server_metrics {
             }
         }
         #[doc = "Configure server metrics for a test or test run"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Unique name for server metrics, must be a valid URL character ^[a-z0-9_-]*$."]
+        #[doc = "* `body`: Server metrics configuration model"]
         pub fn create_or_update_server_metrics_config(
             &self,
             name: impl Into<String>,
@@ -349,6 +366,9 @@ pub mod server_metrics {
             }
         }
         #[doc = "Delete server metrics configuration by its name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Unique name for server metrics, must be a valid URL character ^[a-z0-9_-]*$."]
         pub fn delete_server_metrics(&self, name: impl Into<String>) -> delete_server_metrics::Builder {
             delete_server_metrics::Builder {
                 client: self.0.clone(),
@@ -663,6 +683,9 @@ pub mod test {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get load test details by test name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique name for load test, must be a valid URL character ^[a-z0-9_-]*$."]
         pub fn get_load_test(&self, test_id: impl Into<String>) -> get_load_test::Builder {
             get_load_test::Builder {
                 client: self.0.clone(),
@@ -670,6 +693,10 @@ pub mod test {
             }
         }
         #[doc = "Create a new test or Update an existing test."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique name for load test, must be a valid URL character ^[a-z0-9_-]*$."]
+        #[doc = "* `body`: Load test model"]
         pub fn create_or_update_test(
             &self,
             test_id: impl Into<String>,
@@ -682,6 +709,9 @@ pub mod test {
             }
         }
         #[doc = "Delete a test by its name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique name for load test, must be a valid URL character ^[a-z0-9_-]*$."]
         pub fn delete_load_test(&self, test_id: impl Into<String>) -> delete_load_test::Builder {
             delete_load_test::Builder {
                 client: self.0.clone(),
@@ -701,6 +731,10 @@ pub mod test {
             }
         }
         #[doc = "Get test file by the file name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique name for load test, must be a valid URL character ^[a-z0-9_-]*$."]
+        #[doc = "* `file_id`: Unique identifier for test file, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_test_file(&self, test_id: impl Into<String>, file_id: impl Into<String>) -> get_test_file::Builder {
             get_test_file::Builder {
                 client: self.0.clone(),
@@ -709,6 +743,11 @@ pub mod test {
             }
         }
         #[doc = "Upload input file for a given test name. File size can't be more than 50 MB. Existing file with same name for the given test will be overwritten. File should be provided in the request body as multipart/form-data."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique name for load test, must be a valid URL character ^[a-z0-9_-]*$."]
+        #[doc = "* `file_id`: Unique identifier for test file, must be a valid URL character ^[a-z0-9_-]*$."]
+        #[doc = "* `file`: The file to be uploaded."]
         pub fn upload_test_file(
             &self,
             test_id: impl Into<String>,
@@ -724,6 +763,10 @@ pub mod test {
             }
         }
         #[doc = "Delete file by the file name for a test."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique name for load test, must be a valid URL character ^[a-z0-9_-]*$."]
+        #[doc = "* `file_id`: Unique identifier for test file, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn delete_test_file(&self, test_id: impl Into<String>, file_id: impl Into<String>) -> delete_test_file::Builder {
             delete_test_file::Builder {
                 client: self.0.clone(),
@@ -732,6 +775,9 @@ pub mod test {
             }
         }
         #[doc = "Get all test files."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique name for load test, must be a valid URL character ^[a-z0-9_-]*$."]
         pub fn get_all_test_files(&self, test_id: impl Into<String>) -> get_all_test_files::Builder {
             get_all_test_files::Builder {
                 client: self.0.clone(),
@@ -1190,6 +1236,9 @@ pub mod test_run {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get test run details by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique name of load test run, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_test_run(&self, test_run_id: impl Into<String>) -> get_test_run::Builder {
             get_test_run::Builder {
                 client: self.0.clone(),
@@ -1197,6 +1246,10 @@ pub mod test_run {
             }
         }
         #[doc = "Create and start a new test run with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique name of the load test run, must be a valid URL character ^[a-z0-9_-]*$."]
+        #[doc = "* `body`: Load test run model"]
         pub fn create_and_update_test(
             &self,
             test_run_id: impl Into<String>,
@@ -1210,6 +1263,9 @@ pub mod test_run {
             }
         }
         #[doc = "Delete a test run by its name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique name of the load test run, must be a valid URL character ^[a-z0-9_-]*$."]
         pub fn delete_test_run(&self, test_run_id: impl Into<String>) -> delete_test_run::Builder {
             delete_test_run::Builder {
                 client: self.0.clone(),
@@ -1217,6 +1273,10 @@ pub mod test_run {
             }
         }
         #[doc = "Get test run file by file name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique name of load test run, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `file_id`: Unique identifier for test run file, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_test_run_file(&self, test_run_id: impl Into<String>, file_id: impl Into<String>) -> get_test_run_file::Builder {
             get_test_run_file::Builder {
                 client: self.0.clone(),
@@ -1239,6 +1299,9 @@ pub mod test_run {
             }
         }
         #[doc = "Stop test run by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique name of the load test run, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn stop_test_run(&self, test_run_id: impl Into<String>) -> stop_test_run::Builder {
             stop_test_run::Builder {
                 client: self.0.clone(),
@@ -1246,6 +1309,10 @@ pub mod test_run {
             }
         }
         #[doc = "Get all client metrics for a load test run."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique name of the load test run, must be a valid URL character ^[a-z0-9_-]*$."]
+        #[doc = "* `body`: Client metrics request model"]
         pub fn get_test_run_client_metrics(
             &self,
             test_run_id: impl Into<String>,
@@ -1258,6 +1325,9 @@ pub mod test_run {
             }
         }
         #[doc = "Get all filters that are supported for client metrics for a given load test run"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique name for load test run, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_test_run_client_metrics_filters(&self, test_run_id: impl Into<String>) -> get_test_run_client_metrics_filters::Builder {
             get_test_run_client_metrics_filters::Builder {
                 client: self.0.clone(),

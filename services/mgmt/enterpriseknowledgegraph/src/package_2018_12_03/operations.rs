@@ -85,6 +85,12 @@ pub mod enterprise_knowledge_graph {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns a EnterpriseKnowledgeGraph service specified by the parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the EnterpriseKnowledgeGraph resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the EnterpriseKnowledgeGraph resource."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -98,6 +104,13 @@ pub mod enterprise_knowledge_graph {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a EnterpriseKnowledgeGraph Service. EnterpriseKnowledgeGraph Service is a resource group wide resource type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the EnterpriseKnowledgeGraph resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the EnterpriseKnowledgeGraph resource."]
+        #[doc = "* `parameters`: The parameters to provide for the created EnterpriseKnowledgeGraph."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -113,6 +126,13 @@ pub mod enterprise_knowledge_graph {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a EnterpriseKnowledgeGraph Service"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the EnterpriseKnowledgeGraph resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the EnterpriseKnowledgeGraph resource."]
+        #[doc = "* `parameters`: The parameters to provide for the created EnterpriseKnowledgeGraph."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -128,6 +148,12 @@ pub mod enterprise_knowledge_graph {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a EnterpriseKnowledgeGraph Service from the resource group. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the EnterpriseKnowledgeGraph resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the EnterpriseKnowledgeGraph resource."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -141,6 +167,11 @@ pub mod enterprise_knowledge_graph {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns all the resources of a particular type belonging to a resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the EnterpriseKnowledgeGraph resource group in the user subscription."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -152,6 +183,10 @@ pub mod enterprise_knowledge_graph {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns all the resources of a particular type belonging to a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -545,6 +580,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the available EnterpriseKnowledgeGraph services operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

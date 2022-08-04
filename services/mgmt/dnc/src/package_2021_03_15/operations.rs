@@ -94,6 +94,12 @@ pub mod controller {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets details about the specified dnc controller."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the resource. It must be a minimum of 3 characters, and a maximum of 63."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_details(
             &self,
             resource_group_name: impl Into<String>,
@@ -107,6 +113,13 @@ pub mod controller {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create a dnc controller"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the resource. It must be a minimum of 3 characters, and a maximum of 63."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `parameters`: controller type parameters"]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -122,6 +135,13 @@ pub mod controller {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Update dnc controller"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the resource. It must be a minimum of 3 characters, and a maximum of 63."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `parameters`: controller type parameters"]
         pub fn patch(
             &self,
             resource_group_name: impl Into<String>,
@@ -137,6 +157,12 @@ pub mod controller {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the DNC controller"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the resource. It must be a minimum of 3 characters, and a maximum of 63."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -382,12 +408,21 @@ pub mod delegated_network {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all the delegatedController resources in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all the delegatedController resources in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -555,6 +590,12 @@ pub mod orchestrator_instance_service {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets details about the orchestrator instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the resource. It must be a minimum of 3 characters, and a maximum of 63."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_details(
             &self,
             resource_group_name: impl Into<String>,
@@ -568,6 +609,13 @@ pub mod orchestrator_instance_service {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create a orchestrator instance"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the resource. It must be a minimum of 3 characters, and a maximum of 63."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `parameters`: OrchestratorInstance type parameters"]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -583,6 +631,13 @@ pub mod orchestrator_instance_service {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Update Orchestrator Instance"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the resource. It must be a minimum of 3 characters, and a maximum of 63."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `parameters`: OrchestratorInstance update parameters"]
         pub fn patch(
             &self,
             resource_group_name: impl Into<String>,
@@ -598,6 +653,12 @@ pub mod orchestrator_instance_service {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the Orchestrator Instance"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the resource. It must be a minimum of 3 characters, and a maximum of 63."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -612,12 +673,21 @@ pub mod orchestrator_instance_service {
                 force_delete: None,
             }
         }
+        #[doc = "Get all the orchestratorInstance resources in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all the OrchestratorInstances resources in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -1021,6 +1091,12 @@ pub mod delegated_subnet_service {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets details about the specified dnc DelegatedSubnet Link."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the resource. It must be a minimum of 3 characters, and a maximum of 63."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_details(
             &self,
             resource_group_name: impl Into<String>,
@@ -1034,6 +1110,13 @@ pub mod delegated_subnet_service {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Put delegated subnet resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the resource. It must be a minimum of 3 characters, and a maximum of 63."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `parameters`: Delegated subnet details."]
         pub fn put_details(
             &self,
             resource_group_name: impl Into<String>,
@@ -1049,6 +1132,13 @@ pub mod delegated_subnet_service {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Patch delegated subnet resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the resource. It must be a minimum of 3 characters, and a maximum of 63."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `parameters`: Delegated subnet details."]
         pub fn patch_details(
             &self,
             resource_group_name: impl Into<String>,
@@ -1064,6 +1154,12 @@ pub mod delegated_subnet_service {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete dnc DelegatedSubnet."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the resource. It must be a minimum of 3 characters, and a maximum of 63."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete_details(
             &self,
             resource_group_name: impl Into<String>,
@@ -1078,12 +1174,21 @@ pub mod delegated_subnet_service {
                 force_delete: None,
             }
         }
+        #[doc = "Get all the DelegatedSubnets resources in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all the DelegatedSubnets resources in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -1488,6 +1593,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available DelegatedNetwork service REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

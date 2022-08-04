@@ -89,6 +89,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Operations"]
+        #[doc = "Lists all of the available REST API operations of the Microsoft.Communication provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -169,6 +170,10 @@ pub mod communication_service {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Check Name Availability"]
+        #[doc = "Checks that the CommunicationService name is valid and is not already in use."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn check_name_availability(&self, subscription_id: impl Into<String>) -> check_name_availability::Builder {
             check_name_availability::Builder {
                 client: self.0.clone(),
@@ -177,6 +182,12 @@ pub mod communication_service {
             }
         }
         #[doc = "Link Notification Hub"]
+        #[doc = "Links an Azure Notification Hub to this communication service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `communication_service_name`: The name of the CommunicationService resource."]
         pub fn link_notification_hub(
             &self,
             subscription_id: impl Into<String>,
@@ -192,6 +203,10 @@ pub mod communication_service {
             }
         }
         #[doc = "List By Subscription"]
+        #[doc = "Handles requests to list all resources in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -199,6 +214,11 @@ pub mod communication_service {
             }
         }
         #[doc = "List By Resource Group"]
+        #[doc = "Handles requests to list all resources in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -211,6 +231,12 @@ pub mod communication_service {
             }
         }
         #[doc = "Get"]
+        #[doc = "Get the CommunicationService and its properties."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `communication_service_name`: The name of the CommunicationService resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -225,6 +251,12 @@ pub mod communication_service {
             }
         }
         #[doc = "Create Or Update"]
+        #[doc = "Create a new CommunicationService or update an existing CommunicationService."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `communication_service_name`: The name of the CommunicationService resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -240,6 +272,12 @@ pub mod communication_service {
             }
         }
         #[doc = "Update"]
+        #[doc = "Operation to update an existing CommunicationService."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `communication_service_name`: The name of the CommunicationService resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -255,6 +293,12 @@ pub mod communication_service {
             }
         }
         #[doc = "Delete"]
+        #[doc = "Operation to delete a CommunicationService."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `communication_service_name`: The name of the CommunicationService resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -269,6 +313,12 @@ pub mod communication_service {
             }
         }
         #[doc = "List Keys"]
+        #[doc = "Get the access keys of the CommunicationService resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `communication_service_name`: The name of the CommunicationService resource."]
         pub fn list_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -283,6 +333,12 @@ pub mod communication_service {
             }
         }
         #[doc = "Regenerate Key"]
+        #[doc = "Regenerate CommunicationService access key. PrimaryKey and SecondaryKey cannot be regenerated at the same time."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `communication_service_name`: The name of the CommunicationService resource."]
         pub fn regenerate_key(
             &self,
             subscription_id: impl Into<String>,
@@ -934,6 +990,11 @@ pub mod operation_statuses {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get Operation Status"]
+        #[doc = "Gets the current status of an async operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The Azure region"]
+        #[doc = "* `operation_id`: The ID of an ongoing async operation"]
         pub fn get(&self, location: impl Into<String>, operation_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),

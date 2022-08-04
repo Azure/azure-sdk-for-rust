@@ -94,6 +94,12 @@ pub mod digital_twins {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get DigitalTwinsInstances resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the DigitalTwinsInstance."]
+        #[doc = "* `resource_name`: The name of the DigitalTwinsInstance."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -107,6 +113,13 @@ pub mod digital_twins {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create or update the metadata of a DigitalTwinsInstance. The usual pattern to modify a property is to retrieve the DigitalTwinsInstance and security metadata, and then combine them with the modified values in a new body to update the DigitalTwinsInstance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the DigitalTwinsInstance."]
+        #[doc = "* `resource_name`: The name of the DigitalTwinsInstance."]
+        #[doc = "* `digital_twins_create`: The DigitalTwinsInstance and security metadata."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -122,6 +135,13 @@ pub mod digital_twins {
                 digital_twins_create: digital_twins_create.into(),
             }
         }
+        #[doc = "Update metadata of DigitalTwinsInstance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the DigitalTwinsInstance."]
+        #[doc = "* `resource_name`: The name of the DigitalTwinsInstance."]
+        #[doc = "* `digital_twins_patch_description`: The DigitalTwinsInstance and security metadata."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -137,6 +157,12 @@ pub mod digital_twins {
                 digital_twins_patch_description: digital_twins_patch_description.into(),
             }
         }
+        #[doc = "Delete a DigitalTwinsInstance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the DigitalTwinsInstance."]
+        #[doc = "* `resource_name`: The name of the DigitalTwinsInstance."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -150,12 +176,21 @@ pub mod digital_twins {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get all the DigitalTwinsInstances in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all the DigitalTwinsInstances in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the DigitalTwinsInstance."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -167,6 +202,12 @@ pub mod digital_twins {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Check if a DigitalTwinsInstance name is available."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `location`: Location of DigitalTwinsInstance."]
+        #[doc = "* `digital_twins_instance_check_name`: Set the name parameter in the DigitalTwinsInstanceCheckName structure to the name of the DigitalTwinsInstance to check."]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -632,6 +673,12 @@ pub mod digital_twins_endpoint {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get DigitalTwinsInstance Endpoints."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the DigitalTwinsInstance."]
+        #[doc = "* `resource_name`: The name of the DigitalTwinsInstance."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -645,6 +692,13 @@ pub mod digital_twins_endpoint {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get DigitalTwinsInstances Endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the DigitalTwinsInstance."]
+        #[doc = "* `resource_name`: The name of the DigitalTwinsInstance."]
+        #[doc = "* `endpoint_name`: Name of Endpoint Resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -660,6 +714,14 @@ pub mod digital_twins_endpoint {
                 endpoint_name: endpoint_name.into(),
             }
         }
+        #[doc = "Create or update DigitalTwinsInstance endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the DigitalTwinsInstance."]
+        #[doc = "* `resource_name`: The name of the DigitalTwinsInstance."]
+        #[doc = "* `endpoint_name`: Name of Endpoint Resource."]
+        #[doc = "* `endpoint_description`: The DigitalTwinsInstance endpoint metadata and security metadata."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -677,6 +739,13 @@ pub mod digital_twins_endpoint {
                 endpoint_description: endpoint_description.into(),
             }
         }
+        #[doc = "Delete a DigitalTwinsInstance endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the DigitalTwinsInstance."]
+        #[doc = "* `resource_name`: The name of the DigitalTwinsInstance."]
+        #[doc = "* `endpoint_name`: Name of Endpoint Resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -962,6 +1031,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available DigitalTwins service REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1041,6 +1111,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List private link resources for given Digital Twin."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the DigitalTwinsInstance."]
+        #[doc = "* `resource_name`: The name of the DigitalTwinsInstance."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1054,6 +1130,13 @@ pub mod private_link_resources {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get the specified private link resource for the given Digital Twin."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the DigitalTwinsInstance."]
+        #[doc = "* `resource_name`: The name of the DigitalTwinsInstance."]
+        #[doc = "* `resource_id`: The name of the private link resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1168,6 +1251,12 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List private endpoint connection properties."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the DigitalTwinsInstance."]
+        #[doc = "* `resource_name`: The name of the DigitalTwinsInstance."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1181,6 +1270,13 @@ pub mod private_endpoint_connections {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get private endpoint connection properties for the given private endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the DigitalTwinsInstance."]
+        #[doc = "* `resource_name`: The name of the DigitalTwinsInstance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1196,6 +1292,14 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Update the status of a private endpoint connection with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the DigitalTwinsInstance."]
+        #[doc = "* `resource_name`: The name of the DigitalTwinsInstance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
+        #[doc = "* `private_endpoint_connection`: The private endpoint connection with updated properties."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1213,6 +1317,13 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection: private_endpoint_connection.into(),
             }
         }
+        #[doc = "Delete private endpoint connection with the specified name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the DigitalTwinsInstance."]
+        #[doc = "* `resource_name`: The name of the DigitalTwinsInstance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

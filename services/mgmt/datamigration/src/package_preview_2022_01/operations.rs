@@ -112,6 +112,12 @@ pub mod database_migrations_sql_mi {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the specified database migration for a given SQL Managed Instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `target_db_name`: The name of the target database."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -129,6 +135,13 @@ pub mod database_migrations_sql_mi {
                 expand: None,
             }
         }
+        #[doc = "Create a new database migration to a given SQL Managed Instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `target_db_name`: The name of the target database."]
+        #[doc = "* `parameters`: Details of SqlMigrationService resource."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -146,6 +159,13 @@ pub mod database_migrations_sql_mi {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Stop in-progress database migration to SQL Managed Instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `target_db_name`: The name of the target database."]
+        #[doc = "* `parameters`: Required migration operation ID for which cancel will be initiated."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn cancel(
             &self,
             resource_group_name: impl Into<String>,
@@ -163,6 +183,13 @@ pub mod database_migrations_sql_mi {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Initiate cutover for in-progress online database migration to SQL Managed Instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `target_db_name`: The name of the target database."]
+        #[doc = "* `parameters`: Required migration operation ID for which cutover will be initiated."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn cutover(
             &self,
             resource_group_name: impl Into<String>,
@@ -412,6 +439,12 @@ pub mod database_migrations_sql_vm {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the specified database migration for a given SQL VM."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `target_db_name`: The name of the target database."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -429,6 +462,13 @@ pub mod database_migrations_sql_vm {
                 expand: None,
             }
         }
+        #[doc = "Create a new database migration to a given SQL VM."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `target_db_name`: The name of the target database."]
+        #[doc = "* `parameters`: Details of SqlMigrationService resource."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -446,6 +486,12 @@ pub mod database_migrations_sql_vm {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Stop in-progress database migration to SQL VM."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `target_db_name`: The name of the target database."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn cancel(
             &self,
             resource_group_name: impl Into<String>,
@@ -463,6 +509,12 @@ pub mod database_migrations_sql_vm {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Initiate cutover for in-progress online database migration to SQL VM."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `target_db_name`: The name of the target database."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn cutover(
             &self,
             resource_group_name: impl Into<String>,
@@ -712,6 +764,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available SQL Migration REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -791,6 +844,12 @@ pub mod sql_migration_services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the Database Migration Service"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_migration_service_name`: Name of the SQL Migration Service."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -804,6 +863,13 @@ pub mod sql_migration_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or Update Database Migration Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_migration_service_name`: Name of the SQL Migration Service."]
+        #[doc = "* `parameters`: Details of SqlMigrationService resource."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -819,6 +885,13 @@ pub mod sql_migration_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update Database Migration Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_migration_service_name`: Name of the SQL Migration Service."]
+        #[doc = "* `parameters`: Details of SqlMigrationService resource."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -834,6 +907,12 @@ pub mod sql_migration_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete Database Migration Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_migration_service_name`: Name of the SQL Migration Service."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -847,6 +926,11 @@ pub mod sql_migration_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve all SQL migration services in the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -858,6 +942,12 @@ pub mod sql_migration_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve the List of Authentication Keys for Self Hosted Integration Runtime."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_migration_service_name`: Name of the SQL Migration Service."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn list_auth_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -871,6 +961,13 @@ pub mod sql_migration_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Regenerate a new set of Authentication Keys for Self Hosted Integration Runtime."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_migration_service_name`: Name of the SQL Migration Service."]
+        #[doc = "* `parameters`: Details of SqlMigrationService resource."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn regenerate_auth_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -886,6 +983,13 @@ pub mod sql_migration_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete the integration runtime node."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_migration_service_name`: Name of the SQL Migration Service."]
+        #[doc = "* `parameters`: Details of SqlMigrationService resource."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn delete_node(
             &self,
             resource_group_name: impl Into<String>,
@@ -901,6 +1005,12 @@ pub mod sql_migration_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve the List of database migrations attached to the service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_migration_service_name`: Name of the SQL Migration Service."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn list_migrations(
             &self,
             resource_group_name: impl Into<String>,
@@ -914,6 +1024,12 @@ pub mod sql_migration_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve the registered Integration Runtime nodes and their monitoring data for a given Database Migration Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_migration_service_name`: Name of the SQL Migration Service."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn list_monitoring_data(
             &self,
             resource_group_name: impl Into<String>,
@@ -927,6 +1043,10 @@ pub mod sql_migration_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve all SQL migration services in the subscriptions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -1600,6 +1720,10 @@ pub mod resource_skus {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get supported SKUs"]
+        #[doc = "The skus action returns the list of SKUs that DMS supports."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn list_skus(&self, subscription_id: impl Into<String>) -> list_skus::Builder {
             list_skus::Builder {
                 client: self.0.clone(),
@@ -1687,6 +1811,12 @@ pub mod services {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get DMS Service Instance"]
+        #[doc = "The services resource is the top-level resource that represents the Database Migration Service. The GET method retrieves information about a service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1701,6 +1831,13 @@ pub mod services {
             }
         }
         #[doc = "Create or update DMS Instance"]
+        #[doc = "The services resource is the top-level resource that represents the Database Migration Service. The PUT method creates a new service or updates an existing one. When a service is updated, existing child resources (i.e. tasks) are unaffected. Services currently support a single kind, \"vm\", which refers to a VM-based service, although other kinds may be added in the future. This method can change the kind, SKU, and network of the service, but if tasks are currently running (i.e. the service is busy), this will fail with 400 Bad Request (\"ServiceIsBusy\"). The provider will reply when successful with 200 OK or 201 Created. Long-running operations use the provisioningState property."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `parameters`: Information about the service"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1717,6 +1854,13 @@ pub mod services {
             }
         }
         #[doc = "Create or update DMS Service Instance"]
+        #[doc = "The services resource is the top-level resource that represents the Database Migration Service. The PATCH method updates an existing service. This method can change the kind, SKU, and network of the service, but if tasks are currently running (i.e. the service is busy), this will fail with 400 Bad Request (\"ServiceIsBusy\")."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `parameters`: Information about the service"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1733,6 +1877,12 @@ pub mod services {
             }
         }
         #[doc = "Delete DMS Service Instance"]
+        #[doc = "The services resource is the top-level resource that represents the Database Migration Service. The DELETE method deletes a service. Any running tasks will be canceled."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1748,6 +1898,12 @@ pub mod services {
             }
         }
         #[doc = "Check service health status"]
+        #[doc = "The services resource is the top-level resource that represents the Database Migration Service. This action performs a health check and returns the status of the service and virtual machine size."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
         pub fn check_status(
             &self,
             subscription_id: impl Into<String>,
@@ -1762,6 +1918,12 @@ pub mod services {
             }
         }
         #[doc = "Start service"]
+        #[doc = "The services resource is the top-level resource that represents the Database Migration Service. This action starts the service and the service can be used for data migration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -1776,6 +1938,12 @@ pub mod services {
             }
         }
         #[doc = "Stop service"]
+        #[doc = "The services resource is the top-level resource that represents the Database Migration Service. This action stops the service and the service cannot be used for data migration. The service owner won't be billed when the service is stopped."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -1790,6 +1958,12 @@ pub mod services {
             }
         }
         #[doc = "Get compatible SKUs"]
+        #[doc = "The services resource is the top-level resource that represents the Database Migration Service. The skus action returns the list of SKUs that a service resource can be updated to."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
         pub fn list_skus(
             &self,
             subscription_id: impl Into<String>,
@@ -1804,6 +1978,13 @@ pub mod services {
             }
         }
         #[doc = "Check nested resource name validity and availability"]
+        #[doc = "This method checks whether a proposed nested resource name is valid and available."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `parameters`: Requested name to validate"]
         pub fn check_children_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -1820,6 +2001,11 @@ pub mod services {
             }
         }
         #[doc = "Get services in resource group"]
+        #[doc = "The Services resource is the top-level resource that represents the Database Migration Service. This method returns a list of service resources in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1832,6 +2018,10 @@ pub mod services {
             }
         }
         #[doc = "Get services in subscription"]
+        #[doc = "The services resource is the top-level resource that represents the Database Migration Service. This method returns a list of service resources in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1839,6 +2029,12 @@ pub mod services {
             }
         }
         #[doc = "Check name validity and availability"]
+        #[doc = "This method checks whether a proposed top-level resource name is valid and available."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `location`: The Azure region of the operation"]
+        #[doc = "* `parameters`: Requested name to validate"]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -2600,6 +2796,13 @@ pub mod tasks {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get tasks in a service"]
+        #[doc = "The services resource is the top-level resource that represents the Database Migration Service. This method returns a list of tasks owned by a service resource. Some tasks may have a status of Unknown, which indicates that an error occurred while querying the status of that task."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `project_name`: Name of the project"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2617,6 +2820,14 @@ pub mod tasks {
             }
         }
         #[doc = "Get task information"]
+        #[doc = "The tasks resource is a nested, proxy-only resource representing work performed by a DMS instance. The GET method retrieves information about a task."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `project_name`: Name of the project"]
+        #[doc = "* `task_name`: Name of the Task"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2636,6 +2847,15 @@ pub mod tasks {
             }
         }
         #[doc = "Create or update task"]
+        #[doc = "The tasks resource is a nested, proxy-only resource representing work performed by a DMS instance. The PUT method creates a new task or updates an existing one, although since tasks have no mutable custom properties, there is little reason to update an existing one."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `project_name`: Name of the project"]
+        #[doc = "* `task_name`: Name of the Task"]
+        #[doc = "* `parameters`: Information about the task"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2656,6 +2876,15 @@ pub mod tasks {
             }
         }
         #[doc = "Create or update task"]
+        #[doc = "The tasks resource is a nested, proxy-only resource representing work performed by a DMS instance. The PATCH method updates an existing task, but since tasks have no mutable custom properties, there is little reason to do so."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `project_name`: Name of the project"]
+        #[doc = "* `task_name`: Name of the Task"]
+        #[doc = "* `parameters`: Information about the task"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2676,6 +2905,14 @@ pub mod tasks {
             }
         }
         #[doc = "Delete task"]
+        #[doc = "The tasks resource is a nested, proxy-only resource representing work performed by a DMS instance. The DELETE method deletes a task, canceling it first if it's running."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `project_name`: Name of the project"]
+        #[doc = "* `task_name`: Name of the Task"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2695,6 +2932,14 @@ pub mod tasks {
             }
         }
         #[doc = "Cancel a task"]
+        #[doc = "The tasks resource is a nested, proxy-only resource representing work performed by a DMS instance. This method cancels a task if it's currently queued or running."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `project_name`: Name of the project"]
+        #[doc = "* `task_name`: Name of the Task"]
         pub fn cancel(
             &self,
             subscription_id: impl Into<String>,
@@ -2713,6 +2958,15 @@ pub mod tasks {
             }
         }
         #[doc = "Execute a command on a task"]
+        #[doc = "The tasks resource is a nested, proxy-only resource representing work performed by a DMS instance. This method executes a command on a running task."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `project_name`: Name of the project"]
+        #[doc = "* `task_name`: Name of the Task"]
+        #[doc = "* `parameters`: Command to execute"]
         pub fn command(
             &self,
             subscription_id: impl Into<String>,
@@ -3182,6 +3436,12 @@ pub mod service_tasks {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get service level tasks for a service"]
+        #[doc = "The services resource is the top-level resource that represents the Database Migration Service. This method returns a list of service level tasks owned by a service resource. Some tasks may have a status of Unknown, which indicates that an error occurred while querying the status of that task."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3197,6 +3457,13 @@ pub mod service_tasks {
             }
         }
         #[doc = "Get service task information"]
+        #[doc = "The service tasks resource is a nested, proxy-only resource representing work performed by a DMS instance. The GET method retrieves information about a service task."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `task_name`: Name of the Task"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3214,6 +3481,14 @@ pub mod service_tasks {
             }
         }
         #[doc = "Create or update service task"]
+        #[doc = "The service tasks resource is a nested, proxy-only resource representing work performed by a DMS instance. The PUT method creates a new service task or updates an existing one, although since service tasks have no mutable custom properties, there is little reason to update an existing one."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `task_name`: Name of the Task"]
+        #[doc = "* `parameters`: Information about the task"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3232,6 +3507,14 @@ pub mod service_tasks {
             }
         }
         #[doc = "Create or update service task"]
+        #[doc = "The service tasks resource is a nested, proxy-only resource representing work performed by a DMS instance. The PATCH method updates an existing service task, but since service tasks have no mutable custom properties, there is little reason to do so."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `task_name`: Name of the Task"]
+        #[doc = "* `parameters`: Information about the task"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3250,6 +3533,13 @@ pub mod service_tasks {
             }
         }
         #[doc = "Delete service task"]
+        #[doc = "The service tasks resource is a nested, proxy-only resource representing work performed by a DMS instance. The DELETE method deletes a service task, canceling it first if it's running."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `task_name`: Name of the Task"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3267,6 +3557,13 @@ pub mod service_tasks {
             }
         }
         #[doc = "Cancel a service task"]
+        #[doc = "The service tasks resource is a nested, proxy-only resource representing work performed by a DMS instance. This method cancels a service task if it's currently queued or running."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `task_name`: Name of the Task"]
         pub fn cancel(
             &self,
             subscription_id: impl Into<String>,
@@ -3678,6 +3975,12 @@ pub mod projects {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get projects in a service"]
+        #[doc = "The project resource is a nested resource representing a stored migration project. This method returns a list of projects owned by a service resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3692,6 +3995,13 @@ pub mod projects {
             }
         }
         #[doc = "Get project information"]
+        #[doc = "The project resource is a nested resource representing a stored migration project. The GET method retrieves information about a project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `project_name`: Name of the project"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3708,6 +4018,14 @@ pub mod projects {
             }
         }
         #[doc = "Create or update project"]
+        #[doc = "The project resource is a nested resource representing a stored migration project. The PUT method creates a new project or updates an existing one."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `project_name`: Name of the project"]
+        #[doc = "* `parameters`: Information about the project"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3726,6 +4044,14 @@ pub mod projects {
             }
         }
         #[doc = "Update project"]
+        #[doc = "The project resource is a nested resource representing a stored migration project. The PATCH method updates an existing project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `project_name`: Name of the project"]
+        #[doc = "* `parameters`: Information about the project"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3744,6 +4070,13 @@ pub mod projects {
             }
         }
         #[doc = "Delete project"]
+        #[doc = "The project resource is a nested resource representing a stored migration project. The DELETE method deletes a project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `project_name`: Name of the project"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4085,6 +4418,11 @@ pub mod usages {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get resource quotas and usage information"]
+        #[doc = "This method returns region-specific quotas and resource usage information for the Database Migration Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `location`: The Azure region of the operation"]
         pub fn list(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -4175,6 +4513,13 @@ pub mod files {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get files in a project"]
+        #[doc = "The project resource is a nested resource representing a stored migration project. This method returns a list of files owned by a project resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `project_name`: Name of the project"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4191,6 +4536,14 @@ pub mod files {
             }
         }
         #[doc = "Get file information"]
+        #[doc = "The files resource is a nested, proxy-only resource representing a file stored under the project resource. This method retrieves information about a file."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `project_name`: Name of the project"]
+        #[doc = "* `file_name`: Name of the File"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4209,6 +4562,15 @@ pub mod files {
             }
         }
         #[doc = "Create a file resource"]
+        #[doc = "The PUT method creates a new file or updates an existing one."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `project_name`: Name of the project"]
+        #[doc = "* `file_name`: Name of the File"]
+        #[doc = "* `parameters`: Information about the file"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4229,6 +4591,15 @@ pub mod files {
             }
         }
         #[doc = "Update a file"]
+        #[doc = "This method updates an existing file."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `project_name`: Name of the project"]
+        #[doc = "* `file_name`: Name of the File"]
+        #[doc = "* `parameters`: Information about the file"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4249,6 +4620,14 @@ pub mod files {
             }
         }
         #[doc = "Delete file"]
+        #[doc = "This method deletes a file."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `project_name`: Name of the project"]
+        #[doc = "* `file_name`: Name of the File"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4267,6 +4646,14 @@ pub mod files {
             }
         }
         #[doc = "Request storage information for downloading the file content"]
+        #[doc = "This method is used for requesting storage information using which contents of the file can be downloaded."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `project_name`: Name of the project"]
+        #[doc = "* `file_name`: Name of the File"]
         pub fn read(
             &self,
             subscription_id: impl Into<String>,
@@ -4285,6 +4672,14 @@ pub mod files {
             }
         }
         #[doc = "Request information for reading and writing file content."]
+        #[doc = "This method is used for requesting information for reading and writing the file content."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
+        #[doc = "* `group_name`: Name of the resource group"]
+        #[doc = "* `service_name`: Name of the service"]
+        #[doc = "* `project_name`: Name of the project"]
+        #[doc = "* `file_name`: Name of the File"]
         pub fn read_write(
             &self,
             subscription_id: impl Into<String>,

@@ -85,6 +85,7 @@ pub mod adc_operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the available Azure Data Catalog service operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -139,6 +140,11 @@ pub mod adc_catalogs {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List catalogs in Resource Group (GET Resources)"]
+        #[doc = "The List catalogs in Resource Group operation lists all the Azure Data Catalogs available under the given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
         pub fn listt_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -151,6 +157,12 @@ pub mod adc_catalogs {
             }
         }
         #[doc = "Get Azure Data Catalog service (GET Resources)"]
+        #[doc = "The Get Azure Data Catalog Service operation retrieves a json representation of the data catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `catalog_name`: The name of the data catalog in the specified subscription and resource group."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -165,6 +177,13 @@ pub mod adc_catalogs {
             }
         }
         #[doc = "Create or Update Azure Data Catalog service (PUT Resource)"]
+        #[doc = "The Create Azure Data Catalog service operation creates a new data catalog service with the specified parameters. If the specific service already exists, then any patchable properties will be updated and any immutable properties will remain unchanged."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `catalog_name`: The name of the data catalog in the specified subscription and resource group."]
+        #[doc = "* `properties`: Properties supplied to the Create or Update a data catalog."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -181,6 +200,13 @@ pub mod adc_catalogs {
             }
         }
         #[doc = "Update Azure Data Catalog Service (PATCH Resource)"]
+        #[doc = "The Update Azure Data Catalog Service operation can be used to update the existing deployment. The update call only supports the properties listed in the PATCH body."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `catalog_name`: The name of the data catalog in the specified subscription and resource group."]
+        #[doc = "* `properties`: Properties supplied to the Update a data catalog."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -197,6 +223,12 @@ pub mod adc_catalogs {
             }
         }
         #[doc = "Delete Azure Data Catalog Service (DELETE Resource)"]
+        #[doc = "The Delete Azure Data Catalog Service operation deletes an existing data catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `catalog_name`: The name of the data catalog in the specified subscription and resource group."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

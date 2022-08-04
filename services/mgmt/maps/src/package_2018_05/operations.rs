@@ -82,6 +82,12 @@ pub mod accounts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a Maps Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource Group."]
+        #[doc = "* `account_name`: The name of the Maps Account."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -95,6 +101,13 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Create or update a Maps Account. A Maps Account holds the keys which allow access to the Maps REST APIs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource Group."]
+        #[doc = "* `account_name`: The name of the Maps Account."]
+        #[doc = "* `maps_account_create_parameters`: The new or updated parameters for the Maps Account."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -110,6 +123,13 @@ pub mod accounts {
                 maps_account_create_parameters: maps_account_create_parameters.into(),
             }
         }
+        #[doc = "Updates a Maps Account. Only a subset of the parameters may be updated after creation, such as Sku and Tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource Group."]
+        #[doc = "* `account_name`: The name of the Maps Account."]
+        #[doc = "* `maps_account_update_parameters`: The updated parameters for the Maps Account."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -125,6 +145,12 @@ pub mod accounts {
                 maps_account_update_parameters: maps_account_update_parameters.into(),
             }
         }
+        #[doc = "Delete a Maps Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource Group."]
+        #[doc = "* `account_name`: The name of the Maps Account."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -138,6 +164,11 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Get all Maps Accounts in a Resource Group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource Group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -149,12 +180,22 @@ pub mod accounts {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get all Maps Accounts in a Subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Moves Maps Accounts from one ResourceGroup (or Subscription) to another"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains Maps Account to move."]
+        #[doc = "* `move_request`: The details of the Maps Account move."]
         pub fn move_(
             &self,
             subscription_id: impl Into<String>,
@@ -168,6 +209,12 @@ pub mod accounts {
                 move_request: move_request.into(),
             }
         }
+        #[doc = "Get the keys to use with the Maps APIs. A key is used to authenticate and authorize access to the Maps REST APIs. Only one key is needed at a time; two are given to provide seamless key regeneration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource Group."]
+        #[doc = "* `account_name`: The name of the Maps Account."]
         pub fn list_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -181,6 +228,13 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Regenerate either the primary or secondary key for use with the Maps APIs. The old key will stop working immediately."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource Group."]
+        #[doc = "* `account_name`: The name of the Maps Account."]
+        #[doc = "* `key_specification`: Which key to regenerate:  primary or secondary."]
         pub fn regenerate_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -196,6 +250,7 @@ pub mod accounts {
                 key_specification: key_specification.into(),
             }
         }
+        #[doc = "List operations available for the Maps Resource Provider"]
         pub fn list_operations(&self) -> list_operations::Builder {
             list_operations::Builder { client: self.0.clone() }
         }

@@ -88,6 +88,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Autonomous Development Platform provider operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -169,12 +170,21 @@ pub mod accounts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all ADP accounts available under the subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List all ADP accounts available under the resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -186,6 +196,12 @@ pub mod accounts {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets the properties of an ADP account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the ADP account."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -199,6 +215,12 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Creates or updates an ADP account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the ADP account."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -213,6 +235,12 @@ pub mod accounts {
                 parameters: None,
             }
         }
+        #[doc = "Updates the properties of an existing ADP account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the ADP account."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -227,6 +255,12 @@ pub mod accounts {
                 parameters: None,
             }
         }
+        #[doc = "Deletes an ADP account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the ADP account."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -648,6 +682,12 @@ pub mod data_pools {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the data pools under the ADP account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the ADP account."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -661,6 +701,13 @@ pub mod data_pools {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Gets the properties of a Data Pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the ADP account."]
+        #[doc = "* `data_pool_name`: The name of the Data Pool."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -676,6 +723,13 @@ pub mod data_pools {
                 data_pool_name: data_pool_name.into(),
             }
         }
+        #[doc = "Creates or updates a Data Pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the ADP account."]
+        #[doc = "* `data_pool_name`: The name of the Data Pool."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -692,6 +746,13 @@ pub mod data_pools {
                 parameters: None,
             }
         }
+        #[doc = "Updates the properties of an existing Data Pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the ADP account."]
+        #[doc = "* `data_pool_name`: The name of the Data Pool."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -708,6 +769,13 @@ pub mod data_pools {
                 parameters: None,
             }
         }
+        #[doc = "Deletes a Data Pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the ADP account."]
+        #[doc = "* `data_pool_name`: The name of the Data Pool."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

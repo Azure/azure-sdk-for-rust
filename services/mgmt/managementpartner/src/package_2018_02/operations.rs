@@ -89,6 +89,10 @@ pub mod partner {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a specific `Partner`."]
+        #[doc = "Get the management partner using the partnerId, objectId and tenantId."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `partner_id`: Id of the Partner"]
         pub fn get(&self, partner_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -96,6 +100,10 @@ pub mod partner {
             }
         }
         #[doc = "Create a specific `Partner`."]
+        #[doc = "Create a management partner for the objectId and tenantId."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `partner_id`: Id of the Partner"]
         pub fn create(&self, partner_id: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -103,6 +111,10 @@ pub mod partner {
             }
         }
         #[doc = "Update a specific `Partner`."]
+        #[doc = "Update the management partner for the objectId and tenantId."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `partner_id`: Id of the Partner"]
         pub fn update(&self, partner_id: impl Into<String>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -110,6 +122,10 @@ pub mod partner {
             }
         }
         #[doc = "Delete a specific `Partner`."]
+        #[doc = "Delete the management partner for the objectId and tenantId."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `partner_id`: Id of the Partner"]
         pub fn delete(&self, partner_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -311,6 +327,7 @@ pub mod operation {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get operations."]
+        #[doc = "List all the operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -393,6 +410,7 @@ pub mod partners {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a specific `Partner`."]
+        #[doc = "Get the management partner using the objectId and tenantId."]
         pub fn get(&self) -> get::Builder {
             get::Builder { client: self.0.clone() }
         }

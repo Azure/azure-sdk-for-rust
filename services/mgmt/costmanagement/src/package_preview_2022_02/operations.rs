@@ -85,6 +85,12 @@ pub mod price_sheet {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a URL to download the pricesheet for an invoice. The operation is supported for billing accounts with agreement type Microsoft Partner Agreement or Microsoft Customer Agreement."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
+        #[doc = "* `invoice_name`: The ID that uniquely identifies an invoice."]
         pub fn download(
             &self,
             billing_account_name: impl Into<String>,
@@ -98,6 +104,11 @@ pub mod price_sheet {
                 invoice_name: invoice_name.into(),
             }
         }
+        #[doc = "Gets a URL to download the current month's pricesheet for a billing profile. The operation is supported for billing accounts with agreement type Microsoft Partner Agreement or Microsoft Customer Agreement.Due to Azure product growth, the Azure price sheet download experience in this preview version will be updated from a single csv file to a Zip file containing multiple csv files, each with max 200k records."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
         pub fn download_by_billing_profile(
             &self,
             billing_account_name: impl Into<String>,
@@ -220,6 +231,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available consumption REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

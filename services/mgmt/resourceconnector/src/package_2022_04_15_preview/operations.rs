@@ -82,10 +82,15 @@ pub mod appliances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all available Appliances operations."]
         pub fn list_operations(&self) -> list_operations::Builder {
             list_operations::Builder { client: self.0.clone() }
         }
         #[doc = "Gets a list of Appliances in a subscription."]
+        #[doc = "Gets a list of Appliances in the specified subscription. The operation returns properties of each Appliance"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -93,6 +98,11 @@ pub mod appliances {
             }
         }
         #[doc = "Gets a list of Appliances in the specified subscription and resource group."]
+        #[doc = "Gets a list of Appliances in the specified subscription and resource group. The operation returns properties of each Appliance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -105,6 +115,12 @@ pub mod appliances {
             }
         }
         #[doc = "Gets an Appliance."]
+        #[doc = "Gets the details of an Appliance with a specified resource group and name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: Appliances name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -119,6 +135,13 @@ pub mod appliances {
             }
         }
         #[doc = "Creates or updates an Appliance."]
+        #[doc = "Creates or updates an Appliance in the specified Subscription and Resource Group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: Appliances name."]
+        #[doc = "* `parameters`: Parameters supplied to create or update an Appliance."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -135,6 +158,13 @@ pub mod appliances {
             }
         }
         #[doc = "Updates an Appliance."]
+        #[doc = "Updates an Appliance with the specified Resource Name in the specified Resource Group and Subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: Appliances name."]
+        #[doc = "* `parameters`: The updatable fields of an existing Appliance."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -151,6 +181,12 @@ pub mod appliances {
             }
         }
         #[doc = "Deletes an Appliance."]
+        #[doc = "Deletes an Appliance with the specified Resource Name, Resource Group, and Subscription Id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: Appliances name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -165,6 +201,12 @@ pub mod appliances {
             }
         }
         #[doc = "Returns the cluster customer user credential."]
+        #[doc = "Returns the cluster customer user credentials for the dedicated appliance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: Appliances name."]
         pub fn list_cluster_customer_user_credential(
             &self,
             subscription_id: impl Into<String>,
@@ -179,6 +221,12 @@ pub mod appliances {
             }
         }
         #[doc = "Returns the cluster user credential."]
+        #[doc = "Returns the cluster user credentials for the dedicated appliance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: Appliances name."]
         pub fn list_cluster_user_credential(
             &self,
             subscription_id: impl Into<String>,
@@ -193,6 +241,13 @@ pub mod appliances {
             }
         }
         #[doc = "Gets an Appliance upgrade graph."]
+        #[doc = "Gets the upgrade graph of an Appliance with a specified resource group and name and specific release train."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: Appliances name."]
+        #[doc = "* `upgrade_graph`: Upgrade graph version, ex - stable"]
         pub fn get_upgrade_graph(
             &self,
             subscription_id: impl Into<String>,

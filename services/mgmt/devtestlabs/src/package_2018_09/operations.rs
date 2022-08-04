@@ -154,6 +154,7 @@ pub mod provider_operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Result of the request to list REST API operations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -233,6 +234,10 @@ pub mod labs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List labs in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -243,6 +248,11 @@ pub mod labs {
                 orderby: None,
             }
         }
+        #[doc = "List labs in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -258,6 +268,12 @@ pub mod labs {
                 orderby: None,
             }
         }
+        #[doc = "Get lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the lab."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -272,6 +288,13 @@ pub mod labs {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing lab. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the lab."]
+        #[doc = "* `lab`: A lab."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -287,6 +310,13 @@ pub mod labs {
                 lab: lab.into(),
             }
         }
+        #[doc = "Allows modifying tags of labs. All other properties will be ignored."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the lab."]
+        #[doc = "* `lab`: A lab."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -302,6 +332,12 @@ pub mod labs {
                 lab: lab.into(),
             }
         }
+        #[doc = "Delete lab. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the lab."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -315,6 +351,12 @@ pub mod labs {
                 name: name.into(),
             }
         }
+        #[doc = "Claim a random claimable virtual machine in the lab. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the lab."]
         pub fn claim_any_vm(
             &self,
             subscription_id: impl Into<String>,
@@ -328,6 +370,13 @@ pub mod labs {
                 name: name.into(),
             }
         }
+        #[doc = "Create virtual machines in a lab. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the lab."]
+        #[doc = "* `lab_virtual_machine_creation_parameter`: Properties for creating a virtual machine."]
         pub fn create_environment(
             &self,
             subscription_id: impl Into<String>,
@@ -343,6 +392,13 @@ pub mod labs {
                 lab_virtual_machine_creation_parameter: lab_virtual_machine_creation_parameter.into(),
             }
         }
+        #[doc = "Exports the lab resource usage into a storage account This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the lab."]
+        #[doc = "* `export_resource_usage_parameters`: The parameters of the export operation."]
         pub fn export_resource_usage(
             &self,
             subscription_id: impl Into<String>,
@@ -358,6 +414,13 @@ pub mod labs {
                 export_resource_usage_parameters: export_resource_usage_parameters.into(),
             }
         }
+        #[doc = "Generate a URI for uploading custom disk images to a Lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the lab."]
+        #[doc = "* `generate_upload_uri_parameter`: Properties for generating an upload URI."]
         pub fn generate_upload_uri(
             &self,
             subscription_id: impl Into<String>,
@@ -373,6 +436,13 @@ pub mod labs {
                 generate_upload_uri_parameter: generate_upload_uri_parameter.into(),
             }
         }
+        #[doc = "Import a virtual machine into a different lab. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the lab."]
+        #[doc = "* `import_lab_virtual_machine_request`: This represents the payload required to import a virtual machine from a different lab into the current one"]
         pub fn import_virtual_machine(
             &self,
             subscription_id: impl Into<String>,
@@ -388,6 +458,12 @@ pub mod labs {
                 import_lab_virtual_machine_request: import_lab_virtual_machine_request.into(),
             }
         }
+        #[doc = "List disk images available for custom image creation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the lab."]
         pub fn list_vhds(
             &self,
             subscription_id: impl Into<String>,
@@ -1211,6 +1287,12 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `location_name`: The name of the location."]
+        #[doc = "* `name`: The name of the operation."]
         pub fn get(&self, subscription_id: impl Into<String>, location_name: impl Into<String>, name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1286,6 +1368,10 @@ pub mod global_schedules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List schedules in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -1296,6 +1382,11 @@ pub mod global_schedules {
                 orderby: None,
             }
         }
+        #[doc = "List schedules in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1311,6 +1402,12 @@ pub mod global_schedules {
                 orderby: None,
             }
         }
+        #[doc = "Get schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the schedule."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1325,6 +1422,13 @@ pub mod global_schedules {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the schedule."]
+        #[doc = "* `schedule`: A schedule."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1340,6 +1444,13 @@ pub mod global_schedules {
                 schedule: schedule.into(),
             }
         }
+        #[doc = "Allows modifying tags of schedules. All other properties will be ignored."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the schedule."]
+        #[doc = "* `schedule`: A schedule."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1355,6 +1466,12 @@ pub mod global_schedules {
                 schedule: schedule.into(),
             }
         }
+        #[doc = "Delete schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the schedule."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1368,6 +1485,12 @@ pub mod global_schedules {
                 name: name.into(),
             }
         }
+        #[doc = "Execute a schedule. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the schedule."]
         pub fn execute(
             &self,
             subscription_id: impl Into<String>,
@@ -1381,6 +1504,13 @@ pub mod global_schedules {
                 name: name.into(),
             }
         }
+        #[doc = "Updates a schedule's target resource Id. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the schedule."]
+        #[doc = "* `retarget_schedule_properties`: Properties for retargeting a virtual machine schedule."]
         pub fn retarget(
             &self,
             subscription_id: impl Into<String>,
@@ -1957,6 +2087,12 @@ pub mod artifact_sources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List artifact sources in a given lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1974,6 +2110,13 @@ pub mod artifact_sources {
                 orderby: None,
             }
         }
+        #[doc = "Get artifact source."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the artifact source."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1990,6 +2133,14 @@ pub mod artifact_sources {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing artifact source."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the artifact source."]
+        #[doc = "* `artifact_source`: Properties of an artifact source."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2007,6 +2158,14 @@ pub mod artifact_sources {
                 artifact_source: artifact_source.into(),
             }
         }
+        #[doc = "Allows modifying tags of artifact sources. All other properties will be ignored."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the artifact source."]
+        #[doc = "* `artifact_source`: Properties of an artifact source."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2024,6 +2183,13 @@ pub mod artifact_sources {
                 artifact_source: artifact_source.into(),
             }
         }
+        #[doc = "Delete artifact source."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the artifact source."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2393,6 +2559,13 @@ pub mod arm_templates {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List azure resource manager templates in a given artifact source."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `artifact_source_name`: The name of the artifact source."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2412,6 +2585,14 @@ pub mod arm_templates {
                 orderby: None,
             }
         }
+        #[doc = "Get azure resource manager template."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `artifact_source_name`: The name of the artifact source."]
+        #[doc = "* `name`: The name of the azure resource manager template."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2604,6 +2785,13 @@ pub mod artifacts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List artifacts in a given artifact source."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `artifact_source_name`: The name of the artifact source."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2623,6 +2811,14 @@ pub mod artifacts {
                 orderby: None,
             }
         }
+        #[doc = "Get artifact."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `artifact_source_name`: The name of the artifact source."]
+        #[doc = "* `name`: The name of the artifact."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2641,6 +2837,15 @@ pub mod artifacts {
                 expand: None,
             }
         }
+        #[doc = "Generates an ARM template for the given artifact, uploads the required files to a storage account, and validates the generated artifact."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `artifact_source_name`: The name of the artifact source."]
+        #[doc = "* `name`: The name of the artifact."]
+        #[doc = "* `generate_arm_template_request`: Parameters for generating an ARM template for deploying artifacts."]
         pub fn generate_arm_template(
             &self,
             subscription_id: impl Into<String>,
@@ -2892,6 +3097,13 @@ pub mod costs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get cost."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the cost."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2908,6 +3120,14 @@ pub mod costs {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing cost."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the cost."]
+        #[doc = "* `lab_cost`: A cost item."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3058,6 +3278,12 @@ pub mod custom_images {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List custom images in a given lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3075,6 +3301,13 @@ pub mod custom_images {
                 orderby: None,
             }
         }
+        #[doc = "Get custom image."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the custom image."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3091,6 +3324,14 @@ pub mod custom_images {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing custom image. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the custom image."]
+        #[doc = "* `custom_image`: A custom image."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3108,6 +3349,14 @@ pub mod custom_images {
                 custom_image: custom_image.into(),
             }
         }
+        #[doc = "Allows modifying tags of custom images. All other properties will be ignored."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the custom image."]
+        #[doc = "* `custom_image`: A custom image."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3125,6 +3374,13 @@ pub mod custom_images {
                 custom_image: custom_image.into(),
             }
         }
+        #[doc = "Delete custom image. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the custom image."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3498,6 +3754,12 @@ pub mod formulas {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List formulas in a given lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3515,6 +3777,13 @@ pub mod formulas {
                 orderby: None,
             }
         }
+        #[doc = "Get formula."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the formula."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3531,6 +3800,14 @@ pub mod formulas {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing formula. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the formula."]
+        #[doc = "* `formula`: A formula for creating a VM, specifying an image base and other parameters"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3548,6 +3825,14 @@ pub mod formulas {
                 formula: formula.into(),
             }
         }
+        #[doc = "Allows modifying tags of formulas. All other properties will be ignored."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the formula."]
+        #[doc = "* `formula`: A formula for creating a VM, specifying an image base and other parameters"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3565,6 +3850,13 @@ pub mod formulas {
                 formula: formula.into(),
             }
         }
+        #[doc = "Delete formula."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the formula."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3935,6 +4227,12 @@ pub mod gallery_images {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List gallery images in a given lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4068,6 +4366,12 @@ pub mod notification_channels {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List notification channels in a given lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4085,6 +4389,13 @@ pub mod notification_channels {
                 orderby: None,
             }
         }
+        #[doc = "Get notification channel."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the notification channel."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4101,6 +4412,14 @@ pub mod notification_channels {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing notification channel."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the notification channel."]
+        #[doc = "* `notification_channel`: A notification."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4118,6 +4437,14 @@ pub mod notification_channels {
                 notification_channel: notification_channel.into(),
             }
         }
+        #[doc = "Allows modifying tags of notification channels. All other properties will be ignored."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the notification channel."]
+        #[doc = "* `notification_channel`: A notification."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4135,6 +4462,13 @@ pub mod notification_channels {
                 notification_channel: notification_channel.into(),
             }
         }
+        #[doc = "Delete notification channel."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the notification channel."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4150,6 +4484,14 @@ pub mod notification_channels {
                 name: name.into(),
             }
         }
+        #[doc = "Send notification to provided channel."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the notification channel."]
+        #[doc = "* `notify_parameters`: Properties for generating a Notification."]
         pub fn notify(
             &self,
             subscription_id: impl Into<String>,
@@ -4573,6 +4915,14 @@ pub mod policy_sets {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Evaluates lab policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the policy set."]
+        #[doc = "* `evaluate_policies_request`: Request body for evaluating a policy set."]
         pub fn evaluate_policies(
             &self,
             subscription_id: impl Into<String>,
@@ -4652,6 +5002,13 @@ pub mod policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List policies in a given policy set."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `policy_set_name`: The name of the policy set."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4671,6 +5028,14 @@ pub mod policies {
                 orderby: None,
             }
         }
+        #[doc = "Get policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `policy_set_name`: The name of the policy set."]
+        #[doc = "* `name`: The name of the policy."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4689,6 +5054,15 @@ pub mod policies {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `policy_set_name`: The name of the policy set."]
+        #[doc = "* `name`: The name of the policy."]
+        #[doc = "* `policy`: A Policy."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4708,6 +5082,15 @@ pub mod policies {
                 policy: policy.into(),
             }
         }
+        #[doc = "Allows modifying tags of policies. All other properties will be ignored."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `policy_set_name`: The name of the policy set."]
+        #[doc = "* `name`: The name of the policy."]
+        #[doc = "* `policy`: A Policy."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4727,6 +5110,14 @@ pub mod policies {
                 policy: policy.into(),
             }
         }
+        #[doc = "Delete policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `policy_set_name`: The name of the policy set."]
+        #[doc = "* `name`: The name of the policy."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5108,6 +5499,12 @@ pub mod schedules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List schedules in a given lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -5125,6 +5522,13 @@ pub mod schedules {
                 orderby: None,
             }
         }
+        #[doc = "Get schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the schedule."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5141,6 +5545,14 @@ pub mod schedules {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the schedule."]
+        #[doc = "* `schedule`: A schedule."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -5158,6 +5570,14 @@ pub mod schedules {
                 schedule: schedule.into(),
             }
         }
+        #[doc = "Allows modifying tags of schedules. All other properties will be ignored."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the schedule."]
+        #[doc = "* `schedule`: A schedule."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -5175,6 +5595,13 @@ pub mod schedules {
                 schedule: schedule.into(),
             }
         }
+        #[doc = "Delete schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the schedule."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5190,6 +5617,13 @@ pub mod schedules {
                 name: name.into(),
             }
         }
+        #[doc = "Execute a schedule. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the schedule."]
         pub fn execute(
             &self,
             subscription_id: impl Into<String>,
@@ -5205,6 +5639,13 @@ pub mod schedules {
                 name: name.into(),
             }
         }
+        #[doc = "Lists all applicable schedules"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the schedule."]
         pub fn list_applicable(
             &self,
             subscription_id: impl Into<String>,
@@ -5712,6 +6153,13 @@ pub mod service_runners {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get service runner."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the service runner."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5727,6 +6175,14 @@ pub mod service_runners {
                 name: name.into(),
             }
         }
+        #[doc = "Create or replace an existing service runner."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the service runner."]
+        #[doc = "* `service_runner`: A container for a managed identity to execute DevTest lab services."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -5744,6 +6200,13 @@ pub mod service_runners {
                 service_runner: service_runner.into(),
             }
         }
+        #[doc = "Delete service runner."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the service runner."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5939,6 +6402,12 @@ pub mod users {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List user profiles in a given lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -5956,6 +6425,13 @@ pub mod users {
                 orderby: None,
             }
         }
+        #[doc = "Get user profile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the user profile."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5972,6 +6448,14 @@ pub mod users {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing user profile. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the user profile."]
+        #[doc = "* `user`: Profile of a lab user."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -5989,6 +6473,14 @@ pub mod users {
                 user: user.into(),
             }
         }
+        #[doc = "Allows modifying tags of user profiles. All other properties will be ignored."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the user profile."]
+        #[doc = "* `user`: Profile of a lab user."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -6006,6 +6498,13 @@ pub mod users {
                 user: user.into(),
             }
         }
+        #[doc = "Delete user profile. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the user profile."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -6379,6 +6878,13 @@ pub mod disks {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List disks in a given user profile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -6398,6 +6904,14 @@ pub mod disks {
                 orderby: None,
             }
         }
+        #[doc = "Get disk."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the disk."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -6416,6 +6930,15 @@ pub mod disks {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing disk. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the disk."]
+        #[doc = "* `disk`: A Disk."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -6435,6 +6958,15 @@ pub mod disks {
                 disk: disk.into(),
             }
         }
+        #[doc = "Allows modifying tags of disks. All other properties will be ignored."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the disk."]
+        #[doc = "* `disk`: A Disk."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -6454,6 +6986,14 @@ pub mod disks {
                 disk: disk.into(),
             }
         }
+        #[doc = "Delete disk. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the disk."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -6471,6 +7011,15 @@ pub mod disks {
                 name: name.into(),
             }
         }
+        #[doc = "Attach and create the lease of the disk to the virtual machine. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the disk."]
+        #[doc = "* `attach_disk_properties`: Properties of the disk to attach."]
         pub fn attach(
             &self,
             subscription_id: impl Into<String>,
@@ -6490,6 +7039,15 @@ pub mod disks {
                 attach_disk_properties: attach_disk_properties.into(),
             }
         }
+        #[doc = "Detach and break the lease of the disk attached to the virtual machine. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the disk."]
+        #[doc = "* `detach_disk_properties`: Properties of the disk to detach."]
         pub fn detach(
             &self,
             subscription_id: impl Into<String>,
@@ -6997,6 +7555,13 @@ pub mod environments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List environments in a given user profile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -7016,6 +7581,14 @@ pub mod environments {
                 orderby: None,
             }
         }
+        #[doc = "Get environment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the environment."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -7034,6 +7607,15 @@ pub mod environments {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing environment. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the environment."]
+        #[doc = "* `dtl_environment`: An environment, which is essentially an ARM template deployment."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -7053,6 +7635,15 @@ pub mod environments {
                 dtl_environment: dtl_environment.into(),
             }
         }
+        #[doc = "Allows modifying tags of environments. All other properties will be ignored."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the environment."]
+        #[doc = "* `dtl_environment`: An environment, which is essentially an ARM template deployment."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -7072,6 +7663,14 @@ pub mod environments {
                 dtl_environment: dtl_environment.into(),
             }
         }
+        #[doc = "Delete environment. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the environment."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -7457,6 +8056,13 @@ pub mod secrets {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List secrets in a given user profile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -7476,6 +8082,14 @@ pub mod secrets {
                 orderby: None,
             }
         }
+        #[doc = "Get secret."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the secret."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -7494,6 +8108,15 @@ pub mod secrets {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing secret. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the secret."]
+        #[doc = "* `secret`: A secret."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -7513,6 +8136,15 @@ pub mod secrets {
                 secret: secret.into(),
             }
         }
+        #[doc = "Allows modifying tags of secrets. All other properties will be ignored."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the secret."]
+        #[doc = "* `secret`: A secret."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -7532,6 +8164,14 @@ pub mod secrets {
                 secret: secret.into(),
             }
         }
+        #[doc = "Delete secret."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the secret."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -7914,6 +8554,13 @@ pub mod service_fabrics {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List service fabrics in a given user profile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -7933,6 +8580,14 @@ pub mod service_fabrics {
                 orderby: None,
             }
         }
+        #[doc = "Get service fabric."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the service fabric."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -7951,6 +8606,15 @@ pub mod service_fabrics {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing service fabric. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the service fabric."]
+        #[doc = "* `service_fabric`: A Service Fabric."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -7970,6 +8634,15 @@ pub mod service_fabrics {
                 service_fabric: service_fabric.into(),
             }
         }
+        #[doc = "Allows modifying tags of service fabrics. All other properties will be ignored."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the service fabric."]
+        #[doc = "* `service_fabric`: A Service Fabric."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -7989,6 +8662,14 @@ pub mod service_fabrics {
                 service_fabric: service_fabric.into(),
             }
         }
+        #[doc = "Delete service fabric. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the service fabric."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -8006,6 +8687,14 @@ pub mod service_fabrics {
                 name: name.into(),
             }
         }
+        #[doc = "Lists the applicable start/stop schedules, if any."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the service fabric."]
         pub fn list_applicable_schedules(
             &self,
             subscription_id: impl Into<String>,
@@ -8023,6 +8712,14 @@ pub mod service_fabrics {
                 name: name.into(),
             }
         }
+        #[doc = "Start a service fabric. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the service fabric."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -8040,6 +8737,14 @@ pub mod service_fabrics {
                 name: name.into(),
             }
         }
+        #[doc = "Stop a service fabric This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `name`: The name of the service fabric."]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -8592,6 +9297,14 @@ pub mod service_fabric_schedules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List schedules in a given service fabric."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `service_fabric_name`: The name of the service fabric."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -8613,6 +9326,15 @@ pub mod service_fabric_schedules {
                 orderby: None,
             }
         }
+        #[doc = "Get schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `service_fabric_name`: The name of the service fabric."]
+        #[doc = "* `name`: The name of the schedule."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -8633,6 +9355,16 @@ pub mod service_fabric_schedules {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `service_fabric_name`: The name of the service fabric."]
+        #[doc = "* `name`: The name of the schedule."]
+        #[doc = "* `schedule`: A schedule."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -8654,6 +9386,16 @@ pub mod service_fabric_schedules {
                 schedule: schedule.into(),
             }
         }
+        #[doc = "Allows modifying tags of schedules. All other properties will be ignored."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `service_fabric_name`: The name of the service fabric."]
+        #[doc = "* `name`: The name of the schedule."]
+        #[doc = "* `schedule`: A schedule."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -8675,6 +9417,15 @@ pub mod service_fabric_schedules {
                 schedule: schedule.into(),
             }
         }
+        #[doc = "Delete schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `service_fabric_name`: The name of the service fabric."]
+        #[doc = "* `name`: The name of the schedule."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -8694,6 +9445,15 @@ pub mod service_fabric_schedules {
                 name: name.into(),
             }
         }
+        #[doc = "Execute a schedule. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `user_name`: The name of the user profile."]
+        #[doc = "* `service_fabric_name`: The name of the service fabric."]
+        #[doc = "* `name`: The name of the schedule."]
         pub fn execute(
             &self,
             subscription_id: impl Into<String>,
@@ -9095,6 +9855,12 @@ pub mod virtual_machines {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List virtual machines in a given lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -9112,6 +9878,13 @@ pub mod virtual_machines {
                 orderby: None,
             }
         }
+        #[doc = "Get virtual machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual machine."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -9128,6 +9901,14 @@ pub mod virtual_machines {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing virtual machine. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual machine."]
+        #[doc = "* `lab_virtual_machine`: A virtual machine."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -9145,6 +9926,14 @@ pub mod virtual_machines {
                 lab_virtual_machine: lab_virtual_machine.into(),
             }
         }
+        #[doc = "Allows modifying tags of virtual machines. All other properties will be ignored."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual machine."]
+        #[doc = "* `lab_virtual_machine`: A virtual machine."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -9162,6 +9951,13 @@ pub mod virtual_machines {
                 lab_virtual_machine: lab_virtual_machine.into(),
             }
         }
+        #[doc = "Delete virtual machine. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual machine."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -9177,6 +9973,14 @@ pub mod virtual_machines {
                 name: name.into(),
             }
         }
+        #[doc = "Attach a new or existing data disk to virtual machine. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual machine."]
+        #[doc = "* `data_disk_properties`: Request body for adding a new or existing data disk to a virtual machine."]
         pub fn add_data_disk(
             &self,
             subscription_id: impl Into<String>,
@@ -9194,6 +9998,14 @@ pub mod virtual_machines {
                 data_disk_properties: data_disk_properties.into(),
             }
         }
+        #[doc = "Apply artifacts to virtual machine. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual machine."]
+        #[doc = "* `apply_artifacts_request`: Request body for applying artifacts to a virtual machine."]
         pub fn apply_artifacts(
             &self,
             subscription_id: impl Into<String>,
@@ -9211,6 +10023,13 @@ pub mod virtual_machines {
                 apply_artifacts_request: apply_artifacts_request.into(),
             }
         }
+        #[doc = "Take ownership of an existing virtual machine This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual machine."]
         pub fn claim(
             &self,
             subscription_id: impl Into<String>,
@@ -9226,6 +10045,14 @@ pub mod virtual_machines {
                 name: name.into(),
             }
         }
+        #[doc = "Detach the specified disk from the virtual machine. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual machine."]
+        #[doc = "* `detach_data_disk_properties`: Request body for detaching data disk from a virtual machine."]
         pub fn detach_data_disk(
             &self,
             subscription_id: impl Into<String>,
@@ -9243,6 +10070,13 @@ pub mod virtual_machines {
                 detach_data_disk_properties: detach_data_disk_properties.into(),
             }
         }
+        #[doc = "Gets a string that represents the contents of the RDP file for the virtual machine"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual machine."]
         pub fn get_rdp_file_contents(
             &self,
             subscription_id: impl Into<String>,
@@ -9258,6 +10092,13 @@ pub mod virtual_machines {
                 name: name.into(),
             }
         }
+        #[doc = "Lists the applicable start/stop schedules, if any."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual machine."]
         pub fn list_applicable_schedules(
             &self,
             subscription_id: impl Into<String>,
@@ -9273,6 +10114,13 @@ pub mod virtual_machines {
                 name: name.into(),
             }
         }
+        #[doc = "Redeploy a virtual machine This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual machine."]
         pub fn redeploy(
             &self,
             subscription_id: impl Into<String>,
@@ -9288,6 +10136,14 @@ pub mod virtual_machines {
                 name: name.into(),
             }
         }
+        #[doc = "Resize Virtual Machine. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual machine."]
+        #[doc = "* `resize_lab_virtual_machine_properties`: Request body for resizing a virtual machine."]
         pub fn resize(
             &self,
             subscription_id: impl Into<String>,
@@ -9305,6 +10161,13 @@ pub mod virtual_machines {
                 resize_lab_virtual_machine_properties: resize_lab_virtual_machine_properties.into(),
             }
         }
+        #[doc = "Restart a virtual machine. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual machine."]
         pub fn restart(
             &self,
             subscription_id: impl Into<String>,
@@ -9320,6 +10183,13 @@ pub mod virtual_machines {
                 name: name.into(),
             }
         }
+        #[doc = "Start a virtual machine. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual machine."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -9335,6 +10205,13 @@ pub mod virtual_machines {
                 name: name.into(),
             }
         }
+        #[doc = "Stop a virtual machine This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual machine."]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -9350,6 +10227,13 @@ pub mod virtual_machines {
                 name: name.into(),
             }
         }
+        #[doc = "Transfers all data disks attached to the virtual machine to be owned by the current user. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual machine."]
         pub fn transfer_disks(
             &self,
             subscription_id: impl Into<String>,
@@ -9365,6 +10249,13 @@ pub mod virtual_machines {
                 name: name.into(),
             }
         }
+        #[doc = "Release ownership of an existing virtual machine This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual machine."]
         pub fn un_claim(
             &self,
             subscription_id: impl Into<String>,
@@ -10451,6 +11342,13 @@ pub mod virtual_machine_schedules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List schedules in a given virtual machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `virtual_machine_name`: The name of the virtual machine."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -10470,6 +11368,14 @@ pub mod virtual_machine_schedules {
                 orderby: None,
             }
         }
+        #[doc = "Get schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `virtual_machine_name`: The name of the virtual machine."]
+        #[doc = "* `name`: The name of the schedule."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -10488,6 +11394,15 @@ pub mod virtual_machine_schedules {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `virtual_machine_name`: The name of the virtual machine."]
+        #[doc = "* `name`: The name of the schedule."]
+        #[doc = "* `schedule`: A schedule."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -10507,6 +11422,15 @@ pub mod virtual_machine_schedules {
                 schedule: schedule.into(),
             }
         }
+        #[doc = "Allows modifying tags of schedules. All other properties will be ignored."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `virtual_machine_name`: The name of the virtual machine."]
+        #[doc = "* `name`: The name of the schedule."]
+        #[doc = "* `schedule`: A schedule."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -10526,6 +11450,14 @@ pub mod virtual_machine_schedules {
                 schedule: schedule.into(),
             }
         }
+        #[doc = "Delete schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `virtual_machine_name`: The name of the virtual machine."]
+        #[doc = "* `name`: The name of the schedule."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -10543,6 +11475,14 @@ pub mod virtual_machine_schedules {
                 name: name.into(),
             }
         }
+        #[doc = "Execute a schedule. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `virtual_machine_name`: The name of the virtual machine."]
+        #[doc = "* `name`: The name of the schedule."]
         pub fn execute(
             &self,
             subscription_id: impl Into<String>,
@@ -10975,6 +11915,12 @@ pub mod virtual_networks {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List virtual networks in a given lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -10992,6 +11938,13 @@ pub mod virtual_networks {
                 orderby: None,
             }
         }
+        #[doc = "Get virtual network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual network."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -11008,6 +11961,14 @@ pub mod virtual_networks {
                 expand: None,
             }
         }
+        #[doc = "Create or replace an existing virtual network. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual network."]
+        #[doc = "* `virtual_network`: A virtual network."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -11025,6 +11986,14 @@ pub mod virtual_networks {
                 virtual_network: virtual_network.into(),
             }
         }
+        #[doc = "Allows modifying tags of virtual networks. All other properties will be ignored."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual network."]
+        #[doc = "* `virtual_network`: A virtual network."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -11042,6 +12011,13 @@ pub mod virtual_networks {
                 virtual_network: virtual_network.into(),
             }
         }
+        #[doc = "Delete virtual network. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual network."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

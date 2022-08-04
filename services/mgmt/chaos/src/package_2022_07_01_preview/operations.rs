@@ -97,6 +97,15 @@ pub mod capabilities {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of Capability resources that extend a Target resource.."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `resource_group_name`: String that represents an Azure resource group."]
+        #[doc = "* `parent_provider_namespace`: String that represents a resource provider namespace."]
+        #[doc = "* `parent_resource_type`: String that represents a resource type."]
+        #[doc = "* `parent_resource_name`: String that represents a resource name."]
+        #[doc = "* `target_name`: String that represents a Target resource name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -117,6 +126,16 @@ pub mod capabilities {
                 continuation_token: None,
             }
         }
+        #[doc = "Get a Capability resource that extends a Target resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `resource_group_name`: String that represents an Azure resource group."]
+        #[doc = "* `parent_provider_namespace`: String that represents a resource provider namespace."]
+        #[doc = "* `parent_resource_type`: String that represents a resource type."]
+        #[doc = "* `parent_resource_name`: String that represents a resource name."]
+        #[doc = "* `target_name`: String that represents a Target resource name."]
+        #[doc = "* `capability_name`: String that represents a Capability resource name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -138,6 +157,17 @@ pub mod capabilities {
                 capability_name: capability_name.into(),
             }
         }
+        #[doc = "Create or update a Capability resource that extends a Target resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `resource_group_name`: String that represents an Azure resource group."]
+        #[doc = "* `parent_provider_namespace`: String that represents a resource provider namespace."]
+        #[doc = "* `parent_resource_type`: String that represents a resource type."]
+        #[doc = "* `parent_resource_name`: String that represents a resource name."]
+        #[doc = "* `target_name`: String that represents a Target resource name."]
+        #[doc = "* `capability_name`: String that represents a Capability resource name."]
+        #[doc = "* `capability`: Capability resource to be created or updated."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -161,6 +191,16 @@ pub mod capabilities {
                 capability: capability.into(),
             }
         }
+        #[doc = "Delete a Capability that extends a Target resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `resource_group_name`: String that represents an Azure resource group."]
+        #[doc = "* `parent_provider_namespace`: String that represents a resource provider namespace."]
+        #[doc = "* `parent_resource_type`: String that represents a resource type."]
+        #[doc = "* `parent_resource_name`: String that represents a resource name."]
+        #[doc = "* `target_name`: String that represents a Target resource name."]
+        #[doc = "* `capability_name`: String that represents a Capability resource name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -463,6 +503,10 @@ pub mod experiments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of Experiment resources in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
@@ -471,6 +515,11 @@ pub mod experiments {
                 continuation_token: None,
             }
         }
+        #[doc = "Get a list of Experiment resources in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `resource_group_name`: String that represents an Azure resource group."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -480,6 +529,12 @@ pub mod experiments {
                 continuation_token: None,
             }
         }
+        #[doc = "Get a Experiment resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `resource_group_name`: String that represents an Azure resource group."]
+        #[doc = "* `experiment_name`: String that represents a Experiment resource name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -493,6 +548,13 @@ pub mod experiments {
                 experiment_name: experiment_name.into(),
             }
         }
+        #[doc = "Create or update a Experiment resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `resource_group_name`: String that represents an Azure resource group."]
+        #[doc = "* `experiment_name`: String that represents a Experiment resource name."]
+        #[doc = "* `experiment`: Experiment resource to be created or updated."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -508,6 +570,12 @@ pub mod experiments {
                 experiment: experiment.into(),
             }
         }
+        #[doc = "Delete a Experiment resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `resource_group_name`: String that represents an Azure resource group."]
+        #[doc = "* `experiment_name`: String that represents a Experiment resource name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -521,6 +589,12 @@ pub mod experiments {
                 experiment_name: experiment_name.into(),
             }
         }
+        #[doc = "Cancel a running Experiment resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `resource_group_name`: String that represents an Azure resource group."]
+        #[doc = "* `experiment_name`: String that represents a Experiment resource name."]
         pub fn cancel(
             &self,
             subscription_id: impl Into<String>,
@@ -534,6 +608,12 @@ pub mod experiments {
                 experiment_name: experiment_name.into(),
             }
         }
+        #[doc = "Start a Experiment resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `resource_group_name`: String that represents an Azure resource group."]
+        #[doc = "* `experiment_name`: String that represents a Experiment resource name."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -547,6 +627,12 @@ pub mod experiments {
                 experiment_name: experiment_name.into(),
             }
         }
+        #[doc = "Get a list of statuses of a Experiment resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `resource_group_name`: String that represents an Azure resource group."]
+        #[doc = "* `experiment_name`: String that represents a Experiment resource name."]
         pub fn list_all_statuses(
             &self,
             subscription_id: impl Into<String>,
@@ -560,6 +646,13 @@ pub mod experiments {
                 experiment_name: experiment_name.into(),
             }
         }
+        #[doc = "Get a status of a Experiment resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `resource_group_name`: String that represents an Azure resource group."]
+        #[doc = "* `experiment_name`: String that represents a Experiment resource name."]
+        #[doc = "* `status_id`: GUID that represents a Experiment status."]
         pub fn get_status(
             &self,
             subscription_id: impl Into<String>,
@@ -575,6 +668,12 @@ pub mod experiments {
                 status_id: status_id.into(),
             }
         }
+        #[doc = "Get a list of execution details of a Experiment resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `resource_group_name`: String that represents an Azure resource group."]
+        #[doc = "* `experiment_name`: String that represents a Experiment resource name."]
         pub fn list_execution_details(
             &self,
             subscription_id: impl Into<String>,
@@ -588,6 +687,13 @@ pub mod experiments {
                 experiment_name: experiment_name.into(),
             }
         }
+        #[doc = "Get an execution detail of a Experiment resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `resource_group_name`: String that represents an Azure resource group."]
+        #[doc = "* `experiment_name`: String that represents a Experiment resource name."]
+        #[doc = "* `execution_details_id`: GUID that represents a Experiment execution detail."]
         pub fn get_execution_details(
             &self,
             subscription_id: impl Into<String>,
@@ -1320,6 +1426,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list all available Operations."]
         pub fn list_all(&self) -> list_all::Builder {
             list_all::Builder { client: self.0.clone() }
         }
@@ -1398,6 +1505,14 @@ pub mod targets {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of Target resources that extend a tracked regional resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `resource_group_name`: String that represents an Azure resource group."]
+        #[doc = "* `parent_provider_namespace`: String that represents a resource provider namespace."]
+        #[doc = "* `parent_resource_type`: String that represents a resource type."]
+        #[doc = "* `parent_resource_name`: String that represents a resource name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1416,6 +1531,15 @@ pub mod targets {
                 continuation_token: None,
             }
         }
+        #[doc = "Get a Target resource that extends a tracked regional resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `resource_group_name`: String that represents an Azure resource group."]
+        #[doc = "* `parent_provider_namespace`: String that represents a resource provider namespace."]
+        #[doc = "* `parent_resource_type`: String that represents a resource type."]
+        #[doc = "* `parent_resource_name`: String that represents a resource name."]
+        #[doc = "* `target_name`: String that represents a Target resource name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1435,6 +1559,16 @@ pub mod targets {
                 target_name: target_name.into(),
             }
         }
+        #[doc = "Create or update a Target resource that extends a tracked regional resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `resource_group_name`: String that represents an Azure resource group."]
+        #[doc = "* `parent_provider_namespace`: String that represents a resource provider namespace."]
+        #[doc = "* `parent_resource_type`: String that represents a resource type."]
+        #[doc = "* `parent_resource_name`: String that represents a resource name."]
+        #[doc = "* `target_name`: String that represents a Target resource name."]
+        #[doc = "* `target`: Target resource to be created or updated."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1456,6 +1590,15 @@ pub mod targets {
                 target: target.into(),
             }
         }
+        #[doc = "Delete a Target resource that extends a tracked regional resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `resource_group_name`: String that represents an Azure resource group."]
+        #[doc = "* `parent_provider_namespace`: String that represents a resource provider namespace."]
+        #[doc = "* `parent_resource_type`: String that represents a resource type."]
+        #[doc = "* `parent_resource_name`: String that represents a resource name."]
+        #[doc = "* `target_name`: String that represents a Target resource name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1748,6 +1891,11 @@ pub mod target_types {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of Target Type resources for given location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `location_name`: String that represents a Location resource name."]
         pub fn list(&self, subscription_id: impl Into<String>, location_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1756,6 +1904,12 @@ pub mod target_types {
                 continuation_token: None,
             }
         }
+        #[doc = "Get a Target Type resources for given location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `location_name`: String that represents a Location resource name."]
+        #[doc = "* `target_type_name`: String that represents a Target Type resource name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1911,6 +2065,12 @@ pub mod capability_types {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of Capability Type resources for given Target Type and location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `location_name`: String that represents a Location resource name."]
+        #[doc = "* `target_type_name`: String that represents a Target Type resource name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1925,6 +2085,13 @@ pub mod capability_types {
                 continuation_token: None,
             }
         }
+        #[doc = "Get a Capability Type resource for given Target Type and location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: GUID that represents an Azure subscription ID."]
+        #[doc = "* `location_name`: String that represents a Location resource name."]
+        #[doc = "* `target_type_name`: String that represents a Target Type resource name."]
+        #[doc = "* `capability_type_name`: String that represents a Capability Type resource name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,

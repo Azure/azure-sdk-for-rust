@@ -109,6 +109,12 @@ pub mod devices {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `device_name`: The name of the device resource."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -122,6 +128,13 @@ pub mod devices {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `device_name`: Resource name for the device resource."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update device operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -137,6 +150,13 @@ pub mod devices {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates device tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `device_name`: The name of the device resource."]
+        #[doc = "* `parameters`: Parameters supplied to the update device tags operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -152,6 +172,12 @@ pub mod devices {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `device_name`: The name of the device resource."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -165,12 +191,21 @@ pub mod devices {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the devices in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the device resource in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -182,6 +217,12 @@ pub mod devices {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List the registration key for the device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `device_name`: The name of the device resource."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_registration_key(
             &self,
             resource_group_name: impl Into<String>,
@@ -630,6 +671,12 @@ pub mod network_functions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified network function resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `network_function_name`: The name of the network function resource."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -643,6 +690,13 @@ pub mod network_functions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a network function resource. This operation can take up to 6 hours to complete. This is expected service behavior."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `network_function_name`: Resource name for the network function resource."]
+        #[doc = "* `parameters`: Parameters supplied in the body to the create or update network function operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -658,6 +712,13 @@ pub mod network_functions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the tags for the network function resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `network_function_name`: Resource name for the network function resource."]
+        #[doc = "* `parameters`: Parameters supplied to the update network function tags operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -673,6 +734,12 @@ pub mod network_functions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified network function resource. This operation can take up to 1 hour to complete. This is expected service behavior."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `network_function_name`: The name of the network function."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -686,12 +753,21 @@ pub mod network_functions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the network functions in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the network function resources in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -703,6 +779,13 @@ pub mod network_functions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Execute a request to services on a network function."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `network_function_name`: The name of the network function."]
+        #[doc = "* `parameters`: Payload for execute request post call."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn execute_request(
             &self,
             resource_group_name: impl Into<String>,
@@ -1156,6 +1239,10 @@ pub mod network_function_vendors {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the available vendor and sku information."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1242,6 +1329,11 @@ pub mod network_function_vendor_skus {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all network function vendor sku details in a vendor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vendor_name`: The name of the network function vendor."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_vendor(&self, vendor_name: impl Into<String>, subscription_id: impl Into<String>) -> list_by_vendor::Builder {
             list_by_vendor::Builder {
                 client: self.0.clone(),
@@ -1249,6 +1341,12 @@ pub mod network_function_vendor_skus {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists information about network function vendor sku details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vendor_name`: The name of the network function vendor."]
+        #[doc = "* `vendor_sku_name`: The name of the network function sku."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_sku(
             &self,
             vendor_name: impl Into<String>,
@@ -1422,6 +1520,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of the operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1501,6 +1600,11 @@ pub mod vendors {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified vendor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vendor_name`: The name of the vendor."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(&self, vendor_name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1508,6 +1612,11 @@ pub mod vendors {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a vendor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vendor_name`: The name of the vendor."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(&self, vendor_name: impl Into<String>, subscription_id: impl Into<String>) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -1516,6 +1625,11 @@ pub mod vendors {
                 parameters: None,
             }
         }
+        #[doc = "Deletes the specified vendor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vendor_name`: The name of the vendor."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(&self, vendor_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1523,6 +1637,10 @@ pub mod vendors {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the vendors in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -1783,6 +1901,12 @@ pub mod vendor_skus {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified sku."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vendor_name`: The name of the vendor."]
+        #[doc = "* `sku_name`: The name of the sku."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(&self, vendor_name: impl Into<String>, sku_name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1791,6 +1915,13 @@ pub mod vendor_skus {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a sku. This operation can take up to 2 hours to complete. This is expected service behavior."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vendor_name`: The name of the vendor."]
+        #[doc = "* `sku_name`: The name of the sku."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update sku operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             vendor_name: impl Into<String>,
@@ -1806,6 +1937,12 @@ pub mod vendor_skus {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified sku. This operation can take up to 2 hours to complete. This is expected service behavior."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vendor_name`: The name of the vendor."]
+        #[doc = "* `sku_name`: The name of the sku."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             vendor_name: impl Into<String>,
@@ -1819,6 +1956,11 @@ pub mod vendor_skus {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the skus of a vendor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vendor_name`: The name of the vendor."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, vendor_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1826,6 +1968,12 @@ pub mod vendor_skus {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Generate credentials for publishing SKU images."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vendor_name`: The name of the vendor."]
+        #[doc = "* `sku_name`: The name of the sku."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_credential(
             &self,
             vendor_name: impl Into<String>,
@@ -2146,6 +2294,12 @@ pub mod vendor_sku_preview {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the preview information of a vendor sku."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vendor_name`: The name of the vendor."]
+        #[doc = "* `sku_name`: The name of the sku."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             vendor_name: impl Into<String>,
@@ -2159,6 +2313,13 @@ pub mod vendor_sku_preview {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the preview information of a vendor sku."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vendor_name`: The name of the vendor."]
+        #[doc = "* `sku_name`: The name of the vendor sku."]
+        #[doc = "* `preview_subscription`: Preview subscription ID."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             vendor_name: impl Into<String>,
@@ -2174,6 +2335,14 @@ pub mod vendor_sku_preview {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates preview information of a vendor sku."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vendor_name`: The name of the vendor."]
+        #[doc = "* `sku_name`: The name of the vendor sku."]
+        #[doc = "* `preview_subscription`: Preview subscription ID."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update vendor preview subscription operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             vendor_name: impl Into<String>,
@@ -2191,6 +2360,13 @@ pub mod vendor_sku_preview {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the preview information of a vendor sku."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vendor_name`: The name of the vendor."]
+        #[doc = "* `sku_name`: The name of the vendor sku."]
+        #[doc = "* `preview_subscription`: Preview subscription ID."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             vendor_name: impl Into<String>,
@@ -2468,6 +2644,13 @@ pub mod vendor_network_functions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified vendor network function."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The Azure region where the network function resource was created by the customer."]
+        #[doc = "* `vendor_name`: The name of the vendor."]
+        #[doc = "* `service_key`: The GUID for the vendor network function."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             location_name: impl Into<String>,
@@ -2483,6 +2666,14 @@ pub mod vendor_network_functions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a vendor network function. This operation can take up to 6 hours to complete. This is expected service behavior."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The Azure region where the network function resource was created by the customer."]
+        #[doc = "* `vendor_name`: The name of the vendor."]
+        #[doc = "* `service_key`: The GUID for the vendor network function."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update vendor network function operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             location_name: impl Into<String>,
@@ -2500,6 +2691,12 @@ pub mod vendor_network_functions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the vendor network function sub resources in an Azure region, filtered by skuType, skuName, vendorProvisioningState."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The Azure region where the network function resource was created by the customer."]
+        #[doc = "* `vendor_name`: The name of the vendor."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             location_name: impl Into<String>,
@@ -2726,6 +2923,14 @@ pub mod role_instances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Starts a role instance of a vendor network function."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The Azure region where the network function resource was created by customer."]
+        #[doc = "* `vendor_name`: The name of the vendor."]
+        #[doc = "* `service_key`: The GUID for the vendor network function."]
+        #[doc = "* `role_instance_name`: The name of the role instance of the vendor network function."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn start(
             &self,
             location_name: impl Into<String>,
@@ -2743,6 +2948,14 @@ pub mod role_instances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Powers off (stop) a role instance of a vendor network function."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The Azure region where the network function resource was created by customer."]
+        #[doc = "* `vendor_name`: The name of the vendor."]
+        #[doc = "* `service_key`: The GUID for the vendor network function."]
+        #[doc = "* `role_instance_name`: The name of the role instance of the vendor network function."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn stop(
             &self,
             location_name: impl Into<String>,
@@ -2760,6 +2973,14 @@ pub mod role_instances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Restarts a role instance of a vendor network function."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The Azure region where the network function resource was created by customer."]
+        #[doc = "* `vendor_name`: The name of the vendor."]
+        #[doc = "* `service_key`: The GUID for the vendor network function."]
+        #[doc = "* `role_instance_name`: The name of the role instance of the vendor network function."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn restart(
             &self,
             location_name: impl Into<String>,
@@ -2777,6 +2998,14 @@ pub mod role_instances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the information of role instance of vendor network function."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The Azure region where the network function resource was created by customer."]
+        #[doc = "* `vendor_name`: The name of the vendor."]
+        #[doc = "* `service_key`: The GUID for the vendor network function."]
+        #[doc = "* `role_instance_name`: The name of the role instance of the vendor network function."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             location_name: impl Into<String>,
@@ -2794,6 +3023,13 @@ pub mod role_instances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the information of role instances of vendor network function."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The Azure region where the network function resource was created by customer."]
+        #[doc = "* `vendor_name`: The name of the vendor."]
+        #[doc = "* `service_key`: The GUID for the vendor network function."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             location_name: impl Into<String>,

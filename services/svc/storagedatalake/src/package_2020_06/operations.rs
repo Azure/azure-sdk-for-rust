@@ -89,6 +89,11 @@ pub mod service {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List FileSystems"]
+        #[doc = "List filesystems and their properties in given account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource`: The value must be \"account\" for all account operations."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn list_file_systems(&self, resource: impl Into<String>, x_ms_version: impl Into<String>) -> list_file_systems::Builder {
             list_file_systems::Builder {
                 client: self.0.clone(),
@@ -194,6 +199,12 @@ pub mod file_system {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Create FileSystem"]
+        #[doc = "Create a FileSystem rooted at the specified location. If the FileSystem already exists, the operation fails.  This operation does not support conditional HTTP requests."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filesystem`: The filesystem identifier."]
+        #[doc = "* `resource`: The value must be \"filesystem\" for all filesystem operations."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn create(
             &self,
             filesystem: impl Into<String>,
@@ -211,6 +222,12 @@ pub mod file_system {
             }
         }
         #[doc = "Set FileSystem Properties"]
+        #[doc = "Set properties for the FileSystem.  This operation supports conditional HTTP requests.  For more information, see [Specifying Conditional Headers for Blob Service Operations](https://docs.microsoft.com/en-us/rest/api/storageservices/specifying-conditional-headers-for-blob-service-operations)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filesystem`: The filesystem identifier."]
+        #[doc = "* `resource`: The value must be \"filesystem\" for all filesystem operations."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_properties(
             &self,
             filesystem: impl Into<String>,
@@ -230,6 +247,12 @@ pub mod file_system {
             }
         }
         #[doc = "Delete FileSystem"]
+        #[doc = "Marks the FileSystem for deletion.  When a FileSystem is deleted, a FileSystem with the same identifier cannot be created for at least 30 seconds. While the filesystem is being deleted, attempts to create a filesystem with the same identifier will fail with status code 409 (Conflict), with the service returning additional error information indicating that the filesystem is being deleted. All other operations, including operations on any files or directories within the filesystem, will fail with status code 404 (Not Found) while the filesystem is being deleted. This operation supports conditional HTTP requests.  For more information, see [Specifying Conditional Headers for Blob Service Operations](https://docs.microsoft.com/en-us/rest/api/storageservices/specifying-conditional-headers-for-blob-service-operations)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filesystem`: The filesystem identifier."]
+        #[doc = "* `resource`: The value must be \"filesystem\" for all filesystem operations."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn delete(
             &self,
             filesystem: impl Into<String>,
@@ -248,6 +271,12 @@ pub mod file_system {
             }
         }
         #[doc = "Get FileSystem Properties."]
+        #[doc = "All system and user-defined filesystem properties are specified in the response headers."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filesystem`: The filesystem identifier."]
+        #[doc = "* `resource`: The value must be \"filesystem\" for all filesystem operations."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_properties(
             &self,
             filesystem: impl Into<String>,
@@ -264,6 +293,12 @@ pub mod file_system {
             }
         }
         #[doc = "List Paths"]
+        #[doc = "List FileSystem paths and their properties."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filesystem`: The filesystem identifier."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `recursive`: Required"]
         pub fn list_paths(&self, filesystem: impl Into<String>, x_ms_version: impl Into<String>, recursive: bool) -> list_paths::Builder {
             list_paths::Builder {
                 client: self.0.clone(),
@@ -278,6 +313,11 @@ pub mod file_system {
                 upn: None,
             }
         }
+        #[doc = "The List Blobs operation returns a list of the blobs under the specified container"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filesystem`: The filesystem identifier."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn list_blob_hierarchy_segment(
             &self,
             filesystem: impl Into<String>,
@@ -806,6 +846,12 @@ pub mod path {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Read File"]
+        #[doc = "Read the contents of a file.  For read operations, range requests are supported. This operation supports conditional HTTP requests.  For more information, see [Specifying Conditional Headers for Blob Service Operations](https://docs.microsoft.com/en-us/rest/api/storageservices/specifying-conditional-headers-for-blob-service-operations)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filesystem`: The filesystem identifier."]
+        #[doc = "* `path`: The file or directory path."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn read(&self, filesystem: impl Into<String>, path: impl Into<String>, x_ms_version: impl Into<String>) -> read::Builder {
             read::Builder {
                 client: self.0.clone(),
@@ -824,6 +870,13 @@ pub mod path {
             }
         }
         #[doc = "Lease Path"]
+        #[doc = "Create and manage a lease to restrict write and delete access to the path. This operation supports conditional HTTP requests.  For more information, see [Specifying Conditional Headers for Blob Service Operations](https://docs.microsoft.com/en-us/rest/api/storageservices/specifying-conditional-headers-for-blob-service-operations)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filesystem`: The filesystem identifier."]
+        #[doc = "* `path`: The file or directory path."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `x_ms_lease_action`: There are five lease actions: \"acquire\", \"break\", \"change\", \"renew\", and \"release\". Use \"acquire\" and specify the \"x-ms-proposed-lease-id\" and \"x-ms-lease-duration\" to acquire a new lease. Use \"break\" to break an existing lease. When a lease is broken, the lease break period is allowed to elapse, during which time no lease operation except break and release can be performed on the file. When a lease is successfully broken, the response indicates the interval in seconds until a new lease can be acquired. Use \"change\" and specify the current lease ID in \"x-ms-lease-id\" and the new lease ID in \"x-ms-proposed-lease-id\" to change the lease ID of an active lease. Use \"renew\" and specify the \"x-ms-lease-id\" to renew an existing lease. Use \"release\" and specify the \"x-ms-lease-id\" to release a lease."]
         pub fn lease(
             &self,
             filesystem: impl Into<String>,
@@ -850,6 +903,12 @@ pub mod path {
             }
         }
         #[doc = "Create File | Create Directory | Rename File | Rename Directory"]
+        #[doc = "Create or rename a file or directory.    By default, the destination is overwritten and if the destination already exists and has a lease the lease is broken.  This operation supports conditional HTTP requests.  For more information, see [Specifying Conditional Headers for Blob Service Operations](https://docs.microsoft.com/en-us/rest/api/storageservices/specifying-conditional-headers-for-blob-service-operations).  To fail if the destination already exists, use a conditional request with If-None-Match: \"*\"."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filesystem`: The filesystem identifier."]
+        #[doc = "* `path`: The file or directory path."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn create(&self, filesystem: impl Into<String>, path: impl Into<String>, x_ms_version: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -883,6 +942,15 @@ pub mod path {
             }
         }
         #[doc = "Append Data | Flush Data | Set Properties | Set Access Control"]
+        #[doc = "Uploads data to be appended to a file, flushes (writes) previously uploaded data to a file, sets properties for a file or directory, or sets access control for a file or directory. Data can only be appended to a file. Concurrent writes to the same file using multiple clients are not supported. This operation supports conditional HTTP requests. For more information, see [Specifying Conditional Headers for Blob Service Operations](https://docs.microsoft.com/en-us/rest/api/storageservices/specifying-conditional-headers-for-blob-service-operations)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filesystem`: The filesystem identifier."]
+        #[doc = "* `path`: The file or directory path."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `action`: The action must be \"append\" to upload data to be appended to a file, \"flush\" to flush previously uploaded data to a file, \"setProperties\" to set the properties of a file or directory, \"setAccessControl\" to set the owner, group, permissions, or access control list for a file or directory, or  \"setAccessControlRecursive\" to set the access control list for a directory recursively. Note that Hierarchical Namespace must be enabled for the account in order to use access control.  Also note that the Access Control List (ACL) includes permissions for the owner, owning group, and others, so the x-ms-permissions and x-ms-acl request headers are mutually exclusive."]
+        #[doc = "* `mode`: Mode \"set\" sets POSIX access control rights on files and directories, \"modify\" modifies one or more POSIX access control rights  that pre-exist on files and directories, \"remove\" removes one or more POSIX access control rights  that were present earlier on files and directories"]
+        #[doc = "* `body`: Initial data"]
         pub fn update(
             &self,
             filesystem: impl Into<String>,
@@ -928,6 +996,12 @@ pub mod path {
             }
         }
         #[doc = "Delete File | Delete Directory"]
+        #[doc = "Delete the file or directory. This operation supports conditional HTTP requests.  For more information, see [Specifying Conditional Headers for Blob Service Operations](https://docs.microsoft.com/en-us/rest/api/storageservices/specifying-conditional-headers-for-blob-service-operations)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filesystem`: The filesystem identifier."]
+        #[doc = "* `path`: The file or directory path."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn delete(&self, filesystem: impl Into<String>, path: impl Into<String>, x_ms_version: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -946,6 +1020,12 @@ pub mod path {
             }
         }
         #[doc = "Get Properties | Get Status | Get Access Control List"]
+        #[doc = "Get Properties returns all system and user defined properties for a path. Get Status returns all system defined properties for a path. Get Access Control List returns the access control list for a path. This operation supports conditional HTTP requests.  For more information, see [Specifying Conditional Headers for Blob Service Operations](https://docs.microsoft.com/en-us/rest/api/storageservices/specifying-conditional-headers-for-blob-service-operations)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filesystem`: The filesystem identifier."]
+        #[doc = "* `path`: The file or directory path."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_properties(
             &self,
             filesystem: impl Into<String>,
@@ -968,6 +1048,12 @@ pub mod path {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Set the owner, group, permissions, or access control list for a path."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filesystem`: The filesystem identifier."]
+        #[doc = "* `path`: The file or directory path."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_access_control(
             &self,
             filesystem: impl Into<String>,
@@ -992,6 +1078,13 @@ pub mod path {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Set the access control list for a path and sub-paths."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filesystem`: The filesystem identifier."]
+        #[doc = "* `path`: The file or directory path."]
+        #[doc = "* `mode`: Mode \"set\" sets POSIX access control rights on files and directories, \"modify\" modifies one or more POSIX access control rights  that pre-exist on files and directories, \"remove\" removes one or more POSIX access control rights  that were present earlier on files and directories"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_access_control_recursive(
             &self,
             filesystem: impl Into<String>,
@@ -1013,6 +1106,12 @@ pub mod path {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Set the owner, group, permissions, or access control list for a path."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filesystem`: The filesystem identifier."]
+        #[doc = "* `path`: The file or directory path."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn flush_data(
             &self,
             filesystem: impl Into<String>,
@@ -1043,6 +1142,13 @@ pub mod path {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Append data to the file."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filesystem`: The filesystem identifier."]
+        #[doc = "* `path`: The file or directory path."]
+        #[doc = "* `body`: Initial data"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn append_data(
             &self,
             filesystem: impl Into<String>,
@@ -1065,6 +1171,13 @@ pub mod path {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Sets the time a blob will expire and be deleted."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filesystem`: The filesystem identifier."]
+        #[doc = "* `path`: The file or directory path."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `x_ms_expiry_option`: Required. Indicates mode of the expiry time"]
         pub fn set_expiry(
             &self,
             filesystem: impl Into<String>,
@@ -1083,6 +1196,12 @@ pub mod path {
                 x_ms_expiry_time: None,
             }
         }
+        #[doc = "Undelete a path that was previously soft deleted"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filesystem`: The filesystem identifier."]
+        #[doc = "* `path`: The file or directory path."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn undelete(
             &self,
             filesystem: impl Into<String>,

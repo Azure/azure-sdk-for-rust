@@ -85,6 +85,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all available Windows.ESU provider operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -164,12 +165,21 @@ pub mod multiple_activation_keys {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all Multiple Activation Keys (MAK) created for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List all Multiple Activation Keys (MAK) in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -181,6 +191,12 @@ pub mod multiple_activation_keys {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get a MAK key."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `multiple_activation_key_name`: The name of the MAK key."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -194,6 +210,13 @@ pub mod multiple_activation_keys {
                 multiple_activation_key_name: multiple_activation_key_name.into(),
             }
         }
+        #[doc = "Create a MAK key."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `multiple_activation_key_name`: The name of the MAK key."]
+        #[doc = "* `multiple_activation_key`: Details of the MAK key."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -209,6 +232,13 @@ pub mod multiple_activation_keys {
                 multiple_activation_key: multiple_activation_key.into(),
             }
         }
+        #[doc = "Update a MAK key."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `multiple_activation_key_name`: The name of the MAK key."]
+        #[doc = "* `multiple_activation_key`: Details of the MAK key."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -224,6 +254,12 @@ pub mod multiple_activation_keys {
                 multiple_activation_key: multiple_activation_key.into(),
             }
         }
+        #[doc = "Delete a MAK key."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `multiple_activation_key_name`: The name of the MAK key."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

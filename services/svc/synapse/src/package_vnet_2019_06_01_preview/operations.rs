@@ -82,6 +82,11 @@ pub mod managed_private_endpoints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Managed Private Endpoints"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `managed_virtual_network_name`: Managed virtual network name"]
+        #[doc = "* `managed_private_endpoint_name`: Managed private endpoint name"]
         pub fn get(
             &self,
             managed_virtual_network_name: impl Into<String>,
@@ -93,6 +98,12 @@ pub mod managed_private_endpoints {
                 managed_private_endpoint_name: managed_private_endpoint_name.into(),
             }
         }
+        #[doc = "Create Managed Private Endpoints"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `managed_virtual_network_name`: Managed virtual network name"]
+        #[doc = "* `managed_private_endpoint_name`: Managed private endpoint name"]
+        #[doc = "* `managed_private_endpoint`: Managed private endpoint properties."]
         pub fn create(
             &self,
             managed_virtual_network_name: impl Into<String>,
@@ -106,6 +117,11 @@ pub mod managed_private_endpoints {
                 managed_private_endpoint: managed_private_endpoint.into(),
             }
         }
+        #[doc = "Delete Managed Private Endpoints"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `managed_virtual_network_name`: Managed virtual network name"]
+        #[doc = "* `managed_private_endpoint_name`: Managed private endpoint name"]
         pub fn delete(
             &self,
             managed_virtual_network_name: impl Into<String>,
@@ -117,6 +133,10 @@ pub mod managed_private_endpoints {
                 managed_private_endpoint_name: managed_private_endpoint_name.into(),
             }
         }
+        #[doc = "List Managed Private Endpoints"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `managed_virtual_network_name`: Managed virtual network name"]
         pub fn list(&self, managed_virtual_network_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

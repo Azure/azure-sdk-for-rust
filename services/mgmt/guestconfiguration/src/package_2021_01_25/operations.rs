@@ -100,6 +100,13 @@ pub mod guest_configuration_assignments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get information about a guest configuration assignment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `guest_configuration_assignment_name`: The guest configuration assignment name."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `vm_name`: The name of the virtual machine."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -115,6 +122,14 @@ pub mod guest_configuration_assignments {
                 vm_name: vm_name.into(),
             }
         }
+        #[doc = "Creates an association between a VM and guest configuration"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guest_configuration_assignment_name`: Name of the guest configuration assignment."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update guest configuration assignment."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `vm_name`: The name of the virtual machine."]
         pub fn create_or_update(
             &self,
             guest_configuration_assignment_name: impl Into<String>,
@@ -132,6 +147,13 @@ pub mod guest_configuration_assignments {
                 vm_name: vm_name.into(),
             }
         }
+        #[doc = "Delete a guest configuration assignment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `guest_configuration_assignment_name`: Name of the guest configuration assignment"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `vm_name`: The name of the virtual machine."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -147,12 +169,21 @@ pub mod guest_configuration_assignments {
                 vm_name: vm_name.into(),
             }
         }
+        #[doc = "List all guest configuration assignments for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn subscription_list(&self, subscription_id: impl Into<String>) -> subscription_list::Builder {
             subscription_list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List all guest configuration assignments for a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn rg_list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> rg_list::Builder {
             rg_list::Builder {
                 client: self.0.clone(),
@@ -160,6 +191,12 @@ pub mod guest_configuration_assignments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List all guest configuration assignments for a virtual machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `vm_name`: The name of the virtual machine."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -502,6 +539,13 @@ pub mod guest_configuration_assignment_reports {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all reports for the guest configuration assignment, latest report first."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `guest_configuration_assignment_name`: The guest configuration assignment name."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `vm_name`: The name of the virtual machine."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -517,6 +561,14 @@ pub mod guest_configuration_assignment_reports {
                 vm_name: vm_name.into(),
             }
         }
+        #[doc = "Get a report for the guest configuration assignment, by reportId."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `guest_configuration_assignment_name`: The guest configuration assignment name."]
+        #[doc = "* `report_id`: The GUID for the guest configuration assignment report."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `vm_name`: The name of the virtual machine."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -635,6 +687,13 @@ pub mod guest_configuration_hcrp_assignments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get information about a guest configuration assignment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `guest_configuration_assignment_name`: The guest configuration assignment name."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `machine_name`: The name of the ARC machine."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -650,6 +709,14 @@ pub mod guest_configuration_hcrp_assignments {
                 machine_name: machine_name.into(),
             }
         }
+        #[doc = "Creates an association between a ARC machine and guest configuration"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `guest_configuration_assignment_name`: Name of the guest configuration assignment."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update guest configuration assignment."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `machine_name`: The name of the ARC machine."]
         pub fn create_or_update(
             &self,
             guest_configuration_assignment_name: impl Into<String>,
@@ -667,6 +734,13 @@ pub mod guest_configuration_hcrp_assignments {
                 machine_name: machine_name.into(),
             }
         }
+        #[doc = "Delete a guest configuration assignment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `guest_configuration_assignment_name`: Name of the guest configuration assignment"]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `machine_name`: The name of the ARC machine."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -682,6 +756,12 @@ pub mod guest_configuration_hcrp_assignments {
                 machine_name: machine_name.into(),
             }
         }
+        #[doc = "List all guest configuration assignments for an ARC machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `machine_name`: The name of the ARC machine."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -896,6 +976,13 @@ pub mod guest_configuration_hcrp_assignment_reports {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all reports for the guest configuration assignment, latest report first."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `guest_configuration_assignment_name`: The guest configuration assignment name."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `machine_name`: The name of the ARC machine."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -911,6 +998,14 @@ pub mod guest_configuration_hcrp_assignment_reports {
                 machine_name: machine_name.into(),
             }
         }
+        #[doc = "Get a report for the guest configuration assignment, by reportId."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `guest_configuration_assignment_name`: The guest configuration assignment name."]
+        #[doc = "* `report_id`: The GUID for the guest configuration assignment report."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `machine_name`: The name of the ARC machine."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1029,6 +1124,13 @@ pub mod guest_configuration_assignments_vmss {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get information about a guest configuration assignment for VMSS"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `name`: The guest configuration assignment name."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `vmss_name`: The name of the virtual machine scale set."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1044,6 +1146,13 @@ pub mod guest_configuration_assignments_vmss {
                 vmss_name: vmss_name.into(),
             }
         }
+        #[doc = "Delete a guest configuration assignment for VMSS"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `name`: The guest configuration assignment name."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `vmss_name`: The name of the virtual machine scale set."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1059,6 +1168,12 @@ pub mod guest_configuration_assignments_vmss {
                 vmss_name: vmss_name.into(),
             }
         }
+        #[doc = "List all guest configuration assignments for VMSS."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `vmss_name`: The name of the virtual machine scale set."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -1224,6 +1339,13 @@ pub mod guest_configuration_assignment_reports_vmss {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all reports for the VMSS guest configuration assignment, latest report first."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `name`: The guest configuration assignment name."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `vmss_name`: The name of the virtual machine scale set."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -1239,6 +1361,14 @@ pub mod guest_configuration_assignment_reports_vmss {
                 vmss_name: vmss_name.into(),
             }
         }
+        #[doc = "Get a report for the VMSS guest configuration assignment, by reportId."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `name`: The guest configuration assignment name."]
+        #[doc = "* `id`: The GUID for the guest configuration assignment report."]
+        #[doc = "* `subscription_id`: Subscription ID which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `vmss_name`: The name of the virtual machine scale set."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1357,6 +1487,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available GuestConfiguration REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

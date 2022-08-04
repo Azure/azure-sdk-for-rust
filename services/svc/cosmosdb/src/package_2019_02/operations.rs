@@ -85,6 +85,12 @@ pub mod service {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the properties of an account's Table service, including properties for Analytics and CORS (Cross-Origin Resource Sharing) rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `restype`: Required query string to set the service properties."]
+        #[doc = "* `comp`: Required query string to set the service properties."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_properties(
             &self,
             restype: impl Into<String>,
@@ -100,6 +106,13 @@ pub mod service {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Sets properties for an account's Table service endpoint, including properties for Analytics and CORS (Cross-Origin Resource Sharing) rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `restype`: Required query string to set the service properties."]
+        #[doc = "* `comp`: Required query string to set the service properties."]
+        #[doc = "* `table_service_properties`: The Table Service properties."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_properties(
             &self,
             restype: impl Into<String>,
@@ -117,6 +130,12 @@ pub mod service {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Retrieves statistics related to replication for the Table service. It is only available on the secondary location endpoint when read-access geo-redundant replication is enabled for the account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `restype`: Required query string to get service stats."]
+        #[doc = "* `comp`: Required query string to get service stats."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_statistics(
             &self,
             restype: impl Into<String>,
@@ -328,6 +347,11 @@ pub mod table {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Queries tables under the given account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `data_service_version`: Specifies the data service version."]
         pub fn query(&self, x_ms_version: impl Into<String>, data_service_version: impl Into<String>) -> query::Builder {
             query::Builder {
                 client: self.0.clone(),
@@ -341,6 +365,12 @@ pub mod table {
                 next_table_name: None,
             }
         }
+        #[doc = "Creates a new table under the given account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `data_service_version`: Specifies the data service version."]
+        #[doc = "* `table_properties`: The Table properties."]
         pub fn create(
             &self,
             x_ms_version: impl Into<String>,
@@ -357,6 +387,11 @@ pub mod table {
                 prefer: None,
             }
         }
+        #[doc = "Operation permanently deletes the specified table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `table`: The name of the table."]
         pub fn delete(&self, x_ms_version: impl Into<String>, table: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -365,6 +400,12 @@ pub mod table {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Queries entities in a table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `data_service_version`: Specifies the data service version."]
+        #[doc = "* `table`: The name of the table."]
         pub fn query_entities(
             &self,
             x_ms_version: impl Into<String>,
@@ -386,6 +427,14 @@ pub mod table {
                 next_row_key: None,
             }
         }
+        #[doc = "Queries a single entity in a table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `data_service_version`: Specifies the data service version."]
+        #[doc = "* `table`: The name of the table."]
+        #[doc = "* `partition_key`: The partition key of the entity."]
+        #[doc = "* `row_key`: The row key of the entity."]
         pub fn query_entity_with_partition_and_row_key(
             &self,
             x_ms_version: impl Into<String>,
@@ -408,6 +457,14 @@ pub mod table {
                 filter: None,
             }
         }
+        #[doc = "Update entity in a table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `data_service_version`: Specifies the data service version."]
+        #[doc = "* `table`: The name of the table."]
+        #[doc = "* `partition_key`: The partition key of the entity."]
+        #[doc = "* `row_key`: The row key of the entity."]
         pub fn update_entity(
             &self,
             x_ms_version: impl Into<String>,
@@ -430,6 +487,14 @@ pub mod table {
                 if_match: None,
             }
         }
+        #[doc = "Merge entity in a table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `data_service_version`: Specifies the data service version."]
+        #[doc = "* `table`: The name of the table."]
+        #[doc = "* `partition_key`: The partition key of the entity."]
+        #[doc = "* `row_key`: The row key of the entity."]
         pub fn merge_entity(
             &self,
             x_ms_version: impl Into<String>,
@@ -452,6 +517,15 @@ pub mod table {
                 if_match: None,
             }
         }
+        #[doc = "Deletes the specified entity in a table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `data_service_version`: Specifies the data service version."]
+        #[doc = "* `table`: The name of the table."]
+        #[doc = "* `partition_key`: The partition key of the entity."]
+        #[doc = "* `row_key`: The row key of the entity."]
+        #[doc = "* `if_match`: Match condition for an entity to be deleted. If specified and a matching entity is not found, an error will be raised. To force an unconditional delete, set to the wildcard character (*)."]
         pub fn delete_entity(
             &self,
             x_ms_version: impl Into<String>,
@@ -474,6 +548,12 @@ pub mod table {
                 format: None,
             }
         }
+        #[doc = "Retrieves details about any stored access policies specified on the table that may be used with Shared Access Signatures."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `table`: The name of the table."]
+        #[doc = "* `comp`: Required query string to handle stored access policies for the table that may be used with Shared Access Signatures."]
         pub fn get_access_policy(
             &self,
             x_ms_version: impl Into<String>,
@@ -489,6 +569,12 @@ pub mod table {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Insert entity in a table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `data_service_version`: Specifies the data service version."]
+        #[doc = "* `table`: The name of the table."]
         pub fn insert_entity(
             &self,
             x_ms_version: impl Into<String>,
@@ -507,6 +593,12 @@ pub mod table {
                 prefer: None,
             }
         }
+        #[doc = "Sets stored access policies for the table that may be used with Shared Access Signatures."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `table`: The name of the table."]
+        #[doc = "* `comp`: Required query string to handle stored access policies for the table that may be used with Shared Access Signatures."]
         pub fn set_access_policy(
             &self,
             x_ms_version: impl Into<String>,

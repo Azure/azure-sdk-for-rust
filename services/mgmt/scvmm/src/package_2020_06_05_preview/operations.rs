@@ -104,6 +104,12 @@ pub mod vmm_servers {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a VMMServer."]
+        #[doc = "Implements VMMServer GET method."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `vmm_server_name`: Name of the VMMServer."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -118,6 +124,13 @@ pub mod vmm_servers {
             }
         }
         #[doc = "Implements VmmServers PUT method."]
+        #[doc = "Onboards the SCVMM fabric as an Azure VmmServer resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `vmm_server_name`: Name of the VMMServer."]
+        #[doc = "* `body`: Request payload."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -134,6 +147,13 @@ pub mod vmm_servers {
             }
         }
         #[doc = "Implements VmmServers PATCH method."]
+        #[doc = "Updates the VmmServers resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `vmm_server_name`: Name of the VMMServer."]
+        #[doc = "* `body`: VmmServers patch payload."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -150,6 +170,12 @@ pub mod vmm_servers {
             }
         }
         #[doc = "Implements VmmServers DELETE method."]
+        #[doc = "Deboards the SCVMM fabric from Azure."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `vmm_server_name`: Name of the VMMServer."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -165,6 +191,11 @@ pub mod vmm_servers {
             }
         }
         #[doc = "Implements GET VmmServers in a resource group."]
+        #[doc = "List of VmmServers in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -177,6 +208,10 @@ pub mod vmm_servers {
             }
         }
         #[doc = "Implements GET VmmServers in a subscription."]
+        #[doc = "List of VmmServers in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -585,6 +620,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns list of all operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -664,6 +700,12 @@ pub mod clouds {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a Cloud."]
+        #[doc = "Implements Cloud GET method."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cloud_name`: Name of the Cloud."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -678,6 +720,13 @@ pub mod clouds {
             }
         }
         #[doc = "Implements Clouds PUT method."]
+        #[doc = "Onboards the ScVmm fabric cloud as an Azure cloud resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cloud_name`: Name of the Cloud."]
+        #[doc = "* `body`: Request payload."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -694,6 +743,13 @@ pub mod clouds {
             }
         }
         #[doc = "Implements the Clouds PATCH method."]
+        #[doc = "Updates the Clouds resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `cloud_name`: Name of the Cloud."]
+        #[doc = "* `body`: Clouds patch payload."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -710,6 +766,12 @@ pub mod clouds {
             }
         }
         #[doc = "Implements Cloud resource DELETE method."]
+        #[doc = "Deregisters the ScVmm fabric cloud from Azure."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cloud_name`: Name of the Cloud."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -725,6 +787,11 @@ pub mod clouds {
             }
         }
         #[doc = "Implements GET Clouds in a resource group."]
+        #[doc = "List of Clouds in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -737,6 +804,10 @@ pub mod clouds {
             }
         }
         #[doc = "Implements GET Clouds in a subscription."]
+        #[doc = "List of Clouds in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -1146,6 +1217,12 @@ pub mod virtual_networks {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a VirtualNetwork."]
+        #[doc = "Implements VirtualNetwork GET method."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: Name of the VirtualNetwork."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1160,6 +1237,13 @@ pub mod virtual_networks {
             }
         }
         #[doc = "Implements VirtualNetworks PUT method."]
+        #[doc = "Onboards the ScVmm virtual network as an Azure virtual network resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: Name of the VirtualNetwork."]
+        #[doc = "* `body`: Request payload."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1176,6 +1260,13 @@ pub mod virtual_networks {
             }
         }
         #[doc = "Implements the VirtualNetworks PATCH method."]
+        #[doc = "Updates the VirtualNetworks resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `virtual_network_name`: Name of the VirtualNetwork."]
+        #[doc = "* `body`: VirtualNetworks patch payload."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1192,6 +1283,12 @@ pub mod virtual_networks {
             }
         }
         #[doc = "Implements VirtualNetwork DELETE method."]
+        #[doc = "Deregisters the ScVmm virtual network from Azure."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: Name of the VirtualNetwork."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1207,6 +1304,11 @@ pub mod virtual_networks {
             }
         }
         #[doc = "Implements GET VirtualNetworks in a resource group."]
+        #[doc = "List of VirtualNetworks in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1219,6 +1321,10 @@ pub mod virtual_networks {
             }
         }
         #[doc = "Implements GET VirtualNetworks in a subscription."]
+        #[doc = "List of VirtualNetworks in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -1628,6 +1734,12 @@ pub mod virtual_machines {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a VirtualMachine."]
+        #[doc = "Implements VirtualMachine GET method."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_machine_name`: Name of the VirtualMachine."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1642,6 +1754,13 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Implements VirtualMachines PUT method."]
+        #[doc = "Creates Or Updates virtual machines deployed on scvmm fabric."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_machine_name`: Name of the VirtualMachine."]
+        #[doc = "* `body`: Request payload."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1658,6 +1777,13 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Implements the VirtualMachines PATCH method."]
+        #[doc = "Updates the VirtualMachines resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `virtual_machine_name`: Name of the VirtualMachine."]
+        #[doc = "* `body`: VirtualMachines patch payload."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1674,6 +1800,12 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Implements VirtualMachine DELETE method."]
+        #[doc = "Deletes a VirtualMachine deployed on ScVmm fabric."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_machine_name`: Name of the VirtualMachine."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1690,6 +1822,12 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Implements the operation to stop a virtual machine."]
+        #[doc = "Stop virtual machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `virtual_machine_name`: Name of the VirtualMachine."]
         pub fn stop(
             &self,
             resource_group_name: impl Into<String>,
@@ -1705,6 +1843,12 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Implements the operation to start a virtual machine."]
+        #[doc = "Start virtual machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `virtual_machine_name`: Name of the VirtualMachine."]
         pub fn start(
             &self,
             resource_group_name: impl Into<String>,
@@ -1719,6 +1863,12 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Implements the operation to restart a virtual machine."]
+        #[doc = "Restart virtual machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `virtual_machine_name`: Name of the VirtualMachine."]
         pub fn restart(
             &self,
             resource_group_name: impl Into<String>,
@@ -1733,6 +1883,12 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Implements the operation to creates a checkpoint in a virtual machine."]
+        #[doc = "Creates a checkpoint in virtual machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `virtual_machine_name`: Name of the VirtualMachine."]
         pub fn create_checkpoint(
             &self,
             resource_group_name: impl Into<String>,
@@ -1748,6 +1904,12 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Implements the operation to delete a checkpoint in a virtual machine."]
+        #[doc = "Deletes a checkpoint in virtual machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `virtual_machine_name`: Name of the VirtualMachine."]
         pub fn delete_checkpoint(
             &self,
             resource_group_name: impl Into<String>,
@@ -1763,6 +1925,12 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Implements the operation to restores to a checkpoint in a virtual machine."]
+        #[doc = "Restores to a checkpoint in virtual machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `virtual_machine_name`: Name of the VirtualMachine."]
         pub fn restore_checkpoint(
             &self,
             resource_group_name: impl Into<String>,
@@ -1778,6 +1946,11 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Implements GET VirtualMachines in a resource group."]
+        #[doc = "List of VirtualMachines in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1790,6 +1963,10 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Implements GET VirtualMachines in a subscription."]
+        #[doc = "List of VirtualMachines in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -2573,6 +2750,12 @@ pub mod virtual_machine_templates {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a VirtualMachineTemplate."]
+        #[doc = "Implements VirtualMachineTemplate GET method."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_machine_template_name`: Name of the VirtualMachineTemplate."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2587,6 +2770,13 @@ pub mod virtual_machine_templates {
             }
         }
         #[doc = "Implements VirtualMachineTemplates PUT method."]
+        #[doc = "Onboards the ScVmm VM Template as an Azure VM Template resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_machine_template_name`: Name of the VirtualMachineTemplate."]
+        #[doc = "* `body`: Request payload."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2603,6 +2793,13 @@ pub mod virtual_machine_templates {
             }
         }
         #[doc = "Implements the VirtualMachineTemplate PATCH method."]
+        #[doc = "Updates the VirtualMachineTemplate resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `virtual_machine_template_name`: Name of the VirtualMachineTemplate."]
+        #[doc = "* `body`: VirtualMachineTemplates patch details."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -2619,6 +2816,12 @@ pub mod virtual_machine_templates {
             }
         }
         #[doc = "Implements VirtualMachineTemplate DELETE method."]
+        #[doc = "Deregisters the ScVmm VM Template from Azure."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_machine_template_name`: Name of the VirtualMachineTemplate."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2634,6 +2837,11 @@ pub mod virtual_machine_templates {
             }
         }
         #[doc = "Implements GET VirtualMachineTemplates in a resource group."]
+        #[doc = "List of VirtualMachineTemplates in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -2646,6 +2854,10 @@ pub mod virtual_machine_templates {
             }
         }
         #[doc = "Implements GET VirtualMachineTemplates in a subscription."]
+        #[doc = "List of VirtualMachineTemplates in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -3055,6 +3267,12 @@ pub mod availability_sets {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets an AvailabilitySet."]
+        #[doc = "Implements AvailabilitySet GET method."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `availability_set_name`: Name of the AvailabilitySet."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3069,6 +3287,13 @@ pub mod availability_sets {
             }
         }
         #[doc = "Implements AvailabilitySets PUT method."]
+        #[doc = "Onboards the ScVmm availability set as an Azure resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `availability_set_name`: Name of the AvailabilitySet."]
+        #[doc = "* `body`: Request payload."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3085,6 +3310,13 @@ pub mod availability_sets {
             }
         }
         #[doc = "Implements the AvailabilitySets PATCH method."]
+        #[doc = "Updates the AvailabilitySets resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `availability_set_name`: Name of the AvailabilitySet."]
+        #[doc = "* `body`: AvailabilitySets patch payload."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3101,6 +3333,12 @@ pub mod availability_sets {
             }
         }
         #[doc = "Implements AvailabilitySet DELETE method."]
+        #[doc = "Deregisters the ScVmm availability set from Azure."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `availability_set_name`: Name of the AvailabilitySet."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3116,6 +3354,11 @@ pub mod availability_sets {
             }
         }
         #[doc = "Implements GET AvailabilitySets in a resource group."]
+        #[doc = "List of AvailabilitySets in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3128,6 +3371,10 @@ pub mod availability_sets {
             }
         }
         #[doc = "Implements GET AvailabilitySets in a subscription."]
+        #[doc = "List of AvailabilitySets in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -3537,6 +3784,13 @@ pub mod inventory_items {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Implements GET InventoryItem method."]
+        #[doc = "Shows an inventory item."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `vmm_server_name`: Name of the VMMServer."]
+        #[doc = "* `inventory_item_name`: Name of the inventoryItem."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3553,6 +3807,13 @@ pub mod inventory_items {
             }
         }
         #[doc = "Implements InventoryItem PUT method."]
+        #[doc = "Create Or Update InventoryItem."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `vmm_server_name`: Name of the VMMServer."]
+        #[doc = "* `inventory_item_name`: Name of the inventoryItem."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -3570,6 +3831,13 @@ pub mod inventory_items {
             }
         }
         #[doc = "Implements inventoryItem DELETE method."]
+        #[doc = "Deletes an inventoryItem."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `vmm_server_name`: Name of the VMMServer."]
+        #[doc = "* `inventory_item_name`: Name of the inventoryItem."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3586,6 +3854,12 @@ pub mod inventory_items {
             }
         }
         #[doc = "Implements GET for the list of Inventory Items in the VMMServer."]
+        #[doc = "Returns the list of inventoryItems in the given VMMServer."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `vmm_server_name`: Name of the VMMServer."]
         pub fn list_by_vmm_server(
             &self,
             subscription_id: impl Into<String>,

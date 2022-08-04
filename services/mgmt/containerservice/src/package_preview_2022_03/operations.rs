@@ -164,6 +164,10 @@ pub mod managed_clusters {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets supported OS options in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: The name of Azure region."]
         pub fn get_os_options(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> get_os_options::Builder {
             get_os_options::Builder {
                 client: self.0.clone(),
@@ -173,6 +177,9 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Gets a list of managed clusters in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -180,6 +187,10 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Lists managed clusters in the specified subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -192,6 +203,11 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Gets the upgrade profile of a managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
         pub fn get_upgrade_profile(
             &self,
             subscription_id: impl Into<String>,
@@ -206,6 +222,13 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Gets an access profile of a managed cluster."]
+        #[doc = "**WARNING**: This API will be deprecated. Instead use [ListClusterUserCredentials](https://docs.microsoft.com/rest/api/aks/managedclusters/listclusterusercredentials) or [ListClusterAdminCredentials](https://docs.microsoft.com/rest/api/aks/managedclusters/listclusteradmincredentials) ."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `role_name`: The name of the role for managed cluster accessProfile resource."]
         pub fn get_access_profile(
             &self,
             subscription_id: impl Into<String>,
@@ -222,6 +245,11 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Lists the admin credentials of a managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
         pub fn list_cluster_admin_credentials(
             &self,
             subscription_id: impl Into<String>,
@@ -237,6 +265,11 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Lists the user credentials of a managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
         pub fn list_cluster_user_credentials(
             &self,
             subscription_id: impl Into<String>,
@@ -253,6 +286,11 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Lists the cluster monitoring user credentials of a managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
         pub fn list_cluster_monitoring_user_credentials(
             &self,
             subscription_id: impl Into<String>,
@@ -268,6 +306,11 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Gets a managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -282,6 +325,12 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Creates or updates a managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `parameters`: The managed cluster to create or update."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -298,6 +347,12 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Updates tags on a managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `parameters`: Parameters supplied to the Update Managed Cluster Tags operation."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -314,6 +369,11 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Deletes a managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -329,6 +389,13 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Reset the Service Principal Profile of a managed cluster."]
+        #[doc = "This action cannot be performed on a cluster that is not using a service principal"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `parameters`: The service principal profile to set on the managed cluster."]
         pub fn reset_service_principal_profile(
             &self,
             subscription_id: impl Into<String>,
@@ -345,6 +412,12 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Reset the AAD Profile of a managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `parameters`: The AAD profile to set on the Managed Cluster"]
         pub fn reset_aad_profile(
             &self,
             subscription_id: impl Into<String>,
@@ -361,6 +434,12 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Rotates the certificates of a managed cluster."]
+        #[doc = "See [Certificate rotation](https://docs.microsoft.com/azure/aks/certificate-rotation) for more details about rotating managed cluster certificates."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
         pub fn rotate_cluster_certificates(
             &self,
             subscription_id: impl Into<String>,
@@ -375,6 +454,11 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Rotates the service account signing keys of a managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
         pub fn rotate_service_account_signing_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -389,6 +473,12 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Stops a Managed Cluster"]
+        #[doc = "This can only be performed on Azure Virtual Machine Scale set backed clusters. Stopping a cluster stops the control plane and agent nodes entirely, while maintaining all object and cluster state. A cluster does not accrue charges while it is stopped. See [stopping a cluster](https://docs.microsoft.com/azure/aks/start-stop-cluster) for more details about stopping a cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -403,6 +493,12 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Starts a previously stopped Managed Cluster"]
+        #[doc = "See [starting a cluster](https://docs.microsoft.com/azure/aks/start-stop-cluster) for more details about starting a cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -417,6 +513,13 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Submits a command to run against the Managed Cluster."]
+        #[doc = "AKS will create a pod to run the command. This is primarily useful for private clusters. For more information see [AKS Run Command](https://docs.microsoft.com/azure/aks/private-clusters#aks-run-command-preview)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `request_payload`: The run command request"]
         pub fn run_command(
             &self,
             subscription_id: impl Into<String>,
@@ -433,6 +536,12 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Gets the results of a command which has been run on the Managed Cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `command_id`: Id of the command."]
         pub fn get_command_result(
             &self,
             subscription_id: impl Into<String>,
@@ -449,6 +558,12 @@ pub mod managed_clusters {
             }
         }
         #[doc = "Gets a list of egress endpoints (network endpoints of all outbound dependencies) in the specified managed cluster."]
+        #[doc = "Gets a list of egress endpoints (network endpoints of all outbound dependencies) in the specified managed cluster. The operation returns properties of each egress endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
         pub fn list_outbound_network_dependencies_endpoints(
             &self,
             subscription_id: impl Into<String>,
@@ -1677,6 +1792,11 @@ pub mod maintenance_configurations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of maintenance configurations in the specified managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
         pub fn list_by_managed_cluster(
             &self,
             subscription_id: impl Into<String>,
@@ -1691,6 +1811,12 @@ pub mod maintenance_configurations {
             }
         }
         #[doc = "Gets the specified maintenance configuration of a managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `config_name`: The name of the maintenance configuration."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1707,6 +1833,13 @@ pub mod maintenance_configurations {
             }
         }
         #[doc = "Creates or updates a maintenance configuration in the specified managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `config_name`: The name of the maintenance configuration."]
+        #[doc = "* `parameters`: The maintenance configuration to create or update."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1725,6 +1858,12 @@ pub mod maintenance_configurations {
             }
         }
         #[doc = "Deletes a maintenance configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `config_name`: The name of the maintenance configuration."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1963,6 +2102,11 @@ pub mod agent_pools {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of agent pools in the specified managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1977,6 +2121,12 @@ pub mod agent_pools {
             }
         }
         #[doc = "Gets the specified managed cluster agent pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `agent_pool_name`: The name of the agent pool."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1993,6 +2143,13 @@ pub mod agent_pools {
             }
         }
         #[doc = "Creates or updates an agent pool in the specified managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `agent_pool_name`: The name of the agent pool."]
+        #[doc = "* `parameters`: The agent pool to create or update."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2011,6 +2168,12 @@ pub mod agent_pools {
             }
         }
         #[doc = "Deletes an agent pool in the specified managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `agent_pool_name`: The name of the agent pool."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2028,6 +2191,12 @@ pub mod agent_pools {
             }
         }
         #[doc = "Gets the upgrade profile for an agent pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `agent_pool_name`: The name of the agent pool."]
         pub fn get_upgrade_profile(
             &self,
             subscription_id: impl Into<String>,
@@ -2044,6 +2213,12 @@ pub mod agent_pools {
             }
         }
         #[doc = "Gets a list of supported Kubernetes versions for the specified agent pool."]
+        #[doc = "See [supported Kubernetes versions](https://docs.microsoft.com/azure/aks/supported-kubernetes-versions) for more details about the version lifecycle."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
         pub fn get_available_agent_pool_versions(
             &self,
             subscription_id: impl Into<String>,
@@ -2058,6 +2233,13 @@ pub mod agent_pools {
             }
         }
         #[doc = "Upgrades the node image version of an agent pool to the latest."]
+        #[doc = "Upgrading the node image version of an agent pool applies the newest OS and runtime updates to the nodes. AKS provides one new image per week with the latest updates. For more details on node image versions, see: https://docs.microsoft.com/azure/aks/node-image-upgrade"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `agent_pool_name`: The name of the agent pool."]
         pub fn upgrade_node_image_version(
             &self,
             subscription_id: impl Into<String>,
@@ -2491,6 +2673,12 @@ pub mod private_endpoint_connections {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of private endpoint connections in the specified managed cluster."]
+        #[doc = "To learn more about private clusters, see: https://docs.microsoft.com/azure/aks/private-clusters"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2505,6 +2693,13 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Gets the specified private endpoint connection."]
+        #[doc = "To learn more about private clusters, see: https://docs.microsoft.com/azure/aks/private-clusters"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2521,6 +2716,13 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Updates a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
+        #[doc = "* `parameters`: The updated private endpoint connection."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2539,6 +2741,12 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Deletes a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2752,6 +2960,12 @@ pub mod private_link_resources {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of private link resources in the specified managed cluster."]
+        #[doc = "To learn more about private clusters, see: https://docs.microsoft.com/azure/aks/private-clusters"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2818,6 +3032,12 @@ pub mod resolve_private_link_service_id {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the private link service ID for the specified managed cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `parameters`: Parameters required in order to resolve a private link service ID."]
         pub fn post(
             &self,
             subscription_id: impl Into<String>,
@@ -2888,6 +3108,9 @@ pub mod snapshots {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of snapshots in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2895,6 +3118,10 @@ pub mod snapshots {
             }
         }
         #[doc = "Lists snapshots in the specified subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -2907,6 +3134,11 @@ pub mod snapshots {
             }
         }
         #[doc = "Gets a snapshot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2921,6 +3153,12 @@ pub mod snapshots {
             }
         }
         #[doc = "Creates or updates a snapshot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `parameters`: The snapshot to create or update."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2937,6 +3175,12 @@ pub mod snapshots {
             }
         }
         #[doc = "Updates tags on a snapshot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `parameters`: Parameters supplied to the Update snapshot Tags operation."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -2953,6 +3197,11 @@ pub mod snapshots {
             }
         }
         #[doc = "Deletes a snapshot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3345,6 +3594,9 @@ pub mod managed_cluster_snapshots {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of managed cluster snapshots in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -3352,6 +3604,10 @@ pub mod managed_cluster_snapshots {
             }
         }
         #[doc = "Lists managed cluster snapshots in the specified subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3364,6 +3620,11 @@ pub mod managed_cluster_snapshots {
             }
         }
         #[doc = "Gets a managed cluster snapshot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3378,6 +3639,12 @@ pub mod managed_cluster_snapshots {
             }
         }
         #[doc = "Creates or updates a managed cluster snapshot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `parameters`: The managed cluster snapshot to create or update."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3394,6 +3661,12 @@ pub mod managed_cluster_snapshots {
             }
         }
         #[doc = "Updates tags on a managed cluster snapshot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
+        #[doc = "* `parameters`: Parameters supplied to the Update managed cluster snapshot Tags operation."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -3410,6 +3683,11 @@ pub mod managed_cluster_snapshots {
             }
         }
         #[doc = "Deletes a managed cluster snapshot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the managed cluster resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

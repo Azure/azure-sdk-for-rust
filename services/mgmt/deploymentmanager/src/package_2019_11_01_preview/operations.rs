@@ -101,6 +101,11 @@ pub mod service_topologies {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the service topology."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `service_topology_name`: The name of the service topology ."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -115,6 +120,13 @@ pub mod service_topologies {
             }
         }
         #[doc = "Creates or updates a service topology."]
+        #[doc = "Synchronously creates a new service topology or updates an existing service topology."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_topology_info`: Source topology object defines the resource."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `service_topology_name`: The name of the service topology ."]
         pub fn create_or_update(
             &self,
             service_topology_info: impl Into<models::ServiceTopologyResource>,
@@ -131,6 +143,11 @@ pub mod service_topologies {
             }
         }
         #[doc = "Deletes the service topology."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `service_topology_name`: The name of the service topology ."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -145,6 +162,10 @@ pub mod service_topologies {
             }
         }
         #[doc = "Lists the service topologies in the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -368,6 +389,12 @@ pub mod services {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `service_topology_name`: The name of the service topology ."]
+        #[doc = "* `service_name`: The name of the service resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -384,6 +411,14 @@ pub mod services {
             }
         }
         #[doc = "Creates or updates a service in the service topology."]
+        #[doc = "Synchronously creates a new service or updates an existing service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `service_topology_name`: The name of the service topology ."]
+        #[doc = "* `service_name`: The name of the service resource."]
+        #[doc = "* `service_info`: The service object"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -402,6 +437,12 @@ pub mod services {
             }
         }
         #[doc = "Deletes the service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `service_topology_name`: The name of the service topology ."]
+        #[doc = "* `service_name`: The name of the service resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -418,6 +459,11 @@ pub mod services {
             }
         }
         #[doc = "Lists the services in the service topology."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `service_topology_name`: The name of the service topology ."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -655,6 +701,13 @@ pub mod service_units {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the service unit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `service_topology_name`: The name of the service topology ."]
+        #[doc = "* `service_name`: The name of the service resource."]
+        #[doc = "* `service_unit_name`: The name of the service unit resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -673,6 +726,15 @@ pub mod service_units {
             }
         }
         #[doc = "Creates or updates a service unit under the service in the service topology."]
+        #[doc = "This is an asynchronous operation and can be polled to completion using the operation resource returned by this operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `service_topology_name`: The name of the service topology ."]
+        #[doc = "* `service_name`: The name of the service resource."]
+        #[doc = "* `service_unit_name`: The name of the service unit resource."]
+        #[doc = "* `service_unit_info`: The service unit resource object."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -693,6 +755,13 @@ pub mod service_units {
             }
         }
         #[doc = "Deletes the service unit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `service_topology_name`: The name of the service topology ."]
+        #[doc = "* `service_name`: The name of the service resource."]
+        #[doc = "* `service_unit_name`: The name of the service unit resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -711,6 +780,12 @@ pub mod service_units {
             }
         }
         #[doc = "Lists the service units under a service in the service topology."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `service_topology_name`: The name of the service topology ."]
+        #[doc = "* `service_name`: The name of the service resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -928,6 +1003,11 @@ pub mod steps {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the step."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `step_name`: The name of the deployment step."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -942,6 +1022,12 @@ pub mod steps {
             }
         }
         #[doc = "Creates or updates a rollout step with the given step properties."]
+        #[doc = "Synchronously creates a new step or updates an existing step."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `step_name`: The name of the deployment step."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -957,6 +1043,11 @@ pub mod steps {
             }
         }
         #[doc = "Deletes the step."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `step_name`: The name of the deployment step."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -971,6 +1062,10 @@ pub mod steps {
             }
         }
         #[doc = "Lists the steps in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1202,6 +1297,11 @@ pub mod rollouts {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets detailed information of a rollout."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rollout_name`: The rollout name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1217,6 +1317,12 @@ pub mod rollouts {
             }
         }
         #[doc = "Creates or updates a rollout."]
+        #[doc = "This is an asynchronous operation and can be polled to completion using the location header returned by this operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rollout_name`: The rollout name."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1232,6 +1338,12 @@ pub mod rollouts {
             }
         }
         #[doc = "Deletes a rollout resource."]
+        #[doc = "Only rollouts in terminal state can be deleted."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rollout_name`: The rollout name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1246,6 +1358,12 @@ pub mod rollouts {
             }
         }
         #[doc = "Stops a running rollout."]
+        #[doc = "Only running rollouts can be canceled."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rollout_name`: The rollout name."]
         pub fn cancel(
             &self,
             subscription_id: impl Into<String>,
@@ -1260,6 +1378,12 @@ pub mod rollouts {
             }
         }
         #[doc = "Restarts a failed rollout and optionally skips all succeeded steps."]
+        #[doc = "Only failed rollouts can be restarted."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rollout_name`: The rollout name."]
         pub fn restart(
             &self,
             subscription_id: impl Into<String>,
@@ -1275,6 +1399,10 @@ pub mod rollouts {
             }
         }
         #[doc = "Lists the rollouts in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1633,6 +1761,11 @@ pub mod artifact_sources {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets an artifact source."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `artifact_source_name`: The name of the artifact source."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1647,6 +1780,12 @@ pub mod artifact_sources {
             }
         }
         #[doc = "Creates or updates an artifact source."]
+        #[doc = "Synchronously creates a new artifact source or updates an existing artifact source."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `artifact_source_name`: The name of the artifact source."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1662,6 +1801,11 @@ pub mod artifact_sources {
             }
         }
         #[doc = "Deletes an artifact source."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `artifact_source_name`: The name of the artifact source."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1676,6 +1820,10 @@ pub mod artifact_sources {
             }
         }
         #[doc = "Lists the artifact sources in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

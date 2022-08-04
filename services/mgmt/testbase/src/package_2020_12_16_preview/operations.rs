@@ -124,6 +124,10 @@ pub mod skus {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the available SKUs of Test Base Account in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -210,6 +214,10 @@ pub mod test_base_accounts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the Test Base Accounts in a subscription. This API is required by ARM guidelines."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -217,6 +225,11 @@ pub mod test_base_accounts {
                 get_deleted: None,
             }
         }
+        #[doc = "Lists all the Test Base Accounts in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -229,6 +242,12 @@ pub mod test_base_accounts {
                 get_deleted: None,
             }
         }
+        #[doc = "Gets a Test Base Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -242,6 +261,13 @@ pub mod test_base_accounts {
                 test_base_account_name: test_base_account_name.into(),
             }
         }
+        #[doc = "Create or replace (overwrite/recreate, with potential downtime) a Test Base Account in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters supplied to create a Test Base Account."]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
         pub fn create(
             &self,
             parameters: impl Into<models::TestBaseAccountResource>,
@@ -258,6 +284,13 @@ pub mod test_base_accounts {
                 restore: None,
             }
         }
+        #[doc = "Update an existing Test Base Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters supplied to update a Test Base Account."]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
         pub fn update(
             &self,
             parameters: impl Into<models::TestBaseAccountUpdateParameters>,
@@ -273,6 +306,12 @@ pub mod test_base_accounts {
                 test_base_account_name: test_base_account_name.into(),
             }
         }
+        #[doc = "Deletes a Test Base Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -286,6 +325,12 @@ pub mod test_base_accounts {
                 test_base_account_name: test_base_account_name.into(),
             }
         }
+        #[doc = "Offboard a Test Base Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
         pub fn offboard(
             &self,
             subscription_id: impl Into<String>,
@@ -299,6 +344,12 @@ pub mod test_base_accounts {
                 test_base_account_name: test_base_account_name.into(),
             }
         }
+        #[doc = "Gets the file upload URL of a Test Base Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
         pub fn get_file_upload_url(
             &self,
             subscription_id: impl Into<String>,
@@ -313,6 +364,13 @@ pub mod test_base_accounts {
                 parameters: None,
             }
         }
+        #[doc = "Checks that the Test Base Package name and version is valid and is not already in use."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `parameters`: Parameters supplied to the Test Base Package CheckNameAvailability operation."]
         pub fn check_package_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -909,6 +967,12 @@ pub mod usage {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the usage data of a Test Base Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1015,6 +1079,13 @@ pub mod available_os {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the available OSs to run a package under a Test Base Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `os_update_type`: The type of the OS Update."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1030,6 +1101,13 @@ pub mod available_os {
                 os_update_type: os_update_type.into(),
             }
         }
+        #[doc = "Gets an available OS to run a package under a Test Base Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `available_os_resource_name`: The resource name of an Available OS."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1186,6 +1264,12 @@ pub mod flighting_rings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the flighting rings of a Test Base Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1199,6 +1283,13 @@ pub mod flighting_rings {
                 test_base_account_name: test_base_account_name.into(),
             }
         }
+        #[doc = "Gets a flighting ring of a Test Base Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `flighting_ring_resource_name`: The resource name of a flighting ring."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1352,6 +1443,12 @@ pub mod test_types {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the test types of a Test Base Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1365,6 +1462,13 @@ pub mod test_types {
                 test_base_account_name: test_base_account_name.into(),
             }
         }
+        #[doc = "Gets a test type of a Test Base Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `test_type_resource_name`: The resource name of a test type."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1518,6 +1622,12 @@ pub mod packages {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the packages under a Test Base Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
         pub fn list_by_test_base_account(
             &self,
             subscription_id: impl Into<String>,
@@ -1531,6 +1641,13 @@ pub mod packages {
                 test_base_account_name: test_base_account_name.into(),
             }
         }
+        #[doc = "Gets a Test Base Package."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `package_name`: The resource name of the Test Base Package."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1546,6 +1663,14 @@ pub mod packages {
                 package_name: package_name.into(),
             }
         }
+        #[doc = "Create or replace (overwrite/recreate, with potential downtime) a Test Base Package."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters supplied to create a Test Base Package."]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `package_name`: The resource name of the Test Base Package."]
         pub fn create(
             &self,
             parameters: impl Into<models::PackageResource>,
@@ -1563,6 +1688,14 @@ pub mod packages {
                 package_name: package_name.into(),
             }
         }
+        #[doc = "Update an existing Test Base Package."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters supplied to update a Test Base Package."]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `package_name`: The resource name of the Test Base Package."]
         pub fn update(
             &self,
             parameters: impl Into<models::PackageUpdateParameters>,
@@ -1580,6 +1713,13 @@ pub mod packages {
                 package_name: package_name.into(),
             }
         }
+        #[doc = "Deletes a Test Base Package."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `package_name`: The resource name of the Test Base Package."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1595,6 +1735,13 @@ pub mod packages {
                 package_name: package_name.into(),
             }
         }
+        #[doc = "Hard Delete a Test Base Package."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `package_name`: The resource name of the Test Base Package."]
         pub fn hard_delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1610,6 +1757,13 @@ pub mod packages {
                 package_name: package_name.into(),
             }
         }
+        #[doc = "Gets the download URL of a package."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `package_name`: The resource name of the Test Base Package."]
         pub fn get_download_url(
             &self,
             subscription_id: impl Into<String>,
@@ -2058,6 +2212,12 @@ pub mod test_summaries {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the Test Summaries of all the packages under a Test Base Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2071,6 +2231,13 @@ pub mod test_summaries {
                 test_base_account_name: test_base_account_name.into(),
             }
         }
+        #[doc = "Gets a Test Summary with specific name from all the Test Summaries of all the packages under a Test Base Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `test_summary_name`: The name of the Test Summary."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2224,6 +2391,14 @@ pub mod test_results {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the Test Results with specified OS Update type for a Test Base Package. Can be filtered by osName, releaseName, flightingRing, buildVersion, buildRevision."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `package_name`: The resource name of the Test Base Package."]
+        #[doc = "* `os_update_type`: The type of the OS Update."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2242,6 +2417,14 @@ pub mod test_results {
                 filter: None,
             }
         }
+        #[doc = "Get the Test Result by Id with specified OS Update type for a Test Base Package."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `package_name`: The resource name of the Test Base Package."]
+        #[doc = "* `test_result_name`: The Test Result Name. It equals to {osName}-{TestResultId} string."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2259,6 +2442,14 @@ pub mod test_results {
                 test_result_name: test_result_name.into(),
             }
         }
+        #[doc = "Gets the download URL of the test result."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `package_name`: The resource name of the Test Base Package."]
+        #[doc = "* `test_result_name`: The Test Result Name. It equals to {osName}-{TestResultId} string."]
         pub fn get_download_url(
             &self,
             subscription_id: impl Into<String>,
@@ -2276,6 +2467,14 @@ pub mod test_results {
                 test_result_name: test_result_name.into(),
             }
         }
+        #[doc = "Gets the download URL of the test execution screen recording."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `package_name`: The resource name of the Test Base Package."]
+        #[doc = "* `test_result_name`: The Test Result Name. It equals to {osName}-{TestResultId} string."]
         pub fn get_video_download_url(
             &self,
             subscription_id: impl Into<String>,
@@ -2529,6 +2728,14 @@ pub mod os_updates {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the OS Updates in which the package were tested before."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `package_name`: The resource name of the Test Base Package."]
+        #[doc = "* `os_update_type`: The type of the OS Update."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2546,6 +2753,14 @@ pub mod os_updates {
                 os_update_type: os_update_type.into(),
             }
         }
+        #[doc = "Gets an OS Update by name in which the package was tested before."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `package_name`: The resource name of the Test Base Package."]
+        #[doc = "* `os_update_resource_name`: The resource name of an OS Update."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2700,6 +2915,13 @@ pub mod favorite_processes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the favorite processes for a specific package."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `package_name`: The resource name of the Test Base Package."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2715,6 +2937,14 @@ pub mod favorite_processes {
                 package_name: package_name.into(),
             }
         }
+        #[doc = "Gets a favorite process for a Test Base Package."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `package_name`: The resource name of the Test Base Package."]
+        #[doc = "* `favorite_process_resource_name`: The resource name of a favorite process in a package. If the process name contains characters that are not allowed in Azure Resource Name, we use 'actualProcessName' in request body to submit the name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2732,6 +2962,15 @@ pub mod favorite_processes {
                 favorite_process_resource_name: favorite_process_resource_name.into(),
             }
         }
+        #[doc = "Create or replace a favorite process for a Test Base Package."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters supplied to create a favorite process in a package."]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `package_name`: The resource name of the Test Base Package."]
+        #[doc = "* `favorite_process_resource_name`: The resource name of a favorite process in a package. If the process name contains characters that are not allowed in Azure Resource Name, we use 'actualProcessName' in request body to submit the name."]
         pub fn create(
             &self,
             parameters: impl Into<models::FavoriteProcessResource>,
@@ -2751,6 +2990,14 @@ pub mod favorite_processes {
                 favorite_process_resource_name: favorite_process_resource_name.into(),
             }
         }
+        #[doc = "Deletes a favorite process for a specific package."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `package_name`: The resource name of the Test Base Package."]
+        #[doc = "* `favorite_process_resource_name`: The resource name of a favorite process in a package. If the process name contains characters that are not allowed in Azure Resource Name, we use 'actualProcessName' in request body to submit the name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2994,6 +3241,15 @@ pub mod analysis_results {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the Analysis Results of a Test Result. The result collection will only contain one element as all the data will be nested in a singleton object."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `package_name`: The resource name of the Test Base Package."]
+        #[doc = "* `test_result_name`: The Test Result Name. It equals to {osName}-{TestResultId} string."]
+        #[doc = "* `analysis_result_type`: The type of the Analysis Result of a Test Result."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3013,6 +3269,15 @@ pub mod analysis_results {
                 analysis_result_type: analysis_result_type.into(),
             }
         }
+        #[doc = "Gets an Analysis Result of a Test Result by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `package_name`: The resource name of the Test Base Package."]
+        #[doc = "* `test_result_name`: The Test Result Name. It equals to {osName}-{TestResultId} string."]
+        #[doc = "* `analysis_result_name`: The name of the Analysis Result of a Test Result."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3141,6 +3406,12 @@ pub mod email_events {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the email events of a Test Base Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3154,6 +3425,13 @@ pub mod email_events {
                 test_base_account_name: test_base_account_name.into(),
             }
         }
+        #[doc = "Gets a email event of a Test Base Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `email_event_resource_name`: The resource name of an email event."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3307,6 +3585,12 @@ pub mod customer_events {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all notification events subscribed under a Test Base Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
         pub fn list_by_test_base_account(
             &self,
             subscription_id: impl Into<String>,
@@ -3320,6 +3604,13 @@ pub mod customer_events {
                 test_base_account_name: test_base_account_name.into(),
             }
         }
+        #[doc = "Gets a Test Base CustomerEvent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `customer_event_name`: The resource name of the Test Base Customer event."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3335,6 +3626,14 @@ pub mod customer_events {
                 customer_event_name: customer_event_name.into(),
             }
         }
+        #[doc = "Create or replace a Test Base Customer Event."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters supplied to create a Test Base CustomerEvent."]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `customer_event_name`: The resource name of the Test Base Customer event."]
         pub fn create(
             &self,
             parameters: impl Into<models::CustomerEventResource>,
@@ -3352,6 +3651,13 @@ pub mod customer_events {
                 customer_event_name: customer_event_name.into(),
             }
         }
+        #[doc = "Deletes a Test Base Customer Event."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource."]
+        #[doc = "* `test_base_account_name`: The resource name of the Test Base Account."]
+        #[doc = "* `customer_event_name`: The resource name of the Test Base Customer event."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3629,6 +3935,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available REST API operations of the Microsoft.TestBase provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

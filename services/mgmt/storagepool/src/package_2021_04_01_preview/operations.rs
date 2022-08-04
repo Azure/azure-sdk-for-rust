@@ -91,6 +91,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of StoragePool operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -145,12 +146,21 @@ pub mod disk_pools {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of Disk Pools in a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of DiskPools in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -162,6 +172,12 @@ pub mod disk_pools {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get a Disk pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `disk_pool_name`: The name of the Disk Pool."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -175,6 +191,13 @@ pub mod disk_pools {
                 disk_pool_name: disk_pool_name.into(),
             }
         }
+        #[doc = "Create or Update Disk pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `disk_pool_name`: The name of the Disk Pool."]
+        #[doc = "* `disk_pool_create_payload`: Request payload for Disk Pool create operation"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -190,6 +213,13 @@ pub mod disk_pools {
                 disk_pool_create_payload: disk_pool_create_payload.into(),
             }
         }
+        #[doc = "Update a Disk pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `disk_pool_name`: The name of the Disk Pool."]
+        #[doc = "* `disk_pool_update_payload`: Request payload for Disk Pool update operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -205,6 +235,12 @@ pub mod disk_pools {
                 disk_pool_update_payload: disk_pool_update_payload.into(),
             }
         }
+        #[doc = "Delete a Disk pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `disk_pool_name`: The name of the Disk Pool."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -218,6 +254,12 @@ pub mod disk_pools {
                 disk_pool_name: disk_pool_name.into(),
             }
         }
+        #[doc = "Gets the network endpoints of all outbound dependencies of a Disk Pool"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `disk_pool_name`: The name of the Disk Pool."]
         pub fn list_outbound_network_dependencies_endpoints(
             &self,
             subscription_id: impl Into<String>,
@@ -231,6 +273,12 @@ pub mod disk_pools {
                 disk_pool_name: disk_pool_name.into(),
             }
         }
+        #[doc = "The operation to start a Disk Pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `disk_pool_name`: The name of the Disk Pool."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -244,6 +292,12 @@ pub mod disk_pools {
                 disk_pool_name: disk_pool_name.into(),
             }
         }
+        #[doc = "Shuts down the Disk Pool and releases the compute resources. You are not billed for the compute resources that this Disk Pool uses."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `disk_pool_name`: The name of the Disk Pool."]
         pub fn deallocate(
             &self,
             subscription_id: impl Into<String>,
@@ -827,6 +881,11 @@ pub mod disk_pool_zones {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists available Disk Pool Skus in an Azure location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: The location of the resource."]
         pub fn list(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -916,6 +975,12 @@ pub mod iscsi_targets {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get iSCSI Targets in a Disk pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `disk_pool_name`: The name of the Disk Pool."]
         pub fn list_by_disk_pool(
             &self,
             subscription_id: impl Into<String>,
@@ -929,6 +994,13 @@ pub mod iscsi_targets {
                 disk_pool_name: disk_pool_name.into(),
             }
         }
+        #[doc = "Get an iSCSI Target."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `disk_pool_name`: The name of the Disk Pool."]
+        #[doc = "* `iscsi_target_name`: The name of the iSCSI Target."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -944,6 +1016,14 @@ pub mod iscsi_targets {
                 iscsi_target_name: iscsi_target_name.into(),
             }
         }
+        #[doc = "Create or Update an iSCSI Target."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `disk_pool_name`: The name of the Disk Pool."]
+        #[doc = "* `iscsi_target_name`: The name of the iSCSI Target."]
+        #[doc = "* `iscsi_target_create_payload`: Request payload for iSCSI Target create operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -961,6 +1041,14 @@ pub mod iscsi_targets {
                 iscsi_target_create_payload: iscsi_target_create_payload.into(),
             }
         }
+        #[doc = "Update an iSCSI Target."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `disk_pool_name`: The name of the Disk Pool."]
+        #[doc = "* `iscsi_target_name`: The name of the iSCSI Target."]
+        #[doc = "* `iscsi_target_update_payload`: Request payload for iSCSI Target update operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -978,6 +1066,13 @@ pub mod iscsi_targets {
                 iscsi_target_update_payload: iscsi_target_update_payload.into(),
             }
         }
+        #[doc = "Delete an iSCSI Target."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `disk_pool_name`: The name of the Disk Pool."]
+        #[doc = "* `iscsi_target_name`: The name of the iSCSI Target."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

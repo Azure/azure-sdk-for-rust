@@ -100,6 +100,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available IoT Hub REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -180,6 +181,12 @@ pub mod iot_hub_resource {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the non-security related metadata of an IoT hub"]
+        #[doc = "Get the non-security related metadata of an IoT hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -194,6 +201,13 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Create or update the metadata of an IoT hub."]
+        #[doc = "Create or update the metadata of an Iot hub. The usual pattern to modify a property is to retrieve the IoT hub metadata and security metadata, and then combine them with the modified values in a new body to update the IoT hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
+        #[doc = "* `iot_hub_description`: The IoT hub metadata and security metadata."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -211,6 +225,13 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Update an existing IoT Hubs tags."]
+        #[doc = "Update an existing IoT Hub tags. to update other fields use the CreateOrUpdate method"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group identifier."]
+        #[doc = "* `resource_name`: Name of iot hub to update."]
+        #[doc = "* `iot_hub_tags`: Updated tag information to set into the iot hub instance."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -227,6 +248,12 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Delete an IoT hub"]
+        #[doc = "Delete an IoT hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -241,6 +268,10 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Get all the IoT hubs in a subscription"]
+        #[doc = "Get all the IoT hubs in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -248,6 +279,11 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Get all the IoT hubs in a resource group"]
+        #[doc = "Get all the IoT hubs in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -260,6 +296,12 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Get the statistics from an IoT hub"]
+        #[doc = "Get the statistics from an IoT hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
         pub fn get_stats(
             &self,
             subscription_id: impl Into<String>,
@@ -274,6 +316,12 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Get the list of valid SKUs for an IoT hub"]
+        #[doc = "Get the list of valid SKUs for an IoT hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
         pub fn get_valid_skus(
             &self,
             subscription_id: impl Into<String>,
@@ -288,6 +336,13 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Get a list of the consumer groups in the Event Hub-compatible device-to-cloud endpoint in an IoT hub"]
+        #[doc = "Get a list of the consumer groups in the Event Hub-compatible device-to-cloud endpoint in an IoT hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
+        #[doc = "* `event_hub_endpoint_name`: The name of the Event Hub-compatible endpoint."]
         pub fn list_event_hub_consumer_groups(
             &self,
             subscription_id: impl Into<String>,
@@ -304,6 +359,14 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Get a consumer group from the Event Hub-compatible device-to-cloud endpoint for an IoT hub"]
+        #[doc = "Get a consumer group from the Event Hub-compatible device-to-cloud endpoint for an IoT hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
+        #[doc = "* `event_hub_endpoint_name`: The name of the Event Hub-compatible endpoint in the IoT hub."]
+        #[doc = "* `name`: The name of the consumer group to retrieve."]
         pub fn get_event_hub_consumer_group(
             &self,
             subscription_id: impl Into<String>,
@@ -322,6 +385,15 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Add a consumer group to an Event Hub-compatible endpoint in an IoT hub"]
+        #[doc = "Add a consumer group to an Event Hub-compatible endpoint in an IoT hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
+        #[doc = "* `event_hub_endpoint_name`: The name of the Event Hub-compatible endpoint in the IoT hub."]
+        #[doc = "* `name`: The name of the consumer group to add."]
+        #[doc = "* `consumer_group_body`: The consumer group to add."]
         pub fn create_event_hub_consumer_group(
             &self,
             subscription_id: impl Into<String>,
@@ -342,6 +414,14 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Delete a consumer group from an Event Hub-compatible endpoint in an IoT hub"]
+        #[doc = "Delete a consumer group from an Event Hub-compatible endpoint in an IoT hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
+        #[doc = "* `event_hub_endpoint_name`: The name of the Event Hub-compatible endpoint in the IoT hub."]
+        #[doc = "* `name`: The name of the consumer group to delete."]
         pub fn delete_event_hub_consumer_group(
             &self,
             subscription_id: impl Into<String>,
@@ -360,6 +440,12 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Get a list of all the jobs in an IoT hub. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-identity-registry"]
+        #[doc = "Get a list of all the jobs in an IoT hub. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-identity-registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
         pub fn list_jobs(
             &self,
             subscription_id: impl Into<String>,
@@ -374,6 +460,13 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Get the details of a job from an IoT hub. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-identity-registry"]
+        #[doc = "Get the details of a job from an IoT hub. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-identity-registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
+        #[doc = "* `job_id`: The job identifier."]
         pub fn get_job(
             &self,
             subscription_id: impl Into<String>,
@@ -390,6 +483,12 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Get the quota metrics for an IoT hub"]
+        #[doc = "Get the quota metrics for an IoT hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
         pub fn get_quota_metrics(
             &self,
             subscription_id: impl Into<String>,
@@ -404,6 +503,10 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Get the health for routing endpoints"]
+        #[doc = "Get the health for routing endpoints."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
         pub fn get_endpoint_health(
             &self,
             subscription_id: impl Into<String>,
@@ -418,6 +521,11 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Check if an IoT hub name is available"]
+        #[doc = "Check if an IoT hub name is available."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `operation_inputs`: Set the name parameter in the OperationInputs structure to the name of the IoT hub to check."]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -430,6 +538,13 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Test all routes"]
+        #[doc = "Test all routes configured in this Iot Hub"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `input`: Input for testing all routes"]
+        #[doc = "* `iot_hub_name`: IotHub to be tested"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: resource group which Iot Hub belongs to"]
         pub fn test_all_routes(
             &self,
             input: impl Into<models::TestAllRoutesInput>,
@@ -446,6 +561,13 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Test the new route"]
+        #[doc = "Test the new route for this Iot Hub"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `input`: Route that needs to be tested"]
+        #[doc = "* `iot_hub_name`: IotHub to be tested"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: resource group which Iot Hub belongs to"]
         pub fn test_route(
             &self,
             input: impl Into<models::TestRouteInput>,
@@ -462,6 +584,12 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Get the security metadata for an IoT hub. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-security"]
+        #[doc = "Get the security metadata for an IoT hub. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-security."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
         pub fn list_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -476,6 +604,13 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Get a shared access policy by name from an IoT hub. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-security"]
+        #[doc = "Get a shared access policy by name from an IoT hub. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-security."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
+        #[doc = "* `key_name`: The name of the shared access policy."]
         pub fn get_keys_for_key_name(
             &self,
             subscription_id: impl Into<String>,
@@ -492,6 +627,13 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Exports all the device identities in the IoT hub identity registry to an Azure Storage blob container. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-identity-registry#import-and-export-device-identities"]
+        #[doc = "Exports all the device identities in the IoT hub identity registry to an Azure Storage blob container. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-identity-registry#import-and-export-device-identities."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
+        #[doc = "* `export_devices_parameters`: The parameters that specify the export devices operation."]
         pub fn export_devices(
             &self,
             subscription_id: impl Into<String>,
@@ -508,6 +650,13 @@ pub mod iot_hub_resource {
             }
         }
         #[doc = "Import, update, or delete device identities in the IoT hub identity registry from a blob. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-identity-registry#import-and-export-device-identities"]
+        #[doc = "Import, update, or delete device identities in the IoT hub identity registry from a blob. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-identity-registry#import-and-export-device-identities."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
+        #[doc = "* `import_devices_parameters`: The parameters that specify the import devices operation."]
         pub fn import_devices(
             &self,
             subscription_id: impl Into<String>,
@@ -1957,6 +2106,10 @@ pub mod resource_provider_common {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the number of iot hubs in the subscription"]
+        #[doc = "Get the number of free and paid iot hubs in the subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
         pub fn get_subscription_quota(&self, subscription_id: impl Into<String>) -> get_subscription_quota::Builder {
             get_subscription_quota::Builder {
                 client: self.0.clone(),
@@ -2018,6 +2171,12 @@ pub mod certificates {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the certificate list."]
+        #[doc = "Returns the list of certificates."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
         pub fn list_by_iot_hub(
             &self,
             subscription_id: impl Into<String>,
@@ -2032,6 +2191,13 @@ pub mod certificates {
             }
         }
         #[doc = "Get the certificate."]
+        #[doc = "Returns the certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
+        #[doc = "* `certificate_name`: The name of the certificate"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2048,6 +2214,14 @@ pub mod certificates {
             }
         }
         #[doc = "Upload the certificate to the IoT hub."]
+        #[doc = "Adds new or replaces existing certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
+        #[doc = "* `certificate_name`: The name of the certificate"]
+        #[doc = "* `certificate_description`: The certificate body."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2067,6 +2241,14 @@ pub mod certificates {
             }
         }
         #[doc = "Delete an X509 certificate."]
+        #[doc = "Deletes an existing X509 certificate or does nothing if it does not exist."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
+        #[doc = "* `certificate_name`: The name of the certificate"]
+        #[doc = "* `if_match`: ETag of the Certificate."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2085,6 +2267,14 @@ pub mod certificates {
             }
         }
         #[doc = "Generate verification code for proof of possession flow."]
+        #[doc = "Generates verification code for proof of possession flow. The verification code will be used to generate a leaf certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
+        #[doc = "* `certificate_name`: The name of the certificate"]
+        #[doc = "* `if_match`: ETag of the Certificate."]
         pub fn generate_verification_code(
             &self,
             subscription_id: impl Into<String>,
@@ -2103,6 +2293,15 @@ pub mod certificates {
             }
         }
         #[doc = "Verify certificate's private key possession."]
+        #[doc = "Verifies the certificate's private key possession by providing the leaf cert issued by the verifying pre uploaded certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
+        #[doc = "* `certificate_name`: The name of the certificate"]
+        #[doc = "* `certificate_verification_body`: The name of the certificate"]
+        #[doc = "* `if_match`: ETag of the Certificate."]
         pub fn verify(
             &self,
             subscription_id: impl Into<String>,
@@ -2473,6 +2672,13 @@ pub mod iot_hub {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Manually initiate a failover for the IoT Hub to its secondary region"]
+        #[doc = "Manually initiate a failover for the IoT Hub to its secondary region. To learn more, see https://aka.ms/manualfailover"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `iot_hub_name`: Name of the IoT hub to failover"]
+        #[doc = "* `failover_input`: Region to failover to. Must be the Azure paired region. Get the value from the secondary location in the locations property. To learn more, see https://aka.ms/manualfailover/region"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: Name of the resource group containing the IoT hub resource"]
         pub fn manual_failover(
             &self,
             iot_hub_name: impl Into<String>,
@@ -2551,6 +2757,12 @@ pub mod private_link_resources {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List private link resources"]
+        #[doc = "List private link resources for the given IotHub"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2565,6 +2777,13 @@ pub mod private_link_resources {
             }
         }
         #[doc = "Get the specified private link resource"]
+        #[doc = "Get the specified private link resource for the given IotHub"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
+        #[doc = "* `group_id`: The name of the private link resource"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2693,6 +2912,12 @@ pub mod private_endpoint_connections {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List private endpoint connections"]
+        #[doc = "List private endpoint connection properties"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2707,6 +2932,13 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Get private endpoint connection"]
+        #[doc = "Get private endpoint connection properties"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2723,6 +2955,14 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Update private endpoint connection"]
+        #[doc = "Update the status of a private endpoint connection with the specified name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection"]
+        #[doc = "* `private_endpoint_connection`: The private endpoint connection with updated properties"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2741,6 +2981,13 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Delete private endpoint connection"]
+        #[doc = "Delete private endpoint connection with the specified name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the IoT hub."]
+        #[doc = "* `resource_name`: The name of the IoT hub."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

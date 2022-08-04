@@ -88,6 +88,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Operation to return the list of available operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -140,15 +141,25 @@ pub mod diagnostic_settings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the active diagnostic settings list for AadIam."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
+        #[doc = "Gets the active diagnostic setting for AadIam."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: The name of the diagnostic setting."]
         pub fn get(&self, name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 name: name.into(),
             }
         }
+        #[doc = "Creates or updates diagnostic settings for AadIam."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters supplied to the operation."]
+        #[doc = "* `name`: The name of the diagnostic setting."]
         pub fn create_or_update(
             &self,
             parameters: impl Into<models::DiagnosticSettingsResource>,
@@ -160,6 +171,10 @@ pub mod diagnostic_settings {
                 name: name.into(),
             }
         }
+        #[doc = "Deletes existing diagnostic setting for AadIam."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: The name of the diagnostic setting."]
         pub fn delete(&self, name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -363,6 +378,7 @@ pub mod diagnostic_settings_category {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the diagnostic settings categories for AadIam."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

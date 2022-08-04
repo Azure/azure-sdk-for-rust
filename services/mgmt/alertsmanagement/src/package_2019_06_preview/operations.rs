@@ -95,6 +95,10 @@ pub mod action_rules {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all action rule in a given subscription"]
+        #[doc = "List all action rules of the subscription and given input filters"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -112,6 +116,11 @@ pub mod action_rules {
             }
         }
         #[doc = "Get all action rules created in a resource group"]
+        #[doc = "List all action rules of the subscription, created in given resource group and given input filters"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: Resource group name where the resource is created."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -134,6 +143,12 @@ pub mod action_rules {
             }
         }
         #[doc = "Get action rule by name"]
+        #[doc = "Get a specific action rule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: Resource group name where the resource is created."]
+        #[doc = "* `action_rule_name`: The name of action rule that needs to be fetched"]
         pub fn get_by_name(
             &self,
             subscription_id: impl Into<String>,
@@ -148,6 +163,13 @@ pub mod action_rules {
             }
         }
         #[doc = "Create/update an action rule"]
+        #[doc = "Creates/Updates a specific action rule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: Resource group name where the resource is created."]
+        #[doc = "* `action_rule_name`: The name of action rule that needs to be created/updated"]
+        #[doc = "* `action_rule`: action rule to be created/updated"]
         pub fn create_update(
             &self,
             subscription_id: impl Into<String>,
@@ -164,6 +186,13 @@ pub mod action_rules {
             }
         }
         #[doc = "Patch action rule"]
+        #[doc = "Update enabled flag and/or tags for the given action rule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: Resource group name where the resource is created."]
+        #[doc = "* `action_rule_name`: The name that needs to be updated"]
+        #[doc = "* `action_rule_patch`: Parameters supplied to the operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -180,6 +209,12 @@ pub mod action_rules {
             }
         }
         #[doc = "Delete action rule"]
+        #[doc = "Deletes a given action rule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: Resource group name where the resource is created."]
+        #[doc = "* `action_rule_name`: The name that needs to be deleted"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -729,6 +764,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all operations available through Azure Alerts Management Resource Provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -810,12 +846,20 @@ pub mod alerts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List alerts meta data information based on value of identifier parameter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `identifier`: Identification of the information to be retrieved by API call."]
         pub fn meta_data(&self, identifier: impl Into<String>) -> meta_data::Builder {
             meta_data::Builder {
                 client: self.0.clone(),
                 identifier: identifier.into(),
             }
         }
+        #[doc = "List all existing alerts, where the results can be filtered on the basis of multiple parameters (e.g. time range). The results can then be sorted on the basis specific fields, with the default being lastModifiedDateTime. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_all(&self, subscription_id: impl Into<String>) -> get_all::Builder {
             get_all::Builder {
                 client: self.0.clone(),
@@ -840,6 +884,11 @@ pub mod alerts {
             }
         }
         #[doc = "Get a specific alert."]
+        #[doc = "Get information related to a specific alert"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `alert_id`: Unique ID of an alert instance."]
         pub fn get_by_id(&self, subscription_id: impl Into<String>, alert_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
@@ -847,6 +896,12 @@ pub mod alerts {
                 alert_id: alert_id.into(),
             }
         }
+        #[doc = "Change the state of an alert."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `alert_id`: Unique ID of an alert instance."]
+        #[doc = "* `new_state`: New state of the alert."]
         pub fn change_state(
             &self,
             subscription_id: impl Into<String>,
@@ -861,6 +916,11 @@ pub mod alerts {
                 comment: None,
             }
         }
+        #[doc = "Get the history of an alert, which captures any monitor condition changes (Fired/Resolved) and alert state changes (New/Acknowledged/Closed)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `alert_id`: Unique ID of an alert instance."]
         pub fn get_history(&self, subscription_id: impl Into<String>, alert_id: impl Into<String>) -> get_history::Builder {
             get_history::Builder {
                 client: self.0.clone(),
@@ -868,6 +928,11 @@ pub mod alerts {
                 alert_id: alert_id.into(),
             }
         }
+        #[doc = "Get a summarized count of your alerts grouped by various parameters (e.g. grouping by 'Severity' returns the count of alerts for each severity)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `groupby`: This parameter allows the result set to be grouped by input fields (Maximum 2 comma separated fields supported). For example, groupby=severity or groupby=severity,alertstate."]
         pub fn get_summary(&self, subscription_id: impl Into<String>, groupby: impl Into<String>) -> get_summary::Builder {
             get_summary::Builder {
                 client: self.0.clone(),
@@ -1468,6 +1533,10 @@ pub mod smart_groups {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all Smart Groups within a specified subscription"]
+        #[doc = "List all the Smart Groups within a specified subscription. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_all(&self, subscription_id: impl Into<String>) -> get_all::Builder {
             get_all::Builder {
                 client: self.0.clone(),
@@ -1486,6 +1555,11 @@ pub mod smart_groups {
             }
         }
         #[doc = "Get information related to a specific Smart Group."]
+        #[doc = "Get information related to a specific Smart Group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `smart_group_id`: Smart group unique id. "]
         pub fn get_by_id(&self, subscription_id: impl Into<String>, smart_group_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
@@ -1493,6 +1567,12 @@ pub mod smart_groups {
                 smart_group_id: smart_group_id.into(),
             }
         }
+        #[doc = "Change the state of a Smart Group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `smart_group_id`: Smart group unique id. "]
+        #[doc = "* `new_state`: New state of the alert."]
         pub fn change_state(
             &self,
             subscription_id: impl Into<String>,
@@ -1506,6 +1586,11 @@ pub mod smart_groups {
                 new_state: new_state.into(),
             }
         }
+        #[doc = "Get the history a smart group, which captures any Smart Group state changes (New/Acknowledged/Closed) ."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `smart_group_id`: Smart group unique id. "]
         pub fn get_history(&self, subscription_id: impl Into<String>, smart_group_id: impl Into<String>) -> get_history::Builder {
             get_history::Builder {
                 client: self.0.clone(),
@@ -1839,6 +1924,10 @@ pub mod smart_detector_alert_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all the existing Smart Detector alert rules within the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1846,6 +1935,11 @@ pub mod smart_detector_alert_rules {
                 expand_detector: None,
             }
         }
+        #[doc = "List all the existing Smart Detector alert rules within the subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1858,6 +1952,12 @@ pub mod smart_detector_alert_rules {
                 expand_detector: None,
             }
         }
+        #[doc = "Get a specific Smart Detector alert rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `alert_rule_name`: The name of the alert rule."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1872,6 +1972,13 @@ pub mod smart_detector_alert_rules {
                 expand_detector: None,
             }
         }
+        #[doc = "Create or update a Smart Detector alert rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `alert_rule_name`: The name of the alert rule."]
+        #[doc = "* `parameters`: Parameters supplied to the operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1887,6 +1994,13 @@ pub mod smart_detector_alert_rules {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Patch a specific Smart Detector alert rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `alert_rule_name`: The name of the alert rule."]
+        #[doc = "* `parameters`: Parameters supplied to the operation."]
         pub fn patch(
             &self,
             subscription_id: impl Into<String>,
@@ -1902,6 +2016,12 @@ pub mod smart_detector_alert_rules {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete an existing Smart Detector alert rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `alert_rule_name`: The name of the alert rule."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

@@ -94,6 +94,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Orbital Rest API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -147,12 +148,21 @@ pub mod spacecrafts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Return list of spacecrafts"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Return list of spacecrafts"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -160,6 +170,12 @@ pub mod spacecrafts {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets the specified spacecraft in a specified resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `spacecraft_name`: Spacecraft ID"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -173,6 +189,13 @@ pub mod spacecrafts {
                 spacecraft_name: spacecraft_name.into(),
             }
         }
+        #[doc = "Creates or updates a spacecraft resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `spacecraft_name`: Spacecraft ID"]
+        #[doc = "* `parameters`: The parameters to provide for the created spacecraft."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -188,6 +211,13 @@ pub mod spacecrafts {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates the specified spacecraft tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `spacecraft_name`: Spacecraft ID"]
+        #[doc = "* `parameters`: Parameters supplied to update spacecraft tags."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -203,6 +233,12 @@ pub mod spacecrafts {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a specified spacecraft resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `spacecraft_name`: Spacecraft ID"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -216,6 +252,13 @@ pub mod spacecrafts {
                 spacecraft_name: spacecraft_name.into(),
             }
         }
+        #[doc = "Return list of available contacts"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `spacecraft_name`: Spacecraft ID"]
+        #[doc = "* `parameters`: The parameters to provide for the contacts."]
         pub fn list_available_contacts(
             &self,
             subscription_id: impl Into<String>,
@@ -618,6 +661,12 @@ pub mod contacts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns list of contacts by spacecraftName"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `spacecraft_name`: Spacecraft ID"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -631,6 +680,13 @@ pub mod contacts {
                 spacecraft_name: spacecraft_name.into(),
             }
         }
+        #[doc = "Gets the specified contact in a specified resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `spacecraft_name`: Spacecraft ID"]
+        #[doc = "* `contact_name`: Contact Name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -646,6 +702,14 @@ pub mod contacts {
                 contact_name: contact_name.into(),
             }
         }
+        #[doc = "Creates a contact."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `spacecraft_name`: Spacecraft ID"]
+        #[doc = "* `contact_name`: Contact Name"]
+        #[doc = "* `parameters`: The parameters to provide for the created contact."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -663,6 +727,13 @@ pub mod contacts {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a specified contact"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `spacecraft_name`: Spacecraft ID"]
+        #[doc = "* `contact_name`: Contact Name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -915,6 +986,12 @@ pub mod contact_profiles {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified contact Profile in a specified resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `contact_profile_name`: Contact Profile Name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -928,6 +1005,13 @@ pub mod contact_profiles {
                 contact_profile_name: contact_profile_name.into(),
             }
         }
+        #[doc = "Creates or updates a contact profile"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `contact_profile_name`: Contact Profile Name"]
+        #[doc = "* `parameters`: The parameters to provide for the created Contact Profile."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -943,6 +1027,13 @@ pub mod contact_profiles {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates the specified contact profile tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `parameters`: Parameters supplied to update contact profile tags."]
+        #[doc = "* `contact_profile_name`: Contact Profile Name"]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -958,6 +1049,12 @@ pub mod contact_profiles {
                 contact_profile_name: contact_profile_name.into(),
             }
         }
+        #[doc = "Deletes a specified contact profile resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `contact_profile_name`: Contact Profile Name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -971,12 +1068,21 @@ pub mod contact_profiles {
                 contact_profile_name: contact_profile_name.into(),
             }
         }
+        #[doc = "Returns list of contact profiles"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns list of contact profiles"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1316,6 +1422,11 @@ pub mod available_ground_stations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns list of available ground stations"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `capability`: Ground Station Capability"]
         pub fn list_by_capability(&self, subscription_id: impl Into<String>, capability: impl Into<String>) -> list_by_capability::Builder {
             list_by_capability::Builder {
                 client: self.0.clone(),
@@ -1323,6 +1434,11 @@ pub mod available_ground_stations {
                 capability: capability.into(),
             }
         }
+        #[doc = "Gets the specified  available ground station"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `ground_station_name`: Ground Station name"]
         pub fn get(&self, subscription_id: impl Into<String>, ground_station_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),

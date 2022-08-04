@@ -121,6 +121,11 @@ pub mod cdn_peering_prefixes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the advertised prefixes for the specified peering location"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `peering_location`: The peering location."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list(&self, peering_location: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -208,6 +213,11 @@ pub mod cdn_peering_prefixes {
     }
 }
 impl Client {
+    #[doc = "Checks if the peering service provider is present within 1000 miles of customer's location"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `check_service_provider_availability_input`: The CheckServiceProviderAvailabilityInput indicating customer location and service provider."]
+    #[doc = "* `subscription_id`: The Azure subscription ID."]
     pub fn check_service_provider_availability(
         &self,
         check_service_provider_availability_input: impl Into<models::CheckServiceProviderAvailabilityInput>,
@@ -274,6 +284,12 @@ pub mod legacy_peerings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the legacy peerings under the given subscription matching the specified kind and location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `peering_location`: The location of the peering."]
+        #[doc = "* `kind`: The kind of the peering."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list(
             &self,
             peering_location: impl Into<String>,
@@ -382,6 +398,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available API operations for peering resources."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -461,6 +478,11 @@ pub mod peer_asns {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the peer ASN with the specified name under the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `peer_asn_name`: The peer ASN name."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn get(&self, peer_asn_name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -468,6 +490,12 @@ pub mod peer_asns {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new peer ASN or updates an existing peer ASN with the specified name under the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `peer_asn_name`: The peer ASN name."]
+        #[doc = "* `peer_asn`: The peer ASN."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn create_or_update(
             &self,
             peer_asn_name: impl Into<String>,
@@ -481,6 +509,11 @@ pub mod peer_asns {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing peer ASN with the specified name under the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `peer_asn_name`: The peer ASN name."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn delete(&self, peer_asn_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -488,6 +521,10 @@ pub mod peer_asns {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all of the peer ASNs under the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -736,6 +773,11 @@ pub mod peering_locations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available peering locations for the specified kind of peering."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `kind`: The kind of the peering."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list(&self, kind: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -837,6 +879,13 @@ pub mod registered_asns {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets an existing registered ASN with the specified name under the given subscription, resource group and peering."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `registered_asn_name`: The name of the registered ASN."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -852,6 +901,14 @@ pub mod registered_asns {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new registered ASN with the specified name under the given subscription, resource group and peering."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `registered_asn_name`: The name of the ASN."]
+        #[doc = "* `registered_asn`: The properties needed to create a registered ASN."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -869,6 +926,13 @@ pub mod registered_asns {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing registered ASN with the specified name under the given subscription, resource group and peering."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `registered_asn_name`: The name of the registered ASN."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -884,6 +948,12 @@ pub mod registered_asns {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all registered ASNs under the given subscription, resource group and peering."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list_by_peering(
             &self,
             resource_group_name: impl Into<String>,
@@ -1155,6 +1225,13 @@ pub mod registered_prefixes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets an existing registered prefix with the specified name under the given subscription, resource group and peering."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `registered_prefix_name`: The name of the registered prefix."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1170,6 +1247,14 @@ pub mod registered_prefixes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new registered prefix with the specified name under the given subscription, resource group and peering."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `registered_prefix_name`: The name of the registered prefix."]
+        #[doc = "* `registered_prefix`: The properties needed to create a registered prefix."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1187,6 +1272,13 @@ pub mod registered_prefixes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing registered prefix with the specified name under the given subscription, resource group and peering."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `registered_prefix_name`: The name of the registered prefix."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1202,6 +1294,12 @@ pub mod registered_prefixes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all registered prefixes under the given subscription, resource group and peering."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list_by_peering(
             &self,
             resource_group_name: impl Into<String>,
@@ -1473,6 +1571,12 @@ pub mod peerings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets an existing peering with the specified name under the given subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1486,6 +1590,13 @@ pub mod peerings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new peering or updates an existing peering with the specified name under the given subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `peering`: The properties needed to create or update a peering."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1501,6 +1612,13 @@ pub mod peerings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates tags for a peering with the specified name under the given subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `tags`: The resource tags."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1516,6 +1634,12 @@ pub mod peerings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing peering with the specified name under the given subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1529,6 +1653,11 @@ pub mod peerings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all of the peerings under the given subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -1540,6 +1669,10 @@ pub mod peerings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all of the peerings under the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -1924,6 +2057,12 @@ pub mod received_routes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the prefixes received over the specified peering under the given subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list_by_peering(
             &self,
             resource_group_name: impl Into<String>,
@@ -2070,6 +2209,10 @@ pub mod peering_service_countries {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available countries for peering service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2156,6 +2299,10 @@ pub mod peering_service_locations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available locations for peering service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2251,6 +2398,13 @@ pub mod prefixes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets an existing prefix with the specified name under the given subscription, resource group and peering service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_service_name`: The name of the peering service."]
+        #[doc = "* `prefix_name`: The name of the prefix."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2267,6 +2421,14 @@ pub mod prefixes {
                 expand: None,
             }
         }
+        #[doc = "Creates a new prefix with the specified name under the given subscription, resource group and peering service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_service_name`: The name of the peering service."]
+        #[doc = "* `prefix_name`: The name of the prefix."]
+        #[doc = "* `peering_service_prefix`: The properties needed to create a prefix."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -2284,6 +2446,13 @@ pub mod prefixes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing prefix with the specified name under the given subscription, resource group and peering service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_service_name`: The name of the peering service."]
+        #[doc = "* `prefix_name`: The name of the prefix."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2299,6 +2468,12 @@ pub mod prefixes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all prefixes under the given subscription, resource group and peering service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_service_name`: The name of the peering service."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list_by_peering_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -2587,6 +2762,10 @@ pub mod peering_service_providers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available peering service locations for the specified kind of peering."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2673,6 +2852,12 @@ pub mod peering_services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets an existing peering service with the specified name under the given subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_service_name`: The name of the peering."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2686,6 +2871,13 @@ pub mod peering_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new peering service or updates an existing peering with the specified name under the given subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_service_name`: The name of the peering service."]
+        #[doc = "* `peering_service`: The properties needed to create or update a peering service."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -2701,6 +2893,13 @@ pub mod peering_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates tags for a peering service with the specified name under the given subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_service_name`: The name of the peering service."]
+        #[doc = "* `tags`: The resource tags."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -2716,6 +2915,12 @@ pub mod peering_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing peering service with the specified name under the given subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `peering_service_name`: The name of the peering service."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2729,6 +2934,11 @@ pub mod peering_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all of the peering services under the given subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -2740,6 +2950,10 @@ pub mod peering_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all of the peerings under the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
