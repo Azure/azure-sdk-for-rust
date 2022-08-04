@@ -684,6 +684,7 @@ fn add_references_for_schema(list: &mut Vec<TypedReference>, schema: &Schema) {
     }
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub enum TypeName {
     Reference(String),
     Array(Box<TypeName>),
@@ -695,6 +696,8 @@ pub enum TypeName {
     Float64,
     Boolean,
     String,
+    DateTime,
+    DateTimeRfc1123,
 }
 
 pub fn get_type_name_for_schema(schema: &SchemaCommon) -> Result<TypeName> {
@@ -720,7 +723,15 @@ pub fn get_type_name_for_schema(schema: &SchemaCommon) -> Result<TypeName> {
                     TypeName::Float64
                 }
             }
-            DataType::String => TypeName::String,
+            DataType::String => {
+                if format == Some("date-time") {
+                    TypeName::DateTime
+                } else if format == Some("date-time-rfc1123") {
+                    TypeName::DateTimeRfc1123
+                } else {
+                    TypeName::String
+                }
+            }
             DataType::Boolean => TypeName::Boolean,
             DataType::Object => TypeName::Value,
             DataType::File => TypeName::Bytes,
