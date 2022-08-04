@@ -17,7 +17,7 @@ edition = "2021"
 [dependencies]
 azure_core = { path = "../core", version = "0.3" }
 base64 = "0.13"
-time = "0.3"
+time = "0.3.10"
 log = "0.4"
 url = "2.2"
 hmac = "0.12"
