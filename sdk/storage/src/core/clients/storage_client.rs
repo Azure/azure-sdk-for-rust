@@ -337,11 +337,10 @@ impl StorageClient {
     }
 
     #[cfg(feature = "mock_transport_framework")]
-    /// Create a new instance of `CosmosClient` using a mock backend. The
+    /// Create a new instance of `StorageClient` using a mock backend. The
     /// transaction name is used to look up which files to read to validate the
     /// request and mock the response.
-    // TODO(yosh): consider adding a general way to replace transports, and remove this method.
-    pub fn with_mock(
+    pub fn new_mock(
         account: impl Into<String>,
         storage_credentials: StorageCredentials,
         transaction_name: impl Into<String>,

@@ -22,7 +22,7 @@ pub fn initialize(transaction_name: impl Into<String>) -> azure_core::Result<Sto
     .then(|| StorageCredentials::TokenCredential(Arc::new(DefaultAzureCredential::default())))
     .unwrap_or_else(|| StorageCredentials::BearerToken(String::default()));
 
-    Ok(StorageClient::with_mock(
+    Ok(StorageClient::new_mock(
         account_name,
         storage_credentials,
         transaction_name,
