@@ -16,12 +16,12 @@ pub const EMULATOR_ACCOUNT_KEY: &str =
 
 /// A builder for the cosmos client.
 #[derive(Debug, Clone)]
-pub struct CosmosClientBuilder {
+pub struct CosmosClientOptions {
     cloud_location: CloudLocation,
     options: ClientOptions,
 }
 
-impl CosmosClientBuilder {
+impl CosmosClientOptions {
     /// Create a new instance of `CosmosClientBuilder`.
     pub fn new(account: impl Into<String>, auth_token: AuthorizationToken) -> Self {
         Self::with_location(CloudLocation::Public {
@@ -35,15 +35,6 @@ impl CosmosClientBuilder {
         Self {
             options: ClientOptions::default(),
             cloud_location,
-        }
-    }
-
-    /// Convert the builder into a `CosmosClient` instance.
-    pub fn build(self) -> CosmosClient {
-        let auth_token = self.cloud_location.auth_token();
-        CosmosClient {
-            pipeline: new_pipeline_from_options(self.options, auth_token),
-            cloud_location: self.cloud_location,
         }
     }
 
@@ -76,15 +67,16 @@ pub struct CosmosClient {
 impl CosmosClient {
     /// Create a new `CosmosClient` which connects to the account's instance in the public Azure cloud.
     pub fn new(account: impl Into<String>, auth_token: AuthorizationToken) -> Self {
-        CosmosClientBuilder::new(account, auth_token).build()
+        Self::with_options(CosmosClientOptions::new(account, auth_token))
     }
 
     /// Create a new `CosmosClientBuilder`.
-    pub fn builder(
-        account: impl Into<String>,
-        auth_token: AuthorizationToken,
-    ) -> CosmosClientBuilder {
-        CosmosClientBuilder::new(account, auth_token)
+    pub fn with_options(options: CosmosClientOptions) -> Self {
+        let auth_token = options.cloud_location.auth_token();
+        CosmosClient {
+            pipeline: new_pipeline_from_options(options.options, auth_token),
+            cloud_location: options.cloud_location,
+        }
     }
 
     /// Set the auth token used

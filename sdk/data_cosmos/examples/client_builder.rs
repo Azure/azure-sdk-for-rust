@@ -1,6 +1,7 @@
 use azure_core::{RetryOptions, TransportOptions};
 use clap::Parser;
 
+use azure_data_cosmos::clients::CosmosClientOptions;
 use azure_data_cosmos::prelude::*;
 
 #[derive(Debug, Parser)]
@@ -20,11 +21,11 @@ async fn main() -> azure_core::Result<()> {
     let args = Args::parse();
     let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
 
-    let _database = CosmosClient::builder(args.account, authorization_token)
+    let options = CosmosClientOptions::new(args.account, authorization_token)
         .retry(RetryOptions::default())
-        .transport(TransportOptions::default())
-        .build()
-        .database_client(args.database_name);
+        .transport(TransportOptions::default());
+
+    let _database = CosmosClient::with_options(options).database_client(args.database_name);
 
     // ... the database client is now ready to be used!
 
