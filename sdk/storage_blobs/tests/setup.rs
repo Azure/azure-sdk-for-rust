@@ -2,6 +2,9 @@ use azure_identity::DefaultAzureCredential;
 use azure_storage::clients::StorageClient;
 use std::sync::Arc;
 
+#[cfg(feature = "mock_transport_framework")]
+use azure_storage::clients::StorageCredentials;
+
 #[cfg(not(feature = "mock_transport_framework"))]
 pub fn initialize() -> azure_core::Result<StorageClient> {
     let credentials = Arc::new(DefaultAzureCredential::default());
