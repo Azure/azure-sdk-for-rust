@@ -1110,7 +1110,12 @@ impl ToTokens for BuilderSettersCode {
             if !is_vec {
                 value = quote! { Some(#value) };
             }
+            let doc_comment = match &param.description {
+                Some(desc) if !desc.is_empty() => quote! { #[ doc = #desc ] },
+                _ => quote! {},
+            };
             tokens.extend(quote! {
+                #doc_comment
                 pub fn #variable_name(mut self, #variable_name: #type_name) -> Self {
                     self.#variable_name = #value;
                     self
