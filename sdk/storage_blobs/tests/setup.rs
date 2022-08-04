@@ -1,5 +1,5 @@
 use azure_identity::DefaultAzureCredential;
-use azure_storage::clients::{StorageClient, StorageCredentials};
+use azure_storage::clients::StorageClient;
 use std::sync::Arc;
 
 #[cfg(not(feature = "mock_transport_framework"))]
