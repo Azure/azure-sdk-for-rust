@@ -937,8 +937,8 @@ pub mod test {
             pub(crate) client: super::super::Client,
             pub(crate) order_by: Option<String>,
             pub(crate) search: Option<String>,
-            pub(crate) last_updated_start_time: Option<String>,
-            pub(crate) last_updated_end_time: Option<String>,
+            pub(crate) last_updated_start_time: Option<time::OffsetDateTime>,
+            pub(crate) last_updated_end_time: Option<time::OffsetDateTime>,
             pub(crate) continuation_token: Option<String>,
             pub(crate) max_page_size: Option<i32>,
         }
@@ -954,12 +954,12 @@ pub mod test {
                 self
             }
             #[doc = "Start DateTime(ISO 8601 literal format) of the last updated time range to filter tests."]
-            pub fn last_updated_start_time(mut self, last_updated_start_time: impl Into<String>) -> Self {
+            pub fn last_updated_start_time(mut self, last_updated_start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.last_updated_start_time = Some(last_updated_start_time.into());
                 self
             }
             #[doc = "End DateTime(ISO 8601 literal format) of the last updated time range to filter tests."]
-            pub fn last_updated_end_time(mut self, last_updated_end_time: impl Into<String>) -> Self {
+            pub fn last_updated_end_time(mut self, last_updated_end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.last_updated_end_time = Some(last_updated_end_time.into());
                 self
             }
@@ -997,12 +997,12 @@ pub mod test {
                         if let Some(last_updated_start_time) = &this.last_updated_start_time {
                             req.url_mut()
                                 .query_pairs_mut()
-                                .append_pair("lastUpdatedStartTime", last_updated_start_time);
+                                .append_pair("lastUpdatedStartTime", &last_updated_start_time.to_string());
                         }
                         if let Some(last_updated_end_time) = &this.last_updated_end_time {
                             req.url_mut()
                                 .query_pairs_mut()
-                                .append_pair("lastUpdatedEndTime", last_updated_end_time);
+                                .append_pair("lastUpdatedEndTime", &last_updated_end_time.to_string());
                         }
                         if let Some(continuation_token) = &this.continuation_token {
                             req.url_mut().query_pairs_mut().append_pair("continuationToken", continuation_token);
@@ -1545,8 +1545,8 @@ pub mod test_run {
             pub(crate) order_by: Option<String>,
             pub(crate) continuation_token: Option<String>,
             pub(crate) search: Option<String>,
-            pub(crate) execution_from: Option<String>,
-            pub(crate) execution_to: Option<String>,
+            pub(crate) execution_from: Option<time::OffsetDateTime>,
+            pub(crate) execution_to: Option<time::OffsetDateTime>,
             pub(crate) status: Option<String>,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) test_id: Option<String>,
@@ -1568,12 +1568,12 @@ pub mod test_run {
                 self
             }
             #[doc = "The end DateTime(ISO 8601 literal format) of test-run execution time filter range."]
-            pub fn execution_from(mut self, execution_from: impl Into<String>) -> Self {
+            pub fn execution_from(mut self, execution_from: impl Into<time::OffsetDateTime>) -> Self {
                 self.execution_from = Some(execution_from.into());
                 self
             }
             #[doc = "The start DateTime(ISO 8601 literal format) of test-run execution time filter range."]
-            pub fn execution_to(mut self, execution_to: impl Into<String>) -> Self {
+            pub fn execution_to(mut self, execution_to: impl Into<time::OffsetDateTime>) -> Self {
                 self.execution_to = Some(execution_to.into());
                 self
             }
@@ -1617,10 +1617,14 @@ pub mod test_run {
                             req.url_mut().query_pairs_mut().append_pair("search", search);
                         }
                         if let Some(execution_from) = &this.execution_from {
-                            req.url_mut().query_pairs_mut().append_pair("executionFrom", execution_from);
+                            req.url_mut()
+                                .query_pairs_mut()
+                                .append_pair("executionFrom", &execution_from.to_string());
                         }
                         if let Some(execution_to) = &this.execution_to {
-                            req.url_mut().query_pairs_mut().append_pair("executionTo", execution_to);
+                            req.url_mut()
+                                .query_pairs_mut()
+                                .append_pair("executionTo", &execution_to.to_string());
                         }
                         if let Some(status) = &this.status {
                             req.url_mut().query_pairs_mut().append_pair("status", status);

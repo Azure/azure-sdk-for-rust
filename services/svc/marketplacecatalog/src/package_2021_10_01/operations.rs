@@ -166,7 +166,7 @@ pub mod public_offers {
                         }
                         let hide_keys = &this.hide_keys;
                         for value in &this.hide_keys {
-                            req.url_mut().query_pairs_mut().append_pair("hideKeys", value);
+                            req.url_mut().query_pairs_mut().append_pair("hideKeys", &value.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -228,7 +228,7 @@ pub mod public_offers {
                         }
                         let hide_keys = &this.hide_keys;
                         for value in &this.hide_keys {
-                            req.url_mut().query_pairs_mut().append_pair("hideKeys", value);
+                            req.url_mut().query_pairs_mut().append_pair("hideKeys", &value.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);

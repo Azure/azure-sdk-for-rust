@@ -93,8 +93,8 @@ pub mod usage_aggregates {
         #[doc = "* `subscription_id`: It uniquely identifies Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
-            reported_start_time: impl Into<String>,
-            reported_end_time: impl Into<String>,
+            reported_start_time: impl Into<time::OffsetDateTime>,
+            reported_end_time: impl Into<time::OffsetDateTime>,
             subscription_id: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
@@ -114,8 +114,8 @@ pub mod usage_aggregates {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
-            pub(crate) reported_start_time: String,
-            pub(crate) reported_end_time: String,
+            pub(crate) reported_start_time: time::OffsetDateTime,
+            pub(crate) reported_end_time: time::OffsetDateTime,
             pub(crate) subscription_id: String,
             pub(crate) show_details: Option<bool>,
             pub(crate) aggregation_granularity: Option<String>,
@@ -182,9 +182,11 @@ pub mod usage_aggregates {
                                 let reported_start_time = &this.reported_start_time;
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair("reportedStartTime", reported_start_time);
+                                    .append_pair("reportedStartTime", &reported_start_time.to_string());
                                 let reported_end_time = &this.reported_end_time;
-                                req.url_mut().query_pairs_mut().append_pair("reportedEndTime", reported_end_time);
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair("reportedEndTime", &reported_end_time.to_string());
                                 if let Some(show_details) = &this.show_details {
                                     req.url_mut()
                                         .query_pairs_mut()

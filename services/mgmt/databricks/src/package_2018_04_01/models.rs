@@ -34,7 +34,7 @@ impl CreatedBy {
         Self::default()
     }
 }
-pub type CreatedDateTime = String;
+pub type CreatedDateTime = time::OffsetDateTime;
 #[doc = "The object that contains details of encryption used on the workspace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Encryption {

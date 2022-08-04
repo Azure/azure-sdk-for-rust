@@ -7588,7 +7588,7 @@ pub mod deployments {
                                     .append_pair(azure_core::query_param::API_VERSION, "2022-03-01-preview");
                                 let version = &this.version;
                                 for value in &this.version {
-                                    req.url_mut().query_pairs_mut().append_pair("version", value);
+                                    req.url_mut().query_pairs_mut().append_pair("version", &value.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -7676,7 +7676,7 @@ pub mod deployments {
                                     .append_pair(azure_core::query_param::API_VERSION, "2022-03-01-preview");
                                 let version = &this.version;
                                 for value in &this.version {
-                                    req.url_mut().query_pairs_mut().append_pair("version", value);
+                                    req.url_mut().query_pairs_mut().append_pair("version", &value.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);

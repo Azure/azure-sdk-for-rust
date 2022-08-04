@@ -414,11 +414,11 @@ pub struct CatalogItem {
     #[serde(rename = "excludeFromBootstrap")]
     pub exclude_from_bootstrap: bool,
     #[doc = "Notification creation time"]
-    #[serde(rename = "hydrationNotificationReceivedAt", default, skip_serializing_if = "Option::is_none")]
-    pub hydration_notification_received_at: Option<String>,
+    #[serde(rename = "hydrationNotificationReceivedAt", with = "azure_core::date::rfc3339::option")]
+    pub hydration_notification_received_at: Option<time::OffsetDateTime>,
     #[doc = "Last modified date"]
-    #[serde(rename = "bigCatLastModifiedDate", default, skip_serializing_if = "Option::is_none")]
-    pub big_cat_last_modified_date: Option<String>,
+    #[serde(rename = "bigCatLastModifiedDate", with = "azure_core::date::rfc3339::option")]
+    pub big_cat_last_modified_date: Option<time::OffsetDateTime>,
     #[doc = "Indication to disable sending email on purchase"]
     #[serde(rename = "disableSendEmailOnPurchase")]
     pub disable_send_email_on_purchase: bool,

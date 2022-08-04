@@ -440,7 +440,7 @@ pub mod web_pub_sub {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         let excluded = &this.excluded;
                         for value in &this.excluded {
-                            req.url_mut().query_pairs_mut().append_pair("excluded", value);
+                            req.url_mut().query_pairs_mut().append_pair("excluded", &value.to_string());
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.message)?;
@@ -689,7 +689,7 @@ pub mod web_pub_sub {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         let excluded = &this.excluded;
                         for value in &this.excluded {
-                            req.url_mut().query_pairs_mut().append_pair("excluded", value);
+                            req.url_mut().query_pairs_mut().append_pair("excluded", &value.to_string());
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.message)?;

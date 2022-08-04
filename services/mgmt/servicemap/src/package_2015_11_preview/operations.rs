@@ -280,9 +280,9 @@ pub mod machines {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) live: Option<bool>,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
-            pub(crate) timestamp: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
+            pub(crate) timestamp: Option<time::OffsetDateTime>,
             pub(crate) top: Option<i32>,
         }
         impl Builder {
@@ -292,17 +292,17 @@ pub mod machines {
                 self
             }
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
             #[doc = "UTC date and time specifying a time instance relative to which to evaluate each machine resource. Only applies when `live=false`. When not specified, the service uses DateTime.UtcNow."]
-            pub fn timestamp(mut self, timestamp: impl Into<String>) -> Self {
+            pub fn timestamp(mut self, timestamp: impl Into<time::OffsetDateTime>) -> Self {
                 self.timestamp = Some(timestamp.into());
                 self
             }
@@ -353,13 +353,13 @@ pub mod machines {
                                     req.url_mut().query_pairs_mut().append_pair("live", &live.to_string());
                                 }
                                 if let Some(start_time) = &this.start_time {
-                                    req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                                    req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                                 }
                                 if let Some(end_time) = &this.end_time {
-                                    req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                                    req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                                 }
                                 if let Some(timestamp) = &this.timestamp {
-                                    req.url_mut().query_pairs_mut().append_pair("timestamp", timestamp);
+                                    req.url_mut().query_pairs_mut().append_pair("timestamp", &timestamp.to_string());
                                 }
                                 if let Some(top) = &this.top {
                                     req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
@@ -397,11 +397,11 @@ pub mod machines {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
-            pub(crate) timestamp: Option<String>,
+            pub(crate) timestamp: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "UTC date and time specifying a time instance relative to which to evaluate the machine resource. When not specified, the service uses DateTime.UtcNow."]
-            pub fn timestamp(mut self, timestamp: impl Into<String>) -> Self {
+            pub fn timestamp(mut self, timestamp: impl Into<time::OffsetDateTime>) -> Self {
                 self.timestamp = Some(timestamp.into());
                 self
             }
@@ -421,7 +421,7 @@ pub mod machines {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2015-11-01-preview");
                         if let Some(timestamp) = &this.timestamp {
-                            req.url_mut().query_pairs_mut().append_pair("timestamp", timestamp);
+                            req.url_mut().query_pairs_mut().append_pair("timestamp", &timestamp.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -453,17 +453,17 @@ pub mod machines {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -483,10 +483,10 @@ pub mod machines {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2015-11-01-preview");
                         if let Some(start_time) = &this.start_time {
-                            req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                            req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                         }
                         if let Some(end_time) = &this.end_time {
-                            req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                            req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -518,17 +518,17 @@ pub mod machines {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -571,10 +571,10 @@ pub mod machines {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2015-11-01-preview");
                                 if let Some(start_time) = &this.start_time {
-                                    req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                                    req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                                 }
                                 if let Some(end_time) = &this.end_time {
-                                    req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                                    req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -610,9 +610,9 @@ pub mod machines {
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
             pub(crate) live: Option<bool>,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
-            pub(crate) timestamp: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
+            pub(crate) timestamp: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "Specifies whether to return live resources (true) or inventory resources (false). Defaults to **true**. When retrieving live resources, the start time (`startTime`) and end time (`endTime`) of the desired interval should be included. When retrieving inventory resources, an optional timestamp (`timestamp`) parameter can be specified to return the version of each resource closest (not-after) that timestamp."]
@@ -621,17 +621,17 @@ pub mod machines {
                 self
             }
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
             #[doc = "UTC date and time specifying a time instance relative to which to evaluate all process resource. Only applies when `live=false`. When not specified, the service uses DateTime.UtcNow."]
-            pub fn timestamp(mut self, timestamp: impl Into<String>) -> Self {
+            pub fn timestamp(mut self, timestamp: impl Into<time::OffsetDateTime>) -> Self {
                 self.timestamp = Some(timestamp.into());
                 self
             }
@@ -677,13 +677,13 @@ pub mod machines {
                                     req.url_mut().query_pairs_mut().append_pair("live", &live.to_string());
                                 }
                                 if let Some(start_time) = &this.start_time {
-                                    req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                                    req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                                 }
                                 if let Some(end_time) = &this.end_time {
-                                    req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                                    req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                                 }
                                 if let Some(timestamp) = &this.timestamp {
-                                    req.url_mut().query_pairs_mut().append_pair("timestamp", timestamp);
+                                    req.url_mut().query_pairs_mut().append_pair("timestamp", &timestamp.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -718,17 +718,17 @@ pub mod machines {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -771,10 +771,10 @@ pub mod machines {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2015-11-01-preview");
                                 if let Some(start_time) = &this.start_time {
-                                    req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                                    req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                                 }
                                 if let Some(end_time) = &this.end_time {
-                                    req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                                    req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -809,17 +809,17 @@ pub mod machines {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -862,10 +862,10 @@ pub mod machines {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2015-11-01-preview");
                                 if let Some(start_time) = &this.start_time {
-                                    req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                                    req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                                 }
                                 if let Some(end_time) = &this.end_time {
-                                    req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                                    req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1014,11 +1014,11 @@ pub mod processes {
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
             pub(crate) process_name: String,
-            pub(crate) timestamp: Option<String>,
+            pub(crate) timestamp: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "UTC date and time specifying a time instance relative to which to evaluate a resource. When not specified, the service uses DateTime.UtcNow."]
-            pub fn timestamp(mut self, timestamp: impl Into<String>) -> Self {
+            pub fn timestamp(mut self, timestamp: impl Into<time::OffsetDateTime>) -> Self {
                 self.timestamp = Some(timestamp.into());
                 self
             }
@@ -1038,7 +1038,7 @@ pub mod processes {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2015-11-01-preview");
                         if let Some(timestamp) = &this.timestamp {
-                            req.url_mut().query_pairs_mut().append_pair("timestamp", timestamp);
+                            req.url_mut().query_pairs_mut().append_pair("timestamp", &timestamp.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1071,17 +1071,17 @@ pub mod processes {
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
             pub(crate) process_name: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -1101,10 +1101,10 @@ pub mod processes {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2015-11-01-preview");
                         if let Some(start_time) = &this.start_time {
-                            req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                            req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                         }
                         if let Some(end_time) = &this.end_time {
-                            req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                            req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1137,17 +1137,17 @@ pub mod processes {
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
             pub(crate) process_name: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -1190,10 +1190,10 @@ pub mod processes {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2015-11-01-preview");
                                 if let Some(start_time) = &this.start_time {
-                                    req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                                    req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                                 }
                                 if let Some(end_time) = &this.end_time {
-                                    req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                                    req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1229,17 +1229,17 @@ pub mod processes {
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
             pub(crate) process_name: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -1282,10 +1282,10 @@ pub mod processes {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2015-11-01-preview");
                                 if let Some(start_time) = &this.start_time {
-                                    req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                                    req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                                 }
                                 if let Some(end_time) = &this.end_time {
-                                    req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                                    req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1435,17 +1435,17 @@ pub mod ports {
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
             pub(crate) port_name: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -1465,10 +1465,10 @@ pub mod ports {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2015-11-01-preview");
                         if let Some(start_time) = &this.start_time {
-                            req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                            req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                         }
                         if let Some(end_time) = &this.end_time {
-                            req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                            req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1501,17 +1501,17 @@ pub mod ports {
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
             pub(crate) port_name: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -1531,10 +1531,10 @@ pub mod ports {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2015-11-01-preview");
                         if let Some(start_time) = &this.start_time {
-                            req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                            req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                         }
                         if let Some(end_time) = &this.end_time {
-                            req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                            req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1567,17 +1567,17 @@ pub mod ports {
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
             pub(crate) port_name: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -1620,10 +1620,10 @@ pub mod ports {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2015-11-01-preview");
                                 if let Some(start_time) = &this.start_time {
-                                    req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                                    req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                                 }
                                 if let Some(end_time) = &this.end_time {
-                                    req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                                    req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1659,17 +1659,17 @@ pub mod ports {
             pub(crate) workspace_name: String,
             pub(crate) machine_name: String,
             pub(crate) port_name: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -1712,10 +1712,10 @@ pub mod ports {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2015-11-01-preview");
                                 if let Some(start_time) = &this.start_time {
-                                    req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                                    req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                                 }
                                 if let Some(end_time) = &this.end_time {
-                                    req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                                    req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1829,17 +1829,17 @@ pub mod client_groups {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) client_group_name: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -1859,10 +1859,10 @@ pub mod client_groups {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2015-11-01-preview");
                         if let Some(start_time) = &this.start_time {
-                            req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                            req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                         }
                         if let Some(end_time) = &this.end_time {
-                            req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                            req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1894,17 +1894,17 @@ pub mod client_groups {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) client_group_name: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -1924,10 +1924,10 @@ pub mod client_groups {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2015-11-01-preview");
                         if let Some(start_time) = &this.start_time {
-                            req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                            req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                         }
                         if let Some(end_time) = &this.end_time {
-                            req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                            req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1959,18 +1959,18 @@ pub mod client_groups {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) client_group_name: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
             pub(crate) top: Option<i32>,
         }
         impl Builder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -2018,10 +2018,10 @@ pub mod client_groups {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2015-11-01-preview");
                                 if let Some(start_time) = &this.start_time {
-                                    req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                                    req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                                 }
                                 if let Some(end_time) = &this.end_time {
-                                    req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                                    req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                                 }
                                 if let Some(top) = &this.top {
                                     req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
@@ -2161,17 +2161,17 @@ pub mod summaries {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -2191,10 +2191,10 @@ pub mod summaries {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2015-11-01-preview");
                         if let Some(start_time) = &this.start_time {
-                            req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                            req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                         }
                         if let Some(end_time) = &this.end_time {
-                            req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                            req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -2345,17 +2345,17 @@ pub mod machine_groups {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -2398,10 +2398,10 @@ pub mod machine_groups {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2015-11-01-preview");
                                 if let Some(start_time) = &this.start_time {
-                                    req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                                    req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                                 }
                                 if let Some(end_time) = &this.end_time {
-                                    req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                                    req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -2484,17 +2484,17 @@ pub mod machine_groups {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) machine_group_name: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -2514,10 +2514,10 @@ pub mod machine_groups {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2015-11-01-preview");
                         if let Some(start_time) = &this.start_time {
-                            req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                            req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                         }
                         if let Some(end_time) = &this.end_time {
-                            req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                            req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);

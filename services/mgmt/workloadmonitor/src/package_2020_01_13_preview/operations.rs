@@ -469,8 +469,8 @@ pub mod health_monitors {
             pub(crate) monitor_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) expand: Option<String>,
-            pub(crate) start_timestamp_utc: Option<String>,
-            pub(crate) end_timestamp_utc: Option<String>,
+            pub(crate) start_timestamp_utc: Option<time::OffsetDateTime>,
+            pub(crate) end_timestamp_utc: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "Optionally filter by heartbeat condition. Example: $filter=isHeartbeat eq false."]
@@ -484,12 +484,12 @@ pub mod health_monitors {
                 self
             }
             #[doc = "The start of the time window."]
-            pub fn start_timestamp_utc(mut self, start_timestamp_utc: impl Into<String>) -> Self {
+            pub fn start_timestamp_utc(mut self, start_timestamp_utc: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_timestamp_utc = Some(start_timestamp_utc.into());
                 self
             }
             #[doc = "The end of the time window."]
-            pub fn end_timestamp_utc(mut self, end_timestamp_utc: impl Into<String>) -> Self {
+            pub fn end_timestamp_utc(mut self, end_timestamp_utc: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_timestamp_utc = Some(end_timestamp_utc.into());
                 self
             }
@@ -540,10 +540,12 @@ pub mod health_monitors {
                                 if let Some(start_timestamp_utc) = &this.start_timestamp_utc {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair("startTimestampUtc", start_timestamp_utc);
+                                        .append_pair("startTimestampUtc", &start_timestamp_utc.to_string());
                                 }
                                 if let Some(end_timestamp_utc) = &this.end_timestamp_utc {
-                                    req.url_mut().query_pairs_mut().append_pair("endTimestampUtc", end_timestamp_utc);
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("endTimestampUtc", &end_timestamp_utc.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);

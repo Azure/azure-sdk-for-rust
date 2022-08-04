@@ -235,7 +235,7 @@ pub mod digital_twin_models {
                                 }
                                 let dependencies_for = &this.dependencies_for;
                                 for value in &this.dependencies_for {
-                                    req.url_mut().query_pairs_mut().append_pair("dependenciesFor", value);
+                                    req.url_mut().query_pairs_mut().append_pair("dependenciesFor", &value.to_string());
                                 }
                                 if let Some(include_model_definition) = &this.include_model_definition {
                                     req.url_mut()

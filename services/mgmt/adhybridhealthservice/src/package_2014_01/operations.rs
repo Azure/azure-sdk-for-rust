@@ -1012,8 +1012,8 @@ pub mod adds_services {
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
             pub(crate) group_key: Option<String>,
-            pub(crate) from_date: Option<String>,
-            pub(crate) to_date: Option<String>,
+            pub(crate) from_date: Option<time::OffsetDateTime>,
+            pub(crate) to_date: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "The group key"]
@@ -1022,12 +1022,12 @@ pub mod adds_services {
                 self
             }
             #[doc = "The start date."]
-            pub fn from_date(mut self, from_date: impl Into<String>) -> Self {
+            pub fn from_date(mut self, from_date: impl Into<time::OffsetDateTime>) -> Self {
                 self.from_date = Some(from_date.into());
                 self
             }
             #[doc = "The end date."]
-            pub fn to_date(mut self, to_date: impl Into<String>) -> Self {
+            pub fn to_date(mut self, to_date: impl Into<time::OffsetDateTime>) -> Self {
                 self.to_date = Some(to_date.into());
                 self
             }
@@ -1056,10 +1056,10 @@ pub mod adds_services {
                             req.url_mut().query_pairs_mut().append_pair("groupKey", group_key);
                         }
                         if let Some(from_date) = &this.from_date {
-                            req.url_mut().query_pairs_mut().append_pair("fromDate", from_date);
+                            req.url_mut().query_pairs_mut().append_pair("fromDate", &from_date.to_string());
                         }
                         if let Some(to_date) = &this.to_date {
-                            req.url_mut().query_pairs_mut().append_pair("toDate", to_date);
+                            req.url_mut().query_pairs_mut().append_pair("toDate", &to_date.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -1241,8 +1241,8 @@ pub mod adds_services {
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) state: Option<String>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "The alert property filter to apply."]
@@ -1256,12 +1256,12 @@ pub mod adds_services {
                 self
             }
             #[doc = "The start date to query for."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "The end date till when to query for."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -1315,10 +1315,10 @@ pub mod adds_services {
                                     req.url_mut().query_pairs_mut().append_pair("state", state);
                                 }
                                 if let Some(from) = &this.from {
-                                    req.url_mut().query_pairs_mut().append_pair("from", from);
+                                    req.url_mut().query_pairs_mut().append_pair("from", &from.to_string());
                                 }
                                 if let Some(to) = &this.to {
-                                    req.url_mut().query_pairs_mut().append_pair("to", to);
+                                    req.url_mut().query_pairs_mut().append_pair("to", &to.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1480,8 +1480,8 @@ pub mod alerts {
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) state: Option<String>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "The alert property filter to apply."]
@@ -1495,12 +1495,12 @@ pub mod alerts {
                 self
             }
             #[doc = "The start date to query for."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "The end date till when to query for."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -1553,10 +1553,10 @@ pub mod alerts {
                                     req.url_mut().query_pairs_mut().append_pair("state", state);
                                 }
                                 if let Some(from) = &this.from {
-                                    req.url_mut().query_pairs_mut().append_pair("from", from);
+                                    req.url_mut().query_pairs_mut().append_pair("from", &from.to_string());
                                 }
                                 if let Some(to) = &this.to {
-                                    req.url_mut().query_pairs_mut().append_pair("to", to);
+                                    req.url_mut().query_pairs_mut().append_pair("to", &to.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -2601,8 +2601,8 @@ pub mod adds_service {
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
             pub(crate) group_key: Option<String>,
-            pub(crate) from_date: Option<String>,
-            pub(crate) to_date: Option<String>,
+            pub(crate) from_date: Option<time::OffsetDateTime>,
+            pub(crate) to_date: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "The group key"]
@@ -2611,12 +2611,12 @@ pub mod adds_service {
                 self
             }
             #[doc = "The start date."]
-            pub fn from_date(mut self, from_date: impl Into<String>) -> Self {
+            pub fn from_date(mut self, from_date: impl Into<time::OffsetDateTime>) -> Self {
                 self.from_date = Some(from_date.into());
                 self
             }
             #[doc = "The end date."]
-            pub fn to_date(mut self, to_date: impl Into<String>) -> Self {
+            pub fn to_date(mut self, to_date: impl Into<time::OffsetDateTime>) -> Self {
                 self.to_date = Some(to_date.into());
                 self
             }
@@ -2645,10 +2645,10 @@ pub mod adds_service {
                             req.url_mut().query_pairs_mut().append_pair("groupKey", group_key);
                         }
                         if let Some(from_date) = &this.from_date {
-                            req.url_mut().query_pairs_mut().append_pair("fromDate", from_date);
+                            req.url_mut().query_pairs_mut().append_pair("fromDate", &from_date.to_string());
                         }
                         if let Some(to_date) = &this.to_date {
-                            req.url_mut().query_pairs_mut().append_pair("toDate", to_date);
+                            req.url_mut().query_pairs_mut().append_pair("toDate", &to_date.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -3803,8 +3803,8 @@ pub mod services {
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) state: Option<String>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "The alert property filter to apply."]
@@ -3818,12 +3818,12 @@ pub mod services {
                 self
             }
             #[doc = "The start date to query for."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "The end date till when to query for."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -3876,10 +3876,10 @@ pub mod services {
                                     req.url_mut().query_pairs_mut().append_pair("state", state);
                                 }
                                 if let Some(from) = &this.from {
-                                    req.url_mut().query_pairs_mut().append_pair("from", from);
+                                    req.url_mut().query_pairs_mut().append_pair("from", &from.to_string());
                                 }
                                 if let Some(to) = &this.to {
-                                    req.url_mut().query_pairs_mut().append_pair("to", to);
+                                    req.url_mut().query_pairs_mut().append_pair("to", &to.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -4540,8 +4540,8 @@ pub mod services {
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
             pub(crate) group_key: Option<String>,
-            pub(crate) from_date: Option<String>,
-            pub(crate) to_date: Option<String>,
+            pub(crate) from_date: Option<time::OffsetDateTime>,
+            pub(crate) to_date: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "The group key"]
@@ -4550,12 +4550,12 @@ pub mod services {
                 self
             }
             #[doc = "The start date."]
-            pub fn from_date(mut self, from_date: impl Into<String>) -> Self {
+            pub fn from_date(mut self, from_date: impl Into<time::OffsetDateTime>) -> Self {
                 self.from_date = Some(from_date.into());
                 self
             }
             #[doc = "The end date."]
-            pub fn to_date(mut self, to_date: impl Into<String>) -> Self {
+            pub fn to_date(mut self, to_date: impl Into<time::OffsetDateTime>) -> Self {
                 self.to_date = Some(to_date.into());
                 self
             }
@@ -4584,10 +4584,10 @@ pub mod services {
                             req.url_mut().query_pairs_mut().append_pair("groupKey", group_key);
                         }
                         if let Some(from_date) = &this.from_date {
-                            req.url_mut().query_pairs_mut().append_pair("fromDate", from_date);
+                            req.url_mut().query_pairs_mut().append_pair("fromDate", &from_date.to_string());
                         }
                         if let Some(to_date) = &this.to_date {
-                            req.url_mut().query_pairs_mut().append_pair("toDate", to_date);
+                            req.url_mut().query_pairs_mut().append_pair("toDate", &to_date.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -4949,8 +4949,8 @@ pub mod service {
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
             pub(crate) group_key: Option<String>,
-            pub(crate) from_date: Option<String>,
-            pub(crate) to_date: Option<String>,
+            pub(crate) from_date: Option<time::OffsetDateTime>,
+            pub(crate) to_date: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "The group key"]
@@ -4959,12 +4959,12 @@ pub mod service {
                 self
             }
             #[doc = "The start date."]
-            pub fn from_date(mut self, from_date: impl Into<String>) -> Self {
+            pub fn from_date(mut self, from_date: impl Into<time::OffsetDateTime>) -> Self {
                 self.from_date = Some(from_date.into());
                 self
             }
             #[doc = "The end date."]
-            pub fn to_date(mut self, to_date: impl Into<String>) -> Self {
+            pub fn to_date(mut self, to_date: impl Into<time::OffsetDateTime>) -> Self {
                 self.to_date = Some(to_date.into());
                 self
             }
@@ -4993,10 +4993,10 @@ pub mod service {
                             req.url_mut().query_pairs_mut().append_pair("groupKey", group_key);
                         }
                         if let Some(from_date) = &this.from_date {
-                            req.url_mut().query_pairs_mut().append_pair("fromDate", from_date);
+                            req.url_mut().query_pairs_mut().append_pair("fromDate", &from_date.to_string());
                         }
                         if let Some(to_date) = &this.to_date {
-                            req.url_mut().query_pairs_mut().append_pair("toDate", to_date);
+                            req.url_mut().query_pairs_mut().append_pair("toDate", &to_date.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -5503,8 +5503,8 @@ pub mod service_members {
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) state: Option<String>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "The alert property filter to apply."]
@@ -5518,12 +5518,12 @@ pub mod service_members {
                 self
             }
             #[doc = "The start date to query for."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "The end date till when to query for."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -5577,10 +5577,10 @@ pub mod service_members {
                                     req.url_mut().query_pairs_mut().append_pair("state", state);
                                 }
                                 if let Some(from) = &this.from {
-                                    req.url_mut().query_pairs_mut().append_pair("from", from);
+                                    req.url_mut().query_pairs_mut().append_pair("from", &from.to_string());
                                 }
                                 if let Some(to) = &this.to {
-                                    req.url_mut().query_pairs_mut().append_pair("to", to);
+                                    req.url_mut().query_pairs_mut().append_pair("to", &to.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -5951,8 +5951,8 @@ pub mod service_members {
             pub(crate) group_name: String,
             pub(crate) service_member_id: String,
             pub(crate) group_key: Option<String>,
-            pub(crate) from_date: Option<String>,
-            pub(crate) to_date: Option<String>,
+            pub(crate) from_date: Option<time::OffsetDateTime>,
+            pub(crate) to_date: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "The group key"]
@@ -5961,12 +5961,12 @@ pub mod service_members {
                 self
             }
             #[doc = "The start date."]
-            pub fn from_date(mut self, from_date: impl Into<String>) -> Self {
+            pub fn from_date(mut self, from_date: impl Into<time::OffsetDateTime>) -> Self {
                 self.from_date = Some(from_date.into());
                 self
             }
             #[doc = "The end date."]
-            pub fn to_date(mut self, to_date: impl Into<String>) -> Self {
+            pub fn to_date(mut self, to_date: impl Into<time::OffsetDateTime>) -> Self {
                 self.to_date = Some(to_date.into());
                 self
             }
@@ -5996,10 +5996,10 @@ pub mod service_members {
                             req.url_mut().query_pairs_mut().append_pair("groupKey", group_key);
                         }
                         if let Some(from_date) = &this.from_date {
-                            req.url_mut().query_pairs_mut().append_pair("fromDate", from_date);
+                            req.url_mut().query_pairs_mut().append_pair("fromDate", &from_date.to_string());
                         }
                         if let Some(to_date) = &this.to_date {
-                            req.url_mut().query_pairs_mut().append_pair("toDate", to_date);
+                            req.url_mut().query_pairs_mut().append_pair("toDate", &to_date.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);

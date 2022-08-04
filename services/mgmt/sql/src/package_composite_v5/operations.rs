@@ -4607,19 +4607,19 @@ pub mod database_columns {
                                     .append_pair(azure_core::query_param::API_VERSION, "2020-11-01-preview");
                                 let schema = &this.schema;
                                 for value in &this.schema {
-                                    req.url_mut().query_pairs_mut().append_pair("schema", value);
+                                    req.url_mut().query_pairs_mut().append_pair("schema", &value.to_string());
                                 }
                                 let table = &this.table;
                                 for value in &this.table {
-                                    req.url_mut().query_pairs_mut().append_pair("table", value);
+                                    req.url_mut().query_pairs_mut().append_pair("table", &value.to_string());
                                 }
                                 let column = &this.column;
                                 for value in &this.column {
-                                    req.url_mut().query_pairs_mut().append_pair("column", value);
+                                    req.url_mut().query_pairs_mut().append_pair("column", &value.to_string());
                                 }
                                 let order_by = &this.order_by;
                                 for value in &this.order_by {
-                                    req.url_mut().query_pairs_mut().append_pair("orderBy", value);
+                                    req.url_mut().query_pairs_mut().append_pair("orderBy", &value.to_string());
                                 }
                                 if let Some(skiptoken) = &this.skiptoken {
                                     req.url_mut().query_pairs_mut().append_pair("$skiptoken", skiptoken);
@@ -10678,32 +10678,32 @@ pub mod job_executions {
             pub(crate) server_name: String,
             pub(crate) job_agent_name: String,
             pub(crate) subscription_id: String,
-            pub(crate) create_time_min: Option<String>,
-            pub(crate) create_time_max: Option<String>,
-            pub(crate) end_time_min: Option<String>,
-            pub(crate) end_time_max: Option<String>,
+            pub(crate) create_time_min: Option<time::OffsetDateTime>,
+            pub(crate) create_time_max: Option<time::OffsetDateTime>,
+            pub(crate) end_time_min: Option<time::OffsetDateTime>,
+            pub(crate) end_time_max: Option<time::OffsetDateTime>,
             pub(crate) is_active: Option<bool>,
             pub(crate) skip: Option<i64>,
             pub(crate) top: Option<i64>,
         }
         impl Builder {
             #[doc = "If specified, only job executions created at or after the specified time are included."]
-            pub fn create_time_min(mut self, create_time_min: impl Into<String>) -> Self {
+            pub fn create_time_min(mut self, create_time_min: impl Into<time::OffsetDateTime>) -> Self {
                 self.create_time_min = Some(create_time_min.into());
                 self
             }
             #[doc = "If specified, only job executions created before the specified time are included."]
-            pub fn create_time_max(mut self, create_time_max: impl Into<String>) -> Self {
+            pub fn create_time_max(mut self, create_time_max: impl Into<time::OffsetDateTime>) -> Self {
                 self.create_time_max = Some(create_time_max.into());
                 self
             }
             #[doc = "If specified, only job executions completed at or after the specified time are included."]
-            pub fn end_time_min(mut self, end_time_min: impl Into<String>) -> Self {
+            pub fn end_time_min(mut self, end_time_min: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time_min = Some(end_time_min.into());
                 self
             }
             #[doc = "If specified, only job executions completed before the specified time are included."]
-            pub fn end_time_max(mut self, end_time_max: impl Into<String>) -> Self {
+            pub fn end_time_max(mut self, end_time_max: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time_max = Some(end_time_max.into());
                 self
             }
@@ -10768,16 +10768,20 @@ pub mod job_executions {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2020-11-01-preview");
                                 if let Some(create_time_min) = &this.create_time_min {
-                                    req.url_mut().query_pairs_mut().append_pair("createTimeMin", create_time_min);
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("createTimeMin", &create_time_min.to_string());
                                 }
                                 if let Some(create_time_max) = &this.create_time_max {
-                                    req.url_mut().query_pairs_mut().append_pair("createTimeMax", create_time_max);
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("createTimeMax", &create_time_max.to_string());
                                 }
                                 if let Some(end_time_min) = &this.end_time_min {
-                                    req.url_mut().query_pairs_mut().append_pair("endTimeMin", end_time_min);
+                                    req.url_mut().query_pairs_mut().append_pair("endTimeMin", &end_time_min.to_string());
                                 }
                                 if let Some(end_time_max) = &this.end_time_max {
-                                    req.url_mut().query_pairs_mut().append_pair("endTimeMax", end_time_max);
+                                    req.url_mut().query_pairs_mut().append_pair("endTimeMax", &end_time_max.to_string());
                                 }
                                 if let Some(is_active) = &this.is_active {
                                     req.url_mut().query_pairs_mut().append_pair("isActive", &is_active.to_string());
@@ -10931,32 +10935,32 @@ pub mod job_executions {
             pub(crate) job_agent_name: String,
             pub(crate) job_name: String,
             pub(crate) subscription_id: String,
-            pub(crate) create_time_min: Option<String>,
-            pub(crate) create_time_max: Option<String>,
-            pub(crate) end_time_min: Option<String>,
-            pub(crate) end_time_max: Option<String>,
+            pub(crate) create_time_min: Option<time::OffsetDateTime>,
+            pub(crate) create_time_max: Option<time::OffsetDateTime>,
+            pub(crate) end_time_min: Option<time::OffsetDateTime>,
+            pub(crate) end_time_max: Option<time::OffsetDateTime>,
             pub(crate) is_active: Option<bool>,
             pub(crate) skip: Option<i64>,
             pub(crate) top: Option<i64>,
         }
         impl Builder {
             #[doc = "If specified, only job executions created at or after the specified time are included."]
-            pub fn create_time_min(mut self, create_time_min: impl Into<String>) -> Self {
+            pub fn create_time_min(mut self, create_time_min: impl Into<time::OffsetDateTime>) -> Self {
                 self.create_time_min = Some(create_time_min.into());
                 self
             }
             #[doc = "If specified, only job executions created before the specified time are included."]
-            pub fn create_time_max(mut self, create_time_max: impl Into<String>) -> Self {
+            pub fn create_time_max(mut self, create_time_max: impl Into<time::OffsetDateTime>) -> Self {
                 self.create_time_max = Some(create_time_max.into());
                 self
             }
             #[doc = "If specified, only job executions completed at or after the specified time are included."]
-            pub fn end_time_min(mut self, end_time_min: impl Into<String>) -> Self {
+            pub fn end_time_min(mut self, end_time_min: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time_min = Some(end_time_min.into());
                 self
             }
             #[doc = "If specified, only job executions completed before the specified time are included."]
-            pub fn end_time_max(mut self, end_time_max: impl Into<String>) -> Self {
+            pub fn end_time_max(mut self, end_time_max: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time_max = Some(end_time_max.into());
                 self
             }
@@ -11022,16 +11026,20 @@ pub mod job_executions {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2020-11-01-preview");
                                 if let Some(create_time_min) = &this.create_time_min {
-                                    req.url_mut().query_pairs_mut().append_pair("createTimeMin", create_time_min);
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("createTimeMin", &create_time_min.to_string());
                                 }
                                 if let Some(create_time_max) = &this.create_time_max {
-                                    req.url_mut().query_pairs_mut().append_pair("createTimeMax", create_time_max);
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("createTimeMax", &create_time_max.to_string());
                                 }
                                 if let Some(end_time_min) = &this.end_time_min {
-                                    req.url_mut().query_pairs_mut().append_pair("endTimeMin", end_time_min);
+                                    req.url_mut().query_pairs_mut().append_pair("endTimeMin", &end_time_min.to_string());
                                 }
                                 if let Some(end_time_max) = &this.end_time_max {
-                                    req.url_mut().query_pairs_mut().append_pair("endTimeMax", end_time_max);
+                                    req.url_mut().query_pairs_mut().append_pair("endTimeMax", &end_time_max.to_string());
                                 }
                                 if let Some(is_active) = &this.is_active {
                                     req.url_mut().query_pairs_mut().append_pair("isActive", &is_active.to_string());
@@ -11643,32 +11651,32 @@ pub mod job_step_executions {
             pub(crate) job_name: String,
             pub(crate) job_execution_id: String,
             pub(crate) subscription_id: String,
-            pub(crate) create_time_min: Option<String>,
-            pub(crate) create_time_max: Option<String>,
-            pub(crate) end_time_min: Option<String>,
-            pub(crate) end_time_max: Option<String>,
+            pub(crate) create_time_min: Option<time::OffsetDateTime>,
+            pub(crate) create_time_max: Option<time::OffsetDateTime>,
+            pub(crate) end_time_min: Option<time::OffsetDateTime>,
+            pub(crate) end_time_max: Option<time::OffsetDateTime>,
             pub(crate) is_active: Option<bool>,
             pub(crate) skip: Option<i64>,
             pub(crate) top: Option<i64>,
         }
         impl Builder {
             #[doc = "If specified, only job executions created at or after the specified time are included."]
-            pub fn create_time_min(mut self, create_time_min: impl Into<String>) -> Self {
+            pub fn create_time_min(mut self, create_time_min: impl Into<time::OffsetDateTime>) -> Self {
                 self.create_time_min = Some(create_time_min.into());
                 self
             }
             #[doc = "If specified, only job executions created before the specified time are included."]
-            pub fn create_time_max(mut self, create_time_max: impl Into<String>) -> Self {
+            pub fn create_time_max(mut self, create_time_max: impl Into<time::OffsetDateTime>) -> Self {
                 self.create_time_max = Some(create_time_max.into());
                 self
             }
             #[doc = "If specified, only job executions completed at or after the specified time are included."]
-            pub fn end_time_min(mut self, end_time_min: impl Into<String>) -> Self {
+            pub fn end_time_min(mut self, end_time_min: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time_min = Some(end_time_min.into());
                 self
             }
             #[doc = "If specified, only job executions completed before the specified time are included."]
-            pub fn end_time_max(mut self, end_time_max: impl Into<String>) -> Self {
+            pub fn end_time_max(mut self, end_time_max: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time_max = Some(end_time_max.into());
                 self
             }
@@ -11726,16 +11734,20 @@ pub mod job_step_executions {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2020-11-01-preview");
                                 if let Some(create_time_min) = &this.create_time_min {
-                                    req.url_mut().query_pairs_mut().append_pair("createTimeMin", create_time_min);
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("createTimeMin", &create_time_min.to_string());
                                 }
                                 if let Some(create_time_max) = &this.create_time_max {
-                                    req.url_mut().query_pairs_mut().append_pair("createTimeMax", create_time_max);
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("createTimeMax", &create_time_max.to_string());
                                 }
                                 if let Some(end_time_min) = &this.end_time_min {
-                                    req.url_mut().query_pairs_mut().append_pair("endTimeMin", end_time_min);
+                                    req.url_mut().query_pairs_mut().append_pair("endTimeMin", &end_time_min.to_string());
                                 }
                                 if let Some(end_time_max) = &this.end_time_max {
-                                    req.url_mut().query_pairs_mut().append_pair("endTimeMax", end_time_max);
+                                    req.url_mut().query_pairs_mut().append_pair("endTimeMax", &end_time_max.to_string());
                                 }
                                 if let Some(is_active) = &this.is_active {
                                     req.url_mut().query_pairs_mut().append_pair("isActive", &is_active.to_string());
@@ -12514,32 +12526,32 @@ pub mod job_target_executions {
             pub(crate) job_name: String,
             pub(crate) job_execution_id: String,
             pub(crate) subscription_id: String,
-            pub(crate) create_time_min: Option<String>,
-            pub(crate) create_time_max: Option<String>,
-            pub(crate) end_time_min: Option<String>,
-            pub(crate) end_time_max: Option<String>,
+            pub(crate) create_time_min: Option<time::OffsetDateTime>,
+            pub(crate) create_time_max: Option<time::OffsetDateTime>,
+            pub(crate) end_time_min: Option<time::OffsetDateTime>,
+            pub(crate) end_time_max: Option<time::OffsetDateTime>,
             pub(crate) is_active: Option<bool>,
             pub(crate) skip: Option<i64>,
             pub(crate) top: Option<i64>,
         }
         impl Builder {
             #[doc = "If specified, only job executions created at or after the specified time are included."]
-            pub fn create_time_min(mut self, create_time_min: impl Into<String>) -> Self {
+            pub fn create_time_min(mut self, create_time_min: impl Into<time::OffsetDateTime>) -> Self {
                 self.create_time_min = Some(create_time_min.into());
                 self
             }
             #[doc = "If specified, only job executions created before the specified time are included."]
-            pub fn create_time_max(mut self, create_time_max: impl Into<String>) -> Self {
+            pub fn create_time_max(mut self, create_time_max: impl Into<time::OffsetDateTime>) -> Self {
                 self.create_time_max = Some(create_time_max.into());
                 self
             }
             #[doc = "If specified, only job executions completed at or after the specified time are included."]
-            pub fn end_time_min(mut self, end_time_min: impl Into<String>) -> Self {
+            pub fn end_time_min(mut self, end_time_min: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time_min = Some(end_time_min.into());
                 self
             }
             #[doc = "If specified, only job executions completed before the specified time are included."]
-            pub fn end_time_max(mut self, end_time_max: impl Into<String>) -> Self {
+            pub fn end_time_max(mut self, end_time_max: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time_max = Some(end_time_max.into());
                 self
             }
@@ -12597,16 +12609,20 @@ pub mod job_target_executions {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2020-11-01-preview");
                                 if let Some(create_time_min) = &this.create_time_min {
-                                    req.url_mut().query_pairs_mut().append_pair("createTimeMin", create_time_min);
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("createTimeMin", &create_time_min.to_string());
                                 }
                                 if let Some(create_time_max) = &this.create_time_max {
-                                    req.url_mut().query_pairs_mut().append_pair("createTimeMax", create_time_max);
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("createTimeMax", &create_time_max.to_string());
                                 }
                                 if let Some(end_time_min) = &this.end_time_min {
-                                    req.url_mut().query_pairs_mut().append_pair("endTimeMin", end_time_min);
+                                    req.url_mut().query_pairs_mut().append_pair("endTimeMin", &end_time_min.to_string());
                                 }
                                 if let Some(end_time_max) = &this.end_time_max {
-                                    req.url_mut().query_pairs_mut().append_pair("endTimeMax", end_time_max);
+                                    req.url_mut().query_pairs_mut().append_pair("endTimeMax", &end_time_max.to_string());
                                 }
                                 if let Some(is_active) = &this.is_active {
                                     req.url_mut().query_pairs_mut().append_pair("isActive", &is_active.to_string());
@@ -12653,32 +12669,32 @@ pub mod job_target_executions {
             pub(crate) job_execution_id: String,
             pub(crate) step_name: String,
             pub(crate) subscription_id: String,
-            pub(crate) create_time_min: Option<String>,
-            pub(crate) create_time_max: Option<String>,
-            pub(crate) end_time_min: Option<String>,
-            pub(crate) end_time_max: Option<String>,
+            pub(crate) create_time_min: Option<time::OffsetDateTime>,
+            pub(crate) create_time_max: Option<time::OffsetDateTime>,
+            pub(crate) end_time_min: Option<time::OffsetDateTime>,
+            pub(crate) end_time_max: Option<time::OffsetDateTime>,
             pub(crate) is_active: Option<bool>,
             pub(crate) skip: Option<i64>,
             pub(crate) top: Option<i64>,
         }
         impl Builder {
             #[doc = "If specified, only job executions created at or after the specified time are included."]
-            pub fn create_time_min(mut self, create_time_min: impl Into<String>) -> Self {
+            pub fn create_time_min(mut self, create_time_min: impl Into<time::OffsetDateTime>) -> Self {
                 self.create_time_min = Some(create_time_min.into());
                 self
             }
             #[doc = "If specified, only job executions created before the specified time are included."]
-            pub fn create_time_max(mut self, create_time_max: impl Into<String>) -> Self {
+            pub fn create_time_max(mut self, create_time_max: impl Into<time::OffsetDateTime>) -> Self {
                 self.create_time_max = Some(create_time_max.into());
                 self
             }
             #[doc = "If specified, only job executions completed at or after the specified time are included."]
-            pub fn end_time_min(mut self, end_time_min: impl Into<String>) -> Self {
+            pub fn end_time_min(mut self, end_time_min: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time_min = Some(end_time_min.into());
                 self
             }
             #[doc = "If specified, only job executions completed before the specified time are included."]
-            pub fn end_time_max(mut self, end_time_max: impl Into<String>) -> Self {
+            pub fn end_time_max(mut self, end_time_max: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time_max = Some(end_time_max.into());
                 self
             }
@@ -12736,16 +12752,20 @@ pub mod job_target_executions {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2020-11-01-preview");
                                 if let Some(create_time_min) = &this.create_time_min {
-                                    req.url_mut().query_pairs_mut().append_pair("createTimeMin", create_time_min);
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("createTimeMin", &create_time_min.to_string());
                                 }
                                 if let Some(create_time_max) = &this.create_time_max {
-                                    req.url_mut().query_pairs_mut().append_pair("createTimeMax", create_time_max);
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("createTimeMax", &create_time_max.to_string());
                                 }
                                 if let Some(end_time_min) = &this.end_time_min {
-                                    req.url_mut().query_pairs_mut().append_pair("endTimeMin", end_time_min);
+                                    req.url_mut().query_pairs_mut().append_pair("endTimeMin", &end_time_min.to_string());
                                 }
                                 if let Some(end_time_max) = &this.end_time_max {
-                                    req.url_mut().query_pairs_mut().append_pair("endTimeMax", end_time_max);
+                                    req.url_mut().query_pairs_mut().append_pair("endTimeMax", &end_time_max.to_string());
                                 }
                                 if let Some(is_active) = &this.is_active {
                                     req.url_mut().query_pairs_mut().append_pair("isActive", &is_active.to_string());
@@ -14494,19 +14514,19 @@ pub mod managed_database_columns {
                                     .append_pair(azure_core::query_param::API_VERSION, "2020-11-01-preview");
                                 let schema = &this.schema;
                                 for value in &this.schema {
-                                    req.url_mut().query_pairs_mut().append_pair("schema", value);
+                                    req.url_mut().query_pairs_mut().append_pair("schema", &value.to_string());
                                 }
                                 let table = &this.table;
                                 for value in &this.table {
-                                    req.url_mut().query_pairs_mut().append_pair("table", value);
+                                    req.url_mut().query_pairs_mut().append_pair("table", &value.to_string());
                                 }
                                 let column = &this.column;
                                 for value in &this.column {
-                                    req.url_mut().query_pairs_mut().append_pair("column", value);
+                                    req.url_mut().query_pairs_mut().append_pair("column", &value.to_string());
                                 }
                                 let order_by = &this.order_by;
                                 for value in &this.order_by {
-                                    req.url_mut().query_pairs_mut().append_pair("orderBy", value);
+                                    req.url_mut().query_pairs_mut().append_pair("orderBy", &value.to_string());
                                 }
                                 if let Some(skiptoken) = &this.skiptoken {
                                     req.url_mut().query_pairs_mut().append_pair("$skiptoken", skiptoken);

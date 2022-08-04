@@ -2902,8 +2902,8 @@ pub mod policy_events {
             pub(crate) top: Option<i32>,
             pub(crate) orderby: Option<String>,
             pub(crate) select: Option<String>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
@@ -2925,12 +2925,12 @@ pub mod policy_events {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -3003,10 +3003,10 @@ pub mod policy_events {
                                     req.url_mut().query_pairs_mut().append_pair("$select", select);
                                 }
                                 if let Some(from) = &this.from {
-                                    req.url_mut().query_pairs_mut().append_pair("$from", from);
+                                    req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                                 }
                                 if let Some(to) = &this.to {
-                                    req.url_mut().query_pairs_mut().append_pair("$to", to);
+                                    req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                                 }
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -3052,8 +3052,8 @@ pub mod policy_events {
             pub(crate) top: Option<i32>,
             pub(crate) orderby: Option<String>,
             pub(crate) select: Option<String>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
@@ -3075,12 +3075,12 @@ pub mod policy_events {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -3152,10 +3152,10 @@ pub mod policy_events {
                                     req.url_mut().query_pairs_mut().append_pair("$select", select);
                                 }
                                 if let Some(from) = &this.from {
-                                    req.url_mut().query_pairs_mut().append_pair("$from", from);
+                                    req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                                 }
                                 if let Some(to) = &this.to {
-                                    req.url_mut().query_pairs_mut().append_pair("$to", to);
+                                    req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                                 }
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -3202,8 +3202,8 @@ pub mod policy_events {
             pub(crate) top: Option<i32>,
             pub(crate) orderby: Option<String>,
             pub(crate) select: Option<String>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
@@ -3225,12 +3225,12 @@ pub mod policy_events {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -3303,10 +3303,10 @@ pub mod policy_events {
                                     req.url_mut().query_pairs_mut().append_pair("$select", select);
                                 }
                                 if let Some(from) = &this.from {
-                                    req.url_mut().query_pairs_mut().append_pair("$from", from);
+                                    req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                                 }
                                 if let Some(to) = &this.to {
-                                    req.url_mut().query_pairs_mut().append_pair("$to", to);
+                                    req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                                 }
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -3352,8 +3352,8 @@ pub mod policy_events {
             pub(crate) top: Option<i32>,
             pub(crate) orderby: Option<String>,
             pub(crate) select: Option<String>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
             pub(crate) apply: Option<String>,
             pub(crate) expand: Option<String>,
@@ -3376,12 +3376,12 @@ pub mod policy_events {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -3458,10 +3458,10 @@ pub mod policy_events {
                                     req.url_mut().query_pairs_mut().append_pair("$select", select);
                                 }
                                 if let Some(from) = &this.from {
-                                    req.url_mut().query_pairs_mut().append_pair("$from", from);
+                                    req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                                 }
                                 if let Some(to) = &this.to {
-                                    req.url_mut().query_pairs_mut().append_pair("$to", to);
+                                    req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                                 }
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -3512,8 +3512,8 @@ pub mod policy_events {
             pub(crate) top: Option<i32>,
             pub(crate) orderby: Option<String>,
             pub(crate) select: Option<String>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
@@ -3535,12 +3535,12 @@ pub mod policy_events {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -3607,10 +3607,10 @@ pub mod policy_events {
                                     req.url_mut().query_pairs_mut().append_pair("$select", select);
                                 }
                                 if let Some(from) = &this.from {
-                                    req.url_mut().query_pairs_mut().append_pair("$from", from);
+                                    req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                                 }
                                 if let Some(to) = &this.to {
-                                    req.url_mut().query_pairs_mut().append_pair("$to", to);
+                                    req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                                 }
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -3658,8 +3658,8 @@ pub mod policy_events {
             pub(crate) top: Option<i32>,
             pub(crate) orderby: Option<String>,
             pub(crate) select: Option<String>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
@@ -3681,12 +3681,12 @@ pub mod policy_events {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -3753,10 +3753,10 @@ pub mod policy_events {
                                     req.url_mut().query_pairs_mut().append_pair("$select", select);
                                 }
                                 if let Some(from) = &this.from {
-                                    req.url_mut().query_pairs_mut().append_pair("$from", from);
+                                    req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                                 }
                                 if let Some(to) = &this.to {
-                                    req.url_mut().query_pairs_mut().append_pair("$to", to);
+                                    req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                                 }
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -3804,8 +3804,8 @@ pub mod policy_events {
             pub(crate) top: Option<i32>,
             pub(crate) orderby: Option<String>,
             pub(crate) select: Option<String>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
@@ -3827,12 +3827,12 @@ pub mod policy_events {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -3899,10 +3899,10 @@ pub mod policy_events {
                                     req.url_mut().query_pairs_mut().append_pair("$select", select);
                                 }
                                 if let Some(from) = &this.from {
-                                    req.url_mut().query_pairs_mut().append_pair("$from", from);
+                                    req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                                 }
                                 if let Some(to) = &this.to {
-                                    req.url_mut().query_pairs_mut().append_pair("$to", to);
+                                    req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                                 }
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -3951,8 +3951,8 @@ pub mod policy_events {
             pub(crate) top: Option<i32>,
             pub(crate) orderby: Option<String>,
             pub(crate) select: Option<String>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
@@ -3974,12 +3974,12 @@ pub mod policy_events {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -4046,10 +4046,10 @@ pub mod policy_events {
                                     req.url_mut().query_pairs_mut().append_pair("$select", select);
                                 }
                                 if let Some(from) = &this.from {
-                                    req.url_mut().query_pairs_mut().append_pair("$from", from);
+                                    req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                                 }
                                 if let Some(to) = &this.to {
-                                    req.url_mut().query_pairs_mut().append_pair("$to", to);
+                                    req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                                 }
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -4616,8 +4616,8 @@ pub mod policy_states {
             pub(crate) top: Option<i32>,
             pub(crate) orderby: Option<String>,
             pub(crate) select: Option<String>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
@@ -4639,12 +4639,12 @@ pub mod policy_states {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -4717,10 +4717,10 @@ pub mod policy_states {
                                     req.url_mut().query_pairs_mut().append_pair("$select", select);
                                 }
                                 if let Some(from) = &this.from {
-                                    req.url_mut().query_pairs_mut().append_pair("$from", from);
+                                    req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                                 }
                                 if let Some(to) = &this.to {
-                                    req.url_mut().query_pairs_mut().append_pair("$to", to);
+                                    req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                                 }
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -4765,8 +4765,8 @@ pub mod policy_states {
             pub(crate) management_groups_namespace: String,
             pub(crate) management_group_name: String,
             pub(crate) top: Option<i32>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
         }
         impl Builder {
@@ -4776,12 +4776,12 @@ pub mod policy_states {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -4815,10 +4815,10 @@ pub mod policy_states {
                             req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
                         }
                         if let Some(from) = &this.from {
-                            req.url_mut().query_pairs_mut().append_pair("$from", from);
+                            req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                         }
                         if let Some(to) = &this.to {
-                            req.url_mut().query_pairs_mut().append_pair("$to", to);
+                            req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                         }
                         if let Some(filter) = &this.filter {
                             req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -4855,8 +4855,8 @@ pub mod policy_states {
             pub(crate) top: Option<i32>,
             pub(crate) orderby: Option<String>,
             pub(crate) select: Option<String>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
@@ -4878,12 +4878,12 @@ pub mod policy_states {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -4955,10 +4955,10 @@ pub mod policy_states {
                                     req.url_mut().query_pairs_mut().append_pair("$select", select);
                                 }
                                 if let Some(from) = &this.from {
-                                    req.url_mut().query_pairs_mut().append_pair("$from", from);
+                                    req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                                 }
                                 if let Some(to) = &this.to {
-                                    req.url_mut().query_pairs_mut().append_pair("$to", to);
+                                    req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                                 }
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -5002,8 +5002,8 @@ pub mod policy_states {
             pub(crate) policy_states_summary_resource: String,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i32>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
         }
         impl Builder {
@@ -5013,12 +5013,12 @@ pub mod policy_states {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -5051,10 +5051,10 @@ pub mod policy_states {
                             req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
                         }
                         if let Some(from) = &this.from {
-                            req.url_mut().query_pairs_mut().append_pair("$from", from);
+                            req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                         }
                         if let Some(to) = &this.to {
-                            req.url_mut().query_pairs_mut().append_pair("$to", to);
+                            req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                         }
                         if let Some(filter) = &this.filter {
                             req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -5092,8 +5092,8 @@ pub mod policy_states {
             pub(crate) top: Option<i32>,
             pub(crate) orderby: Option<String>,
             pub(crate) select: Option<String>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
@@ -5115,12 +5115,12 @@ pub mod policy_states {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -5193,10 +5193,10 @@ pub mod policy_states {
                                     req.url_mut().query_pairs_mut().append_pair("$select", select);
                                 }
                                 if let Some(from) = &this.from {
-                                    req.url_mut().query_pairs_mut().append_pair("$from", from);
+                                    req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                                 }
                                 if let Some(to) = &this.to {
-                                    req.url_mut().query_pairs_mut().append_pair("$to", to);
+                                    req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                                 }
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -5241,8 +5241,8 @@ pub mod policy_states {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) top: Option<i32>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
         }
         impl Builder {
@@ -5252,12 +5252,12 @@ pub mod policy_states {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -5291,10 +5291,10 @@ pub mod policy_states {
                             req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
                         }
                         if let Some(from) = &this.from {
-                            req.url_mut().query_pairs_mut().append_pair("$from", from);
+                            req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                         }
                         if let Some(to) = &this.to {
-                            req.url_mut().query_pairs_mut().append_pair("$to", to);
+                            req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                         }
                         if let Some(filter) = &this.filter {
                             req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -5331,8 +5331,8 @@ pub mod policy_states {
             pub(crate) top: Option<i32>,
             pub(crate) orderby: Option<String>,
             pub(crate) select: Option<String>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
             pub(crate) apply: Option<String>,
             pub(crate) expand: Option<String>,
@@ -5355,12 +5355,12 @@ pub mod policy_states {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -5437,10 +5437,10 @@ pub mod policy_states {
                                     req.url_mut().query_pairs_mut().append_pair("$select", select);
                                 }
                                 if let Some(from) = &this.from {
-                                    req.url_mut().query_pairs_mut().append_pair("$from", from);
+                                    req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                                 }
                                 if let Some(to) = &this.to {
-                                    req.url_mut().query_pairs_mut().append_pair("$to", to);
+                                    req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                                 }
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -5487,8 +5487,8 @@ pub mod policy_states {
             pub(crate) policy_states_summary_resource: String,
             pub(crate) resource_id: String,
             pub(crate) top: Option<i32>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
         }
         impl Builder {
@@ -5498,12 +5498,12 @@ pub mod policy_states {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -5536,10 +5536,10 @@ pub mod policy_states {
                             req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
                         }
                         if let Some(from) = &this.from {
-                            req.url_mut().query_pairs_mut().append_pair("$from", from);
+                            req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                         }
                         if let Some(to) = &this.to {
-                            req.url_mut().query_pairs_mut().append_pair("$to", to);
+                            req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                         }
                         if let Some(filter) = &this.filter {
                             req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -5677,8 +5677,8 @@ pub mod policy_states {
             pub(crate) top: Option<i32>,
             pub(crate) orderby: Option<String>,
             pub(crate) select: Option<String>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
@@ -5700,12 +5700,12 @@ pub mod policy_states {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -5772,10 +5772,10 @@ pub mod policy_states {
                                     req.url_mut().query_pairs_mut().append_pair("$select", select);
                                 }
                                 if let Some(from) = &this.from {
-                                    req.url_mut().query_pairs_mut().append_pair("$from", from);
+                                    req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                                 }
                                 if let Some(to) = &this.to {
-                                    req.url_mut().query_pairs_mut().append_pair("$to", to);
+                                    req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                                 }
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -5821,8 +5821,8 @@ pub mod policy_states {
             pub(crate) authorization_namespace: String,
             pub(crate) policy_set_definition_name: String,
             pub(crate) top: Option<i32>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
         }
         impl Builder {
@@ -5832,12 +5832,12 @@ pub mod policy_states {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -5865,10 +5865,10 @@ pub mod policy_states {
                             req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
                         }
                         if let Some(from) = &this.from {
-                            req.url_mut().query_pairs_mut().append_pair("$from", from);
+                            req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                         }
                         if let Some(to) = &this.to {
-                            req.url_mut().query_pairs_mut().append_pair("$to", to);
+                            req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                         }
                         if let Some(filter) = &this.filter {
                             req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -5907,8 +5907,8 @@ pub mod policy_states {
             pub(crate) top: Option<i32>,
             pub(crate) orderby: Option<String>,
             pub(crate) select: Option<String>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
@@ -5930,12 +5930,12 @@ pub mod policy_states {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -6002,10 +6002,10 @@ pub mod policy_states {
                                     req.url_mut().query_pairs_mut().append_pair("$select", select);
                                 }
                                 if let Some(from) = &this.from {
-                                    req.url_mut().query_pairs_mut().append_pair("$from", from);
+                                    req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                                 }
                                 if let Some(to) = &this.to {
-                                    req.url_mut().query_pairs_mut().append_pair("$to", to);
+                                    req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                                 }
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -6051,8 +6051,8 @@ pub mod policy_states {
             pub(crate) authorization_namespace: String,
             pub(crate) policy_definition_name: String,
             pub(crate) top: Option<i32>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
         }
         impl Builder {
@@ -6062,12 +6062,12 @@ pub mod policy_states {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -6095,10 +6095,10 @@ pub mod policy_states {
                             req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
                         }
                         if let Some(from) = &this.from {
-                            req.url_mut().query_pairs_mut().append_pair("$from", from);
+                            req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                         }
                         if let Some(to) = &this.to {
-                            req.url_mut().query_pairs_mut().append_pair("$to", to);
+                            req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                         }
                         if let Some(filter) = &this.filter {
                             req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -6137,8 +6137,8 @@ pub mod policy_states {
             pub(crate) top: Option<i32>,
             pub(crate) orderby: Option<String>,
             pub(crate) select: Option<String>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
@@ -6160,12 +6160,12 @@ pub mod policy_states {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -6232,10 +6232,10 @@ pub mod policy_states {
                                     req.url_mut().query_pairs_mut().append_pair("$select", select);
                                 }
                                 if let Some(from) = &this.from {
-                                    req.url_mut().query_pairs_mut().append_pair("$from", from);
+                                    req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                                 }
                                 if let Some(to) = &this.to {
-                                    req.url_mut().query_pairs_mut().append_pair("$to", to);
+                                    req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                                 }
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -6281,8 +6281,8 @@ pub mod policy_states {
             pub(crate) authorization_namespace: String,
             pub(crate) policy_assignment_name: String,
             pub(crate) top: Option<i32>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
         }
         impl Builder {
@@ -6292,12 +6292,12 @@ pub mod policy_states {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -6325,10 +6325,10 @@ pub mod policy_states {
                             req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
                         }
                         if let Some(from) = &this.from {
-                            req.url_mut().query_pairs_mut().append_pair("$from", from);
+                            req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                         }
                         if let Some(to) = &this.to {
-                            req.url_mut().query_pairs_mut().append_pair("$to", to);
+                            req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                         }
                         if let Some(filter) = &this.filter {
                             req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -6368,8 +6368,8 @@ pub mod policy_states {
             pub(crate) top: Option<i32>,
             pub(crate) orderby: Option<String>,
             pub(crate) select: Option<String>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
             pub(crate) apply: Option<String>,
             pub(crate) skiptoken: Option<String>,
@@ -6391,12 +6391,12 @@ pub mod policy_states {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -6463,10 +6463,10 @@ pub mod policy_states {
                                     req.url_mut().query_pairs_mut().append_pair("$select", select);
                                 }
                                 if let Some(from) = &this.from {
-                                    req.url_mut().query_pairs_mut().append_pair("$from", from);
+                                    req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                                 }
                                 if let Some(to) = &this.to {
-                                    req.url_mut().query_pairs_mut().append_pair("$to", to);
+                                    req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                                 }
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
@@ -6513,8 +6513,8 @@ pub mod policy_states {
             pub(crate) authorization_namespace: String,
             pub(crate) policy_assignment_name: String,
             pub(crate) top: Option<i32>,
-            pub(crate) from: Option<String>,
-            pub(crate) to: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
             pub(crate) filter: Option<String>,
         }
         impl Builder {
@@ -6524,12 +6524,12 @@ pub mod policy_states {
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
-            pub fn from(mut self, from: impl Into<String>) -> Self {
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
                 self.from = Some(from.into());
                 self
             }
             #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
-            pub fn to(mut self, to: impl Into<String>) -> Self {
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
                 self.to = Some(to.into());
                 self
             }
@@ -6557,10 +6557,10 @@ pub mod policy_states {
                             req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
                         }
                         if let Some(from) = &this.from {
-                            req.url_mut().query_pairs_mut().append_pair("$from", from);
+                            req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
                         }
                         if let Some(to) = &this.to {
-                            req.url_mut().query_pairs_mut().append_pair("$to", to);
+                            req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
                         }
                         if let Some(filter) = &this.filter {
                             req.url_mut().query_pairs_mut().append_pair("$filter", filter);

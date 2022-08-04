@@ -1300,8 +1300,8 @@ pub mod container {
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
@@ -1316,12 +1316,12 @@ pub mod container {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -1350,10 +1350,10 @@ pub mod container {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
@@ -1386,7 +1386,7 @@ pub mod container {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) x_ms_meta: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
@@ -1406,7 +1406,7 @@ pub mod container {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
@@ -1441,7 +1441,7 @@ pub mod container {
                             req.insert_header("x-ms-meta", x_ms_meta);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
@@ -1549,8 +1549,8 @@ pub mod container {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) x_ms_blob_public_access: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
@@ -1575,12 +1575,12 @@ pub mod container {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -1621,10 +1621,10 @@ pub mod container {
                             req.insert_header("x-ms-blob-public-access", x_ms_blob_public_access);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
@@ -1878,8 +1878,8 @@ pub mod container {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_duration: Option<i64>,
             pub(crate) x_ms_proposed_lease_id: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
@@ -1899,12 +1899,12 @@ pub mod container {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -1940,10 +1940,10 @@ pub mod container {
                             req.insert_header("x-ms-proposed-lease-id", x_ms_proposed_lease_id);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
@@ -1976,8 +1976,8 @@ pub mod container {
             pub(crate) x_ms_lease_id: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
@@ -1987,12 +1987,12 @@ pub mod container {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -2023,10 +2023,10 @@ pub mod container {
                         }
                         req.insert_header("x-ms-lease-id", &this.x_ms_lease_id);
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
@@ -2059,8 +2059,8 @@ pub mod container {
             pub(crate) x_ms_lease_id: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
@@ -2070,12 +2070,12 @@ pub mod container {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -2106,10 +2106,10 @@ pub mod container {
                         }
                         req.insert_header("x-ms-lease-id", &this.x_ms_lease_id);
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
@@ -2142,8 +2142,8 @@ pub mod container {
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_break_period: Option<i64>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
@@ -2158,12 +2158,12 @@ pub mod container {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -2196,10 +2196,10 @@ pub mod container {
                             req.insert_header("x-ms-lease-break-period", &x_ms_lease_break_period.to_string());
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
@@ -2233,8 +2233,8 @@ pub mod container {
             pub(crate) x_ms_proposed_lease_id: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
@@ -2244,12 +2244,12 @@ pub mod container {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -2281,10 +2281,10 @@ pub mod container {
                         req.insert_header("x-ms-lease-id", &this.x_ms_lease_id);
                         req.insert_header("x-ms-proposed-lease-id", &this.x_ms_proposed_lease_id);
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
@@ -3326,8 +3326,8 @@ pub mod blob {
             pub(crate) x_ms_encryption_key: Option<String>,
             pub(crate) x_ms_encryption_key_sha256: Option<String>,
             pub(crate) x_ms_encryption_algorithm: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -3385,12 +3385,12 @@ pub mod blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -3457,10 +3457,10 @@ pub mod blob {
                             req.insert_header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -3514,8 +3514,8 @@ pub mod blob {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) x_ms_delete_snapshots: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -3549,12 +3549,12 @@ pub mod blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -3611,10 +3611,10 @@ pub mod blob {
                             req.insert_header("x-ms-delete-snapshots", x_ms_delete_snapshots);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -3664,8 +3664,8 @@ pub mod blob {
             pub(crate) x_ms_encryption_key: Option<String>,
             pub(crate) x_ms_encryption_key_sha256: Option<String>,
             pub(crate) x_ms_encryption_algorithm: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -3708,12 +3708,12 @@ pub mod blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -3771,10 +3771,10 @@ pub mod blob {
                             req.insert_header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -3958,8 +3958,8 @@ pub mod blob {
             pub(crate) x_ms_blob_content_encoding: Option<String>,
             pub(crate) x_ms_blob_content_language: Option<String>,
             pub(crate) x_ms_lease_id: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -4003,12 +4003,12 @@ pub mod blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -4076,10 +4076,10 @@ pub mod blob {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -4124,8 +4124,8 @@ pub mod blob {
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
-            pub(crate) x_ms_immutability_policy_until_date: Option<String>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
+            pub(crate) x_ms_immutability_policy_until_date: Option<time::OffsetDateTime>,
             pub(crate) x_ms_immutability_policy_mode: Option<String>,
         }
         impl Builder {
@@ -4140,12 +4140,15 @@ pub mod blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             #[doc = "Specifies the date time when the blobs immutability policy is set to expire."]
-            pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
+            pub fn x_ms_immutability_policy_until_date(
+                mut self,
+                x_ms_immutability_policy_until_date: impl Into<time::OffsetDateTime>,
+            ) -> Self {
                 self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
                 self
             }
@@ -4179,10 +4182,13 @@ pub mod blob {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_immutability_policy_until_date) = &this.x_ms_immutability_policy_until_date {
-                            req.insert_header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
+                            req.insert_header(
+                                "x-ms-immutability-policy-until-date",
+                                &x_ms_immutability_policy_until_date.to_string(),
+                            );
                         }
                         if let Some(x_ms_immutability_policy_mode) = &this.x_ms_immutability_policy_mode {
                             req.insert_header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
@@ -4347,8 +4353,8 @@ pub mod blob {
             pub(crate) x_ms_encryption_key_sha256: Option<String>,
             pub(crate) x_ms_encryption_algorithm: Option<String>,
             pub(crate) x_ms_encryption_scope: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -4391,12 +4397,12 @@ pub mod blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -4459,10 +4465,10 @@ pub mod blob {
                             req.insert_header("x-ms-encryption-scope", x_ms_encryption_scope);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -4506,8 +4512,8 @@ pub mod blob {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_duration: Option<i64>,
             pub(crate) x_ms_proposed_lease_id: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -4530,12 +4536,12 @@ pub mod blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -4587,10 +4593,10 @@ pub mod blob {
                             req.insert_header("x-ms-proposed-lease-id", x_ms_proposed_lease_id);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -4633,8 +4639,8 @@ pub mod blob {
             pub(crate) x_ms_lease_id: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -4647,12 +4653,12 @@ pub mod blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -4699,10 +4705,10 @@ pub mod blob {
                         }
                         req.insert_header("x-ms-lease-id", &this.x_ms_lease_id);
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -4745,8 +4751,8 @@ pub mod blob {
             pub(crate) x_ms_lease_id: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -4759,12 +4765,12 @@ pub mod blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -4811,10 +4817,10 @@ pub mod blob {
                         }
                         req.insert_header("x-ms-lease-id", &this.x_ms_lease_id);
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -4858,8 +4864,8 @@ pub mod blob {
             pub(crate) x_ms_proposed_lease_id: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -4872,12 +4878,12 @@ pub mod blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -4925,10 +4931,10 @@ pub mod blob {
                         req.insert_header("x-ms-lease-id", &this.x_ms_lease_id);
                         req.insert_header("x-ms-proposed-lease-id", &this.x_ms_proposed_lease_id);
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -4971,8 +4977,8 @@ pub mod blob {
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_break_period: Option<i64>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -4990,12 +4996,12 @@ pub mod blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -5044,10 +5050,10 @@ pub mod blob {
                             req.insert_header("x-ms-lease-break-period", &x_ms_lease_break_period.to_string());
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -5093,8 +5099,8 @@ pub mod blob {
             pub(crate) x_ms_encryption_key_sha256: Option<String>,
             pub(crate) x_ms_encryption_algorithm: Option<String>,
             pub(crate) x_ms_encryption_scope: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -5133,12 +5139,12 @@ pub mod blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -5203,10 +5209,10 @@ pub mod blob {
                             req.insert_header("x-ms-encryption-scope", x_ms_encryption_scope);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -5254,13 +5260,13 @@ pub mod blob {
             pub(crate) x_ms_meta: Option<String>,
             pub(crate) x_ms_access_tier: Option<String>,
             pub(crate) x_ms_rehydrate_priority: Option<String>,
-            pub(crate) x_ms_source_if_modified_since: Option<String>,
-            pub(crate) x_ms_source_if_unmodified_since: Option<String>,
+            pub(crate) x_ms_source_if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) x_ms_source_if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_source_if_match: Option<String>,
             pub(crate) x_ms_source_if_none_match: Option<String>,
             pub(crate) x_ms_source_if_tags: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -5268,7 +5274,7 @@ pub mod blob {
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_tags: Option<String>,
             pub(crate) x_ms_seal_blob: Option<bool>,
-            pub(crate) x_ms_immutability_policy_until_date: Option<String>,
+            pub(crate) x_ms_immutability_policy_until_date: Option<time::OffsetDateTime>,
             pub(crate) x_ms_immutability_policy_mode: Option<String>,
             pub(crate) x_ms_legal_hold: Option<bool>,
         }
@@ -5294,12 +5300,12 @@ pub mod blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<String>) -> Self {
+            pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_source_if_modified_since = Some(x_ms_source_if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<String>) -> Self {
+            pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_source_if_unmodified_since = Some(x_ms_source_if_unmodified_since.into());
                 self
             }
@@ -5319,12 +5325,12 @@ pub mod blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -5364,7 +5370,10 @@ pub mod blob {
                 self
             }
             #[doc = "Specifies the date time when the blobs immutability policy is set to expire."]
-            pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
+            pub fn x_ms_immutability_policy_until_date(
+                mut self,
+                x_ms_immutability_policy_until_date: impl Into<time::OffsetDateTime>,
+            ) -> Self {
                 self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
                 self
             }
@@ -5408,10 +5417,10 @@ pub mod blob {
                             req.insert_header("x-ms-rehydrate-priority", x_ms_rehydrate_priority);
                         }
                         if let Some(x_ms_source_if_modified_since) = &this.x_ms_source_if_modified_since {
-                            req.insert_header("x-ms-source-if-modified-since", x_ms_source_if_modified_since);
+                            req.insert_header("x-ms-source-if-modified-since", &x_ms_source_if_modified_since.to_string());
                         }
                         if let Some(x_ms_source_if_unmodified_since) = &this.x_ms_source_if_unmodified_since {
-                            req.insert_header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since);
+                            req.insert_header("x-ms-source-if-unmodified-since", &x_ms_source_if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_source_if_match) = &this.x_ms_source_if_match {
                             req.insert_header("x-ms-source-if-match", x_ms_source_if_match);
@@ -5423,10 +5432,10 @@ pub mod blob {
                             req.insert_header("x-ms-source-if-tags", x_ms_source_if_tags);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -5452,7 +5461,10 @@ pub mod blob {
                             req.insert_header("x-ms-seal-blob", &x_ms_seal_blob.to_string());
                         }
                         if let Some(x_ms_immutability_policy_until_date) = &this.x_ms_immutability_policy_until_date {
-                            req.insert_header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
+                            req.insert_header(
+                                "x-ms-immutability-policy-until-date",
+                                &x_ms_immutability_policy_until_date.to_string(),
+                            );
                         }
                         if let Some(x_ms_immutability_policy_mode) = &this.x_ms_immutability_policy_mode {
                             req.insert_header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
@@ -5490,12 +5502,12 @@ pub mod blob {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_meta: Option<String>,
             pub(crate) x_ms_access_tier: Option<String>,
-            pub(crate) x_ms_source_if_modified_since: Option<String>,
-            pub(crate) x_ms_source_if_unmodified_since: Option<String>,
+            pub(crate) x_ms_source_if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) x_ms_source_if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_source_if_match: Option<String>,
             pub(crate) x_ms_source_if_none_match: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -5503,7 +5515,7 @@ pub mod blob {
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_source_content_md5: Option<String>,
             pub(crate) x_ms_tags: Option<String>,
-            pub(crate) x_ms_immutability_policy_until_date: Option<String>,
+            pub(crate) x_ms_immutability_policy_until_date: Option<time::OffsetDateTime>,
             pub(crate) x_ms_immutability_policy_mode: Option<String>,
             pub(crate) x_ms_legal_hold: Option<bool>,
             pub(crate) x_ms_copy_source_authorization: Option<String>,
@@ -5526,12 +5538,12 @@ pub mod blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<String>) -> Self {
+            pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_source_if_modified_since = Some(x_ms_source_if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<String>) -> Self {
+            pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_source_if_unmodified_since = Some(x_ms_source_if_unmodified_since.into());
                 self
             }
@@ -5546,12 +5558,12 @@ pub mod blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -5591,7 +5603,10 @@ pub mod blob {
                 self
             }
             #[doc = "Specifies the date time when the blobs immutability policy is set to expire."]
-            pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
+            pub fn x_ms_immutability_policy_until_date(
+                mut self,
+                x_ms_immutability_policy_until_date: impl Into<time::OffsetDateTime>,
+            ) -> Self {
                 self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
                 self
             }
@@ -5643,10 +5658,10 @@ pub mod blob {
                             req.insert_header("x-ms-access-tier", x_ms_access_tier);
                         }
                         if let Some(x_ms_source_if_modified_since) = &this.x_ms_source_if_modified_since {
-                            req.insert_header("x-ms-source-if-modified-since", x_ms_source_if_modified_since);
+                            req.insert_header("x-ms-source-if-modified-since", &x_ms_source_if_modified_since.to_string());
                         }
                         if let Some(x_ms_source_if_unmodified_since) = &this.x_ms_source_if_unmodified_since {
-                            req.insert_header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since);
+                            req.insert_header("x-ms-source-if-unmodified-since", &x_ms_source_if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_source_if_match) = &this.x_ms_source_if_match {
                             req.insert_header("x-ms-source-if-match", x_ms_source_if_match);
@@ -5655,10 +5670,10 @@ pub mod blob {
                             req.insert_header("x-ms-source-if-none-match", x_ms_source_if_none_match);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -5684,7 +5699,10 @@ pub mod blob {
                             req.insert_header("x-ms-tags", x_ms_tags);
                         }
                         if let Some(x_ms_immutability_policy_until_date) = &this.x_ms_immutability_policy_until_date {
-                            req.insert_header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
+                            req.insert_header(
+                                "x-ms-immutability-policy-until-date",
+                                &x_ms_immutability_policy_until_date.to_string(),
+                            );
                         }
                         if let Some(x_ms_immutability_policy_mode) = &this.x_ms_immutability_policy_mode {
                             req.insert_header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
@@ -5968,8 +5986,8 @@ pub mod blob {
             pub(crate) x_ms_encryption_key: Option<String>,
             pub(crate) x_ms_encryption_key_sha256: Option<String>,
             pub(crate) x_ms_encryption_algorithm: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -6012,12 +6030,12 @@ pub mod blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -6083,10 +6101,10 @@ pub mod blob {
                             req.insert_header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -6733,15 +6751,15 @@ pub mod page_blob {
             pub(crate) x_ms_encryption_key_sha256: Option<String>,
             pub(crate) x_ms_encryption_algorithm: Option<String>,
             pub(crate) x_ms_encryption_scope: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_blob_sequence_number: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_tags: Option<String>,
-            pub(crate) x_ms_immutability_policy_until_date: Option<String>,
+            pub(crate) x_ms_immutability_policy_until_date: Option<time::OffsetDateTime>,
             pub(crate) x_ms_immutability_policy_mode: Option<String>,
             pub(crate) x_ms_legal_hold: Option<bool>,
         }
@@ -6817,12 +6835,12 @@ pub mod page_blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -6857,7 +6875,10 @@ pub mod page_blob {
                 self
             }
             #[doc = "Specifies the date time when the blobs immutability policy is set to expire."]
-            pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
+            pub fn x_ms_immutability_policy_until_date(
+                mut self,
+                x_ms_immutability_policy_until_date: impl Into<time::OffsetDateTime>,
+            ) -> Self {
                 self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
                 self
             }
@@ -6933,10 +6954,10 @@ pub mod page_blob {
                             req.insert_header("x-ms-encryption-scope", x_ms_encryption_scope);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -6959,7 +6980,10 @@ pub mod page_blob {
                             req.insert_header("x-ms-tags", x_ms_tags);
                         }
                         if let Some(x_ms_immutability_policy_until_date) = &this.x_ms_immutability_policy_until_date {
-                            req.insert_header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
+                            req.insert_header(
+                                "x-ms-immutability-policy-until-date",
+                                &x_ms_immutability_policy_until_date.to_string(),
+                            );
                         }
                         if let Some(x_ms_immutability_policy_mode) = &this.x_ms_immutability_policy_mode {
                             req.insert_header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
@@ -7007,8 +7031,8 @@ pub mod page_blob {
             pub(crate) x_ms_if_sequence_number_le: Option<i64>,
             pub(crate) x_ms_if_sequence_number_lt: Option<i64>,
             pub(crate) x_ms_if_sequence_number_eq: Option<i64>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -7076,12 +7100,12 @@ pub mod page_blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -7163,10 +7187,10 @@ pub mod page_blob {
                             req.insert_header("x-ms-if-sequence-number-eq", &x_ms_if_sequence_number_eq.to_string());
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -7217,8 +7241,8 @@ pub mod page_blob {
             pub(crate) x_ms_if_sequence_number_le: Option<i64>,
             pub(crate) x_ms_if_sequence_number_lt: Option<i64>,
             pub(crate) x_ms_if_sequence_number_eq: Option<i64>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -7276,12 +7300,12 @@ pub mod page_blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -7355,10 +7379,10 @@ pub mod page_blob {
                             req.insert_header("x-ms-if-sequence-number-eq", &x_ms_if_sequence_number_eq.to_string());
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -7414,13 +7438,13 @@ pub mod page_blob {
             pub(crate) x_ms_if_sequence_number_le: Option<i64>,
             pub(crate) x_ms_if_sequence_number_lt: Option<i64>,
             pub(crate) x_ms_if_sequence_number_eq: Option<i64>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
-            pub(crate) x_ms_source_if_modified_since: Option<String>,
-            pub(crate) x_ms_source_if_unmodified_since: Option<String>,
+            pub(crate) x_ms_source_if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) x_ms_source_if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_source_if_match: Option<String>,
             pub(crate) x_ms_source_if_none_match: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -7483,12 +7507,12 @@ pub mod page_blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -7508,12 +7532,12 @@ pub mod page_blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<String>) -> Self {
+            pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_source_if_modified_since = Some(x_ms_source_if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<String>) -> Self {
+            pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_source_if_unmodified_since = Some(x_ms_source_if_unmodified_since.into());
                 self
             }
@@ -7593,10 +7617,10 @@ pub mod page_blob {
                             req.insert_header("x-ms-if-sequence-number-eq", &x_ms_if_sequence_number_eq.to_string());
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -7608,10 +7632,10 @@ pub mod page_blob {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
                         if let Some(x_ms_source_if_modified_since) = &this.x_ms_source_if_modified_since {
-                            req.insert_header("x-ms-source-if-modified-since", x_ms_source_if_modified_since);
+                            req.insert_header("x-ms-source-if-modified-since", &x_ms_source_if_modified_since.to_string());
                         }
                         if let Some(x_ms_source_if_unmodified_since) = &this.x_ms_source_if_unmodified_since {
-                            req.insert_header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since);
+                            req.insert_header("x-ms-source-if-unmodified-since", &x_ms_source_if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_source_if_match) = &this.x_ms_source_if_match {
                             req.insert_header("x-ms-source-if-match", x_ms_source_if_match);
@@ -7655,8 +7679,8 @@ pub mod page_blob {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_range: Option<String>,
             pub(crate) x_ms_lease_id: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -7686,12 +7710,12 @@ pub mod page_blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -7771,10 +7795,10 @@ pub mod page_blob {
                                     req.insert_header("x-ms-lease-id", x_ms_lease_id);
                                 }
                                 if let Some(if_modified_since) = &this.if_modified_since {
-                                    req.insert_header("if-modified-since", if_modified_since);
+                                    req.insert_header("if-modified-since", &if_modified_since.to_string());
                                 }
                                 if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                                    req.insert_header("if-unmodified-since", if_unmodified_since);
+                                    req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                                 }
                                 if let Some(if_match) = &this.if_match {
                                     req.insert_header("if-match", if_match);
@@ -7833,8 +7857,8 @@ pub mod page_blob {
             pub(crate) x_ms_previous_snapshot_url: Option<String>,
             pub(crate) x_ms_range: Option<String>,
             pub(crate) x_ms_lease_id: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -7874,12 +7898,12 @@ pub mod page_blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -7965,10 +7989,10 @@ pub mod page_blob {
                                     req.insert_header("x-ms-lease-id", x_ms_lease_id);
                                 }
                                 if let Some(if_modified_since) = &this.if_modified_since {
-                                    req.insert_header("if-modified-since", if_modified_since);
+                                    req.insert_header("if-modified-since", &if_modified_since.to_string());
                                 }
                                 if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                                    req.insert_header("if-unmodified-since", if_unmodified_since);
+                                    req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                                 }
                                 if let Some(if_match) = &this.if_match {
                                     req.insert_header("if-match", if_match);
@@ -8028,8 +8052,8 @@ pub mod page_blob {
             pub(crate) x_ms_encryption_key_sha256: Option<String>,
             pub(crate) x_ms_encryption_algorithm: Option<String>,
             pub(crate) x_ms_encryption_scope: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -8067,12 +8091,12 @@ pub mod page_blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -8132,10 +8156,10 @@ pub mod page_blob {
                             req.insert_header("x-ms-encryption-scope", x_ms_encryption_scope);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -8179,8 +8203,8 @@ pub mod page_blob {
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -8199,12 +8223,12 @@ pub mod page_blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -8257,10 +8281,10 @@ pub mod page_blob {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -8306,8 +8330,8 @@ pub mod page_blob {
             pub(crate) x_ms_copy_source: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -8320,12 +8344,12 @@ pub mod page_blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -8370,10 +8394,10 @@ pub mod page_blob {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -8594,14 +8618,14 @@ pub mod append_blob {
             pub(crate) x_ms_encryption_key_sha256: Option<String>,
             pub(crate) x_ms_encryption_algorithm: Option<String>,
             pub(crate) x_ms_encryption_scope: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_tags: Option<String>,
-            pub(crate) x_ms_immutability_policy_until_date: Option<String>,
+            pub(crate) x_ms_immutability_policy_until_date: Option<time::OffsetDateTime>,
             pub(crate) x_ms_immutability_policy_mode: Option<String>,
             pub(crate) x_ms_legal_hold: Option<bool>,
         }
@@ -8672,12 +8696,12 @@ pub mod append_blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -8707,7 +8731,10 @@ pub mod append_blob {
                 self
             }
             #[doc = "Specifies the date time when the blobs immutability policy is set to expire."]
-            pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
+            pub fn x_ms_immutability_policy_until_date(
+                mut self,
+                x_ms_immutability_policy_until_date: impl Into<time::OffsetDateTime>,
+            ) -> Self {
                 self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
                 self
             }
@@ -8780,10 +8807,10 @@ pub mod append_blob {
                             req.insert_header("x-ms-encryption-scope", x_ms_encryption_scope);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -8802,7 +8829,10 @@ pub mod append_blob {
                             req.insert_header("x-ms-tags", x_ms_tags);
                         }
                         if let Some(x_ms_immutability_policy_until_date) = &this.x_ms_immutability_policy_until_date {
-                            req.insert_header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
+                            req.insert_header(
+                                "x-ms-immutability-policy-until-date",
+                                &x_ms_immutability_policy_until_date.to_string(),
+                            );
                         }
                         if let Some(x_ms_immutability_policy_mode) = &this.x_ms_immutability_policy_mode {
                             req.insert_header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
@@ -8847,8 +8877,8 @@ pub mod append_blob {
             pub(crate) x_ms_encryption_key_sha256: Option<String>,
             pub(crate) x_ms_encryption_algorithm: Option<String>,
             pub(crate) x_ms_encryption_scope: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
@@ -8906,12 +8936,12 @@ pub mod append_blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -8986,10 +9016,10 @@ pub mod append_blob {
                             req.insert_header("x-ms-encryption-scope", x_ms_encryption_scope);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -9042,13 +9072,13 @@ pub mod append_blob {
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) x_ms_blob_condition_maxsize: Option<i64>,
             pub(crate) x_ms_blob_condition_appendpos: Option<i64>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
-            pub(crate) x_ms_source_if_modified_since: Option<String>,
-            pub(crate) x_ms_source_if_unmodified_since: Option<String>,
+            pub(crate) x_ms_source_if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) x_ms_source_if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_source_if_match: Option<String>,
             pub(crate) x_ms_source_if_none_match: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -9116,12 +9146,12 @@ pub mod append_blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -9141,12 +9171,12 @@ pub mod append_blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<String>) -> Self {
+            pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_source_if_modified_since = Some(x_ms_source_if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<String>) -> Self {
+            pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_source_if_unmodified_since = Some(x_ms_source_if_unmodified_since.into());
                 self
             }
@@ -9226,10 +9256,10 @@ pub mod append_blob {
                             req.insert_header("x-ms-blob-condition-appendpos", &x_ms_blob_condition_appendpos.to_string());
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -9241,10 +9271,10 @@ pub mod append_blob {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
                         if let Some(x_ms_source_if_modified_since) = &this.x_ms_source_if_modified_since {
-                            req.insert_header("x-ms-source-if-modified-since", x_ms_source_if_modified_since);
+                            req.insert_header("x-ms-source-if-modified-since", &x_ms_source_if_modified_since.to_string());
                         }
                         if let Some(x_ms_source_if_unmodified_since) = &this.x_ms_source_if_unmodified_since {
-                            req.insert_header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since);
+                            req.insert_header("x-ms-source-if-unmodified-since", &x_ms_source_if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_source_if_match) = &this.x_ms_source_if_match {
                             req.insert_header("x-ms-source-if-match", x_ms_source_if_match);
@@ -9287,8 +9317,8 @@ pub mod append_blob {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_lease_id: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_blob_condition_appendpos: Option<i64>,
@@ -9310,12 +9340,12 @@ pub mod append_blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -9362,10 +9392,10 @@ pub mod append_blob {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -9691,14 +9721,14 @@ pub mod block_blob {
             pub(crate) x_ms_encryption_algorithm: Option<String>,
             pub(crate) x_ms_encryption_scope: Option<String>,
             pub(crate) x_ms_access_tier: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_tags: Option<String>,
-            pub(crate) x_ms_immutability_policy_until_date: Option<String>,
+            pub(crate) x_ms_immutability_policy_until_date: Option<time::OffsetDateTime>,
             pub(crate) x_ms_immutability_policy_mode: Option<String>,
             pub(crate) x_ms_legal_hold: Option<bool>,
         }
@@ -9779,12 +9809,12 @@ pub mod block_blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -9814,7 +9844,10 @@ pub mod block_blob {
                 self
             }
             #[doc = "Specifies the date time when the blobs immutability policy is set to expire."]
-            pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
+            pub fn x_ms_immutability_policy_until_date(
+                mut self,
+                x_ms_immutability_policy_until_date: impl Into<time::OffsetDateTime>,
+            ) -> Self {
                 self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
                 self
             }
@@ -9895,10 +9928,10 @@ pub mod block_blob {
                             req.insert_header("x-ms-access-tier", x_ms_access_tier);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -9917,7 +9950,10 @@ pub mod block_blob {
                             req.insert_header("x-ms-tags", x_ms_tags);
                         }
                         if let Some(x_ms_immutability_policy_until_date) = &this.x_ms_immutability_policy_until_date {
-                            req.insert_header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
+                            req.insert_header(
+                                "x-ms-immutability-policy-until-date",
+                                &x_ms_immutability_policy_until_date.to_string(),
+                            );
                         }
                         if let Some(x_ms_immutability_policy_mode) = &this.x_ms_immutability_policy_mode {
                             req.insert_header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
@@ -9967,13 +10003,13 @@ pub mod block_blob {
             pub(crate) x_ms_encryption_algorithm: Option<String>,
             pub(crate) x_ms_encryption_scope: Option<String>,
             pub(crate) x_ms_access_tier: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
-            pub(crate) x_ms_source_if_modified_since: Option<String>,
-            pub(crate) x_ms_source_if_unmodified_since: Option<String>,
+            pub(crate) x_ms_source_if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) x_ms_source_if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_source_if_match: Option<String>,
             pub(crate) x_ms_source_if_none_match: Option<String>,
             pub(crate) x_ms_source_if_tags: Option<String>,
@@ -10060,12 +10096,12 @@ pub mod block_blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -10085,12 +10121,12 @@ pub mod block_blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<String>) -> Self {
+            pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_source_if_modified_since = Some(x_ms_source_if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<String>) -> Self {
+            pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_source_if_unmodified_since = Some(x_ms_source_if_unmodified_since.into());
                 self
             }
@@ -10199,10 +10235,10 @@ pub mod block_blob {
                             req.insert_header("x-ms-access-tier", x_ms_access_tier);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -10214,10 +10250,10 @@ pub mod block_blob {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
                         if let Some(x_ms_source_if_modified_since) = &this.x_ms_source_if_modified_since {
-                            req.insert_header("x-ms-source-if-modified-since", x_ms_source_if_modified_since);
+                            req.insert_header("x-ms-source-if-modified-since", &x_ms_source_if_modified_since.to_string());
                         }
                         if let Some(x_ms_source_if_unmodified_since) = &this.x_ms_source_if_unmodified_since {
-                            req.insert_header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since);
+                            req.insert_header("x-ms-source-if-unmodified-since", &x_ms_source_if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_source_if_match) = &this.x_ms_source_if_match {
                             req.insert_header("x-ms-source-if-match", x_ms_source_if_match);
@@ -10415,8 +10451,8 @@ pub mod block_blob {
             pub(crate) x_ms_encryption_algorithm: Option<String>,
             pub(crate) x_ms_encryption_scope: Option<String>,
             pub(crate) x_ms_lease_id: Option<String>,
-            pub(crate) x_ms_source_if_modified_since: Option<String>,
-            pub(crate) x_ms_source_if_unmodified_since: Option<String>,
+            pub(crate) x_ms_source_if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) x_ms_source_if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_source_if_match: Option<String>,
             pub(crate) x_ms_source_if_none_match: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -10469,12 +10505,12 @@ pub mod block_blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<String>) -> Self {
+            pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_source_if_modified_since = Some(x_ms_source_if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<String>) -> Self {
+            pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_source_if_unmodified_since = Some(x_ms_source_if_unmodified_since.into());
                 self
             }
@@ -10547,10 +10583,10 @@ pub mod block_blob {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
                         if let Some(x_ms_source_if_modified_since) = &this.x_ms_source_if_modified_since {
-                            req.insert_header("x-ms-source-if-modified-since", x_ms_source_if_modified_since);
+                            req.insert_header("x-ms-source-if-modified-since", &x_ms_source_if_modified_since.to_string());
                         }
                         if let Some(x_ms_source_if_unmodified_since) = &this.x_ms_source_if_unmodified_since {
-                            req.insert_header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since);
+                            req.insert_header("x-ms-source-if-unmodified-since", &x_ms_source_if_unmodified_since.to_string());
                         }
                         if let Some(x_ms_source_if_match) = &this.x_ms_source_if_match {
                             req.insert_header("x-ms-source-if-match", x_ms_source_if_match);
@@ -10704,14 +10740,14 @@ pub mod block_blob {
             pub(crate) x_ms_encryption_algorithm: Option<String>,
             pub(crate) x_ms_encryption_scope: Option<String>,
             pub(crate) x_ms_access_tier: Option<String>,
-            pub(crate) if_modified_since: Option<String>,
-            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_modified_since: Option<time::OffsetDateTime>,
+            pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) if_match: Option<String>,
             pub(crate) if_none_match: Option<String>,
             pub(crate) x_ms_if_tags: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_tags: Option<String>,
-            pub(crate) x_ms_immutability_policy_until_date: Option<String>,
+            pub(crate) x_ms_immutability_policy_until_date: Option<time::OffsetDateTime>,
             pub(crate) x_ms_immutability_policy_mode: Option<String>,
             pub(crate) x_ms_legal_hold: Option<bool>,
         }
@@ -10797,12 +10833,12 @@ pub mod block_blob {
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
-            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
             #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
-            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<time::OffsetDateTime>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
@@ -10832,7 +10868,10 @@ pub mod block_blob {
                 self
             }
             #[doc = "Specifies the date time when the blobs immutability policy is set to expire."]
-            pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
+            pub fn x_ms_immutability_policy_until_date(
+                mut self,
+                x_ms_immutability_policy_until_date: impl Into<time::OffsetDateTime>,
+            ) -> Self {
                 self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
                 self
             }
@@ -10912,10 +10951,10 @@ pub mod block_blob {
                             req.insert_header("x-ms-access-tier", x_ms_access_tier);
                         }
                         if let Some(if_modified_since) = &this.if_modified_since {
-                            req.insert_header("if-modified-since", if_modified_since);
+                            req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
-                            req.insert_header("if-unmodified-since", if_unmodified_since);
+                            req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
                         if let Some(if_match) = &this.if_match {
                             req.insert_header("if-match", if_match);
@@ -10936,7 +10975,10 @@ pub mod block_blob {
                             req.insert_header("x-ms-tags", x_ms_tags);
                         }
                         if let Some(x_ms_immutability_policy_until_date) = &this.x_ms_immutability_policy_until_date {
-                            req.insert_header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
+                            req.insert_header(
+                                "x-ms-immutability-policy-until-date",
+                                &x_ms_immutability_policy_until_date.to_string(),
+                            );
                         }
                         if let Some(x_ms_immutability_policy_mode) = &this.x_ms_immutability_policy_mode {
                             req.insert_header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);

@@ -8597,8 +8597,8 @@ pub mod log_analytics {
             resource_group_name: impl Into<String>,
             profile_name: impl Into<String>,
             metrics: Vec<String>,
-            date_time_begin: impl Into<String>,
-            date_time_end: impl Into<String>,
+            date_time_begin: impl Into<time::OffsetDateTime>,
+            date_time_end: impl Into<time::OffsetDateTime>,
             granularity: impl Into<String>,
             custom_domains: Vec<String>,
             protocols: Vec<String>,
@@ -8633,8 +8633,8 @@ pub mod log_analytics {
             rankings: Vec<String>,
             metrics: Vec<String>,
             max_ranking: i32,
-            date_time_begin: impl Into<String>,
-            date_time_end: impl Into<String>,
+            date_time_begin: impl Into<time::OffsetDateTime>,
+            date_time_end: impl Into<time::OffsetDateTime>,
         ) -> get_log_analytics_rankings::Builder {
             get_log_analytics_rankings::Builder {
                 client: self.0.clone(),
@@ -8699,8 +8699,8 @@ pub mod log_analytics {
             resource_group_name: impl Into<String>,
             profile_name: impl Into<String>,
             metrics: Vec<String>,
-            date_time_begin: impl Into<String>,
-            date_time_end: impl Into<String>,
+            date_time_begin: impl Into<time::OffsetDateTime>,
+            date_time_end: impl Into<time::OffsetDateTime>,
             granularity: impl Into<String>,
         ) -> get_waf_log_analytics_metrics::Builder {
             get_waf_log_analytics_metrics::Builder {
@@ -8729,8 +8729,8 @@ pub mod log_analytics {
             resource_group_name: impl Into<String>,
             profile_name: impl Into<String>,
             metrics: Vec<String>,
-            date_time_begin: impl Into<String>,
-            date_time_end: impl Into<String>,
+            date_time_begin: impl Into<time::OffsetDateTime>,
+            date_time_end: impl Into<time::OffsetDateTime>,
             max_ranking: i32,
             rankings: Vec<String>,
         ) -> get_waf_log_analytics_rankings::Builder {
@@ -8759,8 +8759,8 @@ pub mod log_analytics {
             pub(crate) resource_group_name: String,
             pub(crate) profile_name: String,
             pub(crate) metrics: Vec<String>,
-            pub(crate) date_time_begin: String,
-            pub(crate) date_time_end: String,
+            pub(crate) date_time_begin: time::OffsetDateTime,
+            pub(crate) date_time_end: time::OffsetDateTime,
             pub(crate) granularity: String,
             pub(crate) custom_domains: Vec<String>,
             pub(crate) protocols: Vec<String>,
@@ -8804,33 +8804,37 @@ pub mod log_analytics {
                             .append_pair(azure_core::query_param::API_VERSION, "2020-09-01");
                         let metrics = &this.metrics;
                         for value in &this.metrics {
-                            req.url_mut().query_pairs_mut().append_pair("metrics", value);
+                            req.url_mut().query_pairs_mut().append_pair("metrics", &value.to_string());
                         }
                         let date_time_begin = &this.date_time_begin;
-                        req.url_mut().query_pairs_mut().append_pair("dateTimeBegin", date_time_begin);
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair("dateTimeBegin", &date_time_begin.to_string());
                         let date_time_end = &this.date_time_end;
-                        req.url_mut().query_pairs_mut().append_pair("dateTimeEnd", date_time_end);
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair("dateTimeEnd", &date_time_end.to_string());
                         let granularity = &this.granularity;
                         req.url_mut().query_pairs_mut().append_pair("granularity", granularity);
                         let group_by = &this.group_by;
                         for value in &this.group_by {
-                            req.url_mut().query_pairs_mut().append_pair("groupBy", value);
+                            req.url_mut().query_pairs_mut().append_pair("groupBy", &value.to_string());
                         }
                         let continents = &this.continents;
                         for value in &this.continents {
-                            req.url_mut().query_pairs_mut().append_pair("continents", value);
+                            req.url_mut().query_pairs_mut().append_pair("continents", &value.to_string());
                         }
                         let country_or_regions = &this.country_or_regions;
                         for value in &this.country_or_regions {
-                            req.url_mut().query_pairs_mut().append_pair("countryOrRegions", value);
+                            req.url_mut().query_pairs_mut().append_pair("countryOrRegions", &value.to_string());
                         }
                         let custom_domains = &this.custom_domains;
                         for value in &this.custom_domains {
-                            req.url_mut().query_pairs_mut().append_pair("customDomains", value);
+                            req.url_mut().query_pairs_mut().append_pair("customDomains", &value.to_string());
                         }
                         let protocols = &this.protocols;
                         for value in &this.protocols {
-                            req.url_mut().query_pairs_mut().append_pair("protocols", value);
+                            req.url_mut().query_pairs_mut().append_pair("protocols", &value.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -8864,8 +8868,8 @@ pub mod log_analytics {
             pub(crate) rankings: Vec<String>,
             pub(crate) metrics: Vec<String>,
             pub(crate) max_ranking: i32,
-            pub(crate) date_time_begin: String,
-            pub(crate) date_time_end: String,
+            pub(crate) date_time_begin: time::OffsetDateTime,
+            pub(crate) date_time_end: time::OffsetDateTime,
             pub(crate) custom_domains: Vec<String>,
         }
         impl Builder {
@@ -8896,21 +8900,25 @@ pub mod log_analytics {
                             .append_pair(azure_core::query_param::API_VERSION, "2020-09-01");
                         let rankings = &this.rankings;
                         for value in &this.rankings {
-                            req.url_mut().query_pairs_mut().append_pair("rankings", value);
+                            req.url_mut().query_pairs_mut().append_pair("rankings", &value.to_string());
                         }
                         let metrics = &this.metrics;
                         for value in &this.metrics {
-                            req.url_mut().query_pairs_mut().append_pair("metrics", value);
+                            req.url_mut().query_pairs_mut().append_pair("metrics", &value.to_string());
                         }
                         let max_ranking = &this.max_ranking;
                         req.url_mut().query_pairs_mut().append_pair("maxRanking", &max_ranking.to_string());
                         let date_time_begin = &this.date_time_begin;
-                        req.url_mut().query_pairs_mut().append_pair("dateTimeBegin", date_time_begin);
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair("dateTimeBegin", &date_time_begin.to_string());
                         let date_time_end = &this.date_time_end;
-                        req.url_mut().query_pairs_mut().append_pair("dateTimeEnd", date_time_end);
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair("dateTimeEnd", &date_time_end.to_string());
                         let custom_domains = &this.custom_domains;
                         for value in &this.custom_domains {
-                            req.url_mut().query_pairs_mut().append_pair("customDomains", value);
+                            req.url_mut().query_pairs_mut().append_pair("customDomains", &value.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -9046,8 +9054,8 @@ pub mod log_analytics {
             pub(crate) resource_group_name: String,
             pub(crate) profile_name: String,
             pub(crate) metrics: Vec<String>,
-            pub(crate) date_time_begin: String,
-            pub(crate) date_time_end: String,
+            pub(crate) date_time_begin: time::OffsetDateTime,
+            pub(crate) date_time_end: time::OffsetDateTime,
             pub(crate) granularity: String,
             pub(crate) actions: Vec<String>,
             pub(crate) group_by: Vec<String>,
@@ -9089,25 +9097,29 @@ pub mod log_analytics {
                             .append_pair(azure_core::query_param::API_VERSION, "2020-09-01");
                         let metrics = &this.metrics;
                         for value in &this.metrics {
-                            req.url_mut().query_pairs_mut().append_pair("metrics", value);
+                            req.url_mut().query_pairs_mut().append_pair("metrics", &value.to_string());
                         }
                         let date_time_begin = &this.date_time_begin;
-                        req.url_mut().query_pairs_mut().append_pair("dateTimeBegin", date_time_begin);
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair("dateTimeBegin", &date_time_begin.to_string());
                         let date_time_end = &this.date_time_end;
-                        req.url_mut().query_pairs_mut().append_pair("dateTimeEnd", date_time_end);
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair("dateTimeEnd", &date_time_end.to_string());
                         let granularity = &this.granularity;
                         req.url_mut().query_pairs_mut().append_pair("granularity", granularity);
                         let actions = &this.actions;
                         for value in &this.actions {
-                            req.url_mut().query_pairs_mut().append_pair("actions", value);
+                            req.url_mut().query_pairs_mut().append_pair("actions", &value.to_string());
                         }
                         let group_by = &this.group_by;
                         for value in &this.group_by {
-                            req.url_mut().query_pairs_mut().append_pair("groupBy", value);
+                            req.url_mut().query_pairs_mut().append_pair("groupBy", &value.to_string());
                         }
                         let rule_types = &this.rule_types;
                         for value in &this.rule_types {
-                            req.url_mut().query_pairs_mut().append_pair("ruleTypes", value);
+                            req.url_mut().query_pairs_mut().append_pair("ruleTypes", &value.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -9139,8 +9151,8 @@ pub mod log_analytics {
             pub(crate) resource_group_name: String,
             pub(crate) profile_name: String,
             pub(crate) metrics: Vec<String>,
-            pub(crate) date_time_begin: String,
-            pub(crate) date_time_end: String,
+            pub(crate) date_time_begin: time::OffsetDateTime,
+            pub(crate) date_time_end: time::OffsetDateTime,
             pub(crate) max_ranking: i32,
             pub(crate) rankings: Vec<String>,
             pub(crate) actions: Vec<String>,
@@ -9178,25 +9190,29 @@ pub mod log_analytics {
                             .append_pair(azure_core::query_param::API_VERSION, "2020-09-01");
                         let metrics = &this.metrics;
                         for value in &this.metrics {
-                            req.url_mut().query_pairs_mut().append_pair("metrics", value);
+                            req.url_mut().query_pairs_mut().append_pair("metrics", &value.to_string());
                         }
                         let date_time_begin = &this.date_time_begin;
-                        req.url_mut().query_pairs_mut().append_pair("dateTimeBegin", date_time_begin);
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair("dateTimeBegin", &date_time_begin.to_string());
                         let date_time_end = &this.date_time_end;
-                        req.url_mut().query_pairs_mut().append_pair("dateTimeEnd", date_time_end);
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair("dateTimeEnd", &date_time_end.to_string());
                         let max_ranking = &this.max_ranking;
                         req.url_mut().query_pairs_mut().append_pair("maxRanking", &max_ranking.to_string());
                         let rankings = &this.rankings;
                         for value in &this.rankings {
-                            req.url_mut().query_pairs_mut().append_pair("rankings", value);
+                            req.url_mut().query_pairs_mut().append_pair("rankings", &value.to_string());
                         }
                         let actions = &this.actions;
                         for value in &this.actions {
-                            req.url_mut().query_pairs_mut().append_pair("actions", value);
+                            req.url_mut().query_pairs_mut().append_pair("actions", &value.to_string());
                         }
                         let rule_types = &this.rule_types;
                         for value in &this.rule_types {
-                            req.url_mut().query_pairs_mut().append_pair("ruleTypes", value);
+                            req.url_mut().query_pairs_mut().append_pair("ruleTypes", &value.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);

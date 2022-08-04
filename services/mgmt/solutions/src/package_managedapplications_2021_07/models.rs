@@ -1051,11 +1051,11 @@ pub struct JitSchedulingPolicy {
     pub type_: JitSchedulingType,
     pub duration: String,
     #[doc = "The start time of the request."]
-    #[serde(rename = "startTime")]
-    pub start_time: String,
+    #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
+    pub start_time: time::OffsetDateTime,
 }
 impl JitSchedulingPolicy {
-    pub fn new(type_: JitSchedulingType, duration: String, start_time: String) -> Self {
+    pub fn new(type_: JitSchedulingType, duration: String, start_time: time::OffsetDateTime) -> Self {
         Self {
             type_,
             duration,
@@ -1585,8 +1585,8 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
+    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1594,8 +1594,8 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
+    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

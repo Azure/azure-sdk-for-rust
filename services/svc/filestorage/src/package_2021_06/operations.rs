@@ -2222,9 +2222,9 @@ pub mod directory {
             pub(crate) x_ms_meta: Option<String>,
             pub(crate) x_ms_file_permission: Option<String>,
             pub(crate) x_ms_file_permission_key: Option<String>,
-            pub(crate) x_ms_file_creation_time: Option<String>,
-            pub(crate) x_ms_file_last_write_time: Option<String>,
-            pub(crate) x_ms_file_change_time: Option<String>,
+            pub(crate) x_ms_file_creation_time: Option<time::OffsetDateTime>,
+            pub(crate) x_ms_file_last_write_time: Option<time::OffsetDateTime>,
+            pub(crate) x_ms_file_change_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
@@ -2248,17 +2248,17 @@ pub mod directory {
                 self
             }
             #[doc = "Creation time for the file/directory. Default value: Now."]
-            pub fn x_ms_file_creation_time(mut self, x_ms_file_creation_time: impl Into<String>) -> Self {
+            pub fn x_ms_file_creation_time(mut self, x_ms_file_creation_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_file_creation_time = Some(x_ms_file_creation_time.into());
                 self
             }
             #[doc = "Last write time for the file/directory. Default value: Now."]
-            pub fn x_ms_file_last_write_time(mut self, x_ms_file_last_write_time: impl Into<String>) -> Self {
+            pub fn x_ms_file_last_write_time(mut self, x_ms_file_last_write_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_file_last_write_time = Some(x_ms_file_last_write_time.into());
                 self
             }
             #[doc = "Change time for the file/directory. Default value: Now."]
-            pub fn x_ms_file_change_time(mut self, x_ms_file_change_time: impl Into<String>) -> Self {
+            pub fn x_ms_file_change_time(mut self, x_ms_file_change_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_file_change_time = Some(x_ms_file_change_time.into());
                 self
             }
@@ -2294,13 +2294,13 @@ pub mod directory {
                         }
                         req.insert_header("x-ms-file-attributes", &this.x_ms_file_attributes);
                         if let Some(x_ms_file_creation_time) = &this.x_ms_file_creation_time {
-                            req.insert_header("x-ms-file-creation-time", x_ms_file_creation_time);
+                            req.insert_header("x-ms-file-creation-time", &x_ms_file_creation_time.to_string());
                         }
                         if let Some(x_ms_file_last_write_time) = &this.x_ms_file_last_write_time {
-                            req.insert_header("x-ms-file-last-write-time", x_ms_file_last_write_time);
+                            req.insert_header("x-ms-file-last-write-time", &x_ms_file_last_write_time.to_string());
                         }
                         if let Some(x_ms_file_change_time) = &this.x_ms_file_change_time {
-                            req.insert_header("x-ms-file-change-time", x_ms_file_change_time);
+                            req.insert_header("x-ms-file-change-time", &x_ms_file_change_time.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -2385,9 +2385,9 @@ pub mod directory {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_file_permission: Option<String>,
             pub(crate) x_ms_file_permission_key: Option<String>,
-            pub(crate) x_ms_file_creation_time: Option<String>,
-            pub(crate) x_ms_file_last_write_time: Option<String>,
-            pub(crate) x_ms_file_change_time: Option<String>,
+            pub(crate) x_ms_file_creation_time: Option<time::OffsetDateTime>,
+            pub(crate) x_ms_file_last_write_time: Option<time::OffsetDateTime>,
+            pub(crate) x_ms_file_change_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
@@ -2406,17 +2406,17 @@ pub mod directory {
                 self
             }
             #[doc = "Creation time for the file/directory. Default value: Now."]
-            pub fn x_ms_file_creation_time(mut self, x_ms_file_creation_time: impl Into<String>) -> Self {
+            pub fn x_ms_file_creation_time(mut self, x_ms_file_creation_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_file_creation_time = Some(x_ms_file_creation_time.into());
                 self
             }
             #[doc = "Last write time for the file/directory. Default value: Now."]
-            pub fn x_ms_file_last_write_time(mut self, x_ms_file_last_write_time: impl Into<String>) -> Self {
+            pub fn x_ms_file_last_write_time(mut self, x_ms_file_last_write_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_file_last_write_time = Some(x_ms_file_last_write_time.into());
                 self
             }
             #[doc = "Change time for the file/directory. Default value: Now."]
-            pub fn x_ms_file_change_time(mut self, x_ms_file_change_time: impl Into<String>) -> Self {
+            pub fn x_ms_file_change_time(mut self, x_ms_file_change_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_file_change_time = Some(x_ms_file_change_time.into());
                 self
             }
@@ -2449,13 +2449,13 @@ pub mod directory {
                         }
                         req.insert_header("x-ms-file-attributes", &this.x_ms_file_attributes);
                         if let Some(x_ms_file_creation_time) = &this.x_ms_file_creation_time {
-                            req.insert_header("x-ms-file-creation-time", x_ms_file_creation_time);
+                            req.insert_header("x-ms-file-creation-time", &x_ms_file_creation_time.to_string());
                         }
                         if let Some(x_ms_file_last_write_time) = &this.x_ms_file_last_write_time {
-                            req.insert_header("x-ms-file-last-write-time", x_ms_file_last_write_time);
+                            req.insert_header("x-ms-file-last-write-time", &x_ms_file_last_write_time.to_string());
                         }
                         if let Some(x_ms_file_change_time) = &this.x_ms_file_change_time {
-                            req.insert_header("x-ms-file-change-time", x_ms_file_change_time);
+                            req.insert_header("x-ms-file-change-time", &x_ms_file_change_time.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -3687,9 +3687,9 @@ pub mod file {
             pub(crate) x_ms_meta: Option<String>,
             pub(crate) x_ms_file_permission: Option<String>,
             pub(crate) x_ms_file_permission_key: Option<String>,
-            pub(crate) x_ms_file_creation_time: Option<String>,
-            pub(crate) x_ms_file_last_write_time: Option<String>,
-            pub(crate) x_ms_file_change_time: Option<String>,
+            pub(crate) x_ms_file_creation_time: Option<time::OffsetDateTime>,
+            pub(crate) x_ms_file_last_write_time: Option<time::OffsetDateTime>,
+            pub(crate) x_ms_file_change_time: Option<time::OffsetDateTime>,
             pub(crate) x_ms_lease_id: Option<String>,
         }
         impl Builder {
@@ -3744,17 +3744,17 @@ pub mod file {
                 self
             }
             #[doc = "Creation time for the file/directory. Default value: Now."]
-            pub fn x_ms_file_creation_time(mut self, x_ms_file_creation_time: impl Into<String>) -> Self {
+            pub fn x_ms_file_creation_time(mut self, x_ms_file_creation_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_file_creation_time = Some(x_ms_file_creation_time.into());
                 self
             }
             #[doc = "Last write time for the file/directory. Default value: Now."]
-            pub fn x_ms_file_last_write_time(mut self, x_ms_file_last_write_time: impl Into<String>) -> Self {
+            pub fn x_ms_file_last_write_time(mut self, x_ms_file_last_write_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_file_last_write_time = Some(x_ms_file_last_write_time.into());
                 self
             }
             #[doc = "Change time for the file/directory. Default value: Now."]
-            pub fn x_ms_file_change_time(mut self, x_ms_file_change_time: impl Into<String>) -> Self {
+            pub fn x_ms_file_change_time(mut self, x_ms_file_change_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_file_change_time = Some(x_ms_file_change_time.into());
                 self
             }
@@ -3816,13 +3816,13 @@ pub mod file {
                         }
                         req.insert_header("x-ms-file-attributes", &this.x_ms_file_attributes);
                         if let Some(x_ms_file_creation_time) = &this.x_ms_file_creation_time {
-                            req.insert_header("x-ms-file-creation-time", x_ms_file_creation_time);
+                            req.insert_header("x-ms-file-creation-time", &x_ms_file_creation_time.to_string());
                         }
                         if let Some(x_ms_file_last_write_time) = &this.x_ms_file_last_write_time {
-                            req.insert_header("x-ms-file-last-write-time", x_ms_file_last_write_time);
+                            req.insert_header("x-ms-file-last-write-time", &x_ms_file_last_write_time.to_string());
                         }
                         if let Some(x_ms_file_change_time) = &this.x_ms_file_change_time {
-                            req.insert_header("x-ms-file-change-time", x_ms_file_change_time);
+                            req.insert_header("x-ms-file-change-time", &x_ms_file_change_time.to_string());
                         }
                         if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
@@ -4003,9 +4003,9 @@ pub mod file {
             pub(crate) x_ms_content_disposition: Option<String>,
             pub(crate) x_ms_file_permission: Option<String>,
             pub(crate) x_ms_file_permission_key: Option<String>,
-            pub(crate) x_ms_file_creation_time: Option<String>,
-            pub(crate) x_ms_file_last_write_time: Option<String>,
-            pub(crate) x_ms_file_change_time: Option<String>,
+            pub(crate) x_ms_file_creation_time: Option<time::OffsetDateTime>,
+            pub(crate) x_ms_file_last_write_time: Option<time::OffsetDateTime>,
+            pub(crate) x_ms_file_change_time: Option<time::OffsetDateTime>,
             pub(crate) x_ms_lease_id: Option<String>,
         }
         impl Builder {
@@ -4060,17 +4060,17 @@ pub mod file {
                 self
             }
             #[doc = "Creation time for the file/directory. Default value: Now."]
-            pub fn x_ms_file_creation_time(mut self, x_ms_file_creation_time: impl Into<String>) -> Self {
+            pub fn x_ms_file_creation_time(mut self, x_ms_file_creation_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_file_creation_time = Some(x_ms_file_creation_time.into());
                 self
             }
             #[doc = "Last write time for the file/directory. Default value: Now."]
-            pub fn x_ms_file_last_write_time(mut self, x_ms_file_last_write_time: impl Into<String>) -> Self {
+            pub fn x_ms_file_last_write_time(mut self, x_ms_file_last_write_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_file_last_write_time = Some(x_ms_file_last_write_time.into());
                 self
             }
             #[doc = "Change time for the file/directory. Default value: Now."]
-            pub fn x_ms_file_change_time(mut self, x_ms_file_change_time: impl Into<String>) -> Self {
+            pub fn x_ms_file_change_time(mut self, x_ms_file_change_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.x_ms_file_change_time = Some(x_ms_file_change_time.into());
                 self
             }
@@ -4130,13 +4130,13 @@ pub mod file {
                         }
                         req.insert_header("x-ms-file-attributes", &this.x_ms_file_attributes);
                         if let Some(x_ms_file_creation_time) = &this.x_ms_file_creation_time {
-                            req.insert_header("x-ms-file-creation-time", x_ms_file_creation_time);
+                            req.insert_header("x-ms-file-creation-time", &x_ms_file_creation_time.to_string());
                         }
                         if let Some(x_ms_file_last_write_time) = &this.x_ms_file_last_write_time {
-                            req.insert_header("x-ms-file-last-write-time", x_ms_file_last_write_time);
+                            req.insert_header("x-ms-file-last-write-time", &x_ms_file_last_write_time.to_string());
                         }
                         if let Some(x_ms_file_change_time) = &this.x_ms_file_change_time {
-                            req.insert_header("x-ms-file-change-time", x_ms_file_change_time);
+                            req.insert_header("x-ms-file-change-time", &x_ms_file_change_time.to_string());
                         }
                         if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);

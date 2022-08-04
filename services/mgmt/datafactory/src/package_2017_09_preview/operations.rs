@@ -3455,8 +3455,8 @@ pub mod activity_runs {
             resource_group_name: impl Into<String>,
             factory_name: impl Into<String>,
             run_id: impl Into<String>,
-            start_time: impl Into<String>,
-            end_time: impl Into<String>,
+            start_time: impl Into<time::OffsetDateTime>,
+            end_time: impl Into<time::OffsetDateTime>,
         ) -> list_by_pipeline_run::Builder {
             list_by_pipeline_run::Builder {
                 client: self.0.clone(),
@@ -3482,8 +3482,8 @@ pub mod activity_runs {
             pub(crate) resource_group_name: String,
             pub(crate) factory_name: String,
             pub(crate) run_id: String,
-            pub(crate) start_time: String,
-            pub(crate) end_time: String,
+            pub(crate) start_time: time::OffsetDateTime,
+            pub(crate) end_time: time::OffsetDateTime,
             pub(crate) status: Option<String>,
             pub(crate) activity_name: Option<String>,
             pub(crate) linked_service_name: Option<String>,
@@ -3543,9 +3543,9 @@ pub mod activity_runs {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2017-09-01-preview");
                                 let start_time = &this.start_time;
-                                req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                                req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                                 let end_time = &this.end_time;
-                                req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                                req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                                 if let Some(status) = &this.status {
                                     req.url_mut().query_pairs_mut().append_pair("status", status);
                                 }
@@ -3733,8 +3733,8 @@ pub mod triggers {
             resource_group_name: impl Into<String>,
             factory_name: impl Into<String>,
             trigger_name: impl Into<String>,
-            start_time: impl Into<String>,
-            end_time: impl Into<String>,
+            start_time: impl Into<time::OffsetDateTime>,
+            end_time: impl Into<time::OffsetDateTime>,
         ) -> list_runs::Builder {
             list_runs::Builder {
                 client: self.0.clone(),
@@ -4113,8 +4113,8 @@ pub mod triggers {
             pub(crate) resource_group_name: String,
             pub(crate) factory_name: String,
             pub(crate) trigger_name: String,
-            pub(crate) start_time: String,
-            pub(crate) end_time: String,
+            pub(crate) start_time: time::OffsetDateTime,
+            pub(crate) end_time: time::OffsetDateTime,
         }
         impl Builder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
@@ -4163,9 +4163,9 @@ pub mod triggers {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2017-09-01-preview");
                                 let start_time = &this.start_time;
-                                req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                                req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                                 let end_time = &this.end_time;
-                                req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                                req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?

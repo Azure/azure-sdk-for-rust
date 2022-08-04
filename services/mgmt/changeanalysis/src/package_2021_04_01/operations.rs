@@ -186,7 +186,12 @@ pub mod resource_changes {
         #[doc = "* `resource_id`: The identifier of the resource."]
         #[doc = "* `start_time`: Specifies the start time of the changes request."]
         #[doc = "* `end_time`: Specifies the end time of the changes request."]
-        pub fn list(&self, resource_id: impl Into<String>, start_time: impl Into<String>, end_time: impl Into<String>) -> list::Builder {
+        pub fn list(
+            &self,
+            resource_id: impl Into<String>,
+            start_time: impl Into<time::OffsetDateTime>,
+            end_time: impl Into<time::OffsetDateTime>,
+        ) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 resource_id: resource_id.into(),
@@ -203,8 +208,8 @@ pub mod resource_changes {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
-            pub(crate) start_time: String,
-            pub(crate) end_time: String,
+            pub(crate) start_time: time::OffsetDateTime,
+            pub(crate) end_time: time::OffsetDateTime,
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
@@ -256,9 +261,9 @@ pub mod resource_changes {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2021-04-01");
                                 let start_time = &this.start_time;
-                                req.url_mut().query_pairs_mut().append_pair("$startTime", start_time);
+                                req.url_mut().query_pairs_mut().append_pair("$startTime", &start_time.to_string());
                                 let end_time = &this.end_time;
-                                req.url_mut().query_pairs_mut().append_pair("$endTime", end_time);
+                                req.url_mut().query_pairs_mut().append_pair("$endTime", &end_time.to_string());
                                 if let Some(skip_token) = &this.skip_token {
                                     req.url_mut().query_pairs_mut().append_pair("$skipToken", skip_token);
                                 }
@@ -302,8 +307,8 @@ pub mod changes {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-            start_time: impl Into<String>,
-            end_time: impl Into<String>,
+            start_time: impl Into<time::OffsetDateTime>,
+            end_time: impl Into<time::OffsetDateTime>,
         ) -> list_changes_by_resource_group::Builder {
             list_changes_by_resource_group::Builder {
                 client: self.0.clone(),
@@ -323,8 +328,8 @@ pub mod changes {
         pub fn list_changes_by_subscription(
             &self,
             subscription_id: impl Into<String>,
-            start_time: impl Into<String>,
-            end_time: impl Into<String>,
+            start_time: impl Into<time::OffsetDateTime>,
+            end_time: impl Into<time::OffsetDateTime>,
         ) -> list_changes_by_subscription::Builder {
             list_changes_by_subscription::Builder {
                 client: self.0.clone(),
@@ -343,8 +348,8 @@ pub mod changes {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
-            pub(crate) start_time: String,
-            pub(crate) end_time: String,
+            pub(crate) start_time: time::OffsetDateTime,
+            pub(crate) end_time: time::OffsetDateTime,
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
@@ -397,9 +402,9 @@ pub mod changes {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2021-04-01");
                                 let start_time = &this.start_time;
-                                req.url_mut().query_pairs_mut().append_pair("$startTime", start_time);
+                                req.url_mut().query_pairs_mut().append_pair("$startTime", &start_time.to_string());
                                 let end_time = &this.end_time;
-                                req.url_mut().query_pairs_mut().append_pair("$endTime", end_time);
+                                req.url_mut().query_pairs_mut().append_pair("$endTime", &end_time.to_string());
                                 if let Some(skip_token) = &this.skip_token {
                                     req.url_mut().query_pairs_mut().append_pair("$skipToken", skip_token);
                                 }
@@ -433,8 +438,8 @@ pub mod changes {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
-            pub(crate) start_time: String,
-            pub(crate) end_time: String,
+            pub(crate) start_time: time::OffsetDateTime,
+            pub(crate) end_time: time::OffsetDateTime,
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
@@ -486,9 +491,9 @@ pub mod changes {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2021-04-01");
                                 let start_time = &this.start_time;
-                                req.url_mut().query_pairs_mut().append_pair("$startTime", start_time);
+                                req.url_mut().query_pairs_mut().append_pair("$startTime", &start_time.to_string());
                                 let end_time = &this.end_time;
-                                req.url_mut().query_pairs_mut().append_pair("$endTime", end_time);
+                                req.url_mut().query_pairs_mut().append_pair("$endTime", &end_time.to_string());
                                 if let Some(skip_token) = &this.skip_token {
                                     req.url_mut().query_pairs_mut().append_pair("$skipToken", skip_token);
                                 }

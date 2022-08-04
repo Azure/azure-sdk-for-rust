@@ -35,8 +35,8 @@ pub struct ApiToken {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
     #[doc = "String-formatted date representing the time when the token expires."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub expiry: Option<String>,
+    #[serde(with = "azure_core::date::rfc3339::option")]
+    pub expiry: Option<time::OffsetDateTime>,
 }
 impl ApiToken {
     pub fn new(permission: Permission) -> Self {
@@ -333,8 +333,8 @@ pub struct DeviceTelemetry {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<serde_json::Value>,
     #[doc = "String-formatted date representing the time when the telemetry value was sent."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<String>,
+    #[serde(with = "azure_core::date::rfc3339::option")]
+    pub timestamp: Option<time::OffsetDateTime>,
 }
 impl DeviceTelemetry {
     pub fn new() -> Self {

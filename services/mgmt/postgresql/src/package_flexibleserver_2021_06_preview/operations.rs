@@ -2777,7 +2777,7 @@ pub mod query_texts {
                                     .append_pair(azure_core::query_param::API_VERSION, "2021-06-01-preview");
                                 let query_ids = &this.query_ids;
                                 for value in &this.query_ids {
-                                    req.url_mut().query_pairs_mut().append_pair("queryIds", value);
+                                    req.url_mut().query_pairs_mut().append_pair("queryIds", &value.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
