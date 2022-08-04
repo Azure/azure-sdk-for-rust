@@ -250,6 +250,11 @@ impl BlobClient {
         result
     }
 
+    /// Create a blob snapshot
+    pub fn snapshot(&self) -> SnapshotBlobBuilder {
+        SnapshotBlobBuilder::new(self.clone())
+    }
+
     pub fn blob_name(&self) -> &str {
         &self.blob_name
     }

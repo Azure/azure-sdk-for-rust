@@ -39,6 +39,7 @@ oauth2 = { version = "4.0.0", default-features = false }
 [features]
 default = ["enable_reqwest", "azure_identity/default"]
 test_e2e = []
+mock_transport_framework = [ "azure_core/mock_transport_framework", "azure_storage/mock_transport_framework"]
 azurite_workaround = []
 enable_reqwest = ["azure_core/enable_reqwest", "azure_storage/enable_reqwest"]
 enable_reqwest_rustls = [
