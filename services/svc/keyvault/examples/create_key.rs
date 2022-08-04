@@ -9,9 +9,11 @@ you want to create.
 cargo run --package azure_svc_keyvault --example create_key <YourKeyVaultName> <KeyName>
 */
 
+use azure_core::date;
 use azure_identity::AzureCliCredential;
 use azure_svc_keyvault::models::{key_create_parameters::Kty, Attributes, KeyAttributes, KeyCreateParameters};
 use std::sync::Arc;
+use time::OffsetDateTime;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -26,13 +28,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build();
 
     // Configure the not-before (nbf) and expiration (exp) dates
-    let nbf = chrono::Utc::now();
-    let exp = nbf + chrono::Duration::days(90);
+    let nbf = OffsetDateTime::now_utc();
+    let exp = nbf + date::duration_from_days(90);
 
     let mut key_attributes = KeyAttributes::new();
     key_attributes.attributes = Attributes::new();
-    key_attributes.attributes.nbf = Some(nbf.timestamp());
-    key_attributes.attributes.exp = Some(exp.timestamp());
+    key_attributes.attributes.nbf = Some(nbf.unix_timestamp());
+    key_attributes.attributes.exp = Some(exp.unix_timestamp());
 
     // Configure key type and size
     let mut key_create_params = KeyCreateParameters::new(Kty::Rsa);
