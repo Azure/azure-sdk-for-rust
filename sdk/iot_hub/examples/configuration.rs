@@ -1,4 +1,4 @@
-use azure_iot_hub::service::{resources::Configuration, ServiceClient};
+use azure_iot_hub::service::ServiceClient;
 use std::error::Error;
 
 #[tokio::main]
@@ -10,9 +10,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(1)
         .expect("Please pass the configuration id as the first parameter");
 
-    let http_client = azure_core::new_http_client();
-    let service_client =
-        ServiceClient::from_connection_string(http_client, iot_hub_connection_string, 3600)?;
+    let service_client = ServiceClient::new_connection_string(iot_hub_connection_string, 3600)?;
 
     println!("Creating a new configuration with id: {}", configuration_id);
 
@@ -42,7 +40,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .get_configuration(configuration_id)
         .into_future()
         .await?;
-    let configuration: Configuration = configuration.try_into()?;
 
     println!(
         "Successfully retrieved the new configuration '{:?}'",

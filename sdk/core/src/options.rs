@@ -107,17 +107,23 @@ pub struct RetryOptions {
     /// The delay between retry attempts for a fixed algorithm
     /// or the delay on which to base calculations for a back-off-based approach.
     ///
-    /// The default is 800 milliseconds.
+    /// The default is 200 milliseconds.
     pub delay: Duration,
 
     /// The maximum number of retry attempts before giving up.
     ///
-    /// The default is 3.
+    /// The default is 8.
     pub max_retries: u32,
 
-    /// The maximum permissible delay between retry attempts.
+    /// The maximum permissible elapsed time since starting to retry.
     ///
     /// The default is 1 minute.
+    pub max_elapsed: Duration,
+
+    /// The maximum permissible time between retries.
+    ///
+    /// The default is 30 seconds. For SRE reasons, this is only respected when above 1 second.
+    /// This option is ignored when using retry modes that do not change their delay time.
     pub max_delay: Duration,
 }
 
@@ -126,6 +132,7 @@ impl RetryOptions {
         mode: RetryMode => mode,
         delay: Duration => delay,
         max_retries: u32 => max_retries,
+        max_elapsed: Duration => max_elapsed,
         max_delay: Duration => max_delay,
     }
 }
@@ -134,9 +141,10 @@ impl Default for RetryOptions {
     fn default() -> Self {
         RetryOptions {
             mode: RetryMode::default(),
-            delay: Duration::from_millis(800),
-            max_retries: 3,
-            max_delay: Duration::from_secs(60),
+            delay: Duration::from_millis(200),
+            max_retries: 8,
+            max_elapsed: Duration::from_secs(60),
+            max_delay: Duration::from_secs(30),
         }
     }
 }
@@ -147,12 +155,13 @@ impl RetryOptions {
             RetryMode::Exponential => Arc::new(ExponentialRetryPolicy::new(
                 self.delay,
                 self.max_retries,
+                self.max_elapsed,
                 self.max_delay,
             )),
             RetryMode::Fixed => Arc::new(FixedRetryPolicy::new(
                 self.delay,
                 self.max_retries,
-                self.max_delay,
+                self.max_elapsed,
             )),
             RetryMode::None => Arc::new(NoRetryPolicy::default()),
         }
